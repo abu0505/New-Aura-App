@@ -18,7 +18,10 @@ export function usePartner() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     const fetchPartner = async () => {
       // In a 2-person app, the partner is just the other user in the profiles table
