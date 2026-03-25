@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AURA | Your Private World</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;1,300&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-dim": "#13131b",
+              "on-error-container": "#ffdad6",
+              "tertiary": "#cac7d3",
+              "primary": "#e6c487",
+              "on-secondary-fixed": "#261900",
+              "on-secondary": "#412d00",
+              "on-surface-variant": "#d0c5b5",
+              "surface-container-highest": "#34343d",
+              "secondary-fixed": "#ffdea5",
+              "inverse-primary": "#745a27",
+              "on-primary": "#412d00",
+              "tertiary-fixed-dim": "#c7c5d1",
+              "secondary-fixed-dim": "#e4c285",
+              "on-surface": "#e4e1ed",
+              "surface-container-high": "#292932",
+              "surface-container": "#1f1f27",
+              "on-tertiary-container": "#414049",
+              "surface-container-low": "#1b1b23",
+              "secondary-container": "#5a4312",
+              "primary-fixed-dim": "#e4c285",
+              "surface": "#13131b",
+              "inverse-surface": "#e4e1ed",
+              "background": "#13131b",
+              "on-primary-fixed": "#261900",
+              "on-background": "#e4e1ed",
+              "secondary": "#e4c285",
+              "on-tertiary-fixed": "#1b1b23",
+              "error-container": "#93000a",
+              "surface-container-lowest": "#0d0d15",
+              "on-error": "#690005",
+              "inverse-on-surface": "#302f39",
+              "on-primary-container": "#543d0c",
+              "on-secondary-fixed-variant": "#5a4312",
+              "tertiary-fixed": "#e4e1ed",
+              "primary-fixed": "#ffdea4",
+              "on-tertiary": "#303038",
+              "outline": "#998f81",
+              "on-primary-fixed-variant": "#5a4312",
+              "on-secondary-container": "#d1b175",
+              "error": "#ffb4ab",
+              "surface-variant": "#34343d",
+              "surface-bright": "#393842",
+              "primary-container": "#c9a96e",
+              "surface-tint": "#e4c285",
+              "outline-variant": "#4d463a",
+              "on-tertiary-fixed-variant": "#46464f",
+              "tertiary-container": "#aeacb7"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #0d0d15;
+            color: #e4e1ed;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+        .aurora-gradient {
+            background: radial-gradient(circle at 20% 30%, rgba(230, 196, 135, 0.08) 0%, transparent 40%),
+                        radial-gradient(circle at 80% 70%, rgba(65, 45, 0, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, rgba(19, 19, 27, 1) 0%, rgba(13, 13, 21, 1) 100%);
+        }
+        .glass-panel {
+            background: rgba(19, 19, 27, 0.6);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(230, 196, 135, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest min-h-screen selection:bg-primary-container selection:text-on-primary">
+<!-- Main Container -->
+<main class="flex min-h-screen w-full">
+<!-- Left Side: Hero/Branding -->
+<section class="hidden lg:flex flex-col justify-between w-7/12 p-20 aurora-gradient relative overflow-hidden">
+<!-- Decorative Elements -->
+<div class="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPt3UQD2zhBjdcfz4vpoMnLVAO00p927weid8NJG3wHiiGD4FcU1P0MTD8VIMkLAfZM-917g3aicYjhSmb1SqSsCsuThtfGQQS7semr3pXlk2v9N0uWeQ10UsiwSLBcqBuSOhzePp3kU4MNVfyWGXDPMgOw6f_MWEozVvoD15vfsOjt4R6aaTsNn8QKsSyo1VpDaqwNU88qukxWfkWAdJpXUnG-yBBNzFfk4MykA2UpWQnCgOB4mCV3dS5wEZDn4RmtU6KFiU_yb8');"></div>
+<div class="z-10 flex flex-col items-start gap-4">
+<div class="flex items-center gap-2 opacity-60">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="lock" style="font-variation-settings: 'FILL' 1;">lock</span>
+<span class="text-[10px] tracking-[0.3em] uppercase font-label text-primary">End-to-end encrypted for two</span>
+</div>
+</div>
+<div class="z-10 flex flex-col justify-center flex-grow">
+<h1 class="font-headline text-8xl font-light tracking-[0.25em] text-primary text-glow leading-tight mb-4">
+                    AURA
+                </h1>
+<p class="font-headline italic text-2xl text-on-surface-variant font-light tracking-widest opacity-80">
+                    Your Private World
+                </p>
+</div>
+<div class="z-10 flex flex-col gap-8">
+<div class="w-32 h-px bg-outline-variant opacity-30"></div>
+<div class="flex gap-12">
+<div class="flex flex-col gap-1">
+<span class="text-[10px] tracking-widest uppercase text-outline">Intimacy</span>
+<span class="text-xs text-on-surface/60">Crafted for connection</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-[10px] tracking-widest uppercase text-outline">Security</span>
+<span class="text-xs text-on-surface/60">Zero-knowledge privacy</span>
+</div>
+</div>
+</div>
+<!-- Background Ambient Image Layer -->
+<div class="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay">
+<img class="w-full h-full object-cover" data-alt="Abstract cinematic close-up of dark silk fabric rippling with warm golden highlights and deep shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDggKZyHZC82wWLMBP-ZCFJ23iMF1LP-aPhtH9VSTVj3voyoGeExuWoH0mtS8yIyZwR2uhbD-TrJ-QPcpvnPmCy7uIfq15pXXBN0V2qO-LrW5YSshT7jVJhAcZ5NnEtlNNKgMOQoUoAv2Czddr90nG_XHej07gElVkLMkkX8KEOm5ddQSQXvSek9DM2suox42xcr7Uk0r9V0XWulKV1pKmv4fZDxSUTHY9fyxvid2BNpTofZKTx2oiTNFoZJG4KJfhCMR3n0R6Ue1o"/>
+</div>
+</section>
+<!-- Right Side: Login Form -->
+<section class="flex flex-col justify-center items-center w-full lg:w-5/12 bg-surface p-8 md:p-16 lg:p-24 relative">
+<div class="w-full max-w-md flex flex-col gap-12">
+<!-- Branding for Mobile -->
+<div class="lg:hidden flex flex-col items-center mb-4">
+<h1 class="font-headline text-4xl font-light tracking-[0.2em] text-primary">AURA</h1>
+</div>
+<header class="flex flex-col gap-3">
+<h2 class="font-headline text-4xl text-on-surface tracking-tight">Welcome Back</h2>
+<p class="text-on-surface-variant/70 text-sm leading-relaxed">Enter your credentials to return to your shared sanctuary.</p>
+</header>
+<form class="flex flex-col gap-6">
+<!-- Email Field -->
+<div class="flex flex-col gap-2">
+<label class="text-[10px] uppercase tracking-[0.2em] text-outline px-1" for="email">Identity</label>
+<div class="group relative">
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 text-on-surface placeholder:text-on-surface-variant/30 focus:ring-1 focus:ring-primary/40 transition-all duration-500 font-body text-sm" id="email" placeholder="Email address" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-end px-1">
+<label class="text-[10px] uppercase tracking-[0.2em] text-outline" for="password">Secret Key</label>
+<a class="text-[10px] uppercase tracking-[0.1em] text-primary/60 hover:text-primary transition-colors duration-300" href="#">Forgot password?</a>
+</div>
+<div class="group relative">
+<input class="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 text-on-surface placeholder:text-on-surface-variant/30 focus:ring-1 focus:ring-primary/40 transition-all duration-500 font-body text-sm" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex flex-col gap-4 mt-4">
+<button class="w-full bg-primary-container text-on-primary py-4 rounded-full font-label font-semibold tracking-widest uppercase text-xs hover:brightness-110 active:scale-[0.98] transition-all duration-300 shadow-xl shadow-primary/5" type="submit">
+                            Unlock AURA
+                        </button>
+<div class="flex items-center gap-4 py-2">
+<div class="flex-grow h-px bg-outline-variant/20"></div>
+<span class="text-[10px] uppercase tracking-widest text-outline/40">or</span>
+<div class="flex-grow h-px bg-outline-variant/20"></div>
+</div>
+<button class="w-full border border-outline-variant/30 text-on-surface py-4 rounded-full font-label font-semibold tracking-widest uppercase text-xs hover:bg-surface-container-high transition-all duration-300" type="button">
+                            Create Account
+                        </button>
+</div>
+</form>
+<footer class="flex justify-center mt-8">
+<p class="text-[10px] text-outline/40 tracking-widest uppercase text-center max-w-xs leading-loose">
+                        By entering, you agree to our <br/>
+<a class="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Privacy Protocol</a> &amp; <a class="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Terms of Presence</a>
+</p>
+</footer>
+</div>
+</section>
+</main>
+<!-- Shared Footer Navigation -->
+<footer class="fixed bottom-0 left-0 w-full px-12 py-8 z-50 pointer-events-none">
+<div class="flex justify-between items-center w-full opacity-60">
+<div class="flex gap-8 pointer-events-auto">
+<a class="text-[#4D463A] hover:text-[#E6C487] font-['Plus_Jakarta_Sans'] text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Privacy</a>
+<a class="text-[#4D463A] hover:text-[#E6C487] font-['Plus_Jakarta_Sans'] text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Terms</a>
+<a class="text-[#4D463A] hover:text-[#E6C487] font-['Plus_Jakarta_Sans'] text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Concierge</a>
+</div>
+<div class="text-[#4D463A] font-['Plus_Jakarta_Sans'] text-[10px] tracking-[0.2em] uppercase">
+                © 2024 AURA. THE DIGITAL SANCTUARY.
+            </div>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,327 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== CSS Custom Properties (Design Tokens) ===== */
+:root {
+  /* Backgrounds */
+  --bg-primary: #0C0C14;
+  --bg-secondary: #13131E;
+  --bg-elevated: #1C1C2E;
+  --bg-surface: #222236;
+
+  /* Accent — Gold */
+  --gold: #C9A96E;
+  --gold-light: #E2CA9A;
+  --gold-deep: #B8965A;
+  --gold-glow: rgba(201, 169, 110, 0.15);
+
+  /* Accent — Rose Gold (secondary) */
+  --rose: #D4A0A0;
+  --rose-light: #E8C4C4;
+  --rose-muted: rgba(212, 160, 160, 0.12);
+
+  /* Text */
+  --text-primary: #F0EDE8;
+  --text-secondary: #8A8799;
+  --text-muted: #4A4857;
+
+  /* Borders */
+  --border-subtle: rgba(201, 169, 110, 0.12);
+  --border-medium: rgba(201, 169, 110, 0.25);
+
+  /* Bubbles */
+  --sender-bubble: linear-gradient(135deg, #C9A96E, #A8845A);
+  --receiver-bubble: #1C1C2E;
+
+  /* Status */
+  --success: #6ECB8A;
+  --danger: #E87676;
+  --warning: #E8C46E;
+
+  /* Spacing */
+  --radius-bubble: 18px;
+  --glass-blur: 12px;
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+}
+
+/* ===== Base Styles ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  height: 100%;
+  overflow: hidden;
+  line-height: 1.5;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Scrollbar Styling ===== */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-muted) transparent;
+}
+
+/* ===== Selection ===== */
+::selection {
+  background-color: rgba(201, 169, 110, 0.3);
+  color: var(--text-primary);
+}
+
+/* ===== Utility Classes ===== */
+@layer utilities {
+  .glass {
+    background: rgba(28, 28, 46, 0.7);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border-subtle);
+  }
+
+  .glass-strong {
+    background: rgba(28, 28, 46, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-medium);
+  }
+
+  .text-gradient-gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .border-glow {
+    border: 1px solid var(--border-medium);
+    box-shadow: 0 0 15px var(--gold-glow), inset 0 0 15px rgba(201, 169, 110, 0.05);
+  }
+
+  .text-aura-brand {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+  }
+
+  /* Hide scrollbar but allow scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area padding for mobile */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* ===== Animated Background Gradient (Login) ===== */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-gradient-bg {
+  background: linear-gradient(
+    -45deg,
+    #0C0C14,
+    #13131E,
+    #1a1520,
+    #0C0C14,
+    #161222
+  );
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+
+/* ===== Floating Particles (Login) ===== */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+
+.particle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--gold);
+  border-radius: 50%;
+  opacity: 0;
+  animation: float linear infinite;
+}
+
+/* ===== Chat Bubble Tails ===== */
+.bubble-tail-sender::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -6px;
+  width: 12px;
+  height: 12px;
+  background: #A8845A;
+  border-bottom-left-radius: 12px;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.bubble-tail-receiver::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -6px;
+  width: 12px;
+  height: 12px;
+  background: var(--receiver-bubble);
+  border-bottom-right-radius: 12px;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+
+/* ===== Typing Indicator Dots ===== */
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--gold);
+  border-radius: 50%;
+  display: inline-block;
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+/* ===== Story Ring Gradient ===== */
+@keyframes rotateRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.story-ring-unviewed {
+  background: conic-gradient(from 0deg, var(--gold), var(--rose), var(--gold-light), var(--gold));
+  animation: rotateRing 4s linear infinite;
+}
+
+.story-ring-viewed {
+  background: var(--text-muted);
+}
+
+/* ===== Focus Styles ===== */
+input:focus, textarea:focus, button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.3);
+}
+
+/* ===== Prevent double-tap zoom on mobile ===== */
+button, a {
+  touch-action: manipulation;
+}
+
+/* ===== Long press prevention on context menu ===== */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* ===== Toast animation ===== */
+@keyframes toastIn {
+  0% { transform: translateY(100%) scale(0.9); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes toastOut {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(100%) scale(0.9); opacity: 0; }
+}
+
+.toast-enter {
+  animation: toastIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.toast-exit {
+  animation: toastOut 0.2s ease-in forwards;
+}
+
+/* ===== Read Receipt Checkmarks ===== */
+.checkmark-read {
+  color: var(--gold);
+}
+
+.checkmark-delivered {
+  color: var(--text-muted);
+}
+
+/* ===== Confetti (Streak Celebrations) ===== */
+@keyframes confettiFall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: fixed;
+  top: -10px;
+  width: 8px;
+  height: 8px;
+  animation: confettiFall 3s ease-in forwards;
+}

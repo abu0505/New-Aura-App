@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus_Jakarta_Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-variant": "#34343d",
+                        "on-background": "#e4e1ed",
+                        "primary-container": "#c9a96e",
+                        "on-primary-fixed": "#261900",
+                        "surface": "#13131b",
+                        "on-secondary-fixed-variant": "#5a4312",
+                        "error": "#ffb4ab",
+                        "primary": "#e6c487",
+                        "on-tertiary": "#303038",
+                        "inverse-primary": "#745a27",
+                        "background": "#13131b",
+                        "surface-container-high": "#292932",
+                        "outline": "#998f81",
+                        "on-surface-variant": "#d0c5b5",
+                        "secondary-fixed": "#ffdea5",
+                        "surface-container-low": "#1b1b23",
+                        "surface-container-highest": "#34343d",
+                        "on-tertiary-container": "#414049",
+                        "surface-tint": "#e4c285",
+                        "tertiary-container": "#aeacb7",
+                        "surface-dim": "#13131b",
+                        "primary-fixed": "#ffdea4",
+                        "on-tertiary-fixed-variant": "#46464f",
+                        "tertiary": "#cac7d3",
+                        "on-primary-fixed-variant": "#5a4312",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#1b1b23",
+                        "on-primary": "#412d00",
+                        "surface-container-lowest": "#0d0d15",
+                        "on-primary-container": "#543d0c",
+                        "inverse-surface": "#e4e1ed",
+                        "secondary-container": "#5a4312",
+                        "tertiary-fixed-dim": "#c7c5d1",
+                        "on-secondary": "#412d00",
+                        "on-secondary-fixed": "#261900",
+                        "secondary-fixed-dim": "#e4c285",
+                        "secondary": "#e4c285",
+                        "on-secondary-container": "#d1b175",
+                        "surface-container": "#1f1f27",
+                        "on-surface": "#e4e1ed",
+                        "inverse-on-surface": "#302f39",
+                        "error-container": "#93000a",
+                        "tertiary-fixed": "#e4e1ed",
+                        "primary-fixed-dim": "#e4c285",
+                        "outline-variant": "#4d463a",
+                        "surface-bright": "#393842",
+                        "on-error": "#690005"
+                    },
+                    fontFamily: {
+                        "headline": ["Noto Serif"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0d0d15;
+            color: #e4e1ed;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-header {
+            background: rgba(19, 19, 27, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .message-gradient-sender {
+            background: linear-gradient(135deg, #c9a96e 0%, #e6c487 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(230, 196, 135, 0.2);
+            border-radius: 10px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col min-h-screen max-w-md mx-auto relative overflow-hidden bg-surface-container-lowest">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 w-full glass-header flex items-center justify-between px-6 py-4 shadow-[0px_12px_40px_-5px_rgba(0,0,0,0.4)]">
+<div class="flex items-center gap-4">
+<button class="text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined">arrow_back_ios</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="portrait of a handsome young man with a warm smile and gentle eyes in soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCozB7AkFaMfLsJoIfgSVLqkkJbTpSaUGMK1P90SP2eL6Q5mgJ07VL4spW2E2VlRfmK4xBQz4CQJfDDQpFP9HPgQ2xgBYD9ionCTXbJCDGJt7U79-YR8tj95BLxbYeWdeZGuXi7LYIa9WfZjbt06F78EH7k6_ObMTVc3fpKUUBuIjPCqRpeHMRhkg2g3eYA7G9EoTA_otVO7Cp7YARcsXyKy2N6vzXP9TUDOfOKJbLqAo29sMTibgzQ4KNFcQKQny91nfBZOlDp6lg"/>
+</div>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-surface"></div>
+</div>
+<div class="flex flex-col">
+<span class="font-headline text-lg text-primary leading-tight">Julian</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-on-surface-variant opacity-70">Online</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1 px-2 py-1 bg-surface-container-high rounded-full">
+<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-primary font-bold text-xs">42</span>
+</div>
+<button class="text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined">call</span>
+</button>
+<button class="text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col relative overflow-hidden">
+<!-- Pinned Message Banner -->
+<div class="px-4 py-2 relative z-10 animate-fade-in">
+<div class="bg-primary/10 backdrop-blur-md border border-primary/10 rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">push_pin</span>
+<p class="text-on-surface text-sm font-medium tracking-wide">See you at 7pm tonight! ✨</p>
+</div>
+<button class="text-on-surface-variant opacity-60 hover:opacity-100">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+</div>
+<!-- Message List -->
+<div class="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-8 custom-scrollbar">
+<!-- Date Separator -->
+<div class="flex justify-center">
+<span class="text-[10px] font-label uppercase tracking-[0.2em] text-on-surface-variant/40">Today</span>
+</div>
+<!-- Receiver Message: Julian -->
+<div class="flex flex-col items-start gap-1 max-w-[85%]">
+<div class="bg-surface-container-high text-on-surface px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm">
+<p class="text-[15px] leading-relaxed">Good morning sunshine ☀️</p>
+</div>
+<span class="text-[10px] text-on-surface-variant/50 ml-1">9:15 AM</span>
+</div>
+<!-- Sender Message: You -->
+<div class="flex flex-col items-end gap-1 max-w-[85%] self-end">
+<div class="message-gradient-sender text-on-primary px-4 py-3 rounded-2xl rounded-br-sm shadow-md">
+<p class="text-[15px] font-medium leading-relaxed">Hey love! Just woke up 💛</p>
+</div>
+<div class="flex items-center gap-1 mr-1">
+<span class="text-[10px] text-on-surface-variant/50">9:18 AM</span>
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'wght' 700;">done_all</span>
+</div>
+</div>
+<!-- Receiver Message: Julian (Image) -->
+<div class="flex flex-col items-start gap-1 max-w-[85%]">
+<div class="bg-surface-container-high p-2 rounded-2xl rounded-bl-sm shadow-sm space-y-2">
+<div class="rounded-xl overflow-hidden aspect-[4/3] w-full">
+<img class="w-full h-full object-cover" data-alt="a gourmet breakfast spread with avocado toast, poached eggs, and fresh berries on a rustic wooden table in warm morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZVN_Ine4DKIZml8Z6QLsRWlGI1ntl-LdYhNAoksTH9p615BPqrrRQW-OLSpgfaPRpPi9E3J479nVGDFrC1nijdXt6k7D6oHhxafFPRQ-mzaWINaWP3cJxReNF9iheUJB7tYmuqJe54-jRQrKwNXjOWjE9ELnwaCPJp-hkxcJlw1eAFlkVqGvy3xwiHsloVV6SvUEA8l9Ks6SyEeZhOiBjGwlEThMUbBYUSktxrVus3zORngENCdqT8ufJ1Qq-FTD0vuUpXfzV0cE"/>
+</div>
+<p class="text-[15px] leading-relaxed px-2 pb-1">I made breakfast, wish you were here</p>
+</div>
+<span class="text-[10px] text-on-surface-variant/50 ml-1">9:22 AM</span>
+</div>
+<!-- Sender Message: You (Audio) -->
+<div class="flex flex-col items-end gap-1 max-w-[85%] self-end">
+<div class="message-gradient-sender text-on-primary px-4 py-3 rounded-2xl rounded-br-sm shadow-md w-64">
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full bg-on-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<div class="flex-1 flex items-end gap-[2px] h-6 mb-1">
+<div class="w-1 bg-on-primary/40 h-2 rounded-full"></div>
+<div class="w-1 bg-on-primary/60 h-4 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-5 rounded-full"></div>
+<div class="w-1 bg-on-primary h-3 rounded-full"></div>
+<div class="w-1 bg-on-primary/70 h-6 rounded-full"></div>
+<div class="w-1 bg-on-primary h-4 rounded-full"></div>
+<div class="w-1 bg-on-primary/60 h-5 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-3 rounded-full"></div>
+<div class="w-1 bg-on-primary h-5 rounded-full"></div>
+<div class="w-1 bg-on-primary/40 h-2 rounded-full"></div>
+</div>
+<span class="text-[10px] font-bold">0:12</span>
+</div>
+</div>
+<div class="flex items-center gap-1 mr-1">
+<span class="text-[10px] text-on-surface-variant/50">9:25 AM</span>
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'wght' 700;">done_all</span>
+</div>
+</div>
+<!-- Receiver Message: Julian (Reaction) -->
+<div class="flex flex-col items-start gap-1 max-w-[85%] relative">
+<div class="bg-surface-container-high text-on-surface px-4 py-3 rounded-2xl rounded-bl-sm shadow-sm relative">
+<p class="text-[15px] leading-relaxed">Can't wait to see you tonight 💕</p>
+<!-- Reaction Overlay -->
+<div class="absolute -bottom-2 -right-2 bg-surface-container-highest border border-outline-variant/20 rounded-full px-1.5 py-0.5 shadow-lg flex items-center">
+<span class="text-xs">❤️</span>
+</div>
+</div>
+<span class="text-[10px] text-on-surface-variant/50 ml-1 mt-2">9:28 AM</span>
+</div>
+<!-- Sender Message: You -->
+<div class="flex flex-col items-end gap-1 max-w-[85%] self-end">
+<div class="message-gradient-sender text-on-primary px-4 py-3 rounded-2xl rounded-br-sm shadow-md">
+<p class="text-[15px] font-medium leading-relaxed">Me too! Only 3 more hours 🥰</p>
+</div>
+<div class="flex items-center gap-1 mr-1">
+<span class="text-[10px] text-on-surface-variant/50">9:30 AM</span>
+<span class="material-symbols-outlined text-primary text-xs" style="font-variation-settings: 'wght' 700;">done_all</span>
+</div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex items-center gap-2 max-w-[85%] opacity-70">
+<div class="bg-surface-container-low px-4 py-3 rounded-2xl rounded-bl-sm flex gap-1 items-center">
+<div class="w-1.5 h-1.5 bg-on-surface-variant/40 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+<div class="w-1.5 h-1.5 bg-on-surface-variant/40 rounded-full animate-bounce" style="animation-delay: 0.2s;"></div>
+<div class="w-1.5 h-1.5 bg-on-surface-variant/40 rounded-full animate-bounce" style="animation-delay: 0.4s;"></div>
+</div>
+</div>
+</div>
+<!-- Chat Input Bar -->
+<div class="p-4 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest to-transparent">
+<div class="bg-surface-container-low/80 backdrop-blur-xl rounded-full px-2 py-2 flex items-center gap-2 shadow-[0_-8px_32px_rgba(0,0,0,0.3)]">
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">add</span>
+</button>
+<div class="flex-1 bg-surface-container-lowest/50 rounded-full px-4 py-2">
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-on-surface-variant/40 text-[15px]" placeholder="Write something beautiful..." type="text"/>
+</div>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container-high transition-colors text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined">sentiment_satisfied</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">mic</span>
+</button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 glass-header flex justify-around items-center px-8 pb-6 pt-2 rounded-t-3xl border-t border-[#4D463A]/20">
+<!-- Chat Tab (Active) -->
+<a class="flex flex-col items-center justify-center bg-[#E6C487]/10 text-[#E6C487] rounded-full p-3 shadow-[0_0_20px_rgba(230,196,135,0.1)] transition-all duration-300" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest mt-1">Chat</span>
+</a>
+<!-- Stories Tab -->
+<a class="flex flex-col items-center justify-center text-[#E4E1ED]/50 p-3 hover:text-[#E6C487] transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest mt-1 hidden">Stories</span>
+</a>
+<!-- Location Tab -->
+<a class="flex flex-col items-center justify-center text-[#E4E1ED]/50 p-3 hover:text-[#E6C487] transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">favorite</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest mt-1 hidden">Location</span>
+</a>
+<!-- Settings Tab -->
+<a class="flex flex-col items-center justify-center text-[#E4E1ED]/50 p-3 hover:text-[#E6C487] transition-all duration-300 active:scale-90" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[10px] uppercase tracking-widest mt-1 hidden">Settings</span>
+</a>
+</nav>
+<!-- Spacer for Bottom Nav -->
+<div class="h-24 shrink-0"></div>
+</body></html>

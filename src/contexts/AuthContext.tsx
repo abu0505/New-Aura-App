@@ -1,0 +1,109 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import { 
+  checkEncryptionStatus, 
+  generateKeyPair, 
+  storeKeyPair, 
+  backupKeys, 
+  restoreKeys,
+  type EncryptionState 
+} from '../lib/encryption';
+
+interface AuthContextType {
+  session: Session | null;
+  user: User | null;
+  loading: boolean;
+  encryptionStatus: EncryptionState;
+  signOut: () => Promise<void>;
+  setupEncryption: (pin: string) => Promise<void>;
+  unlockEncryption: (pin: string) => Promise<boolean>;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  session: null,
+  user: null,
+  loading: true,
+  encryptionStatus: 'initializing',
+  signOut: async () => {},
+  setupEncryption: async () => {},
+  unlockEncryption: async () => false,
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [encryptionStatus, setEncryptionStatus] = useState<EncryptionState>('initializing');
+
+  useEffect(() => {
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
+      setLoading(false);
+    });
+
+    // Listen for auth events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        handleSession(session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSession = async (currentSession: Session | null) => {
+    setSession(currentSession);
+    setUser(currentSession?.user ?? null);
+
+    if (currentSession?.user) {
+      const status = await checkEncryptionStatus(currentSession.user.id);
+      setEncryptionStatus(status);
+    } else {
+      setEncryptionStatus('initializing');
+    }
+  };
+
+  const setupEncryption = async (pin: string) => {
+    if (!user) return;
+    try {
+      const newKeyPair = generateKeyPair();
+      storeKeyPair(newKeyPair);
+      await backupKeys(user.id, pin);
+      setEncryptionStatus('ready');
+    } catch (err) {
+      console.error('Failed to setup encryption', err);
+      setEncryptionStatus('error');
+    }
+  };
+
+  const unlockEncryption = async (pin: string): Promise<boolean> => {
+    if (!user) return false;
+    const success = await restoreKeys(user.id, pin);
+    if (success) {
+      setEncryptionStatus('ready');
+    }
+    return success;
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  return (
+    <AuthContext.Provider value={{ 
+      session, 
+      user, 
+      loading, 
+      encryptionStatus,
+      signOut, 
+      setupEncryption,
+      unlockEncryption
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);

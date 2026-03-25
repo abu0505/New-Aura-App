@@ -1,0 +1,44 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Secrets and sensitive files
+.env
+.env.*
+! .env.example
+uuids.txt
+uuids.json
+
+# Nested git folders (remnants)
+Aura/
+Aura-App/
+
+# Temporary and export files
+aura_*.html
+stitch_layout.html
+check_pinned.js
+check_pinned.ts
+get_uuids.js
+get_uuids.mjs
+get_uuids_json.mjs
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

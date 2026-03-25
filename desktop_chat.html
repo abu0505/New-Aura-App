@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-variant": "#34343d",
+              "on-tertiary": "#362f25",
+              "tertiary-container": "#b7ac9d",
+              "on-secondary-fixed": "#261900",
+              "on-tertiary-fixed-variant": "#4d463a",
+              "error-container": "#93000a",
+              "outline-variant": "#4d463a",
+              "surface-tint": "#e4c285",
+              "secondary-fixed-dim": "#e4c285",
+              "inverse-primary": "#745a27",
+              "surface-container-low": "#1b1b23",
+              "surface-container": "#1f1f27",
+              "tertiary-fixed": "#ede1d1",
+              "secondary-fixed": "#ffdea5",
+              "error": "#ffb4ab",
+              "primary-fixed": "#ffdea4",
+              "surface-container-lowest": "#0d0d15",
+              "primary-fixed-dim": "#e4c285",
+              "on-surface": "#e4e1ed",
+              "on-error-container": "#ffdad6",
+              "surface-dim": "#13131b",
+              "on-primary": "#412d00",
+              "on-primary-container": "#543d0c",
+              "on-secondary": "#412d00",
+              "inverse-on-surface": "#302f39",
+              "on-tertiary-container": "#484035",
+              "primary-container": "#c9a96e",
+              "on-tertiary-fixed": "#201b11",
+              "inverse-surface": "#e4e1ed",
+              "on-surface-variant": "#d0c5b5",
+              "on-secondary-fixed-variant": "#5a4312",
+              "surface": "#13131b",
+              "outline": "#998f81",
+              "surface-bright": "#393842",
+              "on-primary-fixed": "#261900",
+              "surface-container-highest": "#34343d",
+              "tertiary": "#d3c7b8",
+              "background": "#13131b",
+              "on-primary-fixed-variant": "#5a4312",
+              "secondary-container": "#5a4312",
+              "on-error": "#690005",
+              "on-background": "#e4e1ed",
+              "primary": "#e6c487",
+              "tertiary-fixed-dim": "#d0c5b5",
+              "surface-container-high": "#292932",
+              "secondary": "#e4c285",
+              "on-secondary-container": "#d1b175"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #13131b;
+            color: #e4e1ed;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            background: rgba(19, 19, 27, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .glass-input {
+            background: rgba(27, 27, 35, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        .gold-glow {
+            box-shadow: 0 0 15px rgba(230, 196, 135, 0.15);
+        }
+        .message-shadow {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="overflow-hidden bg-background selection:bg-primary/30 selection:text-primary">
+<div class="flex h-screen w-full">
+<!-- PANEL 1: SideNavBar -->
+<aside class="h-full w-[260px] fixed left-0 top-0 bg-slate-900 dark:bg-[#1B1B23] shadow-2xl shadow-black/50 flex flex-col h-full py-8 px-4 z-50">
+<!-- Brand Logo -->
+<div class="mb-12 px-4">
+<h1 class="text-2xl font-['Noto_Serif'] tracking-[0.2em] text-[#E6C487] drop-shadow-[0_0_8px_rgba(230,196,135,0.4)]">AURA</h1>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 space-y-4">
+<!-- Chat (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-full bg-[#E6C487] text-[#412D00] font-bold scale-95 duration-400 cubic-bezier(0.22, 1, 0.36, 1)" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+<span class="font-['Noto_Serif'] tracking-widest uppercase text-xs">Chat</span>
+</a>
+<!-- Stories -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#998F81] hover:text-[#E6C487] hover:bg-[#292932] transition-all duration-400 ease-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">auto_stories</span>
+<span class="font-['Noto_Serif'] tracking-widest uppercase text-xs">Stories</span>
+</a>
+<!-- Location -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#998F81] hover:text-[#E6C487] hover:bg-[#292932] transition-all duration-400 ease-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">location_on</span>
+<span class="font-['Noto_Serif'] tracking-widest uppercase text-xs">Location</span>
+</a>
+<!-- Settings -->
+<a class="flex items-center gap-3 px-4 py-3 text-[#998F81] hover:text-[#E6C487] hover:bg-[#292932] transition-all duration-400 ease-out rounded-full group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform">settings</span>
+<span class="font-['Noto_Serif'] tracking-widest uppercase text-xs">Settings</span>
+</a>
+</nav>
+<!-- Bottom Section -->
+<div class="mt-auto space-y-6 px-2">
+<!-- Streak Badge -->
+<div class="inline-flex items-center gap-2 bg-[#E6C487]/10 border border-[#E6C487]/20 px-3 py-1.5 rounded-full">
+<span class="text-sm">🔥</span>
+<span class="text-[10px] font-bold tracking-[0.1em] uppercase text-[#E6C487]">42 days</span>
+</div>
+<!-- Profile -->
+<div class="flex items-center gap-3 group cursor-pointer">
+<div class="relative">
+<div class="w-10 h-10 rounded-full border-2 border-[#E6C487] p-0.5 overflow-hidden">
+<img alt="Alex's profile with gold ring" class="w-full h-full object-cover rounded-full" data-alt="Close-up portrait of a handsome man with a kind expression, warm lighting, cinematic depth of field, high-end photography" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9-3vD5NPBrN-fut-zl2v_gVGPhH7dtPVAErIjPuMcE8r_vN5rYaSdYQi6mP1CUR0VyL6vQAtbEDsKhYpmFXLIHkz9tDE8ZiJSjC0TtLgAUISQhuSS1rwMCRujcuVgBE5k4INKB_AVHwGT_6HwE5WOvo125B4gRCEtw8zCHDlAMHR9aJxFSiUNCpofA2g3YinaVOlc4JwWbGqNqJtx0mbZz6NWg1HUbFum91EyL2XHZTaWlR6PUj_oBy-oNLitJW3qjYjt2fC7Yfs"/>
+</div>
+<div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-[#1B1B23] rounded-full"></div>
+</div>
+<div class="flex flex-col">
+<span class="text-xs font-bold tracking-wider text-[#E6C487]">ALEX</span>
+<span class="text-[10px] text-[#998F81] uppercase tracking-tighter">Active</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- PANEL 2: MAIN CHAT AREA -->
+<main class="flex-1 ml-[260px] bg-surface-container-lowest flex flex-col relative h-full">
+<!-- TOP APP BAR -->
+<header class="h-16 glass-header sticky top-0 z-40 flex items-center justify-between px-8 shadow-[0_0_15px_rgba(230,196,135,0.05)] border-b border-white/5">
+<div class="flex items-center gap-4">
+<div class="relative">
+<div class="w-11 h-11 rounded-full border border-primary p-0.5">
+<img alt="Sarah's avatar" class="w-full h-full object-cover rounded-full" data-alt="Stunning close-up portrait of a young woman with a gentle smile, soft glowing skin, golden hour lighting, cinematic luxury feel" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwL_6a97cz32CLlMdLH3sEy7y4nwvhcpAuEFK3cYdKfcL8X0bd3MJ-0C4LlXj_dKvunFqPCA0ozYy5R2OmOgO3NiVT7ABStVOm2PBV8CDMOOTcDtnk6NslUwomjNSmx2807SGhZuGJPC1FMYd3cDu3IZ1k4E1g7VcW55uvCmyNn3xm6MfXt6MHSA6JE_Y8FuFZJ-cbyqno18pGBuO06h_qlMDl-yFTBSxlD4BRW2CIf-VyD5V7QTWI5yOq8Qvy1z0JXRLEtoH2lFA"/>
+</div>
+<div class="absolute bottom-0.5 right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-surface-container-lowest rounded-full"></div>
+</div>
+<div>
+<h2 class="text-lg font-headline text-on-surface leading-tight">Sarah</h2>
+<p class="text-[10px] font-label tracking-widest text-outline uppercase">Online</p>
+</div>
+</div>
+<div class="flex items-center gap-6 text-outline">
+<button class="hover:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined text-xl">call</span>
+</button>
+<button class="hover:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined text-xl">videocam</span>
+</button>
+<button class="hover:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined text-xl">search</span>
+</button>
+</div>
+</header>
+<!-- CHAT CONTENT CANVAS -->
+<section class="flex-1 overflow-y-auto no-scrollbar px-4 py-8">
+<div class="max-w-[680px] mx-auto flex flex-col gap-8">
+<!-- Date Separator -->
+<div class="flex items-center gap-4 py-4">
+<div class="flex-1 h-[1px] bg-outline/10"></div>
+<span class="text-[11px] font-label tracking-[0.2em] text-outline uppercase">Today</span>
+<div class="flex-1 h-[1px] bg-outline/10"></div>
+</div>
+<!-- Partner Message (Left) -->
+<div class="flex flex-col items-start gap-1">
+<div class="bg-surface-container-high text-on-surface px-5 py-3.5 rounded-2xl rounded-bl-none max-w-[85%] message-shadow">
+<p class="text-[15px] leading-relaxed">Good morning sunshine ☀️</p>
+</div>
+<span class="text-[10px] font-label tracking-wider text-outline px-1">9:15 AM</span>
+</div>
+<!-- Your Message (Right) -->
+<div class="flex flex-col items-end gap-1">
+<div class="bg-gradient-to-br from-primary-container to-primary text-on-primary px-5 py-3.5 rounded-2xl rounded-br-none max-w-[85%] gold-glow message-shadow">
+<p class="text-[15px] font-medium leading-relaxed">Hey love! Just woke up 💛</p>
+</div>
+<div class="flex items-center gap-1.5 px-1">
+<span class="text-[10px] font-label tracking-wider text-outline">9:18 AM</span>
+<span class="material-symbols-outlined text-sm text-primary" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+<!-- Partner Message with Image -->
+<div class="flex flex-col items-start gap-1">
+<div class="bg-surface-container-high rounded-2xl rounded-bl-none overflow-hidden max-w-[85%] message-shadow">
+<img alt="Breakfast photo" class="w-full aspect-video object-cover" data-alt="Gourmet breakfast spread on a dark wooden table with soft morning light, fresh berries, pancakes, and steaming coffee cups" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClRGV9pgUlT4pNZ55_8Kjczmx_sogheUAoMyFZkM1KSGFWO3lyItB3rpz8l6cfqqa_1t4xJ5tbTP3MuvYjjBUrR_3aYCsjP3VJf3LoB9EziViYxtbFt_Hgh3gkhn80yjXmxgx8mkR8bfjh-lS_fCHg5ZtGzAjpZA_JjvxWl7g4aBUslvT6lME7V5J7Cfm5w7-pE2UuoGJrZFkLrMGLFDDFfHbarUnv5jJcDQpm2LF4VaFSdvBSCJKMVlCLWtvivKdZT8LAwMB-p_U"/>
+<div class="px-5 py-3.5">
+<p class="text-[15px] leading-relaxed">I made breakfast, wish you were here</p>
+</div>
+</div>
+<span class="text-[10px] font-label tracking-wider text-outline px-1">9:22 AM</span>
+</div>
+<!-- Your Message - Audio -->
+<div class="flex flex-col items-end gap-1">
+<div class="bg-gradient-to-br from-primary-container to-primary text-on-primary px-5 py-3.5 rounded-2xl rounded-br-none w-64 gold-glow message-shadow">
+<div class="flex items-center gap-3">
+<button class="w-8 h-8 rounded-full bg-on-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-lg">play_arrow</span>
+</button>
+<div class="flex-1 flex items-end gap-[2px] h-6">
+<div class="w-1 bg-on-primary/80 h-3 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-5 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-2 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-4 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-6 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-3 rounded-full"></div>
+<div class="w-1 bg-on-primary/80 h-5 rounded-full"></div>
+<div class="w-1 bg-on-primary/20 h-4 rounded-full"></div>
+<div class="w-1 bg-on-primary/20 h-2 rounded-full"></div>
+<div class="w-1 bg-on-primary/20 h-3 rounded-full"></div>
+</div>
+<span class="text-[11px] font-bold">0:12</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-1">
+<span class="text-[10px] font-label tracking-wider text-outline">9:24 AM</span>
+<span class="material-symbols-outlined text-sm text-primary" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+<!-- Partner Message with Reaction -->
+<div class="flex flex-col items-start gap-1 relative">
+<div class="bg-surface-container-high text-on-surface px-5 py-3.5 rounded-2xl rounded-bl-none max-w-[85%] message-shadow">
+<p class="text-[15px] leading-relaxed">Can't wait to see you tonight 💕</p>
+</div>
+<!-- Reaction Badge -->
+<div class="absolute -bottom-3 -right-2 bg-surface-container-highest border border-outline/20 w-7 h-7 rounded-full flex items-center justify-center text-[12px] shadow-lg">
+                            ❤️
+                        </div>
+<span class="text-[10px] font-label tracking-wider text-outline px-1">9:25 AM</span>
+</div>
+<!-- Your Message (Final) -->
+<div class="flex flex-col items-end gap-1">
+<div class="bg-gradient-to-br from-primary-container to-primary text-on-primary px-5 py-3.5 rounded-2xl rounded-br-none max-w-[85%] gold-glow message-shadow">
+<p class="text-[15px] font-medium leading-relaxed">Me too! Only 3 more hours 🥰</p>
+</div>
+<div class="flex items-center gap-1.5 px-1">
+<span class="text-[10px] font-label tracking-wider text-outline">9:26 AM</span>
+<span class="material-symbols-outlined text-sm text-primary" style="font-variation-settings: 'FILL' 1;">done_all</span>
+</div>
+</div>
+<!-- Typing Indicator -->
+<div class="flex flex-col items-start gap-1">
+<div class="bg-surface-container-high/60 px-4 py-3 rounded-2xl rounded-bl-none flex gap-1">
+<div class="w-1.5 h-1.5 bg-outline/40 rounded-full animate-bounce"></div>
+<div class="w-1.5 h-1.5 bg-outline/40 rounded-full animate-bounce [animation-delay:0.2s]"></div>
+<div class="w-1.5 h-1.5 bg-outline/40 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- INPUT AREA BAR -->
+<footer class="h-24 px-8 pb-6 flex items-center justify-center z-40 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest to-transparent">
+<div class="w-full max-w-[720px] glass-input rounded-full h-14 flex items-center px-4 gap-3 shadow-2xl">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">add_circle</span>
+</button>
+<div class="flex-1 flex items-center bg-surface-container-lowest h-10 rounded-full px-4">
+<input class="bg-transparent border-none focus:ring-0 w-full text-sm text-on-surface placeholder:text-outline/50 placeholder:italic" placeholder="Write something beautiful..." type="text"/>
+<button class="p-1 text-outline/60 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-xl">mood</span>
+</button>
+</div>
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">mic</span>
+</button>
+<button class="w-10 h-10 bg-primary text-on-primary rounded-full flex items-center justify-center gold-glow hover:scale-105 active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+</footer>
+<!-- Background Decorative Glow -->
+<div class="absolute top-1/4 -right-20 w-[400px] h-[400px] bg-primary/5 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="absolute bottom-1/4 -left-20 w-[300px] h-[300px] bg-primary/3 blur-[100px] rounded-full pointer-events-none"></div>
+</main>
+</div>
+</body></html>
