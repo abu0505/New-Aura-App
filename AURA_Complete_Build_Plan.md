@@ -636,11 +636,31 @@ Already partially implemented. Additional polish:
 
 ### 8.6 Missing PRD Features (Leftovers)
 
-- **Media Quality Choice Modal** (PRD 9.2 & 24.3): Add a bottom sheet modal when sending images/videos with "Original" vs "Optimized" choice, and remember the choice in `localStorage`.
-- **Verify Key Fingerprint** (PRD 14): In Settings, show the user's public key fingerprint and a way to verify with partner (QR code or comparison view).
-- **Sticker Pack** (PRD 8.10): Small built-in premium sticker pack (~20 minimal stickers).
-- **Chat Background Sync** (PRD 12): Implement the "Apply to both" feature for background changes.
-- **Advanced Error Recovery** (PRD 16): Handle `ffmpeg.wasm` load failures gracefully by falling back to Original quality. Add "⚠️ Could not decrypt this message" inline error display.
+- **Media Quality Choice Modal** (PRD 9.2 & 24.3): Add a bottom sheet modal when sending images/videos with "Original" vs "Optimized" choice, and remember the choice in `localStorage`. ✅ *(Implemented)*
+- **Verify Key Fingerprint** (PRD 14): In Settings, show the user's public key fingerprint and a way to verify with partner (QR code or comparison view). ✅ *(Drafted)*
+- **Sticker Pack** (PRD 8.10): Small built-in premium sticker pack (~20 minimal stickers). ✅ *(Drafted)*
+- **Chat Background Sync** (PRD 12): Implement the "Apply to both" feature for background changes. ✅ *(Implemented)*
+- **Advanced Error Recovery** (PRD 16): Handle `ffmpeg.wasm` load failures gracefully by falling back to Original quality. Add "⚠️ Could not decrypt this message" inline error display. ✅ *(Drafted)*
+
+### 8.7 Fine-Grained PRD Polish (The Final Gaps)
+
+- **🔥 Streak Logic & UI (PRD 23):**
+  - Shared Row Logic: Exactly *one* shared row in the `streaks` table for the couple.
+  - Streak At Risk UI: Amber pulsing flame and orange text notification (PRD 954).
+  - Detail Card Polish: Giant Lottie/CSS fire effect, "Best Ever" and "Snapped Today" checklist (PRD 958).
+  - Break Notification: "💔 Your streak broke" push alert (PRD 935).
+- **💬 Messaging Polish (PRD 8):**
+  - Reply Navigation: Tap reply bubble to scroll-to and highlight original message (PRD 394).
+  - Pinned Banner: Automatically cycle through multiple pinned messages (PRD 420).
+  - Forwarded Label: Re-sent messages via forwarding are missing the explicit "Forwarded" label (PRD 414).
+  - Audio Speed: 1.5x / 2x speed toggle on voice notes (PRD 165).
+- **✨ Stories (PRD 10):**
+  - Story Reaction: Heart reaction button on partner's stories (PRD 655).
+  - Caption Styling: 3 font styles (Bold, Handwritten, Minimal) and color picker for story captions (PRD 666).
+- **📍 Location & System (PRD 11 / 15):**
+  - Distance Display: "2.4 km apart" live distance display on the map (PRD 689).
+  - Offline Banner: "Connecting..." top-level banner when the network is lost (PRD 823).
+  - Video Call Placeholder: UI-only video call icon in the header (PRD 340).
 
 ---
 

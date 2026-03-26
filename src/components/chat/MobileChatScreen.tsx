@@ -17,13 +17,24 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    scrollToBottom();
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    if (isInitialMount.current) {
+      messagesEndRef.current?.scrollIntoView();
+      if (messages.length > 0) isInitialMount.current = false;
+      return;
+    }
+
+    const { scrollHeight, scrollTop, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const handleSend = (text: string, media?: any) => {

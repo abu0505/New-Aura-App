@@ -54,6 +54,7 @@ export function useChatSettings() {
           event: '*',
           schema: 'public',
           table: 'chat_settings',
+          filter: `user_id=eq.${user.id}`,
         },
         () => {
           // Re-fetch own row to get synced values

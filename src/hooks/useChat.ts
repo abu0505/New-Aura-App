@@ -22,6 +22,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
   const [firstUnreadId, setFirstUnreadId] = useState<string | null>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track latest partnerPublicKey via ref so realtime handlers always use the current value
   const partnerKeyRef = useRef(partnerPublicKey);
@@ -79,36 +80,47 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     };
   }, []);
 
-  // Flush pending messages when coming back online
+  // Flush pending messages loop (retries every 3 seconds if there are pending messages)
   useEffect(() => {
-    if (isOnline && pendingMessages.length > 0) {
-      console.log('Back online! Flushing pending messages:', pendingMessages.length);
-      const flush = async () => {
-        const toSend = [...pendingMessages];
-        setPendingMessages([]); // Clear immediately to avoid double-sends
-        
-        for (const msg of toSend) {
-          try {
-            await supabase.from('messages').insert({
-              id: msg.id,
-              sender_id: msg.sender_id,
-              receiver_id: msg.receiver_id,
-              encrypted_content: msg.encrypted_content,
-              nonce: msg.nonce,
-              type: msg.type,
-              media_url: msg.media_url,
-              media_key: msg.media_key,
-              media_nonce: msg.media_nonce,
-              reply_to: msg.reply_to,
-            });
-          } catch (err) {
-            console.error('Failed to flush pending message', msg.id, err);
-            setPendingMessages(prev => [...prev, msg]);
+    if (!isOnline || pendingMessages.length === 0) return;
+
+    let mounted = true;
+    const flush = async () => {
+      const toSend = [...pendingMessages];
+      console.log(`Attempting to flush ${toSend.length} pending messages...`);
+      // Don't clear pending state immediately; do it on successful insert.
+      
+      for (const msg of toSend) {
+        if (!mounted) break;
+        try {
+          const { error } = await supabase.from('messages').insert({
+            id: msg.id,
+            sender_id: msg.sender_id,
+            receiver_id: msg.receiver_id,
+            encrypted_content: msg.encrypted_content,
+            nonce: msg.nonce,
+            type: msg.type,
+            media_url: msg.media_url,
+            media_key: msg.media_key,
+            media_nonce: msg.media_nonce,
+            reply_to: msg.reply_to,
+          });
+
+          if (!error) {
+             setPendingMessages(prev => prev.filter(p => !toSend.some(ts => ts.id === p.id && ts.id === msg.id)));
+             setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pending: false } : m));
           }
+        } catch (err) {
+          console.error('Failed to flush pending message', msg.id, err);
         }
-      };
-      flush();
-    }
+      }
+    };
+
+    const interval = setInterval(flush, 3000);
+    return () => {
+       mounted = false;
+       clearInterval(interval);
+    };
   }, [isOnline, pendingMessages]);
 
   // Re-decrypt messages when partnerPublicKey becomes available (without re-subscribing)
@@ -179,86 +191,115 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     fetchMessages();
 
-    // Subscribe to new and updated messages — unique channel per user+partner
-    const subscription = supabase
-      .channel(`messages:${user.id}:${partnerId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`, // Listen for messages sent to me
-        },
-        (payload) => {
-          // Read keys fresh inside handler to avoid stale closures
-          const myKeyPair = getStoredKeyPair();
-          const currentPartnerKey = partnerKeyRef.current;
-          if (!myKeyPair) return;
-          
-          if (payload.eventType === 'INSERT') {
-            const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
-            setMessages((prev) => [...prev, newMsg]);
+    let channelMsg: ReturnType<typeof supabase.channel> | null = null;
+    let channelPinned: ReturnType<typeof supabase.channel> | null = null;
+    let isSubscribing = false;
 
-            if (document.hasFocus()) {
-              supabase.from('messages').update({ is_read: true, is_delivered: true }).eq('id', newMsg.id).then();
-            } else {
-              supabase.from('messages').update({ is_delivered: true }).eq('id', newMsg.id).then();
-            }
-          } else if (payload.eventType === 'UPDATE') {
-             const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
-             setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
-          } else if (payload.eventType === 'DELETE') {
-             setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `sender_id=eq.${user.id}`, // Also listen to my own messages
-        },
-        (payload) => {
-          const myKeyPair = getStoredKeyPair();
-          const currentPartnerKey = partnerKeyRef.current;
-          if (!myKeyPair) return;
+    const setupSubscriptions = () => {
+      if (isSubscribing) return;
+      isSubscribing = true;
 
-          if (payload.eventType === 'INSERT') {
-            const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
-            setMessages((prev) => {
-              const exists = prev.find(m => m.id === newMsg.id);
-              if (exists) {
-                 return prev.map(m => m.id === newMsg.id ? { ...newMsg, is_pending: false } : m);
+      // Clean up existing channels if any
+      if (channelMsg) supabase.removeChannel(channelMsg);
+      if (channelPinned) supabase.removeChannel(channelPinned);
+
+      channelMsg = supabase
+        .channel(`messages:${user.id}:${partnerId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `receiver_id=eq.${user.id}`, // Listen for messages sent to me
+          },
+          (payload) => {
+            const myKeyPair = getStoredKeyPair();
+            const currentPartnerKey = partnerKeyRef.current;
+            if (!myKeyPair) return;
+            
+            if (payload.eventType === 'INSERT') {
+              const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+              setMessages((prev) => {
+                 if (prev.some(m => m.id === newMsg.id)) return prev;
+                 return [...prev, newMsg];
+              });
+
+              if (document.hasFocus()) {
+                supabase.from('messages').update({ is_read: true, is_delivered: true }).eq('id', newMsg.id).then();
+              } else {
+                supabase.from('messages').update({ is_delivered: true }).eq('id', newMsg.id).then();
               }
-              return [...prev, newMsg];
-            });
-            setPendingMessages(prev => prev.filter(m => m.id !== newMsg.id));
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
-            setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? updatedMsg : m));
-          } else if (payload.eventType === 'DELETE') {
-            setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
+            } else if (payload.eventType === 'UPDATE') {
+               const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+               setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
+            } else if (payload.eventType === 'DELETE') {
+               setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'messages',
+            filter: `sender_id=eq.${user.id}`, // Also listen to my own messages
+          },
+          (payload) => {
+            const myKeyPair = getStoredKeyPair();
+            const currentPartnerKey = partnerKeyRef.current;
+            if (!myKeyPair) return;
 
-    const pinnedSub = supabase.channel(`pinned:${user.id}:${partnerId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pinned_messages' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setPinnedMessages(prev => [...prev, payload.new as Database['public']['Tables']['pinned_messages']['Row']]);
-        } else if (payload.eventType === 'DELETE') {
-          setPinnedMessages(prev => prev.filter(p => p.id !== (payload.old as any).id));
+            if (payload.eventType === 'INSERT') {
+              const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+              setMessages((prev) => {
+                const exists = prev.find(m => m.id === newMsg.id);
+                if (exists) {
+                   return prev.map(m => m.id === newMsg.id ? { ...m, ...newMsg, is_pending: false } : m);
+                }
+                return [...prev, newMsg];
+              });
+              setPendingMessages(prev => prev.filter(m => m.id !== newMsg.id));
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+              setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
+            } else if (payload.eventType === 'DELETE') {
+              setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
+            }
+          }
+        );
+
+      channelMsg.subscribe((status, err) => {
+        isSubscribing = false;
+        if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          console.warn(`Message channel status: ${status}. Attempting reconnect...`, err);
+          if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = setTimeout(setupSubscriptions, 5000);
         }
-      })
-      .subscribe();
+      });
+
+      channelPinned = supabase.channel(`pinned:${user.id}:${partnerId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pinned_messages' }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setPinnedMessages(prev => {
+               if (prev.some(p => p.id === (payload.new as any).id)) return prev;
+               return [...prev, payload.new as Database['public']['Tables']['pinned_messages']['Row']];
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setPinnedMessages(prev => prev.filter(p => p.id !== (payload.old as any).id));
+          }
+        });
+        
+      channelPinned.subscribe();
+    };
+
+    setupSubscriptions();
 
     return () => {
-      subscription.unsubscribe();
-      pinnedSub.unsubscribe();
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (channelMsg) supabase.removeChannel(channelMsg);
+      if (channelPinned) supabase.removeChannel(channelPinned);
     };
   }, [user, partnerId]);
 

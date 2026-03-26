@@ -49,7 +49,7 @@ export function usePartner() {
 
     // Listen to partner profile realtime changes (like online status)
     const subscription = supabase
-      .channel('public:profiles')
+      .channel(`public:profiles:${user.id}`)
       .on(
         'postgres_changes',
         {

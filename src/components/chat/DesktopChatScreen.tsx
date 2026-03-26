@@ -17,13 +17,24 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    scrollToBottom();
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    if (isInitialMount.current) {
+      messagesEndRef.current?.scrollIntoView();
+      if (messages.length > 0) isInitialMount.current = false;
+      return;
+    }
+
+    const { scrollHeight, scrollTop, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   const handleSend = (text: string, media?: any) => {
@@ -86,7 +97,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
             <div>
               <h2 className="text-xl font-serif italic text-[#e6c487] leading-tight">{partner.display_name || 'Your Partner'}</h2>
               <p className="text-[10px] font-label tracking-[0.2em] text-[#998f81] uppercase mt-0.5">
-                {partner.is_online ? 'Sanctuary Active' : 'Offline'}
+                {partner.is_online ? 'Online' : 'Offline'}
               </p>
             </div>
           </div>

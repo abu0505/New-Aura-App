@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { decryptFile } from '../../lib/encryption';
 
 interface EncryptedImageProps {
@@ -9,6 +9,9 @@ interface EncryptedImageProps {
   className?: string;
   placeholder?: string;
 }
+
+// Global cache for decrypted image blobs to prevent re-decryption on remounts
+const imageCache = new Map<string, string>();
 
 /**
  * EncryptedImage - AURA E2EE Image Viewer
@@ -25,7 +28,6 @@ export default function EncryptedImage({
   const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
-  const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!url) {
@@ -36,6 +38,11 @@ export default function EncryptedImage({
     // If it's a standard URL (not encrypted), just use it
     if (!encryptionKey || !nonce) {
       setDecryptedUrl(url);
+      return;
+    }
+
+    if (imageCache.has(url)) {
+      setDecryptedUrl(imageCache.get(url)!);
       return;
     }
 
@@ -61,7 +68,7 @@ export default function EncryptedImage({
         const blob = new Blob([decryptedData as unknown as BlobPart], { type: mime });
         const objectUrl = URL.createObjectURL(blob);
         
-        blobUrlRef.current = objectUrl;
+        imageCache.set(url, objectUrl);
         setDecryptedUrl(objectUrl);
       } catch (err) {
         console.error('Decryption failed for image', err);
@@ -73,12 +80,8 @@ export default function EncryptedImage({
 
     decrypt();
 
-    return () => {
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
+    // Intentionally omitting URL.revokeObjectURL here since we cache the blob URL globally
+    // and multiple components might be referring to it.
   }, [url, encryptionKey, nonce]);
 
   if (loading) {

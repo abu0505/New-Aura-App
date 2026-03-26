@@ -23,29 +23,60 @@ export default function MemoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio'>('all');
   const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string } | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const LIMIT = 12;
 
   useEffect(() => {
-    fetchMemories();
+    fetchMemories(1);
   }, [user?.id, partner?.id]);
 
-  const fetchMemories = async () => {
+  useEffect(() => {
+    return () => {
+      // Cleanup all blobs to prevent memory leaks
+      memories.forEach(m => {
+        if (m.decryptedUrl) URL.revokeObjectURL(m.decryptedUrl);
+      });
+    };
+  }, [memories]);
+
+  const fetchMemories = async (pageNumber = 1) => {
     if (!user || !partner) return;
-    setLoading(true);
+    if (pageNumber === 1) setLoading(true);
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*')
+        .select('*', { count: 'exact' })
         .not('media_url', 'is', null)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .range((pageNumber - 1) * LIMIT, pageNumber * LIMIT - 1)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMemories(data as MemoryItem[]);
+      
+      const newMemories = data as MemoryItem[];
+      
+      if (pageNumber === 1) {
+        setMemories(newMemories);
+      } else {
+        setMemories(prev => {
+          const newItems = newMemories.filter(d => !prev.some(p => p.id === d.id));
+          return [...prev, ...newItems];
+        });
+      }
+
+      setHasMore(newMemories.length === LIMIT);
     } catch (err) {
       console.error('Error fetching memories:', err);
     } finally {
-      setLoading(false);
+      if (pageNumber === 1) setLoading(false);
     }
+  };
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchMemories(nextPage);
   };
 
   const decryptMedia = async (memory: MemoryItem) => {
@@ -116,16 +147,35 @@ export default function MemoriesScreen() {
             <p className="text-xs tracking-widest uppercase mt-2">Shared media will bloom here.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[200px]">
-            {filteredMemories.map((memory, index) => (
-              <MemoryCard 
-                key={memory.id} 
-                memory={memory} 
-                index={index}
-                onDecrypt={() => decryptMedia(memory)}
-                onClick={() => memory.decryptedUrl && setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' })}
-              />
-            ))}
+          <div className="flex flex-col gap-8 pb-12">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 auto-rows-[200px]">
+              {filteredMemories.map((memory, index) => (
+                <MemoryCard 
+                  key={memory.id} 
+                  memory={memory} 
+                  index={index}
+                  onDecrypt={() => decryptMedia(memory)}
+                  onClick={() => memory.decryptedUrl && setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' })}
+                />
+              ))}
+            </div>
+            
+            {hasMore && (
+              <div className="flex justify-center mt-4">
+                 <button 
+                   onClick={loadMore}
+                   className="px-8 py-3 rounded-full border border-white/10 text-[#e6c487] font-serif italic hover:bg-white/5 transition-colors"
+                 >
+                    Load More Fragments
+                 </button>
+              </div>
+            )}
+            
+            {!hasMore && filteredMemories.length > 0 && (
+              <p className="text-center font-label text-[10px] text-white/20 uppercase tracking-[0.4em] mt-8">
+                End of the gallery
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -48,6 +48,7 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
 
   const handleSend = () => {
     if ((text.trim() || isUploading) && !disabled) {
+      if (onTyping) onTyping(false);
       onSend(text.trim());
       setText('');
       if (textareaRef.current) {

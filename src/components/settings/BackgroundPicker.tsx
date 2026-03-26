@@ -17,9 +17,17 @@ export default function BackgroundPicker() {
   const { settings, refreshSettings } = useChatSettings();
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
+  const [optimisticBg, setOptimisticBg] = useState<string | undefined | null>(undefined);
+  const [toast, setToast] = useState<{ message: string, isError: boolean } | null>(null);
+
+  const showToast = (message: string, isError = false) => {
+    setToast({ message, isError });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const handlePresetSelect = async (presetId: string) => {
     const bgUrl = presetId === 'none' ? null : presetId;
+    setOptimisticBg(bgUrl);
     
     const { error } = await supabase.rpc('sync_chat_settings', {
       bg_url: bgUrl,
@@ -29,10 +37,12 @@ export default function BackgroundPicker() {
     });
 
     if (error) {
-      alert('Failed to set ambience: ' + error.message);
+      setOptimisticBg(undefined);
+      showToast('Failed to set ambience: ' + error.message, true);
     } else {
       await refreshSettings();
-      alert(`Sanctuary ambience changed to: ${PRESETS.find(p => p.id === presetId)?.name}.`);
+      setOptimisticBg(undefined);
+      showToast(`Sanctuary ambience changed to: ${PRESETS.find(p => p.id === presetId)?.name}.`);
     }
   };
 
@@ -53,6 +63,7 @@ export default function BackgroundPicker() {
       const blob = new Blob([encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
       const { url } = await uploadToCloudinary(new File([blob], 'bg.enc'));
 
+      setOptimisticBg(url);
       const { error } = await supabase.rpc('sync_chat_settings', {
         bg_url: url,
         bg_key: JSON.stringify(Array.from(fileKey)),
@@ -61,18 +72,23 @@ export default function BackgroundPicker() {
       });
 
       if (error) {
-        alert('Failed to secure background: ' + error.message);
+        setOptimisticBg(undefined);
+        showToast('Failed to secure background: ' + error.message, true);
       } else {
         await refreshSettings();
-        alert('Custom background applied and secured.');
+        setOptimisticBg(undefined);
+        showToast('Custom background applied and secured.');
       }
     } catch (err: any) {
       console.error('Background upload failed', err);
-      alert('Sanctuary storage error: ' + err.message);
+      setOptimisticBg(undefined);
+      showToast('Sanctuary storage error: ' + err.message, true);
     } finally {
       setUploading(false);
     }
   };
+
+  const currentBg = optimisticBg !== undefined ? optimisticBg : settings?.background_url;
 
   return (
     <div className="bg-[#1b1b23]/40 border border-white/5 rounded-[2.5rem] p-8 lg:p-10 shadow-2xl hover:border-[#e6c487]/20 transition-all duration-500 group">
@@ -89,12 +105,12 @@ export default function BackgroundPicker() {
             key={preset.id}
             onClick={() => handlePresetSelect(preset.id)}
             className={`h-24 rounded-2xl border transition-all relative overflow-hidden group/preset ${
-              (preset.id === 'none' ? !settings?.background_url : settings?.background_url === preset.id) ? 'border-[#e6c487] ring-1 ring-[#e6c487]' : 'border-white/10 hover:border-white/30'
+              (preset.id === 'none' ? !currentBg : currentBg === preset.id) ? 'border-[#e6c487] ring-1 ring-[#e6c487]' : 'border-white/10 hover:border-white/30'
             }`}
             style={{ background: preset.color }}
           >
             <span className="absolute bottom-2 left-2 font-label text-[8px] uppercase tracking-widest text-white/40">{preset.name}</span>
-            {(preset.id === 'none' ? !settings?.background_url : settings?.background_url === preset.id) && (
+            {(preset.id === 'none' ? !currentBg : currentBg === preset.id) && (
               <span className="absolute top-2 right-2 material-symbols-outlined text-[#e6c487] text-sm">check_circle</span>
             )}
           </button>
@@ -117,6 +133,17 @@ export default function BackgroundPicker() {
       <p className="text-[10px] text-white/30 italic leading-relaxed">
         Custom backgrounds are end-to-end encrypted. Your partner's sanctuary will automatically mirror your chosen theme.
       </p>
+
+      {toast && (
+        <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-3 backdrop-blur-md border shadow-2xl z-50 animate-fade-in ${
+          toast.isError ? 'bg-red-950/80 border-red-500/50 text-red-200' : 'bg-[#1b1b23]/90 border-[#e6c487]/30 text-[#e6c487]'
+        }`}>
+          <span className="material-symbols-outlined text-sm">
+            {toast.isError ? 'error' : 'check_circle'}
+          </span>
+          <span className="font-label text-[10px] uppercase tracking-widest">{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }

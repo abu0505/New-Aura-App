@@ -25,7 +25,7 @@ export interface ProcessedMedia {
   size?: number;
 }
 
-const ffmpegInstance = new FFmpeg();
+let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoaded = false;
 
 export function useMedia() {
@@ -74,6 +74,9 @@ export function useMedia() {
           });
         } else if (file.type.startsWith('video/')) {
           // Video compression with FFmpeg
+          if (!ffmpegInstance) {
+            ffmpegInstance = new FFmpeg();
+          }
           if (!ffmpegLoaded) {
             await ffmpegInstance.load();
             ffmpegLoaded = true;
