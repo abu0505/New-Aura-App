@@ -77,6 +77,7 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
         <main className="w-full max-w-md px-6 py-8 relative z-10 flex flex-col h-[884px]">
           {/* Header */}
           <header className="flex flex-col items-center mt-20 mb-10">
+            <img src="/aura-logo.png" alt="AURA Logo" className="w-24 h-24 mb-6 object-contain drop-shadow-[0_0_15px_rgba(200,163,109,0.3)]" />
             <h1 className="text-4xl tracking-widest mb-10 uppercase" style={{ fontFamily: "'Playfair Display', serif", color: '#c8a36d' }}>Aura</h1>
             <div className="text-center space-y-3">
               <h2 className="text-4xl font-medium text-white tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>

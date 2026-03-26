@@ -1,6 +1,5 @@
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-const FOLDER = import.meta.env.VITE_CLOUDINARY_FOLDER || 'hamare_private_stuff';
 
 if (!CLOUD_NAME || !UPLOAD_PRESET) {
   console.error('Missing Cloudinary environment variables');
@@ -25,61 +24,38 @@ export async function uploadToCloudinary(
   encryptedBlob: Blob,
   options: UploadOptions = {}
 ): Promise<UploadResult> {
-  const { onProgress, fileName } = options;
+  const { fileName } = options;
 
   const formData = new FormData();
-  const name = fileName || `encrypted_${Date.now()}.bin`;
+  const name = fileName || `encrypted_${Date.now()}.raw`;
   
-  formData.append('file', encryptedBlob, name);
+  // Create a clean Blob exactly like useMedia.ts does
+  formData.append('file', new Blob([encryptedBlob as any]), name);
   formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('folder', FOLDER);
-  formData.append('resource_type', 'raw');
 
   const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/raw/upload`;
 
-  return new Promise<UploadResult>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', uploadUrl, true);
-
-    // Progress tracking
-    if (onProgress) {
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          onProgress(progress);
-        }
-      };
+  try {
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('Cloudinary Error:', errText);
+      throw new Error(`Upload failed: ${response.status}`);
     }
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const response = JSON.parse(xhr.responseText);
-          resolve({
-            url: response.secure_url,
-            publicId: response.public_id,
-            bytes: response.bytes,
-          });
-        } catch {
-          reject(new Error('Failed to parse Cloudinary response'));
-        }
-      } else {
-        reject(new Error(`Cloudinary upload failed: ${xhr.status} ${xhr.statusText}`));
-      }
+    const data = await response.json();
+    return {
+      url: data.secure_url,
+      publicId: data.public_id,
+      bytes: data.bytes,
     };
-
-    xhr.onerror = () => {
-      reject(new Error('Network error during Cloudinary upload'));
-    };
-
-    xhr.ontimeout = () => {
-      reject(new Error('Cloudinary upload timed out'));
-    };
-
-    // 5 minute timeout for large files
-    xhr.timeout = 300000;
-    xhr.send(formData);
-  });
+  } catch (error: any) {
+    throw new Error('Network error during upload: ' + error.message);
+  }
 }
 
 /**

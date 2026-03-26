@@ -64,6 +64,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
           </div>
           
           <div className="z-10 flex flex-col justify-center flex-grow">
+            <img src="/aura-logo.png" alt="AURA Logo" className="w-32 h-32 mb-6 object-contain drop-shadow-[0_0_20px_rgba(230,196,135,0.4)]" />
             <h1 className="font-headline text-8xl font-light tracking-[0.25em] text-primary text-glow-gold leading-tight mb-4">
               AURA
             </h1>

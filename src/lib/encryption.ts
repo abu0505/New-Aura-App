@@ -36,6 +36,30 @@ export function generateSalt(): string {
   return encodeBase64(bytes);
 }
 
+// ===== IndexedDB helper for Service Worker access =====
+function syncToIndexedDB(secretKeyBase64: string, publicKeyBase64: string) {
+  const request = indexedDB.open('AuraDB', 1);
+  
+  request.onupgradeneeded = (event) => {
+    const db = (event.target as IDBOpenDBRequest).result;
+    if (!db.objectStoreNames.contains('keys')) {
+      db.createObjectStore('keys');
+    }
+  };
+
+  request.onsuccess = (event) => {
+    const db = (event.target as IDBOpenDBRequest).result;
+    try {
+      const tx = db.transaction('keys', 'readwrite');
+      const store = tx.objectStore('keys');
+      store.put(secretKeyBase64, 'aura_secret_key');
+      store.put(publicKeyBase64, 'aura_public_key');
+    } catch (e) {
+      console.error('Failed to sync keys to IndexedDB', e);
+    }
+  };
+}
+
 // ===== Key Management =====
 
 export function generateKeyPair(): nacl.BoxKeyPair {
@@ -60,8 +84,14 @@ export function getStoredKeyPair(): { publicKey: Uint8Array; secretKey: Uint8Arr
 }
 
 export function storeKeyPair(keyPair: nacl.BoxKeyPair): void {
-  localStorage.setItem(SECRET_KEY_STORAGE_KEY, encodeBase64(keyPair.secretKey));
-  localStorage.setItem(PUBLIC_KEY_STORAGE_KEY, encodeBase64(keyPair.publicKey));
+  const secretKeyStr = encodeBase64(keyPair.secretKey);
+  const publicKeyStr = encodeBase64(keyPair.publicKey);
+  
+  localStorage.setItem(SECRET_KEY_STORAGE_KEY, secretKeyStr);
+  localStorage.setItem(PUBLIC_KEY_STORAGE_KEY, publicKeyStr);
+  
+  // Sync to IndexedDB for Service Worker access
+  syncToIndexedDB(secretKeyStr, publicKeyStr);
 }
 
 /**
@@ -149,6 +179,13 @@ export async function checkEncryptionStatus(userId: string): Promise<EncryptionS
     // CRITICAL: Sync local public key to Supabase on every session start.
     // This ensures the partner always has the correct public key for decryption.
     await syncPublicKey(userId);
+    
+    // Also ensure IndexedDB has the keys for the Service Worker
+    syncToIndexedDB(
+      encodeBase64(localKeys.secretKey),
+      encodeBase64(localKeys.publicKey)
+    );
+    
     return 'ready';
   }
 

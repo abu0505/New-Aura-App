@@ -44,7 +44,7 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
     } else {
       onTyping(false);
     }
-  }, [text]);
+  }, [text, onTyping]);
 
   const handleSend = () => {
     if ((text.trim() || isUploading) && !disabled) {
@@ -103,8 +103,8 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    // Check if any file requires quality selection (e.g. images)
-    if (files.some(f => f.type.startsWith('image/'))) {
+    // Check if any file requires quality selection (images or videos)
+    if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
       setPendingFiles(files);
       setShowQualityModal(true);
     } else {

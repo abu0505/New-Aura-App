@@ -32,6 +32,7 @@ export default function ChatBubble({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const bubbleRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
+  const blobUrlRef = useRef<string | null>(null);
   
   const isMine = message.is_mine;
   const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -42,13 +43,18 @@ export default function ChatBubble({
       getDecryptedBlob(message.media_url, message.media_key, message.media_nonce, partnerPublicKey)
         .then(blob => {
           if (blob) {
-            setDecryptedMediaUrl(URL.createObjectURL(blob));
+            const url = URL.createObjectURL(blob);
+            blobUrlRef.current = url;
+            setDecryptedMediaUrl(url);
           }
           setLoading(false);
         });
     }
     return () => {
-      if (decryptedMediaUrl) URL.revokeObjectURL(decryptedMediaUrl);
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
   }, [message.id, partnerPublicKey, message.is_deleted_for_everyone]);
 
@@ -265,7 +271,7 @@ export default function ChatBubble({
             <MessageContextMenu 
               isMine={isMine}
               onPin={() => { onPin?.(message.id); setShowInteractions(false); }}
-              onEdit={message.type === 'text' && !message.is_deleted_for_everyone ? () => { 
+              onEdit={message.type === 'text' && !message.is_deleted_for_everyone && !message.decryption_error ? () => { 
                 setIsEditing(true);
                 setEditContent(message.decrypted_content || '');
                 setShowInteractions(false);

@@ -6,6 +6,8 @@ export interface PartnerProfile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
+  avatar_key: string | null;
+  avatar_nonce: string | null;
   public_key: string | null;
   is_online: boolean;
   last_seen: string | null;

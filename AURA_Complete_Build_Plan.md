@@ -75,7 +75,10 @@ This file needs to be regenerated or manually updated to match the actual databa
 
 Throughout `useChat.ts`, `usePartner.ts`, `useOnlineStatus.ts`, `AuthContext.tsx`, the Supabase client is cast as `any` to bypass type checking. Once the types file is correct, replace all `(supabase as any)` with just `supabase` for proper type safety.
 
-**Step 1.4 — Test core chat flow**
+**Step 1.4 — Message Forwarding**
+Forwarding should re-send a message with a "Forwarded" label (PRD 8.8).
+
+**Step 1.5 — Test core chat flow**
 1. Create 2 users in Supabase Auth dashboard (email + password)
 2. Log in as User A in one browser, User B in another
 3. Verify: messages send, encrypt, decrypt, appear in realtime
@@ -114,6 +117,7 @@ Throughout `useChat.ts`, `usePartner.ts`, `useOnlineStatus.ts`, `AuthContext.tsx
 7. Upload encrypted blob to Cloudinary as `raw` resource type
 8. Insert message with type='image', media_url, media_key (encrypted symmetric key), media_nonce
 9. Generate thumbnail: resize to 200px width, upload separately as thumbnail_url
+10. **Selection Memory**: Store the user's last choice (Original vs Optimized) in `localStorage` and pre-select it next time (PRD 24.3).
 
 **Decryption on receive:**
 1. Fetch media_url
@@ -202,7 +206,9 @@ Table `stories` with encrypted_content, media_url/key/nonce, 24h expiry, viewed_
 1. Stories tab shows: your story circle + partner's story circle
 2. Tap "+" on your circle → camera or gallery picker
 3. Options: Image, Video (max 30s), Text (colored background with text overlay)
-4. Add optional text overlay on images/videos
+4. Add optional text overlay on images/videos:
+   - **Font Options**: 3 styles (Bold, Handwritten, Minimal)
+   - **Color Picker**: Choose text color (PRD 10.4).
 5. Encrypt media same as chat attachments
 6. Insert into `stories` table, expires_at = now + 24h
 
@@ -342,6 +348,9 @@ SELECT cron.schedule(
 
 Show as animated toast/modal with confetti (use `canvas-confetti` library).
 
+**Streak Detail Card**:
+Implement a bottom sheet showing current streak, best ever, and today's status for both users (PRD 23.4).
+
 ---
 
 ## PHASE 5: Live Location Sharing
@@ -474,6 +483,9 @@ serve(async (req) => {
 
 Set up a Supabase Database Webhook on `messages` INSERT that calls the Edge Function. This way every new message automatically triggers a push to the receiver.
 
+**Story Notifications**:
+Enhance Edge Function to send "[Name] added to their story ✨" when a new story is inserted (PRD 13.3).
+
 Alternatively, use a Postgres trigger + `pg_net` extension:
 ```sql
 CREATE OR REPLACE FUNCTION notify_push()
@@ -514,8 +526,9 @@ CREATE TRIGGER on_message_send_push
 2. **Chat Background**
    - Grid of preset dark backgrounds/patterns
    - Option to upload custom background
+   - **Apply to Both**: Option to sync background setting to partner's view via Supabase (PRD 12.2).
    - Stored in `chat_settings.background_url`
-   - Applied as CSS background on chat screen
+   - Applied as CSS background on chat screen with brightness(0.3) blur(0px).
 
 3. **Notifications**
    - Toggle: Enable/disable push notifications
@@ -525,6 +538,7 @@ CREATE TRIGGER on_message_send_push
    - Show: "End-to-end encryption active ✓"
    - Your public key fingerprint (first 8 chars of public key hash)
    - Partner's public key fingerprint
+   - **Verify with partner**: Show a comparison view or QR code for manual trust verification (PRD 14.3).
    - "Verify with partner" — show QR code or comparison view
 
 5. **Storage**
@@ -590,6 +604,7 @@ Add to `index.html`:
 ### 8.2 — Performance Optimizations
 
 - Lazy load routes: `React.lazy(() => import('./pages/Stories'))`
+- **Read Receipts**: Use `IntersectionObserver` in `MessageList.tsx` to mark messages as read only when they actually scroll into view (PRD 15.3).
 - Virtual scroll for message list if >500 messages (use `@tanstack/react-virtual`)
 - Image lazy loading with `loading="lazy"`
 - Debounce typing indicator (300ms)
@@ -618,6 +633,14 @@ Already partially implemented. Additional polish:
 - ARIA labels on icon buttons
 - Color contrast ratios ≥ 4.5:1
 - Keyboard navigation for context menu
+
+### 8.6 Missing PRD Features (Leftovers)
+
+- **Media Quality Choice Modal** (PRD 9.2 & 24.3): Add a bottom sheet modal when sending images/videos with "Original" vs "Optimized" choice, and remember the choice in `localStorage`.
+- **Verify Key Fingerprint** (PRD 14): In Settings, show the user's public key fingerprint and a way to verify with partner (QR code or comparison view).
+- **Sticker Pack** (PRD 8.10): Small built-in premium sticker pack (~20 minimal stickers).
+- **Chat Background Sync** (PRD 12): Implement the "Apply to both" feature for background changes.
+- **Advanced Error Recovery** (PRD 16): Handle `ffmpeg.wasm` load failures gracefully by falling back to Original quality. Add "⚠️ Could not decrypt this message" inline error display.
 
 ---
 

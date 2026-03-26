@@ -2,16 +2,19 @@ import { useRef, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
+import { useChatSettings } from '../../hooks/useChatSettings';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
 import PinnedMessagesBanner from './PinnedMessagesBanner';
 import TypingIndicator from './TypingIndicator';
+import EncryptedImage from '../common/EncryptedImage';
 
 export default function DesktopChatScreen({ partner }: { partner: PartnerProfile }) {
   useOnlineStatus();
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
   const { messages, pinnedMessages, loading, sendMessage, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key);
+  const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -27,6 +30,14 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
     sendMessage(text, media);
   };
 
+  const getBackgroundStyle = () => {
+    if (settings?.background_url === 'silk') return { background: '#1a1a24' };
+    if (settings?.background_url === 'stars') return { background: 'linear-gradient(45deg, #0d0d15 0%, #1b1b23 100%)' };
+    if (settings?.background_url === 'gold') return { background: 'linear-gradient(135deg, #13131b 0%, #2a2212 100%)' };
+    
+    return { background: '#0d0d15' };
+  };
+
   return (
     <>
       <style>{`
@@ -38,16 +49,34 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(230, 196, 135, 0.1); border-radius: 10px; }
       `}</style>
 
-      <div className="absolute inset-0 grid grid-rows-[auto_auto_1fr_auto] bg-[#0d0d15] text-[#e4e1ed] font-sans overflow-hidden">
+      <div className="absolute inset-0 grid grid-rows-[auto_auto_1fr_auto] text-[#e4e1ed] font-sans overflow-hidden transition-all duration-700">
+        {/* Background Layer */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
+          {settings?.background_url?.startsWith('http') && (
+            <div className="absolute inset-0">
+               <EncryptedImage 
+                url={settings.background_url}
+                encryptionKey={settings.background_key}
+                nonce={settings.background_nonce}
+                alt="Chat Background"
+                className="w-full h-full object-cover opacity-30"
+              />
+              <div className="absolute inset-0 bg-[#0d0d15]/60 backdrop-blur-[2px]" />
+            </div>
+          )}
+        </div>
         {/* TOP APP BAR - Explicit Grid Row 1 */}
         <header className="h-24 z-50 w-full glass-header flex items-center justify-between px-10 border-b border-white/5 relative shrink-0">
           <div className="flex items-center gap-5">
             <div className="relative">
               <div className="w-12 h-12 rounded-full border-2 border-[#e6c487]/30 p-0.5 overflow-hidden">
-                <img
+                <EncryptedImage
+                  url={partner.avatar_url}
+                  encryptionKey={partner.avatar_key}
+                  nonce={partner.avatar_nonce}
                   alt="Partner Avatar"
                   className="w-full h-full object-cover rounded-full"
-                  src={partner.avatar_url || `https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
+                  placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
                 />
               </div>
               {partner.is_online && (

@@ -18,6 +18,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   setupEncryption: (pin: string) => Promise<void>;
   unlockEncryption: (pin: string) => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   setupEncryption: async () => {},
   unlockEncryption: async () => false,
+  refreshUser: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -91,6 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const refreshUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) setUser(user);
+  };
+
   return (
     <AuthContext.Provider value={{ 
       session, 
@@ -99,7 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       encryptionStatus,
       signOut, 
       setupEncryption,
-      unlockEncryption
+      unlockEncryption,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>

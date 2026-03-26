@@ -26,6 +26,7 @@ export interface ProcessedMedia {
 }
 
 const ffmpegInstance = new FFmpeg();
+let ffmpegLoaded = false;
 
 export function useMedia() {
   const { user } = useAuth();
@@ -73,8 +74,9 @@ export function useMedia() {
           });
         } else if (file.type.startsWith('video/')) {
           // Video compression with FFmpeg
-          if (!ffmpegInstance.loaded) {
+          if (!ffmpegLoaded) {
             await ffmpegInstance.load();
+            ffmpegLoaded = true;
           }
           
           ffmpegInstance.on('progress', ({ progress }) => {

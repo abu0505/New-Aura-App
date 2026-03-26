@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useTypingIndicator(partnerId: string | undefined) {
   const { user } = useAuth();
   const [partnerIsTyping, setPartnerIsTyping] = useState(false);
-  const [channel, setChannel] = useState<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     if (!user || !partnerId) return;
@@ -32,7 +32,7 @@ export function useTypingIndicator(partnerId: string | undefined) {
         }
       });
 
-    setChannel(typingChannel);
+    channelRef.current = typingChannel;
 
     return () => {
       typingChannel.unsubscribe();
@@ -40,8 +40,8 @@ export function useTypingIndicator(partnerId: string | undefined) {
   }, [user, partnerId]);
 
   const sendTypingEvent = async (isTyping: boolean) => {
-    if (channel && user) {
-      await channel.track({ user_id: user.id, typing: isTyping });
+    if (channelRef.current && user) {
+      await channelRef.current.track({ user_id: user.id, typing: isTyping });
     }
   };
 

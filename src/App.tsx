@@ -1,23 +1,39 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/auth/LoginScreen';
 import type { Tab } from './types';
-import ChatScreen from './components/chat/ChatScreen';
-import StoriesScreen from './components/stories/StoriesScreen';
-import LiveLocationScreen from './components/location/LiveLocationScreen';
-import StreakCelebration from './components/chat/StreakCelebration';
-import SettingsScreen from './components/settings/SettingsScreen';
-import MemoriesScreen from './components/memories/MemoriesScreen';
+const ChatScreen = lazy(() => import('./components/chat/ChatScreen'));
+const StoriesScreen = lazy(() => import('./components/stories/StoriesScreen'));
+const LiveLocationScreen = lazy(() => import('./components/location/LiveLocationScreen'));
+const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration'));
+const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
+const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen'));
 import AppLayout from './components/layout/AppLayout';
 import { useStreaks } from './hooks/useStreaks';
 import { usePartner } from './hooks/usePartner';
-import KeySetupModal from './components/auth/KeySetupModal'; // Added import
+import KeySetupModal from './components/auth/KeySetupModal'; 
+import { subscribeToPushNotifications, requestNotificationPermission } from './lib/pushNotifications';
 
 export default function App() {
   const { session, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
-  const { partner, loading: partnerLoading } = usePartner();
+  const { partner } = usePartner();
   const { streakCount, showCelebration, setShowCelebration } = useStreaks();
+
+  // Handle push notification setup
+  useEffect(() => {
+    if (session?.user?.id) {
+      const setupPush = async () => {
+        const granted = await requestNotificationPermission();
+        if (granted) {
+          await subscribeToPushNotifications(session.user.id);
+        }
+      };
+      // Delay slightly to ensure service worker is ready from main.tsx registration
+      const timer = setTimeout(setupPush, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [session?.user?.id]);
 
   // Handle global tab switching
   useEffect(() => {
@@ -31,7 +47,7 @@ export default function App() {
   }, []);
 
   // Loading state
-  if (loading || partnerLoading) {
+  if (loading) {
     return (
       <div className="fixed inset-0 bg-[#0d0d15] flex items-center justify-center">
         <div className="text-center">
@@ -62,26 +78,38 @@ export default function App() {
     <div className="relative h-screen w-full overflow-hidden bg-[#0d0d15]">
       <KeySetupModal />
       <AppLayout activeTab={activeTab} onTabChange={setActiveTab} streakCount={streakCount}>
-        {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
-        <div className={activeTab === 'chat' ? 'h-full w-full block' : 'hidden'}>
-          <ChatScreen partner={partner} />
-        </div>
-        <div className={activeTab === 'stories' ? 'h-full w-full block' : 'hidden'}>
-          <StoriesScreen partner={partner} />
-        </div>
-        <div className={activeTab === 'memories' ? 'h-full w-full block' : 'hidden'}>
-          <MemoriesScreen />
-        </div>
-        {activeTab === 'location' && <LiveLocationScreen partner={partner} />}
-        {activeTab === 'settings' && <SettingsScreen />}
+        <Suspense fallback={
+          <div className="flex-1 flex items-center justify-center bg-[#0d0d15] w-full h-full">
+            <p className="text-[#C9A96E]/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>
+          </div>
+        }>
+          {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
+          <div className={activeTab === 'chat' ? 'h-full w-full block' : 'hidden'}>
+            <ChatScreen partner={partner} />
+          </div>
+          <div className={activeTab === 'stories' ? 'h-full w-full block' : 'hidden'}>
+            <StoriesScreen partner={partner} />
+          </div>
+          <div className={activeTab === 'memories' ? 'h-full w-full block' : 'hidden'}>
+            <MemoriesScreen />
+          </div>
+          <div className={activeTab === 'location' ? 'h-full w-full block' : 'hidden'}>
+            <LiveLocationScreen partner={partner} />
+          </div>
+          <div className={activeTab === 'settings' ? 'h-full w-full block' : 'hidden'}>
+            <SettingsScreen />
+          </div>
+        </Suspense>
       </AppLayout>
 
       {/* Streak Milestone Overlay */}
-      <StreakCelebration 
-        streakCount={streakCount}
-        isOpen={showCelebration}
-        onClose={() => setShowCelebration(false)}
-      />
+      <Suspense fallback={null}>
+        <StreakCelebration 
+          streakCount={streakCount}
+          isOpen={showCelebration}
+          onClose={() => setShowCelebration(false)}
+        />
+      </Suspense>
     </div>
   );
 }
