@@ -20,8 +20,11 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [pinnedMessages, setPinnedMessages] = useState<Database['public']['Tables']['pinned_messages']['Row'][]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
   const [firstUnreadId, setFirstUnreadId] = useState<string | null>(null);
+  const PAGE_SIZE = 10;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track latest partnerPublicKey via ref so realtime handlers always use the current value
@@ -160,14 +163,17 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           .from('messages')
           .select('*')
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-          .order('created_at', { ascending: true })
-          .limit(100);
+          .order('created_at', { ascending: false })
+          .limit(PAGE_SIZE);
 
         if (error) throw error;
 
         if (myKeyPair && data) {
-          const decrypted = data.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
+          // Reverse data because we fetched most recent but want to display ascending
+          const sortedData = [...data].reverse();
+          const decrypted = sortedData.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
           setMessages(decrypted);
+          setHasMore(data.length === PAGE_SIZE);
 
           // Find first unread from partner
           const firstUnread = decrypted.find(m => !m.is_mine && !m.is_read);
@@ -498,5 +504,68 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
   };
 
-  return { messages, pinnedMessages, loading, sendMessage, reactToMessage, editMessage, deleteMessage, markAsRead, pinMessage, firstUnreadId, isOnline };
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || !user || !partnerId) return;
+
+    setLoadingMore(true);
+    const myKeyPair = getStoredKeyPair();
+    const currentPartnerKey = partnerKeyRef.current;
+    const currentKeyHistory = partnerKeyHistoryRef.current;
+    
+    // Use the oldest message in state as the cursor
+    const oldestTimestamp = messages.length > 0 ? messages[0].created_at : null;
+    if (!oldestTimestamp) {
+      setLoadingMore(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .lt('created_at', oldestTimestamp)
+        .order('created_at', { ascending: false })
+        .limit(PAGE_SIZE);
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      if (myKeyPair) {
+        // Reverse to maintain ASC sequence
+        const sortedData = [...data].reverse();
+        const decrypted = sortedData.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
+        setMessages(prev => [...decrypted, ...prev]);
+      } else {
+        const sortedData = [...data].reverse();
+        setMessages(prev => [...sortedData.map(row => ({ ...row, is_mine: row.sender_id === user.id })), ...prev]);
+      }
+      
+      setHasMore(data.length === PAGE_SIZE);
+    } catch (err) {
+      console.error('Error loading more messages', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user?.id, partnerId, messages, loadingMore, hasMore, decryptRow]);
+
+  return { 
+    messages, 
+    pinnedMessages, 
+    loading, 
+    loadingMore,
+    hasMore,
+    sendMessage, 
+    loadMore,
+    reactToMessage, 
+    editMessage, 
+    deleteMessage, 
+    markAsRead, 
+    pinMessage, 
+    firstUnreadId, 
+    isOnline 
+  };
 }

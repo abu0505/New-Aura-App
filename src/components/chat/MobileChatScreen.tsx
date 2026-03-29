@@ -13,10 +13,11 @@ import EncryptedImage from '../common/EncryptedImage';
 export default function MobileChatScreen({ partner }: { partner: PartnerProfile }) {
   useOnlineStatus();
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
-  const { messages, pinnedMessages, loading, sendMessage, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
+  const { messages, pinnedMessages, loading, loadingMore, hasMore, sendMessage, loadMore, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const previousScrollHeightRef = useRef<number>(0);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -24,9 +25,21 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
     if (!container) return;
 
     if (isInitialMount.current) {
-      messagesEndRef.current?.scrollIntoView();
-      if (messages.length > 0) isInitialMount.current = false;
+      if (!loading && messages.length > 0) {
+        container.scrollTop = container.scrollHeight;
+        isInitialMount.current = false;
+      }
       return;
+    }
+
+    // Scroll anchoring
+    if (previousScrollHeightRef.current) {
+      const hDiff = container.scrollHeight - previousScrollHeightRef.current;
+      if (hDiff > 0) {
+        container.scrollTop += hDiff;
+        previousScrollHeightRef.current = 0;
+        return;
+      }
     }
 
     const { scrollHeight, scrollTop, clientHeight } = container;
@@ -35,7 +48,17 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
     if (isNearBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, loading]);
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container || loadingMore || !hasMore) return;
+
+    if (container.scrollTop < 100) {
+      previousScrollHeightRef.current = container.scrollHeight;
+      loadMore();
+    }
+  };
 
   const handleSend = (text: string, media?: any) => {
     sendMessage(text, media);
@@ -144,7 +167,21 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
           />
 
           {/* Message List */}
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6 custom-scrollbar pb-12">
+          <div 
+            ref={scrollContainerRef} 
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6 custom-scrollbar pb-12"
+          >
+            {hasMore && !loading && (
+              <div className="flex justify-center py-4">
+                {loadingMore ? (
+                  <div className="w-5 h-5 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></div>
+                ) : (
+                  <div className="text-[9px] text-[#998f81] uppercase tracking-[0.2em] opacity-60 font-bold">Scroll up for older memories</div>
+                )}
+              </div>
+            )}
+
             {!partner.public_key && (
               <div className="text-center p-6 bg-[#e6c487]/5 border border-[#e6c487]/20 text-[#e6c487] rounded-[2rem] text-[10px] font-label uppercase tracking-widest leading-loose shadow-xl">
                 Establishing Sanctuary Connection...<br/>Generating Encryption Keys.
