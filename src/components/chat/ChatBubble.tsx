@@ -239,9 +239,22 @@ export default function ChatBubble({
             {/* Dark mode overlay since OSM default tiles are light */}
             <div className="absolute inset-0 bg-[#0d0d15]/40 mix-blend-multiply pointer-events-none" />
           </div>
-          <div className="bg-[#1b1b23] px-3 py-2 flex items-center gap-2 border-t border-white/5">
-            <span className="material-symbols-outlined text-[#e6c487] text-sm">location_on</span>
-            <span className="text-[10px] text-[#e4e1ed] font-label uppercase tracking-widest">Shared Location – Tap to view</span>
+          <div className="bg-[#1b1b23] px-3 py-2 flex items-center justify-between border-t border-white/5">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#e6c487] text-sm">location_on</span>
+              <span className="text-[10px] text-[#e4e1ed] font-label uppercase tracking-widest">Sanctuary Live</span>
+            </div>
+            <div className="flex items-center gap-1.5 pt-1">
+               <span className="text-[9px] uppercase tracking-tighter text-[#e4e1ed]/40 font-bold">{time}</span>
+               {isMine && !message.is_deleted_for_everyone && (
+                <span 
+                  className={`material-symbols-outlined text-[12px] ${message.is_read ? 'text-[#e6c487]' : 'text-[#e4e1ed]/30'}`} 
+                  style={{ fontVariationSettings: "'wght' 700" }}
+                >
+                  {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -289,19 +302,20 @@ export default function ChatBubble({
         )}
       </AnimatePresence>
 
-      <div 
-        onContextMenu={handleContextMenu}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchEnd}
-        className={`shadow-lg relative cursor-pointer transition-transform ${showInteractions ? 'scale-95' : ''} ${
-        isOnlyMedia || isSticker
-           ? 'bg-transparent shadow-none' 
-           : isMine 
-             ? 'px-4 py-3 bg-gradient-to-br from-[#c9a96e] to-[#e6c487] text-[#13131b] rounded-2xl rounded-br-sm' 
-             : 'px-4 py-3 bg-[#1b1b23] text-[#e4e1ed] rounded-2xl rounded-bl-sm border border-white/5'
-        } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
-      >
+      {!isLocation && (
+        <div 
+          onContextMenu={handleContextMenu}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchMove={handleTouchEnd}
+          className={`shadow-lg relative cursor-pointer transition-transform ${showInteractions ? 'scale-95' : ''} ${
+          isOnlyMedia || isSticker
+             ? 'bg-transparent shadow-none' 
+             : isMine 
+               ? 'px-4 py-3 bg-gradient-to-br from-[#c9a96e] to-[#e6c487] text-[#13131b] rounded-2xl rounded-br-sm' 
+               : 'px-4 py-3 bg-[#1b1b23] text-[#e4e1ed] rounded-2xl rounded-bl-sm border border-white/5'
+          } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
+        >
         {decryptionError ? (
           <div className="flex items-center gap-2 py-1 px-1">
             <span className="material-symbols-outlined text-red-400 text-lg">history_edu</span>
@@ -316,8 +330,8 @@ export default function ChatBubble({
             {message.decrypted_content}
           </motion.span>
         ) : renderMedia()}
-        {message.decrypted_content && !isSticker && !isLocation && (
-          <p className={`text-[15px] flex items-end gap-2 ${message.media_url ? 'mt-2' : ''} leading-relaxed font-body`}>
+        {message.decrypted_content && !isSticker && (
+          <p className={`text-[15px] flex flex-wrap items-end gap-2 ${message.media_url ? 'mt-2' : ''} leading-relaxed font-body`}>
             {message.decrypted_content}
             {message.is_edited && !message.is_deleted_for_everyone && (
               <span className={`text-[10px] ${isMine ? 'text-[#13131b]/50' : 'text-[#998f81]/60'}`}>(edited)</span>
@@ -331,22 +345,36 @@ export default function ChatBubble({
             {message.reaction}
           </div>
         )}
-      </div>
-      
-      <div className={`flex items-center gap-1 mt-1 ${isMine ? 'mr-1' : 'ml-1'}`}>
-        <span className="text-[10px] text-[#998f81]/50 uppercase tracking-tighter">{time}</span>
-        {isMine && !message.is_deleted_for_everyone && (
-          <span 
-            className={`material-symbols-outlined text-[14px] ${message.is_read ? 'text-[#e6c487]' : 'text-[#998f81]/60'}`} 
-            style={{ fontVariationSettings: "'wght' 700" }}
-          >
-            {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+
+        {/* Embedded Timestamp and Status Info */}
+        <div className={`flex items-center justify-end gap-1 mt-1.5 ${isOnlyMedia || isSticker ? 'absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md' : ''}`}>
+          <span className={`text-[9px] uppercase tracking-tighter ${
+            isOnlyMedia || isSticker
+              ? 'text-white/90'
+              : isMine 
+                ? 'text-[#13131b]/80 font-bold' 
+                : 'text-[#e4e1ed]/60 font-bold'
+          }`}>
+            {time}
           </span>
-        )}
-        {isMine && message.is_pending && (
-          <span className="material-symbols-outlined text-[14px] text-[#e6c487]/40 animate-pulse">schedule</span>
-        )}
+          {isMine && !message.is_deleted_for_everyone && (
+            <span 
+              className={`material-symbols-outlined text-[12px] ${
+                isOnlyMedia || isSticker
+                  ? (message.is_read ? 'text-[#e6c487]' : 'text-white/60')
+                  : (message.is_read ? 'text-[#13131b]/70' : 'text-[#13131b]/30')
+              }`} 
+              style={{ fontVariationSettings: "'wght' 700" }}
+            >
+              {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+            </span>
+          )}
+          {isMine && message.is_pending && (
+            <span className={`material-symbols-outlined text-[12px] animate-pulse ${isOnlyMedia || isSticker ? 'text-[#e6c487]' : 'text-[#13131b]/40'}`}>schedule</span>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 }

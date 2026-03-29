@@ -100,19 +100,19 @@ function InnerApp({
           </div>
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
-          <div className={activeTab === 'chat' ? 'h-full w-full block' : 'hidden'}>
-            {(!isLocked || activeTab === 'chat') && <ChatScreen partner={partner} />}
+          <div className={activeTab === 'chat' ? 'h-full w-full' : 'hidden'}>
+            <ChatScreen partner={partner} />
           </div>
-          <div className={activeTab === 'stories' ? 'h-full w-full block' : 'hidden'}>
-            {(!isLocked || activeTab === 'stories') && <StoriesScreen partner={partner} />}
+          <div className={activeTab === 'stories' ? 'h-full w-full' : 'hidden'}>
+            <StoriesScreen partner={partner} />
           </div>
-          <div className={activeTab === 'memories' ? 'h-full w-full block' : 'hidden'}>
-            {(!isLocked || activeTab === 'memories') && <MemoriesScreen />}
+          <div className={activeTab === 'memories' ? 'h-full w-full' : 'hidden'}>
+            <MemoriesScreen />
           </div>
-          <div className={activeTab === 'location' ? 'h-full w-full block' : 'hidden'}>
-            {(!isLocked || activeTab === 'location') && <LiveLocationScreen partner={partner} />}
+          <div className={activeTab === 'location' ? 'h-full w-full' : 'hidden'}>
+            <LiveLocationScreen partner={partner} />
           </div>
-          <div className={activeTab === 'settings' ? 'h-full w-full block' : 'hidden'}>
+          <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>
             <SettingsScreen />
           </div>
         </Suspense>

@@ -18,6 +18,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previousScrollHeightRef = useRef<number>(0);
+  const previousMessageCountRef = useRef<number>(0);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
       if (!loading && messages.length > 0) {
         container.scrollTop = container.scrollHeight;
         isInitialMount.current = false;
+        previousMessageCountRef.current = messages.length;
       }
       return;
     }
@@ -38,16 +40,26 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
       if (hDiff > 0) {
         container.scrollTop += hDiff;
         previousScrollHeightRef.current = 0;
+        previousMessageCountRef.current = messages.length;
         return;
       }
     }
 
     const { scrollHeight, scrollTop, clientHeight } = container;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+    
+    // Auto-scroll logic for new messages
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+    const lastMessage = messages[messages.length - 1];
+    const sentByMe = lastMessage?.is_mine;
 
-    if (isNearBottom) {
+    // If I sent the message, always scroll to bottom. 
+    // If it's from partner, only scroll if already near bottom.
+    if (hasNewMessage && (sentByMe || isNearBottom)) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
+
+    previousMessageCountRef.current = messages.length;
   }, [messages, loading]);
 
   const handleScroll = () => {
@@ -170,7 +182,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
           <div 
             ref={scrollContainerRef} 
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-6 custom-scrollbar pb-12"
+            className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12"
           >
             {hasMore && !loading && (
               <div className="flex justify-center py-4">
@@ -193,7 +205,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                  <div className="w-6 h-6 border-2 border-[#e6c487] rounded-full border-t-transparent animate-spin"></div>
               </div>
             ) : messages.map((msg) => (
-              <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-6">
+              <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-1">
                 {firstUnreadId === msg.id && (
                   <div className="flex items-center gap-4 py-6">
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
