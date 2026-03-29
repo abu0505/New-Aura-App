@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { encryptMessage, decryptMessage, getStoredKeyPair, decodeBase64 } from '../lib/encryption';
+import { encryptMessage, decryptMessageWithFallback, getStoredKeyPair, decodeBase64, encodeBase64 } from '../lib/encryption';
 import type { Database } from '../integrations/supabase/types';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
@@ -14,7 +14,7 @@ export interface ChatMessage extends MessageRow {
   is_pending?: boolean;
 }
 
-export function useChat(partnerId: string | undefined, partnerPublicKey: string | null | undefined) {
+export function useChat(partnerId: string | undefined, partnerPublicKey: string | null | undefined, partnerKeyHistory?: string[]) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
@@ -28,8 +28,12 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const partnerKeyRef = useRef(partnerPublicKey);
   useEffect(() => { partnerKeyRef.current = partnerPublicKey; }, [partnerPublicKey]);
 
-  // Decrypts a single message row — takes partnerKey as explicit param (no closure dependency)
-  const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined): ChatMessage => {
+  // Track partner key history via ref
+  const partnerKeyHistoryRef = useRef(partnerKeyHistory);
+  useEffect(() => { partnerKeyHistoryRef.current = partnerKeyHistory; }, [partnerKeyHistory]);
+
+  // Decrypts a single message row — uses per-message sender_public_key when available
+  const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
     const isMine = row.sender_id === user?.id;
     let decryptedText = '';
     let decryptionError = false;
@@ -39,11 +43,22 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     } else if (partnerKey && myKeyPair) {
       if (row.type === 'text' || row.type === 'sticker' || !row.type) {
         try {
-          const result = decryptMessage(
+          // NaCl box decryption needs the OTHER party's public key.
+          // - For incoming messages: that's the sender → use sender_public_key from message
+          // - For own sent messages: that's the partner → use partnerKey
+          const decryptionKey = isMine
+            ? partnerKey
+            : (row.sender_public_key || partnerKey);
+          const fallbackKeys = (keyHistory || [])
+            .filter(k => k !== decryptionKey)
+            .map(k => decodeBase64(k));
+
+          const result = decryptMessageWithFallback(
             row.encrypted_content,
             row.nonce,
-            decodeBase64(partnerKey),
-            myKeyPair.secretKey
+            decodeBase64(decryptionKey),
+            myKeyPair.secretKey,
+            fallbackKeys
           );
           decryptedText = result;
         } catch (e) {
@@ -104,6 +119,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
             media_key: msg.media_key,
             media_nonce: msg.media_nonce,
             reply_to: msg.reply_to,
+            sender_public_key: msg.sender_public_key,
           });
 
           if (!error) {
@@ -129,7 +145,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     const myKeyPair = getStoredKeyPair();
     if (!myKeyPair) return;
 
-    setMessages(prev => prev.map(row => decryptRow(row, myKeyPair, partnerPublicKey)));
+    setMessages(prev => prev.map(row => decryptRow(row, myKeyPair, partnerPublicKey, partnerKeyHistoryRef.current)));
   }, [partnerPublicKey]);
 
   useEffect(() => {
@@ -138,6 +154,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     const fetchMessages = async () => {
       const myKeyPair = getStoredKeyPair();
       const currentPartnerKey = partnerKeyRef.current;
+      const currentKeyHistory = partnerKeyHistoryRef.current;
       try {
         const { data, error } = await supabase
           .from('messages')
@@ -149,7 +166,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         if (error) throw error;
 
         if (myKeyPair && data) {
-          const decrypted = data.map(row => decryptRow(row, myKeyPair, currentPartnerKey));
+          const decrypted = data.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
           setMessages(decrypted);
 
           // Find first unread from partner
@@ -216,10 +233,11 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           (payload) => {
             const myKeyPair = getStoredKeyPair();
             const currentPartnerKey = partnerKeyRef.current;
+            const currentKeyHistory = partnerKeyHistoryRef.current;
             if (!myKeyPair) return;
             
             if (payload.eventType === 'INSERT') {
-              const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+              const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
               setMessages((prev) => {
                  if (prev.some(m => m.id === newMsg.id)) return prev;
                  return [...prev, newMsg];
@@ -231,7 +249,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
                 supabase.from('messages').update({ is_delivered: true }).eq('id', newMsg.id).then();
               }
             } else if (payload.eventType === 'UPDATE') {
-               const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+               const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
                setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
             } else if (payload.eventType === 'DELETE') {
                setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
@@ -249,10 +267,11 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           (payload) => {
             const myKeyPair = getStoredKeyPair();
             const currentPartnerKey = partnerKeyRef.current;
+            const currentKeyHistory = partnerKeyHistoryRef.current;
             if (!myKeyPair) return;
 
             if (payload.eventType === 'INSERT') {
-              const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+              const newMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
               setMessages((prev) => {
                 const exists = prev.find(m => m.id === newMsg.id);
                 if (exists) {
@@ -262,7 +281,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
               });
               setPendingMessages(prev => prev.filter(m => m.id !== newMsg.id));
             } else if (payload.eventType === 'UPDATE') {
-              const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey);
+              const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
               setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
             } else if (payload.eventType === 'DELETE') {
               setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
@@ -325,6 +344,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       nonce = encrypted.nonce;
     }
 
+    const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
+
     const optimisticMsg: ChatMessage = {
       id: crypto.randomUUID(),
       sender_id: user.id,
@@ -344,6 +365,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       is_deleted_for_everyone: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      sender_public_key: myPublicKeyStr,
       decrypted_content: text || (media?.type === 'sticker' ? text : ''),
       is_mine: true,
       is_pending: !isOnline
@@ -369,6 +391,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         media_key: media?.media_key || null,
         media_nonce: media?.media_nonce || null,
         reply_to: replyToId || null,
+        sender_public_key: myPublicKeyStr,
       });
 
     if (error) {
@@ -407,19 +430,22 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     if (!myKeyPair) return;
 
     const encrypted = encryptMessage(newText, decodeBase64(partnerPublicKey), myKeyPair.secretKey);
+    const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
     
     setMessages(prev => prev.map(m => m.id === messageId ? { 
       ...m, 
       decrypted_content: newText, 
       encrypted_content: encrypted.ciphertext, 
       nonce: encrypted.nonce, 
-      is_edited: true 
+      is_edited: true,
+      sender_public_key: myPublicKeyStr, 
     } : m));
 
     await supabase.from('messages').update({
       encrypted_content: encrypted.ciphertext,
       nonce: encrypted.nonce,
-      is_edited: true
+      is_edited: true,
+      sender_public_key: myPublicKeyStr,
     }).eq('id', messageId);
   };
 
@@ -474,4 +500,3 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
   return { messages, pinnedMessages, loading, sendMessage, reactToMessage, editMessage, deleteMessage, markAsRead, pinMessage, firstUnreadId, isOnline };
 }
-

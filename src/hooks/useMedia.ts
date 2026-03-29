@@ -8,7 +8,7 @@ import {
   encryptFile,
   decryptFile,
   encryptFileKey,
-  decryptFileKey,
+  decryptFileKeyWithFallback,
   decodeBase64,
   encodeBase64
 } from '../lib/encryption';
@@ -163,7 +163,9 @@ export function useMedia() {
     url: string, 
     packedKey: string, 
     mediaNonce: string, 
-    partnerPublicKey: string
+    partnerPublicKey: string,
+    senderPublicKey?: string | null,
+    partnerKeyHistory?: string[]
   ): Promise<Blob | null> => {
     if (!user) return null;
     const myKeyPair = getStoredKeyPair();
@@ -173,7 +175,17 @@ export function useMedia() {
       const [keyNonce, encryptedKey] = packedKey.split(':');
       if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
 
-      const symmetricKey = decryptFileKey(encryptedKey, keyNonce, decodeBase64(partnerPublicKey), myKeyPair.secretKey);
+      // Use per-message sender key if available, else current partner key
+      const primaryKey = senderPublicKey || partnerPublicKey;
+      const fallbackKeys = (partnerKeyHistory || [])
+        .filter(k => k !== primaryKey)
+        .map(k => decodeBase64(k));
+
+      const symmetricKey = decryptFileKeyWithFallback(
+        encryptedKey, keyNonce, 
+        decodeBase64(primaryKey), myKeyPair.secretKey,
+        fallbackKeys
+      );
       if (!symmetricKey) throw new Error('Failed to unwrap key');
 
       const response = await fetch(url);

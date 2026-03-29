@@ -9,6 +9,7 @@ import { supabase } from './supabase';
 
 const SECRET_KEY_STORAGE_KEY = 'aura_secret_key';
 const PUBLIC_KEY_STORAGE_KEY = 'aura_public_key';
+const KEY_OWNER_STORAGE_KEY = 'aura_key_owner';
 
 export type EncryptionState = 
   | 'initializing' 
@@ -17,18 +18,33 @@ export type EncryptionState =
   | 'pin_unlock_required' 
   | 'error';
 
-// ===== Key Derivation (PBKDF2-like for PIN) =====
+// ===== Key Derivation =====
 
 /**
- * Derives a 32-byte key from a PIN and a salt using SHA-256.
- * In a real production app, use SubtleCrypto PBKDF2.
- * For this private app, we use a salted SHA-512 hash truncated to 32 bytes for SecretBox.
+ * Derives a 32-byte key from a PIN using PBKDF2 with 600,000 iterations.
+ * This makes brute-forcing a 6-digit PIN computationally expensive.
  */
 export async function deriveKeyFromPin(pin: string, salt: string): Promise<Uint8Array> {
   const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', encoder.encode(pin), 'PBKDF2', false, ['deriveBits']
+  );
+  const derivedBits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: encoder.encode(salt), iterations: 600_000, hash: 'SHA-256' },
+    keyMaterial, 256
+  );
+  return new Uint8Array(derivedBits);
+}
+
+/**
+ * Legacy derivation — only used for migration from old SHA-512 backups.
+ * Will be removed once all users have migrated to PBKDF2.
+ */
+export async function deriveKeyFromPinLegacy(pin: string, salt: string): Promise<Uint8Array> {
+  const encoder = new TextEncoder();
   const data = encoder.encode(pin + salt);
   const hashBuffer = await crypto.subtle.digest('SHA-512', data);
-  return new Uint8Array(hashBuffer).slice(0, 32); 
+  return new Uint8Array(hashBuffer).slice(0, 32);
 }
 
 export function generateSalt(): string {
@@ -83,15 +99,28 @@ export function getStoredKeyPair(): { publicKey: Uint8Array; secretKey: Uint8Arr
   }
 }
 
-export function storeKeyPair(keyPair: nacl.BoxKeyPair): void {
+export function storeKeyPair(keyPair: nacl.BoxKeyPair, userId?: string): void {
   const secretKeyStr = encodeBase64(keyPair.secretKey);
   const publicKeyStr = encodeBase64(keyPair.publicKey);
   
   localStorage.setItem(SECRET_KEY_STORAGE_KEY, secretKeyStr);
   localStorage.setItem(PUBLIC_KEY_STORAGE_KEY, publicKeyStr);
+  if (userId) {
+    localStorage.setItem(KEY_OWNER_STORAGE_KEY, userId);
+  }
   
   // Sync to IndexedDB for Service Worker access
   syncToIndexedDB(secretKeyStr, publicKeyStr);
+}
+
+/**
+ * Clears all locally stored encryption keys.
+ * Must be called on sign-out to prevent the next user from inheriting stale keys.
+ */
+export function clearStoredKeys(): void {
+  localStorage.removeItem(SECRET_KEY_STORAGE_KEY);
+  localStorage.removeItem(PUBLIC_KEY_STORAGE_KEY);
+  localStorage.removeItem(KEY_OWNER_STORAGE_KEY);
 }
 
 /**
@@ -122,6 +151,8 @@ export async function backupKeys(userId: string, pin: string): Promise<void> {
 
 /**
  * Restores the secret key from Supabase using the user's PIN.
+ * Tries PBKDF2 first, then falls back to legacy SHA-512 for seamless migration.
+ * On successful legacy restore, silently re-encrypts with PBKDF2.
  */
 export async function restoreKeys(userId: string, pin: string): Promise<boolean> {
   const { data, error } = await supabase
@@ -136,17 +167,39 @@ export async function restoreKeys(userId: string, pin: string): Promise<boolean>
     const salt = data.key_derivation_salt;
     const [nonceStr, encryptedStr] = data.backup_secret_key.split(':');
     
+    // Try PBKDF2 first (new secure derivation)
+    let decryptedSecret: Uint8Array | null = null;
+    let usedLegacy = false;
+
     const derivedKey = await deriveKeyFromPin(pin, salt);
-    const decryptedSecret = nacl.secretbox.open(
+    decryptedSecret = nacl.secretbox.open(
       decodeBase64(encryptedStr),
       decodeBase64(nonceStr),
       derivedKey
     );
 
+    if (!decryptedSecret) {
+      // Fallback: try legacy SHA-512 derivation
+      const legacyKey = await deriveKeyFromPinLegacy(pin, salt);
+      decryptedSecret = nacl.secretbox.open(
+        decodeBase64(encryptedStr),
+        decodeBase64(nonceStr),
+        legacyKey
+      );
+      usedLegacy = true;
+    }
+
     if (!decryptedSecret) return false;
 
     const pair = nacl.box.keyPair.fromSecretKey(decryptedSecret);
-    storeKeyPair(pair);
+    storeKeyPair(pair, userId);
+
+    // If restored from legacy, silently re-encrypt backup with PBKDF2
+    if (usedLegacy) {
+      console.log('[Encryption] Migrating backup from SHA-512 to PBKDF2...');
+      await backupKeys(userId, pin);
+    }
+
     return true;
   } catch (e) {
     console.error('Restore failed', e);
@@ -156,8 +209,8 @@ export async function restoreKeys(userId: string, pin: string): Promise<boolean>
 
 /**
  * Ensures the public key stored in Supabase matches the local key pair.
- * This is critical: if the local keys and Supabase public key are out of sync,
- * the partner cannot decrypt messages from this user.
+ * GUARDED: Only updates if the remote key differs from local.
+ * Also maintains key_history for decryption resilience.
  */
 export async function syncPublicKey(userId: string): Promise<void> {
   const keyPair = getStoredKeyPair();
@@ -165,28 +218,58 @@ export async function syncPublicKey(userId: string): Promise<void> {
 
   const localPublicKey = encodeBase64(keyPair.publicKey);
 
-  // Always update Supabase to match local keys
+  // GUARD: Only update if the remote key is different from local
+  const { data } = await supabase
+    .from('profiles')
+    .select('public_key, key_history')
+    .eq('id', userId)
+    .single();
+
+  if (data?.public_key === localPublicKey) return; // Already in sync
+
+  // Key is changing — update Supabase AND append to key_history
+  const history = (data?.key_history as any[]) || [];
+  // Only append if this key isn't already in history
+  if (!history.some((h: any) => h.public_key === localPublicKey)) {
+    history.push({ public_key: localPublicKey, created_at: new Date().toISOString() });
+  }
+
   await supabase
     .from('profiles')
-    .update({ public_key: localPublicKey })
+    .update({ public_key: localPublicKey, key_history: history })
     .eq('id', userId);
 }
 
 export async function checkEncryptionStatus(userId: string): Promise<EncryptionState> {
   // 1. Check local storage
   const localKeys = getStoredKeyPair();
+  const storedOwner = localStorage.getItem(KEY_OWNER_STORAGE_KEY);
+
   if (localKeys) {
-    // CRITICAL: Sync local public key to Supabase on every session start.
-    // This ensures the partner always has the correct public key for decryption.
-    await syncPublicKey(userId);
-    
-    // Also ensure IndexedDB has the keys for the Service Worker
-    syncToIndexedDB(
-      encodeBase64(localKeys.secretKey),
-      encodeBase64(localKeys.publicKey)
-    );
-    
-    return 'ready';
+    // GUARD: Verify these keys actually belong to the current user.
+    // If a different user logged in on the same browser, the old keys will be stale.
+    if (storedOwner && storedOwner !== userId) {
+      console.warn('[Encryption] Local keys belong to a different user — clearing stale keys.');
+      clearStoredKeys();
+      // Fall through to backup check below
+    } else {
+      // Tag ownership if not already set (legacy migration)
+      if (!storedOwner) {
+        localStorage.setItem(KEY_OWNER_STORAGE_KEY, userId);
+      }
+
+      // CRITICAL: Sync local public key to Supabase on every session start.
+      // This ensures the partner always has the correct public key for decryption.
+      await syncPublicKey(userId);
+      
+      // Also ensure IndexedDB has the keys for the Service Worker
+      syncToIndexedDB(
+        encodeBase64(localKeys.secretKey),
+        encodeBase64(localKeys.publicKey)
+      );
+      
+      return 'ready';
+    }
   }
 
   // 2. Check Supabase backup
@@ -242,6 +325,38 @@ export function decryptMessage(
   }
 
   return encodeUTF8(decrypted);
+}
+
+/**
+ * Attempts decryption with the given senderPublicKey.
+ * If that fails and fallback keys are provided, tries each one.
+ * Returns the decrypted text or throws if all fail.
+ */
+export function decryptMessageWithFallback(
+  ciphertext: string,
+  nonce: string,
+  primarySenderPublicKey: Uint8Array,
+  recipientSecretKey: Uint8Array,
+  fallbackPublicKeys?: Uint8Array[]
+): string {
+  // Try primary key first
+  try {
+    return decryptMessage(ciphertext, nonce, primarySenderPublicKey, recipientSecretKey);
+  } catch {
+    // Primary failed — try fallbacks
+  }
+
+  if (fallbackPublicKeys) {
+    for (const fbKey of fallbackPublicKeys) {
+      try {
+        return decryptMessage(ciphertext, nonce, fbKey, recipientSecretKey);
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  throw new Error('Decryption failed — no matching key found');
 }
 
 // ===== File Encryption (Symmetric — secretbox) =====
@@ -310,6 +425,36 @@ export function decryptFileKey(
   return decrypted;
 }
 
+/**
+ * Attempts file key decryption with the given senderPublicKey.
+ * If that fails and fallback keys are provided, tries each one.
+ */
+export function decryptFileKeyWithFallback(
+  encryptedKey: string,
+  nonce: string,
+  primarySenderPublicKey: Uint8Array,
+  recipientSecretKey: Uint8Array,
+  fallbackPublicKeys?: Uint8Array[]
+): Uint8Array {
+  try {
+    return decryptFileKey(encryptedKey, nonce, primarySenderPublicKey, recipientSecretKey);
+  } catch {
+    // Primary failed
+  }
+
+  if (fallbackPublicKeys) {
+    for (const fbKey of fallbackPublicKeys) {
+      try {
+        return decryptFileKey(encryptedKey, nonce, fbKey, recipientSecretKey);
+      } catch {
+        continue;
+      }
+    }
+  }
+
+  throw new Error('File key decryption failed — no matching key found');
+}
+
 // ===== Utility: Get partner's public key =====
 
 export async function getPartnerPublicKey(partnerId: string): Promise<Uint8Array> {
@@ -324,6 +469,22 @@ export async function getPartnerPublicKey(partnerId: string): Promise<Uint8Array
   }
 
   return decodeBase64(data.public_key);
+}
+
+/**
+ * Gets the partner's key history — all public keys they have ever used.
+ * Used for fallback decryption when a message was encrypted with an old key.
+ */
+export async function getPartnerKeyHistory(partnerId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('key_history')
+    .eq('id', partnerId)
+    .single();
+
+  if (error || !data?.key_history) return [];
+
+  return (data.key_history as any[]).map((h: any) => h.public_key).filter(Boolean);
 }
 
 // ===== Utility: Get key fingerprint for verification =====

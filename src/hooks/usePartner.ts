@@ -12,6 +12,7 @@ export interface PartnerProfile {
   is_online: boolean;
   last_seen: string | null;
   status_message: string | null;
+  key_history: { public_key: string; created_at: string }[] | null;
 }
 
 export function usePartner() {

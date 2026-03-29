@@ -6,7 +6,7 @@ import {
   getPartnerPublicKey, 
   getStoredKeyPair, 
   encryptMessage, 
-  decryptMessage 
+  decryptMessageWithFallback 
 } from '../lib/encryption';
 
 export interface LocationCoordinates {
@@ -152,8 +152,8 @@ export function useLiveLocation() {
         myKeys = getStoredKeyPair();
         if (!myKeys) return;
 
-        const decLatStr = decryptMessage(latParts.ciphertext, latParts.nonce, partnerPubKey, myKeys.secretKey);
-        const decLngStr = decryptMessage(lngParts.ciphertext, lngParts.nonce, partnerPubKey, myKeys.secretKey);
+        const decLatStr = decryptMessageWithFallback(latParts.ciphertext, latParts.nonce, partnerPubKey, myKeys.secretKey);
+        const decLngStr = decryptMessageWithFallback(lngParts.ciphertext, lngParts.nonce, partnerPubKey, myKeys.secretKey);
 
         const lat = parseFloat(decLatStr);
         const lng = parseFloat(decLngStr);

@@ -7,6 +7,8 @@ import {
   storeKeyPair, 
   backupKeys, 
   restoreKeys,
+  syncPublicKey,
+  clearStoredKeys,
   type EncryptionState 
 } from '../lib/encryption';
 
@@ -70,9 +72,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setupEncryption = async (pin: string) => {
     if (!user) return;
     try {
+      // GUARD: If a backup already exists, try to restore first.
+      // This prevents accidental key regeneration which would break old messages.
+      const restored = await restoreKeys(user.id, pin);
+      if (restored) {
+        await syncPublicKey(user.id);
+        setEncryptionStatus('ready');
+        return;
+      }
+
+      // No backup exists or PIN didn't match — generate fresh keys
       const newKeyPair = generateKeyPair();
-      storeKeyPair(newKeyPair);
+      storeKeyPair(newKeyPair, user.id);
       await backupKeys(user.id, pin);
+      await syncPublicKey(user.id);
       setEncryptionStatus('ready');
     } catch (err) {
       console.error('Failed to setup encryption', err);
@@ -84,12 +97,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false;
     const success = await restoreKeys(user.id, pin);
     if (success) {
+      await syncPublicKey(user.id);
       setEncryptionStatus('ready');
     }
     return success;
   };
 
   const signOut = async () => {
+    clearStoredKeys();
     await supabase.auth.signOut();
   };
 

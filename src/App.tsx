@@ -13,12 +13,33 @@ import { useStreaks } from './hooks/useStreaks';
 import { usePartner } from './hooks/usePartner';
 import KeySetupModal from './components/auth/KeySetupModal'; 
 import { subscribeToPushNotifications, requestNotificationPermission } from './lib/pushNotifications';
+import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
+import AppLockModal from './components/auth/AppLockModal';
 
-export default function App() {
-  const { session, loading } = useAuth();
+function InnerApp({ 
+  session, 
+  partner, 
+  streakCount, 
+  showCelebration, 
+  setShowCelebration 
+}: any) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
-  const { partner } = usePartner();
-  const { streakCount, showCelebration, setShowCelebration } = useStreaks();
+  const { isLocked, hasAppPin } = useAppLock();
+  const [showLockModal, setShowLockModal] = useState(false);
+
+  // Initial Lock Modal State - show it once on load if locked
+  useEffect(() => {
+    if (isLocked) {
+      setShowLockModal(true);
+    }
+  }, [isLocked]);
+
+  // Tab Enforcement
+  useEffect(() => {
+    if (isLocked && activeTab !== 'settings') {
+      setActiveTab('settings');
+    }
+  }, [isLocked, activeTab]);
 
   // Handle push notification setup
   useEffect(() => {
@@ -39,12 +60,80 @@ export default function App() {
   useEffect(() => {
     const handleSwitchTab = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
+        if (isLocked && e.detail !== 'settings') {
+           // Prevent switching 
+           return;
+        }
         setActiveTab(e.detail as Tab);
       }
     };
     document.addEventListener('switch-tab', handleSwitchTab);
     return () => document.removeEventListener('switch-tab', handleSwitchTab);
-  }, []);
+  }, [isLocked]);
+
+  const handleTabChangeWrapper = (tab: Tab) => {
+    if (isLocked && tab !== 'settings') {
+      // Just briefly flash the lock modal again if they try to escape settings via navbar
+      setShowLockModal(true);
+      return; 
+    }
+    setActiveTab(tab);
+  };
+
+  // If newly unlocked via modal, they probably want to go back to chat
+  useEffect(() => {
+    if (!isLocked && hasAppPin && activeTab === 'settings') {
+       setActiveTab('chat');
+    }
+  }, [isLocked, hasAppPin]);
+
+  return (
+    <div className="relative h-screen w-full overflow-hidden bg-[#0d0d15]">
+      {showLockModal && (
+        <AppLockModal onCancel={() => setShowLockModal(false)} />
+      )}
+      <KeySetupModal />
+      <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} streakCount={streakCount}>
+        <Suspense fallback={
+          <div className="flex-1 flex items-center justify-center bg-[#0d0d15] w-full h-full">
+            <p className="text-[#C9A96E]/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>
+          </div>
+        }>
+          {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
+          <div className={activeTab === 'chat' ? 'h-full w-full block' : 'hidden'}>
+            {(!isLocked || activeTab === 'chat') && <ChatScreen partner={partner} />}
+          </div>
+          <div className={activeTab === 'stories' ? 'h-full w-full block' : 'hidden'}>
+            {(!isLocked || activeTab === 'stories') && <StoriesScreen partner={partner} />}
+          </div>
+          <div className={activeTab === 'memories' ? 'h-full w-full block' : 'hidden'}>
+            {(!isLocked || activeTab === 'memories') && <MemoriesScreen />}
+          </div>
+          <div className={activeTab === 'location' ? 'h-full w-full block' : 'hidden'}>
+            {(!isLocked || activeTab === 'location') && <LiveLocationScreen partner={partner} />}
+          </div>
+          <div className={activeTab === 'settings' ? 'h-full w-full block' : 'hidden'}>
+            <SettingsScreen />
+          </div>
+        </Suspense>
+      </AppLayout>
+
+      {/* Streak Milestone Overlay */}
+      <Suspense fallback={null}>
+        <StreakCelebration 
+          streakCount={streakCount}
+          isOpen={showCelebration}
+          onClose={() => setShowCelebration(false)}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+export default function App() {
+  const { session, loading } = useAuth();
+  const { partner } = usePartner();
+  const { streakCount, showCelebration, setShowCelebration } = useStreaks();
 
   // Loading state
   if (loading) {
@@ -75,41 +164,14 @@ export default function App() {
 
   // Authenticated — show app wrapped in navigation layout
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#0d0d15]">
-      <KeySetupModal />
-      <AppLayout activeTab={activeTab} onTabChange={setActiveTab} streakCount={streakCount}>
-        <Suspense fallback={
-          <div className="flex-1 flex items-center justify-center bg-[#0d0d15] w-full h-full">
-            <p className="text-[#C9A96E]/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>
-          </div>
-        }>
-          {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
-          <div className={activeTab === 'chat' ? 'h-full w-full block' : 'hidden'}>
-            <ChatScreen partner={partner} />
-          </div>
-          <div className={activeTab === 'stories' ? 'h-full w-full block' : 'hidden'}>
-            <StoriesScreen partner={partner} />
-          </div>
-          <div className={activeTab === 'memories' ? 'h-full w-full block' : 'hidden'}>
-            <MemoriesScreen />
-          </div>
-          <div className={activeTab === 'location' ? 'h-full w-full block' : 'hidden'}>
-            <LiveLocationScreen partner={partner} />
-          </div>
-          <div className={activeTab === 'settings' ? 'h-full w-full block' : 'hidden'}>
-            <SettingsScreen />
-          </div>
-        </Suspense>
-      </AppLayout>
-
-      {/* Streak Milestone Overlay */}
-      <Suspense fallback={null}>
-        <StreakCelebration 
-          streakCount={streakCount}
-          isOpen={showCelebration}
-          onClose={() => setShowCelebration(false)}
-        />
-      </Suspense>
-    </div>
+    <AppLockProvider>
+      <InnerApp 
+        session={session} 
+        partner={partner} 
+        streakCount={streakCount} 
+        showCelebration={showCelebration}
+        setShowCelebration={setShowCelebration}
+      />
+    </AppLockProvider>
   );
 }

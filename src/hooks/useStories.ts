@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePartner } from './usePartner';
-import { encryptMessage, decryptMessage, getStoredKeyPair, decodeBase64 } from '../lib/encryption';
+import { encryptMessage, decryptMessage, getStoredKeyPair, decodeBase64, encodeBase64 } from '../lib/encryption';
 import type { Database } from '../integrations/supabase/types';
 
 type StoryRow = Database['public']['Tables']['stories']['Row'];
@@ -28,10 +28,12 @@ export function useStories() {
     if (partner?.public_key && myKeyPair) {
       if (row.encrypted_content && row.media_nonce) {
         try {
+          // Use per-story sender_public_key if available, else fall back to current partner key
+          const senderKey = row.sender_public_key || partner.public_key;
           const result = decryptMessage(
             row.encrypted_content,
             row.media_nonce,
-            decodeBase64(partner.public_key),
+            decodeBase64(senderKey),
             myKeyPair.secretKey
           );
           decryptedText = result;
@@ -133,6 +135,7 @@ export function useStories() {
         media_key: media?.media_key || null,
         media_nonce: finalNonce || null,
         expires_at: expiresAt.toISOString(),
+        sender_public_key: encodeBase64(myKeyPair.publicKey),
       });
 
     if (error) throw error;

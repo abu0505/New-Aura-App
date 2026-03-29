@@ -19,6 +19,7 @@ export interface Database {
           last_seen: string | null
           created_at: string
           updated_at: string
+          key_history: { public_key: string; created_at: string }[] | null
         }
         Insert: {
           id: string
@@ -29,6 +30,7 @@ export interface Database {
           last_seen?: string | null
           created_at?: string
           updated_at?: string
+          key_history?: { public_key: string; created_at: string }[] | null
         }
         Update: {
           id?: string
@@ -39,6 +41,7 @@ export interface Database {
           last_seen?: string | null
           created_at?: string
           updated_at?: string
+          key_history?: { public_key: string; created_at: string }[] | null
         }
       }
       messages: {
@@ -61,6 +64,7 @@ export interface Database {
           is_deleted_for_everyone: boolean
           created_at: string
           updated_at: string
+          sender_public_key: string | null
         }
         Insert: {
           id?: string
@@ -81,6 +85,7 @@ export interface Database {
           is_deleted_for_everyone?: boolean
           created_at?: string
           updated_at?: string
+          sender_public_key?: string | null
         }
         Update: {
           id?: string
@@ -101,6 +106,7 @@ export interface Database {
           is_deleted_for_everyone?: boolean
           created_at?: string
           updated_at?: string
+          sender_public_key?: string | null
         }
       }
       stories: {
@@ -114,6 +120,7 @@ export interface Database {
           expires_at: string
           viewed_at: string | null
           created_at: string
+          sender_public_key: string | null
         }
         Insert: {
           id?: string
@@ -125,6 +132,7 @@ export interface Database {
           expires_at: string
           viewed_at?: string | null
           created_at?: string
+          sender_public_key?: string | null
         }
         Update: {
           id?: string
@@ -136,6 +144,7 @@ export interface Database {
           expires_at?: string
           viewed_at?: string | null
           created_at?: string
+          sender_public_key?: string | null
         }
       }
       chat_settings: {
@@ -143,25 +152,34 @@ export interface Database {
           id: string
           user_id: string
           background_url: string | null
+          background_key: string | null
+          background_nonce: string | null
           notification_enabled: boolean
           created_at: string
           updated_at: string
+          shared_pin: string | null
         }
         Insert: {
           id?: string
           user_id: string
           background_url?: string | null
+          background_key?: string | null
+          background_nonce?: string | null
           notification_enabled?: boolean
           created_at?: string
           updated_at?: string
+          shared_pin?: string | null
         }
         Update: {
           id?: string
           user_id?: string
           background_url?: string | null
+          background_key?: string | null
+          background_nonce?: string | null
           notification_enabled?: boolean
           created_at?: string
           updated_at?: string
+          shared_pin?: string | null
         }
       }
       streaks: {

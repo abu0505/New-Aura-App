@@ -40,7 +40,11 @@ export default function ChatBubble({
   useEffect(() => {
     if (message.media_url && message.media_key && message.media_nonce && partnerPublicKey && !message.is_deleted_for_everyone) {
       setLoading(true);
-      getDecryptedBlob(message.media_url, message.media_key, message.media_nonce, partnerPublicKey)
+      getDecryptedBlob(
+        message.media_url, message.media_key, message.media_nonce, 
+        partnerPublicKey,
+        message.sender_public_key
+      )
         .then(blob => {
           if (blob) {
             const url = URL.createObjectURL(blob);

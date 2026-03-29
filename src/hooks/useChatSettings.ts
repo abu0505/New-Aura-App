@@ -10,6 +10,7 @@ export interface ChatSettings {
   background_nonce: string | null;
   notification_sound: boolean;
   updated_at: string;
+  shared_pin: string | null;
 }
 
 export function useChatSettings() {
@@ -88,6 +89,23 @@ export function useChatSettings() {
     return { error };
   };
 
+  const setSharedPin = async (newPinHash: string | null) => {
+    if (!user) return { error: new Error("Not authenticated") };
+
+    // Optimistically update local state so UI responds instantly
+    setSettings((prev) => prev ? { ...prev, shared_pin: newPinHash } : null);
+
+    const { error } = await supabase.rpc('set_shared_app_pin', {
+      new_pin: newPinHash
+    });
+
+    if (error) {
+       console.error("Failed to set shared pin:", error);
+       refreshSettings(); // Rollback to actual state
+    }
+    return { error };
+  };
+
   const refreshSettings = async () => {
     if (!user) return;
     const { data } = await supabase
@@ -98,5 +116,5 @@ export function useChatSettings() {
     if (data) setSettings(data);
   };
 
-  return { settings, loading, updateSettings, refreshSettings };
+  return { settings, loading, updateSettings, setSharedPin, refreshSettings };
 }

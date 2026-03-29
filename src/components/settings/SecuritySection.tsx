@@ -3,6 +3,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { getStoredKeyPair, getKeyFingerprint, getPartnerPublicKey } from '../../lib/encryption';
 import { checkPushSubscription, requestNotificationPermission, subscribeToPushNotifications, unsubscribeFromPushNotifications } from '../../lib/pushNotifications';
+import { useAppLock } from '../../contexts/AppLockContext';
+import AppLockSetupModal from './AppLockSetupModal';
 
 export default function SecuritySection() {
   const { user } = useAuth();
@@ -11,6 +13,10 @@ export default function SecuritySection() {
   const [partnerFingerprint, setPartnerFingerprint] = useState('');
   const [showVerify, setShowVerify] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
+  
+  const { hasAppPin } = useAppLock();
+  const [showAppLockSetup, setShowAppLockSetup] = useState(false);
+  const [appLockSetupMode, setAppLockSetupMode] = useState<'setup' | 'remove'>('setup');
 
   useEffect(() => {
     const keys = getStoredKeyPair();
@@ -80,6 +86,32 @@ export default function SecuritySection() {
             </div>
             <span className="material-symbols-outlined text-[#e6c487] text-lg">verified_user</span>
           </div>
+
+          {!hasAppPin ? (
+            <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs uppercase tracking-widest text-white/60 font-label">Sanctuary Lock</span>
+                <span className="text-[10px] text-[#e6c487]/60 italic">Require a PIN to access the app</span>
+              </div>
+              <span className="material-symbols-outlined text-white/30 text-lg">lock_open</span>
+            </div>
+          ) : (
+            <>
+              <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs uppercase tracking-widest text-white/60 font-label">Change Lock PIN</span>
+                  <span className="text-[10px] text-[#e6c487]/60 italic">App Lock is active</span>
+                </div>
+                <span className="material-symbols-outlined text-[#e6c487] text-lg">password</span>
+              </div>
+              <div className="flex justify-between items-center p-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition-all" onClick={() => { setAppLockSetupMode('remove'); setShowAppLockSetup(true); }}>
+                <div className="flex flex-col gap-1">
+                 <span className="text-xs uppercase tracking-widest text-red-400 font-label">Remove Lock</span>
+                </div>
+                <span className="material-symbols-outlined text-red-400 text-lg">lock_open_right</span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -116,6 +148,13 @@ export default function SecuritySection() {
             </button>
           </div>
         </div>
+      )}
+
+      {showAppLockSetup && (
+        <AppLockSetupModal 
+          onClose={() => setShowAppLockSetup(false)} 
+          isRemoving={appLockSetupMode === 'remove'} 
+        />
       )}
     </>
   );

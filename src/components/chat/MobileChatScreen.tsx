@@ -13,7 +13,7 @@ import EncryptedImage from '../common/EncryptedImage';
 export default function MobileChatScreen({ partner }: { partner: PartnerProfile }) {
   useOnlineStatus();
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
-  const { messages, pinnedMessages, loading, sendMessage, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key);
+  const { messages, pinnedMessages, loading, sendMessage, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
