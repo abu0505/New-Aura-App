@@ -28,8 +28,8 @@ export default function KeySetupModal() {
           setError('Invalid PIN. Please try again.');
         }
       }
-    } catch (err) {
-      setError('An error occurred. Please try again.');
+    } catch (err: any) {
+      setError(err?.message || 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

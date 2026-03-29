@@ -204,25 +204,32 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
               <div className="flex justify-center p-12">
                  <div className="w-6 h-6 border-2 border-[#e6c487] rounded-full border-t-transparent animate-spin"></div>
               </div>
-            ) : messages.map((msg) => (
-              <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-1">
-                {firstUnreadId === msg.id && (
-                  <div className="flex items-center gap-4 py-6">
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[#e6c487]/60 font-bold">New Messages</span>
-                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
-                  </div>
-                )}
-                <ChatBubble 
-                  message={msg} 
-                  partnerPublicKey={partner.public_key}
-                  onReact={reactToMessage}
-                  onEdit={editMessage}
-                  onDelete={deleteMessage}
-                  onPin={pinMessage}
-                />
-              </div>
-            ))}
+            ) : messages.map((msg, index) => {
+              const isFirstInGroup = index === 0 || messages[index - 1].sender_id !== msg.sender_id;
+              const isLastInGroup = index === messages.length - 1 || messages[index + 1].sender_id !== msg.sender_id;
+              
+              return (
+                <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-1">
+                  {firstUnreadId === msg.id && (
+                    <div className="flex items-center gap-4 py-6">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-[#e6c487]/60 font-bold">New Messages</span>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
+                    </div>
+                  )}
+                  <ChatBubble 
+                    message={msg} 
+                    partnerPublicKey={partner.public_key}
+                    onReact={reactToMessage}
+                    onEdit={editMessage}
+                    onDelete={deleteMessage}
+                    onPin={pinMessage}
+                    isFirst={isFirstInGroup}
+                    isLast={isLastInGroup}
+                  />
+                </div>
+              );
+            })}
             {partnerIsTyping && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </div>

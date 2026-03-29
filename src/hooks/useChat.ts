@@ -15,11 +15,11 @@ export interface ChatMessage extends MessageRow {
 }
 
 export function useChat(partnerId: string | undefined, partnerPublicKey: string | null | undefined, partnerKeyHistory?: string[]) {
-  const { user } = useAuth();
+  const { user, encryptionStatus } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [pinnedMessages, setPinnedMessages] = useState<Database['public']['Tables']['pinned_messages']['Row'][]>([]);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
@@ -142,14 +142,18 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     };
   }, [isOnline, pendingMessages]);
 
-  // Re-decrypt messages when partnerPublicKey becomes available (without re-subscribing)
+  // Re-decrypt messages when partnerPublicKey or my encryption readiness changes
   useEffect(() => {
-    if (!partnerPublicKey || messages.length === 0) return;
+    if ((!partnerPublicKey && !partnerKeyHistoryRef.current) || messages.length === 0 || encryptionStatus !== 'ready') return;
     const myKeyPair = getStoredKeyPair();
     if (!myKeyPair) return;
 
-    setMessages(prev => prev.map(row => decryptRow(row, myKeyPair, partnerPublicKey, partnerKeyHistoryRef.current)));
-  }, [partnerPublicKey]);
+    setMessages(prev => prev.map(row => 
+       row.decrypted_content && row.decrypted_content !== '[Awaiting Keys]' && !row.decryption_error 
+       ? row 
+       : decryptRow(row, myKeyPair, partnerPublicKey || partnerKeyRef.current, partnerKeyHistoryRef.current)
+    ));
+  }, [partnerPublicKey, encryptionStatus]);
 
   useEffect(() => {
     if (!user || !partnerId) return;
@@ -205,10 +209,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           setPinnedMessages(pinnedData);
         }
 
-      } catch (err) {
-        console.error('Error fetching messages', err);
       } finally {
-        setLoading(false);
+        setDataLoading(false);
       }
     };
 
@@ -326,7 +328,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       if (channelMsg) supabase.removeChannel(channelMsg);
       if (channelPinned) supabase.removeChannel(channelPinned);
     };
-  }, [user, partnerId]);
+  }, [user, partnerId, encryptionStatus]); // Added encryptionStatus to re-subscribe if needed or at least re-trigger
 
   const sendMessage = async (
     text: string, 
@@ -555,7 +557,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   return { 
     messages, 
     pinnedMessages, 
-    loading, 
+    loading: dataLoading || (encryptionStatus !== 'ready' && encryptionStatus !== 'error' && encryptionStatus !== 'pin_setup_required'), 
     loadingMore,
     hasMore,
     sendMessage, 

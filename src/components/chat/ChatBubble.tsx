@@ -12,6 +12,8 @@ interface ChatBubbleProps {
   onEdit?: (msgId: string, content: string) => void;
   onDelete?: (msgId: string, forEveryone: boolean) => void;
   onPin?: (msgId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export default function ChatBubble({ 
@@ -20,7 +22,9 @@ export default function ChatBubble({
   onReact,
   onEdit,
   onDelete,
-  onPin
+  onPin,
+  isFirst = true,
+  isLast = true
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(null);
@@ -215,6 +219,10 @@ export default function ChatBubble({
     );
   }
 
+  // Safety guard: If it's a text message but has no decrypted content yet, 
+  // don't render an empty bubble (unless it's a media/location type which handle their own loading)
+  if (message.type === 'text' && !message.decrypted_content && !message.is_deleted_for_everyone) return null;
+
   return (
     <div 
       ref={bubbleRef}
@@ -312,8 +320,8 @@ export default function ChatBubble({
           isOnlyMedia || isSticker
              ? 'bg-transparent shadow-none' 
              : isMine 
-               ? 'px-4 py-3 bg-gradient-to-br from-[#c9a96e] to-[#e6c487] text-[#13131b] rounded-2xl rounded-br-sm' 
-               : 'px-4 py-3 bg-[#1b1b23] text-[#e4e1ed] rounded-2xl rounded-bl-sm border border-white/5'
+               ? `px-4 py-3 bg-gradient-to-br from-[#c9a96e] to-[#e6c487] text-[#13131b] rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
+               : `px-4 py-3 bg-[#1b1b23] text-[#e4e1ed] rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
         >
         {decryptionError ? (

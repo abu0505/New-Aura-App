@@ -84,12 +84,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // No backup exists or PIN didn't match — generate fresh keys
       const newKeyPair = generateKeyPair();
       storeKeyPair(newKeyPair, user.id);
-      await backupKeys(user.id, pin);
-      await syncPublicKey(user.id);
-      setEncryptionStatus('ready');
+      
+      try {
+        await backupKeys(user.id, pin);
+        await syncPublicKey(user.id);
+        setEncryptionStatus('ready');
+      } catch (backupError) {
+        // If backup fails, clear the local keys we just generated!
+        // This is critical so the next attempt starts fresh and doesn't orphan the previous state.
+        clearStoredKeys();
+        throw backupError;
+      }
     } catch (err) {
-      console.error('Failed to setup encryption', err);
-      setEncryptionStatus('error');
+      console.error('Failed to setup encryption:', err);
+      // Re-throw so the UI component (Modal) can handle and show the error message.
+      throw err;
     }
   };
 

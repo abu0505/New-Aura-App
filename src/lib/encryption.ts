@@ -139,7 +139,7 @@ export async function backupKeys(userId: string, pin: string): Promise<void> {
 
   const backupString = encodeBase64(nonce) + ':' + encodeBase64(encryptedSecretKey);
 
-  await supabase
+  const { error } = await supabase
     .from('profiles')
     .update({ 
       backup_secret_key: backupString,
@@ -147,6 +147,11 @@ export async function backupKeys(userId: string, pin: string): Promise<void> {
       public_key: encodeBase64(keyPair.publicKey)
     })
     .eq('id', userId);
+
+  if (error) {
+    console.error('Backup keys failed:', error);
+    throw new Error(error.message);
+  }
 }
 
 /**

@@ -175,8 +175,11 @@ export function useMedia() {
       const [keyNonce, encryptedKey] = packedKey.split(':');
       if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
 
-      // Use per-message sender key if available, else current partner key
-      const primaryKey = senderPublicKey || partnerPublicKey;
+      // Use per-message sender key for incoming messages, but use partner key for our own sent messages.
+      // We can determine if it's our own message if the senderPublicKey matches our own.
+      const isMine = senderPublicKey === encodeBase64(myKeyPair.publicKey);
+      const primaryKey = isMine ? partnerPublicKey : (senderPublicKey || partnerPublicKey);
+      
       const fallbackKeys = (partnerKeyHistory || [])
         .filter(k => k !== primaryKey)
         .map(k => decodeBase64(k));
