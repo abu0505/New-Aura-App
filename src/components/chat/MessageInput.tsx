@@ -34,13 +34,22 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
     }
   }, [text]);
 
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Typing tracking
   useEffect(() => {
     if (!onTyping) return;
     if (text) {
       onTyping(true);
-      const to = setTimeout(() => onTyping(false), 2000);
-      return () => clearTimeout(to);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        onTyping(false);
+        typingTimeoutRef.current = null;
+      }, 1500);
+      
+      return () => {
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      };
     } else {
       onTyping(false);
     }
@@ -48,6 +57,10 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
 
   const handleSend = () => {
     if ((text.trim() || isUploading) && !disabled) {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
       if (onTyping) onTyping(false);
       onSend(text.trim());
       setText('');

@@ -8,6 +8,12 @@ export function useTypingIndicator(partnerId: string | undefined) {
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSentRef = useRef<number>(0);
+  // Stable refs so the sync closure always reads the latest values
+  const myUserIdRef = useRef<string | undefined>(undefined);
+  const partnerIdRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => { myUserIdRef.current = user?.id; }, [user?.id]);
+  useEffect(() => { partnerIdRef.current = partnerId; }, [partnerId]);
 
   useEffect(() => {
     if (!user || !partnerId) return;
@@ -18,27 +24,37 @@ export function useTypingIndicator(partnerId: string | undefined) {
 
     typingChannel
       .on('presence', { event: 'sync' }, () => {
+        const myId = myUserIdRef.current;
+        const theirId = partnerIdRef.current;
+
+        // If we don't know our own ID yet, bail out. We can never be "the partner".
+        if (!myId || !theirId) return;
+
         const state = typingChannel.presenceState();
         let isTyping = false;
-        
+
         for (const presences of Object.values(state)) {
-            if ((presences as unknown as { user_id: string, typing: boolean }[]).some(p => p.user_id === partnerId && p.typing)) {
-                isTyping = true;
+          for (const p of presences as unknown as { user_id: string; typing: boolean }[]) {
+            // Strictly skip anything that is ours
+            if (p.user_id === myId) continue;
+            // Only care about the partner
+            if (p.user_id === theirId && p.typing) {
+              isTyping = true;
             }
+          }
         }
-        
+
         setPartnerIsTyping(isTyping);
 
-        // Safety timeout: if we don't receive a sync or the partner disconnects abruptly,
-        // force typing to false after 3 seconds
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
         }
-        
+
         if (isTyping) {
           typingTimeoutRef.current = setTimeout(() => {
             setPartnerIsTyping(false);
-          }, 3000);
+          }, 1500);
         }
       })
       .subscribe(async (status) => {
@@ -50,6 +66,7 @@ export function useTypingIndicator(partnerId: string | undefined) {
     channelRef.current = typingChannel;
 
     return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingChannel.unsubscribe();
     };
   }, [user, partnerId]);
@@ -58,7 +75,7 @@ export function useTypingIndicator(partnerId: string | undefined) {
     if (!channelRef.current || !user) return;
 
     const now = Date.now();
-    // Debounce typing logic: allow 'false' explicitly anytime, but throttle 'true' to once per second
+    // Debounce: allow 'false' anytime, but throttle 'true' to once per second
     if (isTyping && now - lastSentRef.current < 1000) {
       return;
     }
