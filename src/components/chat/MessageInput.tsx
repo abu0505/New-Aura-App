@@ -35,41 +35,60 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
   }, [text]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Store onTyping in a ref so the effect does not depend on the function reference.
-  // This prevents re-runs when the parent re-renders but text hasn't changed.
   const onTypingRef = useRef(onTyping);
   useEffect(() => { onTypingRef.current = onTyping; }, [onTyping]);
 
+  const clearTypingTimers = () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+    if (typingIntervalRef.current) {
+      clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+  };
+
   // Typing tracking — ONLY depends on [text], not on onTyping.
+  // Sends typing:true immediately and then every 1s while typing continues.
+  // Sends typing:false after 2s of no new keystrokes (timeout) or when text empties.
   useEffect(() => {
     const typingFn = onTypingRef.current;
     if (!typingFn) return;
 
     if (text) {
+      // Send immediately on keystroke
       typingFn(true);
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+      // Clear old timers
+      clearTypingTimers();
+
+      // Re-send typing:true every 1s so the partner always gets a fresh signal
+      // even if a previous broadcast was lost during a reconnect
+      typingIntervalRef.current = setInterval(() => {
+        onTypingRef.current?.(true);
+      }, 1000);
+
+      // Auto-stop after 2s of no new keystrokes
       typingTimeoutRef.current = setTimeout(() => {
+        clearTypingTimers();
         onTypingRef.current?.(false);
-        typingTimeoutRef.current = null;
       }, 2000);
 
       return () => {
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          typingTimeoutRef.current = null;
-        }
+        clearTypingTimers();
       };
     } else {
+      clearTypingTimers();
       typingFn(false);
     }
   }, [text]);
 
   const handleSend = () => {
     if ((text.trim() || isUploading) && !disabled) {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-        typingTimeoutRef.current = null;
-      }
+      clearTypingTimers();
       onTypingRef.current?.(false);
       onSend(text.trim());
       setText('');
