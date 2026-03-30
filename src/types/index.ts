@@ -5,6 +5,7 @@ export interface Profile {
   public_key: string;
   is_online: boolean;
   last_seen: string;
+  status_message: string | null;
   created_at: string;
 }
 

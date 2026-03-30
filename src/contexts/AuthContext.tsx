@@ -113,6 +113,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Mark offline immediately so the partner sees the change right away
+    if (user) {
+      try {
+        await supabase.from('profiles').update({
+          is_online: false,
+          last_seen: new Date().toISOString(),
+          status_message: null,
+        }).eq('id', user.id);
+      } catch (_) { /* best-effort */ }
+    }
     clearStoredKeys();
     await supabase.auth.signOut();
   };

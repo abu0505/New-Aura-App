@@ -11,6 +11,7 @@ const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen')
 import AppLayout from './components/layout/AppLayout';
 import { useStreaks } from './hooks/useStreaks';
 import { usePartner } from './hooks/usePartner';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 import KeySetupModal from './components/auth/KeySetupModal'; 
 import { subscribeToPushNotifications, requestNotificationPermission } from './lib/pushNotifications';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
@@ -24,6 +25,7 @@ function InnerApp({
   setShowCelebration 
 }: any) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
+  useOnlineStatus(activeTab);
   const { isLocked, hasAppPin } = useAppLock();
   const [showLockModal, setShowLockModal] = useState(false);
 

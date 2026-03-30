@@ -1,7 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { useChat } from '../../hooks/useChat';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
-import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { useChatSettings } from '../../hooks/useChatSettings';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
@@ -11,7 +10,6 @@ import TypingIndicator from './TypingIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 
 export default function DesktopChatScreen({ partner }: { partner: PartnerProfile }) {
-  useOnlineStatus();
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
   const { messages, pinnedMessages, loading, loadingMore, hasMore, sendMessage, loadMore, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
@@ -134,7 +132,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
             <div>
               <h2 className="text-xl font-serif italic text-[#e6c487] leading-tight">{partner.display_name || 'Your Partner'}</h2>
               <p className="text-[10px] font-label tracking-[0.2em] text-[#998f81] uppercase mt-0.5">
-                {partner.is_online ? 'Online' : 'Offline'}
+                {partner.is_online ? (partner.status_message || 'Online') : 'Offline'}
               </p>
             </div>
           </div>
