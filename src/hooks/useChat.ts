@@ -35,6 +35,15 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const partnerKeyHistoryRef = useRef(partnerKeyHistory);
   useEffect(() => { partnerKeyHistoryRef.current = partnerKeyHistory; }, [partnerKeyHistory]);
 
+  // Track latest message timestamp for gap-fill
+  const lastMessageTimeRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (messages.length > 0) {
+      const maxTime = messages.reduce((max, msg) => msg.created_at > max ? msg.created_at : max, messages[0].created_at);
+      lastMessageTimeRef.current = maxTime;
+    }
+  }, [messages]);
+
   // Decrypts a single message row — uses per-message sender_public_key when available
   const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
     const isMine = row.sender_id === user?.id;
@@ -160,6 +169,54 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   useEffect(() => {
     if (!user || !partnerId) return;
 
+    const fetchMissedMessages = async () => {
+      if (!lastMessageTimeRef.current) return;
+      const myKeyPair = getStoredKeyPair();
+      const currentPartnerKey = partnerKeyRef.current;
+      const currentKeyHistory = partnerKeyHistoryRef.current;
+      
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+          .gt('created_at', lastMessageTimeRef.current)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          let newMessages: ChatMessage[] = [];
+          if (myKeyPair) {
+            newMessages = data.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
+          } else {
+            newMessages = data.map(row => ({ ...row, is_mine: row.sender_id === user.id }));
+          }
+          
+          setMessages(prev => {
+            const existingIds = new Set(prev.map(m => m.id));
+            const uniqueNew = newMessages.filter(m => !existingIds.has(m.id));
+            if (uniqueNew.length === 0) return prev;
+            return [...prev, ...uniqueNew];
+          });
+          
+          const unreadIds = data.filter(m => m.sender_id === partnerId && !m.is_read).map(m => m.id);
+          if (unreadIds.length > 0) {
+            if (document.visibilityState === 'visible') {
+              await supabase.from('messages').update({ is_read: true, is_delivered: true }).in('id', unreadIds);
+            } else {
+              const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
+              if (undeliveredIds.length > 0) {
+                await supabase.from('messages').update({ is_delivered: true }).in('id', undeliveredIds);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch missed messages', err);
+      }
+    };
+
     const fetchMessages = async () => {
       const myKeyPair = getStoredKeyPair();
       const currentPartnerKey = partnerKeyRef.current;
@@ -190,7 +247,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           // Mark unread messages from partner as read
           const unreadIds = data.filter(m => m.sender_id === partnerId && !m.is_read).map(m => m.id);
           if (unreadIds.length > 0) {
-            if (document.hasFocus()) {
+            if (document.visibilityState === 'visible') {
               await supabase.from('messages').update({ is_read: true, is_delivered: true }).in('id', unreadIds);
             } else {
               const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
@@ -231,7 +288,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       if (channelPinned) supabase.removeChannel(channelPinned);
 
       channelMsg = supabase
-        .channel(`messages:${user.id}:${partnerId}`)
+        .channel(`messages:${user.id}:${partnerId}:${Date.now()}`)
         .on(
           'postgres_changes',
           {
@@ -253,7 +310,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
                  return [...prev, newMsg];
               });
 
-              if (document.hasFocus()) {
+              if (document.visibilityState === 'visible') {
                 supabase.from('messages').update({ is_read: true, is_delivered: true }).eq('id', newMsg.id).then();
               } else {
                 supabase.from('messages').update({ is_delivered: true }).eq('id', newMsg.id).then();
@@ -308,7 +365,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         }
       });
 
-      channelPinned = supabase.channel(`pinned:${user.id}:${partnerId}`)
+      channelPinned = supabase.channel(`pinned:${user.id}:${partnerId}:${Date.now()}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'pinned_messages' }, (payload) => {
           if (payload.eventType === 'INSERT') {
             setPinnedMessages(prev => {
@@ -325,7 +382,32 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     setupSubscriptions();
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMissedMessages();
+        setupSubscriptions();
+      }
+    };
+
+    const handleOnlineEvent = () => {
+      fetchMissedMessages();
+      setupSubscriptions();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnlineEvent);
+
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchMissedMessages();
+      }
+    }, 30_000);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnlineEvent);
+      clearInterval(intervalId);
+      
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (channelMsg) supabase.removeChannel(channelMsg);
       if (channelPinned) supabase.removeChannel(channelPinned);
