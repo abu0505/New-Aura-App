@@ -46,12 +46,14 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     } else if (partnerKey && myKeyPair) {
       if (row.type === 'text' || row.type === 'sticker' || !row.type) {
         try {
-          // NaCl box decryption needs the OTHER party's public key.
-          // - For incoming messages: that's the sender → use sender_public_key from message
-          // - For own sent messages: that's the partner → use partnerKey
+          // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
+          // For a message I SENT:    "theirPublicKey" slot = Partner's public key (partnerKey)
+          // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
           const decryptionKey = isMine
-            ? partnerKey
-            : (row.sender_public_key || partnerKey);
+            ? partnerKey!
+            : (row.sender_public_key || partnerKey!);
+
+          // For ALL messages, we should try the current partnerKey and all historical partner keys as fallbacks.
           const fallbackKeys = (keyHistory || [])
             .filter(k => k !== decryptionKey)
             .map(k => decodeBase64(k));

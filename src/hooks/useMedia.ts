@@ -175,11 +175,13 @@ export function useMedia() {
       const [keyNonce, encryptedKey] = packedKey.split(':');
       if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
 
-      // Use per-message sender key for incoming messages, but use partner key for our own sent messages.
-      // We can determine if it's our own message if the senderPublicKey matches our own.
+      // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
+      // For a message I SENT:    "theirPublicKey" slot = Partner's public key (partnerPublicKey)
+      // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
       const isMine = senderPublicKey === encodeBase64(myKeyPair.publicKey);
       const primaryKey = isMine ? partnerPublicKey : (senderPublicKey || partnerPublicKey);
       
+      // Try current partner key and all historical partner keys as fallbacks
       const fallbackKeys = (partnerKeyHistory || [])
         .filter(k => k !== primaryKey)
         .map(k => decodeBase64(k));

@@ -263,6 +263,24 @@ export async function checkEncryptionStatus(userId: string): Promise<EncryptionS
         localStorage.setItem(KEY_OWNER_STORAGE_KEY, userId);
       }
 
+      // 2. Compare local public key with Supabase's latest public key
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('public_key, backup_secret_key')
+        .eq('id', userId)
+        .single();
+      
+      const localPublicKey = encodeBase64(localKeys.publicKey);
+      
+      // GUARD: If the local key is different from what's in the cloud, it means another device
+      // has generated a new key pair. We MUST force a restore so the local device isn't stale.
+      if (profile?.public_key && profile.public_key !== localPublicKey) {
+        console.warn('[Encryption] Local public key is stale compared to database — forcing restore.');
+        if (profile.backup_secret_key) return 'pin_unlock_required';
+        // If no backup, treat as setup required (though this shouldn't happen)
+        return 'pin_setup_required';
+      }
+
       // CRITICAL: Sync local public key to Supabase on every session start.
       // This ensures the partner always has the correct public key for decryption.
       await syncPublicKey(userId);
