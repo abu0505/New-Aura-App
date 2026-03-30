@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,7 +27,6 @@ export function useTypingIndicator(partnerId: string | undefined) {
         const myId = myUserIdRef.current;
         const theirId = partnerIdRef.current;
 
-        // If we don't know our own ID yet, bail out. We can never be "the partner".
         if (!myId || !theirId) return;
 
         const state = typingChannel.presenceState();
@@ -51,10 +50,11 @@ export function useTypingIndicator(partnerId: string | undefined) {
           typingTimeoutRef.current = null;
         }
 
+        // Safety timeout must be longer than the throttle interval (1s) + network latency
         if (isTyping) {
           typingTimeoutRef.current = setTimeout(() => {
             setPartnerIsTyping(false);
-          }, 1500);
+          }, 3000);
         }
       })
       .subscribe(async (status) => {
@@ -68,11 +68,15 @@ export function useTypingIndicator(partnerId: string | undefined) {
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingChannel.unsubscribe();
+      channelRef.current = null;
     };
   }, [user, partnerId]);
 
-  const sendTypingEvent = async (isTyping: boolean) => {
-    if (!channelRef.current || !user) return;
+  // MUST be useCallback so the reference is stable across renders.
+  // Without this, MessageInput's typing effect re-runs on every parent render,
+  // causing spurious track(true) calls and timeout resets → self-typing + flickering.
+  const sendTypingEvent = useCallback(async (isTyping: boolean) => {
+    if (!channelRef.current) return;
 
     const now = Date.now();
     // Debounce: allow 'false' anytime, but throttle 'true' to once per second
@@ -81,8 +85,8 @@ export function useTypingIndicator(partnerId: string | undefined) {
     }
 
     lastSentRef.current = now;
-    await channelRef.current.track({ user_id: user.id, typing: isTyping });
-  };
+    await channelRef.current.track({ user_id: myUserIdRef.current, typing: isTyping });
+  }, []);
 
   return { partnerIsTyping, sendTypingEvent };
 }

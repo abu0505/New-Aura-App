@@ -35,25 +35,34 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
   }, [text]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Store onTyping in a ref so the effect does not depend on the function reference.
+  // This prevents re-runs when the parent re-renders but text hasn't changed.
+  const onTypingRef = useRef(onTyping);
+  useEffect(() => { onTypingRef.current = onTyping; }, [onTyping]);
 
-  // Typing tracking
+  // Typing tracking — ONLY depends on [text], not on onTyping.
   useEffect(() => {
-    if (!onTyping) return;
+    const typingFn = onTypingRef.current;
+    if (!typingFn) return;
+
     if (text) {
-      onTyping(true);
+      typingFn(true);
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        onTyping(false);
+        onTypingRef.current?.(false);
         typingTimeoutRef.current = null;
-      }, 1500);
-      
+      }, 2000);
+
       return () => {
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+          typingTimeoutRef.current = null;
+        }
       };
     } else {
-      onTyping(false);
+      typingFn(false);
     }
-  }, [text, onTyping]);
+  }, [text]);
 
   const handleSend = () => {
     if ((text.trim() || isUploading) && !disabled) {
@@ -61,7 +70,7 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
         clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = null;
       }
-      if (onTyping) onTyping(false);
+      onTypingRef.current?.(false);
       onSend(text.trim());
       setText('');
       if (textareaRef.current) {
@@ -172,16 +181,8 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
   return (
     <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end bg-gradient-to-t from-[#0d0d15] via-[#0d0d15] to-transparent">
       <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-[#1b1b23]/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border-t border-white/5">
-        {/* Attachment Button */}
-        <button
-          onClick={() => setIsAttachmentOpen(true)}
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
-        >
-          <span className="material-symbols-outlined text-2xl">add_circle</span>
-        </button>
-
         {/* Input Area */}
-        <div className="flex-1 flex items-center bg-[#0d0d15] min-h-[40px] rounded-full px-4 py-1">
+        <div className="flex-1 flex items-center min-h-[40px] py-1">
           <textarea
             ref={textareaRef}
             value={text}
@@ -193,6 +194,14 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
             rows={1}
           />
         </div>
+
+        {/* Attachment Button */}
+        <button
+          onClick={() => setIsAttachmentOpen(true)}
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+        >
+          <span className="material-symbols-outlined text-2xl">add_circle</span>
+        </button>
 
         {/* Send Button */}
         <AnimatePresence mode="popLayout">
