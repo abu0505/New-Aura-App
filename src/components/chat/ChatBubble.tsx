@@ -226,7 +226,7 @@ export default function ChatBubble({
   return (
     <div 
       ref={bubbleRef}
-      className={`flex flex-col relative ${isMine ? 'items-end' : 'items-start'} gap-1 ${isMine ? 'self-end' : 'self-start'}`}
+      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1`}
     >
       {/* Location mini-map message */}
       {locationCoords && locationCoords.length === 2 && (
@@ -316,7 +316,7 @@ export default function ChatBubble({
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchEnd}
-          className={`shadow-lg relative cursor-pointer transition-transform ${showInteractions ? 'scale-95' : ''} ${
+          className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${showInteractions ? 'scale-95' : ''} ${
           isOnlyMedia || isSticker
              ? 'bg-transparent shadow-none' 
              : isMine 
@@ -339,12 +339,12 @@ export default function ChatBubble({
           </motion.span>
         ) : renderMedia()}
         {message.decrypted_content && !isSticker && (
-          <p className={`text-[15px] flex flex-wrap items-end gap-2 ${message.media_url ? 'mt-2' : ''} leading-relaxed font-body`}>
+          <div className={`text-[15px] ${message.media_url ? 'mt-2' : ''} leading-relaxed font-body whitespace-pre-wrap break-words`}>
             {message.decrypted_content}
             {message.is_edited && !message.is_deleted_for_everyone && (
-              <span className={`text-[10px] ${isMine ? 'text-[#13131b]/50' : 'text-[#998f81]/60'}`}>(edited)</span>
+              <span className={`text-[10px] ml-2 inline-block ${isMine ? 'text-[#13131b]/50' : 'text-[#998f81]/60'}`}>(edited)</span>
             )}
-          </p>
+          </div>
         )}
         
         {/* Reaction Badge */}

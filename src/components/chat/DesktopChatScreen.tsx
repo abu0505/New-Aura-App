@@ -201,7 +201,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
               const isLastInGroup = index === messages.length - 1 || messages[index + 1].sender_id !== msg.sender_id;
               
               return (
-                <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-1">
+                <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-1 w-full">
                   {firstUnreadId === msg.id && (
                     <div className="flex items-center gap-6 py-10">
                       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
