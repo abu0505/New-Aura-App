@@ -223,37 +223,27 @@ Deno.serve(async (req) => {
 
     const receiverId = message.receiver_id;
 
-    // SMART SKIP: Only skip if user was online within the last 30 seconds (timestamp-based, not boolean)
-    const { data: receiverProfile } = await supabase
-      .from("profiles")
-      .select("is_online, last_seen")
-      .eq("id", receiverId)
-      .single();
+    // Fetch profile and subscriptions in parallel to save processing time
+    const [profileRes, subsRes] = await Promise.all([
+      supabase.from("profiles").select("is_online, last_seen").eq("id", receiverId).single(),
+      supabase.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", receiverId)
+    ]);
 
+    const receiverProfile = profileRes.data;
+    const subscriptions = subsRes.data;
+
+    // SMART SKIP: Check if user is actively online
     if (receiverProfile?.is_online) {
       const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
-      const now = Date.now();
-      const secondsSinceLastSeen = (now - lastSeen) / 1000;
-      console.log(`[send-push] Receiver is_online=${receiverProfile.is_online}, last_seen=${secondsSinceLastSeen}s ago`);
-
-      // Only skip if genuinely active (heartbeat within last 30 seconds)
-      // Heartbeat fires every 20s, so 30s gives a generous buffer
+      const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
+      
       if (secondsSinceLastSeen < 30) {
-        console.log("[send-push] Skipped: Receiver is genuinely online (heartbeat fresh).");
+        // Reduced logging to optimize speed
         return new Response(JSON.stringify({ success: true, message: "Skipped" }), { headers });
-      } else {
-        console.log("[send-push] is_online=true but heartbeat is stale (>30s). Sending push anyway.");
       }
     }
 
-    // Get push subscriptions
-    const { data: subscriptions, error } = await supabase
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
-      .eq("user_id", receiverId);
-
-    if (error || !subscriptions || subscriptions.length === 0) {
-      console.log(`[send-push] No subscriptions for user ${receiverId}`);
+    if (subsRes.error || !subscriptions || subscriptions.length === 0) {
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
