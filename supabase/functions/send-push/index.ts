@@ -236,12 +236,13 @@ Deno.serve(async (req) => {
       const secondsSinceLastSeen = (now - lastSeen) / 1000;
       console.log(`[send-push] Receiver is_online=${receiverProfile.is_online}, last_seen=${secondsSinceLastSeen}s ago`);
 
-      // Only skip if genuinely active (heartbeat within last 90 seconds)
-      if (secondsSinceLastSeen < 90) {
+      // Only skip if genuinely active (heartbeat within last 30 seconds)
+      // Heartbeat fires every 20s, so 30s gives a generous buffer
+      if (secondsSinceLastSeen < 30) {
         console.log("[send-push] Skipped: Receiver is genuinely online (heartbeat fresh).");
         return new Response(JSON.stringify({ success: true, message: "Skipped" }), { headers });
       } else {
-        console.log("[send-push] is_online=true but heartbeat is stale. Sending push anyway.");
+        console.log("[send-push] is_online=true but heartbeat is stale (>30s). Sending push anyway.");
       }
     }
 
