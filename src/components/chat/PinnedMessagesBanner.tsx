@@ -4,23 +4,37 @@ import { motion } from 'framer-motion';
 interface PinnedMessagesBannerProps {
   pinnedMessages: any[]; 
   messages: any[]; // The full ChatMessage array to resolve message text
+  pinnedMessageDetails?: Record<string, any>;
   onUnpin: (messageId: string) => void;
   onJumpToMessage: (messageId: string) => void;
 }
 
 export default function PinnedMessagesBanner({ 
-  pinnedMessages, messages, onUnpin, onJumpToMessage 
+  pinnedMessages, messages, pinnedMessageDetails = {}, onUnpin, onJumpToMessage 
 }: PinnedMessagesBannerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   if (!pinnedMessages || pinnedMessages.length === 0) return null;
 
-  const currentPin = pinnedMessages[currentIndex];
-  const activeMessage = messages.find(m => m.id === currentPin.message_id);
+  const safeIndex = Math.min(currentIndex, Math.max(0, pinnedMessages.length - 1));
+  const currentPin = pinnedMessages[safeIndex];
+
+  if (!currentPin) return null;
+
+  const activeMessage = messages.find(m => m.id === currentPin.message_id) || pinnedMessageDetails[currentPin.message_id];
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     setCurrentIndex((prev) => (prev + 1) % pinnedMessages.length);
+  };
+  
+  const renderMessageContent = () => {
+    if (!activeMessage) return 'Message from chat history...';
+    if (activeMessage.type === 'image') return '📷 Image';
+    if (activeMessage.type === 'video') return '🎥 Video';
+    if (activeMessage.type === 'document') return '📄 Document';
+    if (activeMessage.type === 'audio') return '🎵 Audio';
+    return activeMessage.decrypted_content || 'Message from chat history...';
   };
 
   return (
@@ -35,10 +49,10 @@ export default function PinnedMessagesBanner({
         <span className="material-symbols-outlined text-[#e6c487] text-xl rotate-45">push_pin</span>
         <div className="flex flex-col truncate">
           <span className="text-[#e6c487] text-xs font-label uppercase tracking-widest font-semibold flex items-center gap-2">
-            Pinned Message {pinnedMessages.length > 1 && `(${currentIndex + 1}/${pinnedMessages.length})`}
+            Pinned Message {pinnedMessages.length > 1 && `(${safeIndex + 1}/${pinnedMessages.length})`}
           </span>
           <span className="text-[#e4e1ed] text-sm truncate max-w-xs md:max-w-md font-body">
-            {activeMessage?.decrypted_content || 'Encrypted message or media...'}
+            {renderMessageContent()}
           </span>
         </div>
       </div>

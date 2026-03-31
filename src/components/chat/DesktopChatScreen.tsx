@@ -1,23 +1,33 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 import { useChat } from '../../hooks/useChat';
+import type { ChatMessage } from '../../hooks/useChat';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { useChatSettings } from '../../hooks/useChatSettings';
+import { useAuth } from '../../contexts/AuthContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
-import PinnedMessagesBanner from './PinnedMessagesBanner';
+// PinnedMessagesBanner removed in favor of integrated view
 import TypingIndicator from './TypingIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 
 export default function DesktopChatScreen({ partner }: { partner: PartnerProfile }) {
+  const { user } = useAuth();
+  const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
+  const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
+  const [showPinDropdown, setShowPinDropdown] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
-  const { messages, pinnedMessages, loading, loadingMore, hasMore, sendMessage, loadMore, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
+  const { messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, hasMore, sendMessage, loadMore, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previousScrollHeightRef = useRef<number>(0);
   const previousMessageCountRef = useRef<number>(0);
   const isInitialMount = useRef(true);
+
+  const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -72,9 +82,49 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
     }
   };
 
-  const handleSend = (text: string, media?: any) => {
-    sendMessage(text, media);
+  const handleSend = (text: string, media?: any, replyToId?: string) => {
+    sendMessage(text, media, replyToId);
   };
+
+  const handleJumpToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    const container = scrollContainerRef.current;
+    
+    if (el && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const offset = elRect.top - containerRect.top + container.scrollTop - 100;
+      container.scrollTo({ top: offset, behavior: 'smooth' });
+      setIsJumpingToPinned(null);
+    } else {
+      if (hasMore && !loadingMore) {
+        setIsJumpingToPinned(id);
+        if (container) previousScrollHeightRef.current = container.scrollHeight;
+        loadMore();
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (isJumpingToPinned && !loadingMore) {
+      const el = document.getElementById(`msg-${isJumpingToPinned}`);
+      const container = scrollContainerRef.current;
+      if (el && container) {
+        setTimeout(() => {
+          const containerRect = container.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          const offset = elRect.top - containerRect.top + container.scrollTop - 100;
+          container.scrollTo({ top: offset, behavior: 'smooth' });
+        }, 100);
+        setIsJumpingToPinned(null);
+      } else if (hasMore) {
+        if (container) previousScrollHeightRef.current = container.scrollHeight;
+        loadMore();
+      } else {
+        setIsJumpingToPinned(null);
+      }
+    }
+  }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
 
   const getBackgroundStyle = () => {
     if (settings?.background_url === 'silk') return { background: '#1a1a24' };
@@ -83,6 +133,20 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
     
     return { background: '#0d0d15' };
   };
+
+  const filteredPinnedMessages = pinnedMessages.filter(p => {
+    if (pinFilter === 'me') return p.pinned_by === user?.id;
+    if (pinFilter === 'partner') return p.pinned_by === partner.id;
+    return true; // 'all'
+  });
+
+  const pinnedMessagesData = useMemo(() => {
+    if (viewMode !== 'pinned') return [];
+    return filteredPinnedMessages
+      .map(p => messages.find(m => m.id === p.message_id) || pinnedMessageDetails[p.message_id])
+      .filter(Boolean)
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }, [filteredPinnedMessages, messages, pinnedMessageDetails, viewMode]);
 
   return (
     <>
@@ -144,28 +208,82 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
             )}
             <span className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors">call</span>
             <span className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors">videocam</span>
-            <span className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors">more_vert</span>
+            <div className="relative">
+              <span 
+                className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors"
+                onClick={() => setShowPinDropdown(!showPinDropdown)}
+              >
+                more_vert
+              </span>
+              {showPinDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowPinDropdown(false)} />
+                  <div className="absolute right-0 top-full mt-4 w-56 rounded-xl bg-[#292932] border border-white/5 shadow-2xl glass-panel z-50 overflow-hidden py-1">
+                    {viewMode === 'pinned' && (
+                      <button 
+                        onClick={() => { setViewMode('chat'); setShowPinDropdown(false); }}
+                        className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-[#e6c487] bg-white/5 font-bold mb-1"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">forum</span>
+                        Back to Normal Chat
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => { setViewMode('pinned'); setPinFilter('me'); setShowPinDropdown(false); }}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 ${pinFilter === 'me' && viewMode === 'pinned' ? 'text-[#e6c487] bg-white/5' : 'text-[#e4e1ed] hover:bg-white/5'}`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">push_pin</span>
+                      My Pinned Messages
+                    </button>
+                    <button 
+                      onClick={() => { setViewMode('pinned'); setPinFilter('partner'); setShowPinDropdown(false); }}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'partner' && viewMode === 'pinned' ? 'text-[#e6c487] bg-white/5' : 'text-[#e4e1ed] hover:bg-white/5'}`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">person</span>
+                      Partner's Pinned Messages
+                    </button>
+                    <button 
+                      onClick={() => { setViewMode('pinned'); setPinFilter('all'); setShowPinDropdown(false); }}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'all' && viewMode === 'pinned' ? 'text-[#e6c487] bg-white/5' : 'text-[#e4e1ed] hover:bg-white/5'}`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">library_add_check</span>
+                      Combined Pinned Messages
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 
-        {/* PINNED MESSAGES - Grid Row 2 */}
-        <div className="w-full relative z-30">
-          <PinnedMessagesBanner
-            pinnedMessages={pinnedMessages}
-            messages={messages}
-            onUnpin={pinMessage}
-            onJumpToMessage={(id) => {
-              const el = document.getElementById(`msg-${id}`);
-              const container = scrollContainerRef.current;
-              if (el && container) {
-                const containerRect = container.getBoundingClientRect();
-                const elRect = el.getBoundingClientRect();
-                const offset = elRect.top - containerRect.top + container.scrollTop - 100;
-                container.scrollTo({ top: offset, behavior: 'smooth' });
-              }
-            }}
-          />
-        </div>
+        {/* PINNED MESSAGES HEADER - Grid Row 2 */}
+        {viewMode === 'pinned' && (
+          <div className="w-full relative z-30 bg-[#e6c487]/5 backdrop-blur-md border-b border-[#e6c487]/20 px-8 py-3 flex items-center justify-between shadow-lg">
+             <div className="flex flex-col">
+                <span className="text-[#e6c487] text-sm font-label uppercase tracking-widest font-bold flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[18px]">push_pin</span>
+                  Pinned Messages
+                </span>
+                <span className="text-[#998f81] text-xs uppercase tracking-widest mt-1">
+                   {pinFilter === 'all' ? 'Combined View' : pinFilter === 'me' ? 'My Pins' : 'Partner\'s Pins'}
+                </span>
+             </div>
+             <button 
+               onClick={() => setViewMode('chat')}
+               className="bg-[#292932] px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest text-[#e6c487] border border-[#e6c487]/30 hover:bg-[#e6c487]/20 transition-colors"
+             >
+               Close View
+             </button>
+          </div>
+        )}
+
+        {/* Jumping loading indicator */}
+        {isJumpingToPinned && (
+          <div className="absolute top-32 left-1/2 -translate-x-1/2 bg-[#292932]/90 text-[#e6c487] text-xs px-4 py-2 rounded-full border border-[#e6c487]/30 shadow-xl backdrop-blur-md flex items-center gap-2 z-40">
+            <span className="w-3 h-3 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></span>
+            Loading history...
+          </div>
+        )}
 
         {/* SCROLLABLE CONTENT - Grid Row 3 (1fr) */}
         <div 
@@ -180,7 +298,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
               </div>
             )}
 
-            {hasMore && !loading && (
+            {hasMore && !loading && viewMode === 'chat' && (
               <div className="flex justify-center py-4">
                 {loadingMore ? (
                   <div className="w-6 h-6 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></div>
@@ -194,41 +312,87 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
               <div className="flex justify-center p-20">
                 <div className="w-8 h-8 border-2 border-[#e6c487] rounded-full border-t-transparent animate-spin"></div>
               </div>
-            ) : messages.map((msg, index) => {
-              const isFirstInGroup = index === 0 || messages[index - 1].sender_id !== msg.sender_id;
-              const isLastInGroup = index === messages.length - 1 || messages[index + 1].sender_id !== msg.sender_id;
+            ) : (() => {
+              const listToRender = viewMode === 'chat' ? messages : pinnedMessagesData;
               
-              return (
-                <div key={msg.id} id={`msg-${msg.id}`} className="flex flex-col gap-1 w-full">
-                  {firstUnreadId === msg.id && (
-                    <div className="flex items-center gap-6 py-10">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
-                      <span className="text-[10px] uppercase tracking-[0.3em] text-[#e6c487]/60 font-bold whitespace-nowrap">New Sanctuary Messages</span>
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
+              if (viewMode === 'pinned' && listToRender.length === 0) {
+                return (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 opacity-60">
+                    <span className="material-symbols-outlined text-5xl text-[#e6c487] mb-4">push_pin</span>
+                    <span className="text-lg text-[#e4e1ed] font-label uppercase tracking-widest text-center">No Pinned Messages Found</span>
+                  </div>
+                );
+              }
+
+              return listToRender.map((msg, index) => {
+                const currentDateStr = new Date(msg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+                const previousMsg = index > 0 ? listToRender[index - 1] : null;
+                const previousDateStr = previousMsg ? new Date(previousMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+                
+                const showDateSeparator = currentDateStr !== previousDateStr;
+                const isFirstInGroup = index === 0 || previousMsg?.sender_id !== msg.sender_id || showDateSeparator;
+                
+                const nextMsg = index < listToRender.length - 1 ? listToRender[index + 1] : null;
+                const nextDateStr = nextMsg ? new Date(nextMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+                const isLastInGroup = index === listToRender.length - 1 || nextMsg?.sender_id !== msg.sender_id || nextDateStr !== currentDateStr;
+
+                return (
+                  <div key={msg.id} id={viewMode === 'chat' ? `msg-${msg.id}` : `pinned-${msg.id}`} className="flex flex-col gap-1 w-full">
+                    {showDateSeparator && (
+                      <div className="flex justify-center my-8">
+                        <span className="bg-[#292932]/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] text-[#998f81] uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
+                          {currentDateStr}
+                        </span>
+                      </div>
+                    )}
+                    {viewMode === 'chat' && firstUnreadId === msg.id && (
+                      <div className="flex items-center gap-6 py-10">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
+                        <span className="text-[10px] uppercase tracking-[0.3em] text-[#e6c487]/60 font-bold whitespace-nowrap">New Sanctuary Messages</span>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
+                      </div>
+                    )}
+                    <div className={`flex w-full ${msg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
+                      <ChatBubble
+                        message={msg}
+                        partnerPublicKey={msg.sender_id === user?.id ? partner.public_key : null}
+                        onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                        onEdit={viewMode === 'chat' ? editMessage : undefined}
+                        onDelete={viewMode === 'chat' ? deleteMessage : undefined}
+                        onPin={pinMessage}
+                        isFirst={isFirstInGroup}
+                        isLast={isLastInGroup}
+                        isPinnedView={viewMode === 'pinned'}
+                        onRedirect={viewMode === 'pinned' ? (id) => {
+                          setViewMode('chat');
+                          handleJumpToMessage(id);
+                        } : undefined}
+                        onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
+                        repliedMessage={msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined}
+                        onJumpToMessage={handleJumpToMessage}
+                      />
                     </div>
-                  )}
-                  <ChatBubble
-                    message={msg}
-                    partnerPublicKey={partner.public_key}
-                    onReact={reactToMessage}
-                    onEdit={editMessage}
-                    onDelete={deleteMessage}
-                    onPin={pinMessage}
-                    isFirst={isFirstInGroup}
-                    isLast={isLastInGroup}
-                  />
-                </div>
-              );
-            })}
-            {partnerIsTyping && <TypingIndicator />}
+                  </div>
+                );
+              });
+            })()}
+            {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </div>
         </div>
 
         {/* INPUT AREA - Grid Row 4 */}
-        <div className="w-full bg-[#0d0d15] relative z-20">
-          <MessageInput onSend={handleSend} onTyping={sendTypingEvent} disabled={!partner.public_key} />
-        </div>
+        {viewMode === 'chat' && (
+          <div className="w-full bg-[#0d0d15] relative z-20">
+            <MessageInput 
+              onSend={handleSend} 
+              onTyping={sendTypingEvent} 
+              disabled={!partner.public_key} 
+              replyingTo={replyingTo}
+              onCancelReply={() => setReplyingTo(null)}
+            />
+          </div>
+        )}
 
         {/* Background Layer */}
         <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-[#0d0d15]" />

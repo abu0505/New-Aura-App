@@ -14,6 +14,11 @@ interface ChatBubbleProps {
   onPin?: (msgId: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
+  isPinnedView?: boolean;
+  onRedirect?: (msgId: string) => void;
+  onReply?: (msgId: string) => void;
+  repliedMessage?: ChatMessage;
+  onJumpToMessage?: (msgId: string) => void;
 }
 
 export default function ChatBubble({ 
@@ -24,12 +29,17 @@ export default function ChatBubble({
   onDelete,
   onPin,
   isFirst = true,
-  isLast = true
+  isLast = true,
+  isPinnedView = false,
+  onRedirect,
+  onReply,
+  repliedMessage,
+  onJumpToMessage
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showInteractions, setShowInteractions] = useState(false);
+  const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [showAllEmojis, setShowAllEmojis] = useState(false);
@@ -37,9 +47,12 @@ export default function ChatBubble({
   const bubbleRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const blobUrlRef = useRef<string | null>(null);
+
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartX = useRef<number | null>(null);
   
-  const isMine = message.is_mine;
-  const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const isMine = isPinnedView ? true : message.is_mine;
+  const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(':', ' : ');
 
   useEffect(() => {
     if (message.media_url && message.media_key && message.media_nonce && partnerPublicKey && !message.is_deleted_for_everyone) {
@@ -66,39 +79,66 @@ export default function ChatBubble({
     };
   }, [message.id, partnerPublicKey, message.is_deleted_for_everyone]);
 
-  // Click outside listener for interaction menu
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) {
-        setShowInteractions(false);
+        setInteractionType('none');
         setShowAllEmojis(false); // Close all emojis when clicking outside
       }
     };
-    if (showInteractions) {
+    if (interactionType !== 'none') {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showInteractions]);
+  }, [interactionType]);
 
   // Hidden if deleted for me
   if (message.is_deleted_for_me) return null;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    setShowInteractions(true);
+    setInteractionType('menu');
   };
 
   const pressTimer = useRef<number | null>(null);
 
-  const handleTouchStart = () => {
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
     // Custom long press interval for mobile (250ms, half of default 500ms)
     pressTimer.current = window.setTimeout(() => {
-      setShowInteractions(true);
+      setInteractionType('menu');
     }, 250);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const currentX = e.touches[0].clientX;
+    const diff = currentX - touchStartX.current;
+    
+    // Partner -> swipe right (diff > 0)
+    // Mine -> swipe left (diff < 0)
+    if (!isMine && diff > 0) {
+      setSwipeOffset(Math.min(diff, 60)); // Max swipe 60px
+    } else if (isMine && diff < 0) {
+      setSwipeOffset(Math.max(diff, -60));
+    }
+    
+    // Cancel long press if swiping
+    if (Math.abs(diff) > 10 && pressTimer.current) {
+      clearTimeout(pressTimer.current);
+    }
   };
 
   const handleTouchEnd = () => {
     if (pressTimer.current) clearTimeout(pressTimer.current);
+    
+    if (touchStartX.current !== null) {
+      if (Math.abs(swipeOffset) > 40 && onReply) {
+        onReply(message.id);
+      }
+      setSwipeOffset(0);
+      touchStartX.current = null;
+    }
   };
 
   const handleEditSubmit = () => {
@@ -226,8 +266,16 @@ export default function ChatBubble({
   return (
     <div 
       ref={bubbleRef}
-      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1`}
+      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group md:overflow-visible ${message.reaction ? 'z-20' : 'z-10'}`}
     >
+      {/* Reply Icon Indicator for Swipe (Mobile) */}
+      <div 
+        className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 text-[#e6c487] transition-opacity md:hidden z-0
+        ${Math.abs(swipeOffset) > 40 ? 'opacity-100 scale-110' : 'opacity-0 scale-90'}`}
+        style={{ [isMine ? 'right' : 'left']: '-40px', transform: `translate(${isMine ? -swipeOffset/2 : -swipeOffset/2}px, -50%)` }}
+      >
+        <span className="material-symbols-outlined text-[18px]">reply</span>
+      </div>
       {/* Location mini-map message */}
       {locationCoords && locationCoords.length === 2 && (
         <div className={`overflow-hidden rounded-2xl shadow-xl border border-white/10 w-[240px] ${isMine ? 'self-end' : 'self-start'} group cursor-pointer`}
@@ -267,56 +315,91 @@ export default function ChatBubble({
         </div>
       )}
       <AnimatePresence>
-        {showInteractions && (
+        {interactionType !== 'none' && (
           <motion.div 
-            initial={{ opacity: 0, y: isMine ? 10 : -10, scale: 0.9 }}
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`absolute z-30 ${isMine ? 'right-0 top-full mt-2' : 'left-0 bottom-full mb-2'} flex flex-col items-center gap-1`}
+            className={`absolute z-30 ${isMine ? 'right-0' : 'left-0'} bottom-full mb-3 flex flex-col items-center gap-1`}
           >
-            {/* Quick Reactions */}
-            <div className={`p-3 bg-[#1b1b23]/95 backdrop-blur-md shadow-2xl border border-white/10 ${showAllEmojis ? 'w-[200px] flex flex-wrap justify-center gap-2 rounded-3xl' : 'flex justify-center gap-2 rounded-full'}`}>
-              {(showAllEmojis ? ['❤️', '😂', '😮', '😢', '🙏', '🔥', '😍', '✨', '🥺', '🎉', '💔', '💯', '🥂', '🫂', '🥰', '😘', '💍', '🙈', '🚀'] : ['❤️', '😂', '😮', '😢', '🔥']).map(emoji => (
-                <button 
-                  key={emoji}
-                  onClick={() => { onReact?.(message.id, emoji); setShowInteractions(false); setShowAllEmojis(false); }}
-                  className="hover:scale-125 transition-transform text-xl active:scale-90"
-                >
-                  {emoji}
-                </button>
-              ))}
-              {!showAllEmojis && (
-                <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-7 h-7 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-[#e6c487]">
-                  <span className="material-symbols-outlined text-sm">add</span>
-                </button>
-              )}
-            </div>
+            {/* Quick Reactions - Only for chat view */}
+            {interactionType === 'reactions' && !isPinnedView && (
+              <div className={`p-3 bg-[#1b1b23]/95 backdrop-blur-md shadow-2xl border border-white/10 ${showAllEmojis ? 'w-[200px] flex flex-wrap justify-center gap-2 rounded-3xl' : 'flex justify-center gap-2 rounded-full'}`}>
+                {(showAllEmojis ? ['❤️', '😂', '😮', '😢', '🙏', '🔥', '😍', '✨', '🥺', '🎉', '💔', '💯', '🥂', '🫂', '🥰', '😘', '💍', '🙈', '🚀'] : ['❤️', '😂', '😮', '😢', '🔥']).map(emoji => (
+                  <button 
+                    key={emoji}
+                    onClick={() => { onReact?.(message.id, emoji); setInteractionType('none'); setShowAllEmojis(false); }}
+                    className="hover:scale-125 transition-transform text-xl active:scale-90"
+                  >
+                    {emoji}
+                  </button>
+                ))}
+                {!showAllEmojis && (
+                  <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-7 h-7 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-[#e6c487]">
+                    <span className="material-symbols-outlined text-sm">add</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Context Menu Actions */}
-            <MessageContextMenu 
-              isMine={isMine}
-              onPin={() => { onPin?.(message.id); setShowInteractions(false); }}
-              onEdit={message.type === 'text' && !message.is_deleted_for_everyone && !message.decryption_error ? () => { 
-                setIsEditing(true);
-                setEditContent(message.decrypted_content || '');
-                setShowInteractions(false);
-                // Focus textarea after it renders
-                setTimeout(() => editInputRef.current?.focus(), 0);
-              } : undefined}
-              onDeleteForMe={() => { onDelete?.(message.id, false); setShowInteractions(false); }}
-              onDeleteForEveryone={() => { onDelete?.(message.id, true); setShowInteractions(false); }}
-            />
+            {interactionType === 'menu' && (
+              isPinnedView ? (
+                <div className="flex flex-col gap-1 w-[160px]">
+                  <button 
+                    onClick={() => { onRedirect?.(message.id); setInteractionType('none'); }}
+                    className="flex items-center justify-between w-full px-4 py-3 bg-[#1b1b23]/95 hover:bg-white/10 backdrop-blur-md rounded-2xl border border-white/5 transition-colors text-sm text-[#e4e1ed]"
+                  >
+                    Jump to Message
+                    <span className="material-symbols-outlined text-[16px] text-[#e6c487]">open_in_new</span>
+                  </button>
+                  <button 
+                    onClick={() => { onPin?.(message.id); setInteractionType('none'); }}
+                    className="flex items-center justify-between w-full px-4 py-3 bg-[#1b1b23]/95 hover:bg-white/10 backdrop-blur-md rounded-2xl border border-white/5 transition-colors text-sm text-red-400"
+                  >
+                    Unpin
+                    <span className="material-symbols-outlined text-[16px]">push_pin</span>
+                  </button>
+                </div>
+              ) : (
+                <MessageContextMenu 
+                  isMine={isMine}
+                  onPin={() => { onPin?.(message.id); setInteractionType('none'); }}
+                  onEdit={message.type === 'text' && !message.is_deleted_for_everyone && !message.decryption_error ? () => { 
+                    setIsEditing(true);
+                    setEditContent(message.decrypted_content || '');
+                    setInteractionType('none');
+                    setTimeout(() => editInputRef.current?.focus(), 0);
+                  } : undefined}
+                  onDeleteForMe={() => { onDelete?.(message.id, false); setInteractionType('none'); }}
+                  onDeleteForEveryone={() => { onDelete?.(message.id, true); setInteractionType('none'); }}
+                />
+              )
+            )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      <motion.div 
+        animate={{ x: swipeOffset }} 
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        className={`flex items-center gap-2 w-full ${isMine ? 'justify-end' : 'justify-start'} relative z-10`}
+      >
+        {isMine && !isPinnedView && (
+          <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <button onClick={handleContextMenu} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">more_vert</span></button>
+            <button onClick={() => onReply?.(message.id)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">reply</span></button>
+            <button onClick={() => setInteractionType('reactions')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">add_reaction</span></button>
+          </div>
+        )}
 
       {!isLocation && (
         <div 
           onContextMenu={handleContextMenu}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          onTouchMove={handleTouchEnd}
-          className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${showInteractions ? 'scale-95' : ''} ${
+          onTouchMove={handleTouchMove}
+          className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${interactionType !== 'none' ? 'scale-95 z-40' : ''} ${
           isOnlyMedia || isSticker
              ? 'bg-transparent shadow-none' 
              : isMine 
@@ -338,18 +421,31 @@ export default function ChatBubble({
             {message.decrypted_content}
           </motion.span>
         ) : renderMedia()}
+        
+        {/* Reply Quote Block */}
+        {repliedMessage && !isOnlyMedia && !isSticker && (
+          <div 
+            onClick={(e) => { e.stopPropagation(); onJumpToMessage?.(repliedMessage.id); }}
+            className={`mb-2 pl-3 py-1.5 pr-2 rounded-lg cursor-pointer transition-colors border-l-2 active:scale-95 ${isMine ? 'bg-black/10 border-l-[#13131b]/30 hover:bg-black/20 text-[#13131b]/80' : 'bg-white/5 border-l-[#e6c487]/50 hover:bg-white/10 text-[#e4e1ed]/80'}`}
+          >
+            <div className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1 ${isMine ? 'text-[#13131b]' : 'text-[#e6c487]'}`}>
+              <span className="material-symbols-outlined text-[10px]">reply</span>
+              {repliedMessage.is_mine ? 'You' : 'Partner'}
+            </div>
+            <div className="text-xs truncate opacity-80 max-w-[200px]">
+              {repliedMessage.decrypted_content || (repliedMessage.type !== 'text' ? `[${repliedMessage.type}]` : 'Message')}
+            </div>
+          </div>
+        )}
         {message.decrypted_content && !isSticker && (
           <div className={`text-[15px] ${message.media_url ? 'mt-2' : ''} leading-relaxed font-body whitespace-pre-wrap break-words`}>
             {message.decrypted_content}
-            {message.is_edited && !message.is_deleted_for_everyone && (
-              <span className={`text-[10px] ml-2 inline-block ${isMine ? 'text-[#13131b]/50' : 'text-[#998f81]/60'}`}>(edited)</span>
-            )}
           </div>
         )}
         
         {/* Reaction Badge */}
         {message.reaction && (
-          <div className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-[#292932] border border-white/10 rounded-full px-2 py-0.5 text-sm shadow-xl z-10`}>
+          <div className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-[#292932] border border-white/10 rounded-full px-2 py-0.5 text-sm shadow-xl z-30`}>
             {message.reaction}
           </div>
         )}
@@ -363,6 +459,9 @@ export default function ChatBubble({
                 ? 'text-[#13131b]/80 font-bold' 
                 : 'text-[#e4e1ed]/60 font-bold'
           }`}>
+            {message.is_edited && !message.is_deleted_for_everyone && (
+              <span className="mr-1 opacity-70">(edited) </span>
+            )}
             {time}
           </span>
           {isMine && !message.is_deleted_for_everyone && (
@@ -382,7 +481,16 @@ export default function ChatBubble({
           )}
         </div>
       </div>
-    )}
-  </div>
-);
+      )}
+
+      {!isMine && !isPinnedView && (
+        <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <button onClick={() => setInteractionType('reactions')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">add_reaction</span></button>
+          <button onClick={() => onReply?.(message.id)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">reply</span></button>
+          <button onClick={handleContextMenu} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">more_vert</span></button>
+        </div>
+      )}
+      </motion.div>
+    </div>
+  );
 }

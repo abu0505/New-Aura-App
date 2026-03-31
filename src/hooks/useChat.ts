@@ -19,6 +19,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [pinnedMessages, setPinnedMessages] = useState<Database['public']['Tables']['pinned_messages']['Row'][]>([]);
+  const [pinnedMessageDetails, setPinnedMessageDetails] = useState<Record<string, ChatMessage>>({});
   const [dataLoading, setDataLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -414,6 +415,47 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     };
   }, [user, partnerId, encryptionStatus]); // Added encryptionStatus to re-subscribe if needed or at least re-trigger
 
+  // Fetch missing pinned message details
+  useEffect(() => {
+    if (!pinnedMessages || pinnedMessages.length === 0) return;
+    
+    // Find message IDs that are NOT in the `messages` array AND NOT already in `pinnedMessageDetails`
+    const missingIds = pinnedMessages
+      .map(p => p.message_id)
+      .filter(id => !messages.find(m => m.id === id) && !pinnedMessageDetails[id]);
+
+    if (missingIds.length === 0) return;
+
+    const fetchDetails = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .in('id', missingIds);
+          
+        if (error) throw error;
+          
+        if (data && data.length > 0) {
+          const myKeyPair = getStoredKeyPair();
+          const currentPartnerKey = partnerKeyRef.current;
+          const currentKeyHistory = partnerKeyHistoryRef.current;
+          
+          const decryptedDetails: Record<string, ChatMessage> = {};
+          for (const row of data) {
+            const decrypted = decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory);
+            decryptedDetails[row.id] = decrypted;
+          }
+
+          setPinnedMessageDetails(prev => ({ ...prev, ...decryptedDetails }));
+        }
+      } catch (err) {
+        console.error('Error fetching pinned messages:', err);
+      }
+    };
+
+    fetchDetails();
+  }, [pinnedMessages, messages, pinnedMessageDetails, decryptRow]);
+
   const sendMessage = async (
     text: string, 
     media?: { url: string, media_key: string, media_nonce: string, type: string },
@@ -570,7 +612,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
   const pinMessage = async (messageId: string) => {
     if (!user) return;
-    const existing = pinnedMessages.find(p => p.message_id === messageId);
+    const existing = pinnedMessages.find(p => p.message_id === messageId && p.pinned_by === user.id);
     if (existing) {
       setPinnedMessages(prev => prev.filter(p => p.id !== existing.id));
       await supabase.from('pinned_messages').delete().eq('id', existing.id);
@@ -640,7 +682,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
   return { 
     messages, 
-    pinnedMessages, 
+    pinnedMessages,
+    pinnedMessageDetails,
     loading: dataLoading || (encryptionStatus !== 'ready' && encryptionStatus !== 'error' && encryptionStatus !== 'pin_setup_required'), 
     loadingMore,
     hasMore,

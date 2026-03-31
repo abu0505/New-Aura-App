@@ -7,13 +7,17 @@ import AudioRecorder from './AudioRecorder';
 import QualityChoiceModal from './QualityChoiceModal';
 import { StickerPicker } from './StickerPicker';
 
+import type { ChatMessage } from '../../hooks/useChat';
+
 interface MessageInputProps {
-  onSend: (text: string, media?: { url: string, media_key: string, media_nonce: string, type: string }) => void;
+  onSend: (text: string, media?: { url: string, media_key: string, media_nonce: string, type: string }, replyToId?: string) => void;
   onTyping?: (isTyping: boolean) => void;
   disabled?: boolean;
+  replyingTo?: ChatMessage | null;
+  onCancelReply?: () => void;
 }
 
-export default function MessageInput({ onSend, onTyping, disabled }: MessageInputProps) {
+export default function MessageInput({ onSend, onTyping, disabled, replyingTo, onCancelReply }: MessageInputProps) {
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -88,10 +92,12 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
 
   const handleSend = () => {
     if ((text.trim() || isUploading) && !disabled) {
+      if (isUploading) return;
       clearTypingTimers();
       onTypingRef.current?.(false);
-      onSend(text.trim());
+      onSend(text.trim(), undefined, replyingTo?.id);
       setText('');
+      if (onCancelReply) onCancelReply();
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
         textareaRef.current.focus();
@@ -118,7 +124,8 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
         navigator.geolocation.getCurrentPosition(
           (pos) => {
              // Send as a structured location payload for mini-map rendering
-             onSend(`${pos.coords.latitude},${pos.coords.longitude}`, { url: '', media_key: '', media_nonce: '', type: 'location' });
+             onSend(`${pos.coords.latitude},${pos.coords.longitude}`, { url: '', media_key: '', media_nonce: '', type: 'location' }, replyingTo?.id);
+             if (onCancelReply) onCancelReply();
           },
           () => alert('Location permission denied.')
         );
@@ -169,18 +176,20 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
             media_key: uploaded.media_key,
             media_nonce: uploaded.media_nonce,
             type: uploaded.type
-          });
+          }, i === 0 ? replyingTo?.id : undefined);
         }
       }
     } finally {
       setIsUploading(false);
       setPendingFiles([]);
       if (fileInputRef.current) fileInputRef.current.value = '';
+      if (onCancelReply) onCancelReply();
     }
   };
 
   const handleAudioComplete = (media: any) => {
-    onSend('', media);
+    onSend('', media, replyingTo?.id);
+    if (onCancelReply) onCancelReply();
     setIsRecording(false);
   };
 
@@ -199,6 +208,38 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
 
   return (
     <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end bg-gradient-to-t from-[#0d0d15] via-[#0d0d15] to-transparent">
+      
+      <AnimatePresence>
+        {replyingTo && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            className="w-full max-w-[720px] mx-auto mb-2 bg-[#292932]/90 backdrop-blur-md rounded-2xl px-5 py-3 shadow-lg border-l-4 border-l-[#e6c487] border border-white/5 relative overflow-hidden flex-shrink-0"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col flex-1 pr-6 overflow-hidden">
+                <span className="text-[#e6c487] text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[14px]">reply</span>
+                  Replying to {replyingTo.is_mine ? 'Yourself' : 'Partner'}
+                </span>
+                <span className="text-[#e4e1ed]/80 text-sm truncate font-medium">
+                  {replyingTo.decrypted_content || (replyingTo.type !== 'text' ? `[${replyingTo.type}]` : 'Message...')}
+                </span>
+              </div>
+              <button 
+                onClick={onCancelReply} 
+                className="absolute top-1/2 -translate-y-1/2 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/5 text-[#998f81] hover:text-[#e4e1ed] hover:bg-white/10 transition-colors z-10"
+              >
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            {/* Subtle background glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#e6c487]/10 to-transparent blur-2xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-[#1b1b23]/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border-t border-white/5">
         {/* Input Area */}
         <div className="flex-1 flex items-center min-h-[40px] py-1">
@@ -209,7 +250,7 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
             onKeyDown={handleKeyDown}
             placeholder={isUploading ? "Securing media..." : "Write something beautiful..."}
             disabled={disabled || isUploading}
-            className="w-full bg-transparent border-none text-sm text-[#e4e1ed] placeholder:text-[#998f81]/50 placeholder:italic resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
+            className="w-full pl-3 bg-transparent border-none text-sm text-[#e4e1ed] placeholder:text-[#998f81]/50 placeholder:italic resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
             rows={1}
           />
         </div>
@@ -282,7 +323,8 @@ export default function MessageInput({ onSend, onTyping, disabled }: MessageInpu
               >
                 <StickerPicker 
                   onSelect={(sticker) => {
-                    onSend(sticker.emoji, { url: '', media_key: '', media_nonce: '', type: 'sticker' });
+                    onSend(sticker.emoji, { url: '', media_key: '', media_nonce: '', type: 'sticker' }, replyingTo?.id);
+                    if (onCancelReply) onCancelReply();
                     setIsStickerPickerOpen(false);
                   }}
                   onClose={() => setIsStickerPickerOpen(false)}

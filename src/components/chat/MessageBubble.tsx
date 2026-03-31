@@ -11,7 +11,7 @@ interface MessageBubbleProps {
 export default function MessageBubble({ message, isOwn, showTail = true }: MessageBubbleProps) {
   // TODO: Decrypt message content in the future. For now assume plaintext for UI testing.
   const content = message.ciphertext;
-  const time = format(new Date(message.created_at || new Date()), 'HH:mm');
+  const time = format(new Date(message.created_at || new Date()), 'HH : mm');
   
   // Status logic
   let statusIcon = null;
