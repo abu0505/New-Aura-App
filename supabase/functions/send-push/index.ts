@@ -1,19 +1,190 @@
 // @ts-nocheck
-import webpush from "https://esm.sh/web-push@3.6.7";
+// deno-lint-ignore-file
+/// <reference types="https://esm.sh/v135/@supabase/functions-js/src/edge-runtime.d.ts" />
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.6";
 
-// Set VAPID details from environment variables
-const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") || "";
-const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") || "";
+// ── VAPID helpers (Deno-native crypto, no npm:web-push needed) ────────────────
 
-webpush.setVapidDetails(
-  "mailto:your-email@example.com",
-  vapidPublicKey,
-  vapidPrivateKey
-);
+function base64UrlToUint8Array(base64Url: string): Uint8Array {
+  const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
+  const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const arr = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+  return arr;
+}
 
-export default async function (req: Request) {
-  // CORS headers
+function uint8ArrayToBase64Url(arr: Uint8Array): string {
+  let binary = "";
+  for (const byte of arr) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function concatUint8Arrays(...arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((sum, a) => sum + a.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const a of arrays) {
+    result.set(a, offset);
+    offset += a.length;
+  }
+  return result;
+}
+
+// HKDF-SHA256 extract + expand (RFC 5869)
+async function hkdf(
+  salt: Uint8Array,
+  ikm: Uint8Array,
+  info: Uint8Array,
+  length: number
+): Promise<Uint8Array> {
+  const key = await crypto.subtle.importKey("raw", salt.length ? salt : new Uint8Array(32), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const prk = new Uint8Array(await crypto.subtle.sign("HMAC", key, ikm));
+  const infoKey = await crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const t = new Uint8Array(await crypto.subtle.sign("HMAC", infoKey, concatUint8Arrays(info, new Uint8Array([1]))));
+  return t.slice(0, length);
+}
+
+function createInfo(type: string, clientPublicKey: Uint8Array, serverPublicKey: Uint8Array): Uint8Array {
+  const encoder = new TextEncoder();
+  const typeBytes = encoder.encode(type);
+  const header = encoder.encode("Content-Encoding: ");
+  const nul = new Uint8Array([0]);
+
+  // "Content-Encoding: <type>\0P-256\0\0A<client_key>\0A<server_key>"
+  const p256 = encoder.encode("P-256");
+  const clientLen = new Uint8Array([0, clientPublicKey.length]);
+  const serverLen = new Uint8Array([0, serverPublicKey.length]);
+
+  return concatUint8Arrays(
+    header, typeBytes, nul,
+    p256, nul,
+    clientLen, clientPublicKey,
+    serverLen, serverPublicKey
+  );
+}
+
+async function encryptPayload(
+  clientPublicKeyBytes: Uint8Array,
+  clientAuthBytes: Uint8Array,
+  payload: Uint8Array
+): Promise<{ ciphertext: Uint8Array; salt: Uint8Array; serverPublicKeyBytes: Uint8Array }> {
+  // Generate an ephemeral ECDH key pair
+  const serverKeys = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const serverPublicKeyRaw = new Uint8Array(await crypto.subtle.exportKey("raw", serverKeys.publicKey));
+
+  // Import client public key
+  const clientPublicKey = await crypto.subtle.importKey("raw", clientPublicKeyBytes, { name: "ECDH", namedCurve: "P-256" }, false, []);
+
+  // ECDH shared secret
+  const sharedSecret = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: clientPublicKey }, serverKeys.privateKey, 256));
+
+  // Generate random salt
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+
+  // HKDF for auth secret
+  const encoder = new TextEncoder();
+  const authInfo = encoder.encode("Content-Encoding: auth\0");
+  const prk = await hkdf(clientAuthBytes, sharedSecret, authInfo, 32);
+
+  // HKDF for content encryption key
+  const cekInfo = createInfo("aesgcm", clientPublicKeyBytes, serverPublicKeyRaw);
+  const contentEncryptionKey = await hkdf(salt, prk, cekInfo, 16);
+
+  // HKDF for nonce
+  const nonceInfo = createInfo("nonce", clientPublicKeyBytes, serverPublicKeyRaw);
+  const nonce = await hkdf(salt, prk, nonceInfo, 12);
+
+  // Pad payload (2-byte padding length prefix + payload)
+  const paddingLength = 0;
+  const paddedPayload = new Uint8Array(2 + paddingLength + payload.length);
+  paddedPayload[0] = (paddingLength >> 8) & 0xff;
+  paddedPayload[1] = paddingLength & 0xff;
+  paddedPayload.set(payload, 2 + paddingLength);
+
+  // AES-128-GCM encrypt
+  const aesKey = await crypto.subtle.importKey("raw", contentEncryptionKey, { name: "AES-GCM" }, false, ["encrypt"]);
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, paddedPayload));
+
+  return { ciphertext: encrypted, salt, serverPublicKeyBytes: serverPublicKeyRaw };
+}
+
+async function createVapidAuthHeader(
+  audience: string,
+  subject: string,
+  vapidPublicKey: Uint8Array,
+  vapidPrivateKey: Uint8Array
+): Promise<{ authorization: string; cryptoKey: string }> {
+  // JWT header + claims
+  const header = { typ: "JWT", alg: "ES256" };
+  const now = Math.floor(Date.now() / 1000);
+  const claims = { aud: audience, exp: now + 12 * 3600, sub: subject };
+
+  const encodedHeader = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(header)));
+  const encodedClaims = uint8ArrayToBase64Url(new TextEncoder().encode(JSON.stringify(claims)));
+  const unsignedToken = `${encodedHeader}.${encodedClaims}`;
+
+  // Import the VAPID private key as ECDSA P-256
+  // The private key is 32 bytes raw. We need to construct a JWK.
+  const publicKeyUncompressed = vapidPublicKey; // 65 bytes uncompressed
+  const x = uint8ArrayToBase64Url(publicKeyUncompressed.slice(1, 33));
+  const y = uint8ArrayToBase64Url(publicKeyUncompressed.slice(33, 65));
+  const d = uint8ArrayToBase64Url(vapidPrivateKey);
+
+  const jwk = { kty: "EC", crv: "P-256", x, y, d };
+
+  const signingKey = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+  const signature = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, signingKey, new TextEncoder().encode(unsignedToken)));
+
+  // Convert from WebCrypto DER-ish format to raw r||s (64 bytes)
+  // WebCrypto ECDSA P-256 sign returns 64 bytes (r || s) already for P-256
+  const token = `${unsignedToken}.${uint8ArrayToBase64Url(signature)}`;
+
+  const publicKeyBase64Url = uint8ArrayToBase64Url(vapidPublicKey);
+  return {
+    authorization: `vapid t=${token}, k=${publicKeyBase64Url}`,
+    cryptoKey: `p256ecdsa=${publicKeyBase64Url}`,
+  };
+}
+
+async function sendWebPush(
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
+  payload: string,
+  vapidPublicKey: Uint8Array,
+  vapidPrivateKey: Uint8Array,
+  vapidSubject: string
+): Promise<Response> {
+  const clientPublicKey = base64UrlToUint8Array(subscription.keys.p256dh);
+  const clientAuth = base64UrlToUint8Array(subscription.keys.auth);
+  const payloadBytes = new TextEncoder().encode(payload);
+
+  const { ciphertext, salt, serverPublicKeyBytes } = await encryptPayload(clientPublicKey, clientAuth, payloadBytes);
+
+  const endpointUrl = new URL(subscription.endpoint);
+  const audience = `${endpointUrl.protocol}//${endpointUrl.host}`;
+
+  const vapidHeaders = await createVapidAuthHeader(audience, vapidSubject, vapidPublicKey, vapidPrivateKey);
+
+  const response = await fetch(subscription.endpoint, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/octet-stream",
+      "Content-Encoding": "aesgcm",
+      "Encryption": `salt=${uint8ArrayToBase64Url(salt)}`,
+      "Crypto-Key": `dh=${uint8ArrayToBase64Url(serverPublicKeyBytes)};${vapidHeaders.cryptoKey}`,
+      "Authorization": vapidHeaders.authorization,
+      "TTL": "86400",
+      "Urgency": "high",
+    },
+    body: ciphertext,
+  });
+
+  return response;
+}
+
+// ── Main Edge Function ────────────────────────────────────────────────────────
+
+Deno.serve(async (req) => {
   const headers = new Headers({
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -27,81 +198,106 @@ export default async function (req: Request) {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    // Note: We use the SERVICE ROLE KEY here to forcefully check profiles and delete stale subscriptions
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    const vapidPublicKeyStr = Deno.env.get("VAPID_PUBLIC_KEY") || "";
+    const vapidPrivateKeyStr = Deno.env.get("VAPID_PRIVATE_KEY") || "";
+    const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:aura-app@example.com";
+
+    if (!vapidPublicKeyStr || !vapidPrivateKeyStr) {
+      console.error("VAPID keys are not configured!");
+      return new Response(JSON.stringify({ error: "VAPID keys not set" }), { status: 500, headers });
+    }
+
+    const vapidPublicKey = base64UrlToUint8Array(vapidPublicKeyStr);
+    const vapidPrivateKey = base64UrlToUint8Array(vapidPrivateKeyStr);
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
     const message = body.record || body;
-    
+    console.log("[send-push] Received:", JSON.stringify({ id: message?.id, sender_id: message?.sender_id, receiver_id: message?.receiver_id }));
+
     if (!message || !message.receiver_id) {
-       return new Response(JSON.stringify({ error: "No receiver_id in payload" }), { status: 400, headers });
+      return new Response(JSON.stringify({ error: "No receiver_id in payload" }), { status: 400, headers });
     }
 
     const receiverId = message.receiver_id;
 
-    // SMART SKIP: Check if the receiver is currently online
+    // SMART SKIP: Only skip if user was online within the last 30 seconds (timestamp-based, not boolean)
     const { data: receiverProfile } = await supabase
       .from("profiles")
-      .select("is_online, updated_at")
+      .select("is_online, last_seen")
       .eq("id", receiverId)
       .single();
 
     if (receiverProfile?.is_online) {
-      console.log(`User ${receiverId} is currently online. Skipping push notification (Smart-Skip).`);
-      return new Response(JSON.stringify({ success: true, message: "Skipped: Receiver is online" }), { headers });
+      const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
+      const now = Date.now();
+      const secondsSinceLastSeen = (now - lastSeen) / 1000;
+      console.log(`[send-push] Receiver is_online=${receiverProfile.is_online}, last_seen=${secondsSinceLastSeen}s ago`);
+
+      // Only skip if genuinely active (heartbeat within last 90 seconds)
+      if (secondsSinceLastSeen < 90) {
+        console.log("[send-push] Skipped: Receiver is genuinely online (heartbeat fresh).");
+        return new Response(JSON.stringify({ success: true, message: "Skipped" }), { headers });
+      } else {
+        console.log("[send-push] is_online=true but heartbeat is stale. Sending push anyway.");
+      }
     }
 
-    // Get the receiver's push subscriptions
+    // Get push subscriptions
     const { data: subscriptions, error } = await supabase
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", receiverId);
 
     if (error || !subscriptions || subscriptions.length === 0) {
-      console.log(`No active push subscriptions found for user ${receiverId}`);
+      console.log(`[send-push] No subscriptions for user ${receiverId}`);
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
-    // PRIVACY-FIRST NOTIFICATION: We intentionally DO NOT send the sender_name or ciphertext. 
-    // The service worker will just show "You have a new message 💌"
+    console.log(`[send-push] Found ${subscriptions.length} subscription(s). Sending…`);
+
     const pushPayload = JSON.stringify({
       messageId: message.id,
-      url: "/" 
+      url: "/",
     });
 
     let successCount = 0;
-    
-    const sendPromises = subscriptions.map(async (subRecord: any) => {
+
+    const sendPromises = subscriptions.map(async (sub: any) => {
       try {
-        const subscription = {
-          endpoint: subRecord.endpoint,
-          keys: {
-            p256dh: subRecord.p256dh,
-            auth: subRecord.auth
-          }
-        };
-        await webpush.sendNotification(subscription, pushPayload);
-        successCount++;
+        const response = await sendWebPush(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          pushPayload,
+          vapidPublicKey,
+          vapidPrivateKey,
+          vapidSubject
+        );
+
+        console.log(`[send-push] FCM response: ${response.status} ${response.statusText}`);
+
+        if (response.status === 201 || response.status === 200) {
+          successCount++;
+        } else if (response.status === 410 || response.status === 404) {
+          console.log("[send-push] Subscription expired, deleting from DB.");
+          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
+        } else {
+          const respBody = await response.text();
+          console.error(`[send-push] Push failed: ${response.status} - ${respBody}`);
+        }
       } catch (err: any) {
-         console.error("Error sending push notification using sub", err);
-         if (err.statusCode === 410 || err.statusCode === 404) {
-           // Subscription has expired/unsubscribed/revoked, delete it from our DB
-           await supabase
-             .from("push_subscriptions")
-             .delete()
-             .eq("endpoint", subRecord.endpoint)
-             .eq("user_id", receiverId);
-         }
+        console.error("[send-push] Error sending to endpoint:", err.message);
       }
     });
 
     await Promise.all(sendPromises);
 
+    console.log(`[send-push] Done. Sent to ${successCount}/${subscriptions.length} subscriptions.`);
     return new Response(JSON.stringify({ success: true, sentTo: successCount }), { headers });
 
   } catch (err: any) {
-    console.error("Function error:", err.message);
+    console.error("[send-push] Fatal error:", err.message, err.stack);
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
   }
-}
+});
