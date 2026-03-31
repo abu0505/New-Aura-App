@@ -13,7 +13,7 @@ import { useStreaks } from './hooks/useStreaks';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import KeySetupModal from './components/auth/KeySetupModal'; 
-import { subscribeToPushNotifications, requestNotificationPermission } from './lib/pushNotifications';
+import { initPushNotifications } from './lib/pushNotifications';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
 
@@ -28,6 +28,7 @@ function InnerApp({
   useOnlineStatus(activeTab);
   const { isLocked, hasAppPin } = useAppLock();
   const [showLockModal, setShowLockModal] = useState(false);
+  const { encryptionStatus } = useAuth();
 
   // Initial Lock Modal State - show it once on load if locked
   useEffect(() => {
@@ -43,20 +44,16 @@ function InnerApp({
     }
   }, [isLocked, activeTab]);
 
-  // Handle push notification setup
+  // Handle push notification setup silently
   useEffect(() => {
-    if (session?.user?.id) {
+    if (session?.user?.id && encryptionStatus === 'ready') {
       const setupPush = async () => {
-        const granted = await requestNotificationPermission();
-        if (granted) {
-          await subscribeToPushNotifications(session.user.id);
-        }
+        await initPushNotifications(session.user.id);
       };
-      // Delay slightly to ensure service worker is ready from main.tsx registration
       const timer = setTimeout(setupPush, 2000);
       return () => clearTimeout(timer);
     }
-  }, [session?.user?.id]);
+  }, [session?.user?.id, encryptionStatus]);
 
   // Handle global tab switching
   useEffect(() => {

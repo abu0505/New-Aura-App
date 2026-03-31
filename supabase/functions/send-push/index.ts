@@ -27,13 +27,11 @@ export default async function (req: Request) {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+    // Note: We use the SERVICE ROLE KEY here to forcefully check profiles and delete stale subscriptions
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
-    console.log("Received webhook payload:", body);
-
-    // If triggered by a database webhook on insertion to "messages"
     const message = body.record || body;
     
     if (!message || !message.receiver_id) {
@@ -41,16 +39,18 @@ export default async function (req: Request) {
     }
 
     const receiverId = message.receiver_id;
-    const senderId = message.sender_id;
 
-    // Get the sender's details for the notification title
-    const { data: sender } = await supabase
+    // SMART SKIP: Check if the receiver is currently online
+    const { data: receiverProfile } = await supabase
       .from("profiles")
-      .select("display_name")
-      .eq("id", senderId)
+      .select("is_online, updated_at")
+      .eq("id", receiverId)
       .single();
 
-    const senderName = sender?.display_name || "Someone";
+    if (receiverProfile?.is_online) {
+      console.log(`User ${receiverId} is currently online. Skipping push notification (Smart-Skip).`);
+      return new Response(JSON.stringify({ success: true, message: "Skipped: Receiver is online" }), { headers });
+    }
 
     // Get the receiver's push subscriptions
     const { data: subscriptions, error } = await supabase
@@ -63,17 +63,15 @@ export default async function (req: Request) {
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
-    // Since it's E2EE, we send the ciphertext to the service worker to decrypt locally
+    // PRIVACY-FIRST NOTIFICATION: We intentionally DO NOT send the sender_name or ciphertext. 
+    // The service worker will just show "You have a new message 💌"
     const pushPayload = JSON.stringify({
-      title: `Secure message from ${senderName}`,
-      body: "You have a new encrypted message",
       messageId: message.id,
-      ciphertext: message.encrypted_content || message.ciphertext,
-      nonce: message.nonce,
-      senderId: senderId,
-      url: "/" // The URL the user should be taken to when clicking the notification
+      url: "/" 
     });
 
+    let successCount = 0;
+    
     const sendPromises = subscriptions.map(async (subRecord: any) => {
       try {
         const subscription = {
@@ -84,14 +82,15 @@ export default async function (req: Request) {
           }
         };
         await webpush.sendNotification(subscription, pushPayload);
-        console.log("Push notification sent successfully");
+        successCount++;
       } catch (err: any) {
-         console.error("Error sending push notification to a subscription", err);
+         console.error("Error sending push notification using sub", err);
          if (err.statusCode === 410 || err.statusCode === 404) {
-           // Subscription has expired or is no longer valid, we should delete it
+           // Subscription has expired/unsubscribed/revoked, delete it from our DB
            await supabase
              .from("push_subscriptions")
              .delete()
+             .eq("endpoint", subRecord.endpoint)
              .eq("user_id", receiverId);
          }
       }
@@ -99,7 +98,7 @@ export default async function (req: Request) {
 
     await Promise.all(sendPromises);
 
-    return new Response(JSON.stringify({ success: true, count: subscriptions.length }), { headers });
+    return new Response(JSON.stringify({ success: true, sentTo: successCount }), { headers });
 
   } catch (err: any) {
     console.error("Function error:", err.message);

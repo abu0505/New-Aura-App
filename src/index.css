@@ -163,6 +163,14 @@ body {
   .safe-top {
     padding-top: env(safe-area-inset-top, 0px);
   }
+
+  .anchor-none {
+    overflow-anchor: none;
+  }
+
+  .anchor-auto {
+    overflow-anchor: auto;
+  }
 }
 
 /* ===== Animated Background Gradient (Login) ===== */

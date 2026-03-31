@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useMemo } from 'react';
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
@@ -29,7 +29,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
 
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
@@ -289,7 +289,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
         <div 
           ref={scrollContainerRef} 
           onScroll={handleScroll}
-          className="min-h-0 w-full overflow-y-auto custom-scrollbar relative z-10"
+          className="min-h-0 w-full overflow-y-auto custom-scrollbar relative z-10 anchor-auto"
         >
           <div className="max-w-[800px] mx-auto px-6 md:px-10 py-10 flex flex-col gap-1 min-h-full">
             {!partner.public_key && (
@@ -299,7 +299,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
             )}
 
             {hasMore && !loading && viewMode === 'chat' && (
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-4 anchor-none">
                 {loadingMore ? (
                   <div className="w-6 h-6 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></div>
                 ) : (

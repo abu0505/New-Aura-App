@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react'; 
+import { useRef, useEffect, useLayoutEffect, useState, useMemo } from 'react'; 
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
@@ -29,7 +29,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
   
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
@@ -192,9 +192,9 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0d0d15]"></div>
               )}
             </div>
-            <div className="flex flex-col">
-              <span className="font-serif italic text-lg text-[#e6c487] leading-tight">{partner.display_name || 'Your Partner'}</span>
-              <span className="text-[10px] font-label uppercase tracking-widest text-[#998f81]">
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="font-serif italic text-lg text-[#e6c487] leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
+              <span className="text-[10px] font-label uppercase tracking-widest text-[#998f81] truncate">
                 {partner.is_online ? (partner.status_message || 'Online') : 'Offline'}
               </span>
             </div>
@@ -297,10 +297,10 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
           <div 
             ref={scrollContainerRef} 
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12"
+            className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12 anchor-auto"
           >
             {hasMore && !loading && viewMode === 'chat' && (
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-4 anchor-none">
                 {loadingMore ? (
                   <div className="w-5 h-5 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></div>
                 ) : (

@@ -45,13 +45,13 @@ export default function PinnedMessagesBanner({
       onClick={() => activeMessage && onJumpToMessage(activeMessage.id)}
       className="bg-[#292932]/95 backdrop-blur-md border-b border-white/5 px-4 py-2 flex items-center justify-between cursor-pointer shadow-lg z-30 relative"
     >
-      <div className="flex items-center gap-3 overflow-hidden">
-        <span className="material-symbols-outlined text-[#e6c487] text-xl rotate-45">push_pin</span>
-        <div className="flex flex-col truncate">
-          <span className="text-[#e6c487] text-xs font-label uppercase tracking-widest font-semibold flex items-center gap-2">
+      <div className="flex items-center gap-3 min-w-0 flex-1 mr-4">
+        <span className="material-symbols-outlined text-[#e6c487] text-xl rotate-45 shrink-0">push_pin</span>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="text-[#e6c487] text-[10px] font-label uppercase tracking-widest font-semibold flex items-center gap-2 truncate">
             Pinned Message {pinnedMessages.length > 1 && `(${safeIndex + 1}/${pinnedMessages.length})`}
           </span>
-          <span className="text-[#e4e1ed] text-sm truncate max-w-xs md:max-w-md font-body">
+          <span className="text-[#e4e1ed] text-sm truncate font-body w-full">
             {renderMessageContent()}
           </span>
         </div>

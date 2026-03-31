@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+
 /**
  * Utility to convert the base64 URL-safe VAPID public key to a Uint8Array
  */
@@ -18,76 +20,49 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
-export async function requestNotificationPermission(): Promise<boolean> {
+/**
+ * Submits the PushSubscription to Supabase `push_subscriptions` table
+ */
+async function saveSubscriptionToDatabase(userId: string, subscription: PushSubscription) {
+  const subJson = subscription.toJSON();
+  
+  if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
+    console.error('Invalid subscription object', subJson);
+    return false;
+  }
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .upsert({
+      user_id: userId,
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys.p256dh,
+      auth: subJson.keys.auth
+    }, {
+      onConflict: 'user_id'
+    });
+
+  if (error) {
+    console.error('Failed to save push subscription to Supabase', error);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Check the permission state without asking the user
+ */
+export function getPermissionState(): NotificationPermission {
   if (!('Notification' in window)) {
-    console.warn('This browser does not support desktop notification');
-    return false;
+    return 'denied';
   }
-
-  const permission = await Notification.requestPermission();
-  return permission === 'granted';
+  return Notification.permission;
 }
 
-export async function subscribeToPushNotifications(userId: string): Promise<boolean> {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    console.warn('Push messaging is not supported');
-    return false;
-  }
-
-  try {
-    const registration = await navigator.serviceWorker.ready;
-    
-    // Check if already subscribed
-    let subscription = await registration.pushManager.getSubscription();
-
-    if (!subscription) {
-      const publicVapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      
-      if (!publicVapidKey) {
-        console.error('VITE_VAPID_PUBLIC_KEY is not defined in the environment.');
-        return false;
-      }
-
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
-      });
-    }
-
-    // Convert the PushSubscription to JSON so it can be stored in the database
-    const subJson = subscription.toJSON();
-
-    if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
-      console.error('Invalid subscription object', subJson);
-      return false;
-    }
-
-    // Save to Supabase `push_subscriptions` table
-    const { error } = await supabase
-      .from('push_subscriptions')
-      .upsert({
-        user_id: userId,
-        endpoint: subJson.endpoint,
-        p256dh: subJson.keys.p256dh,
-        auth: subJson.keys.auth
-      }, {
-        onConflict: 'user_id'
-      });
-
-    if (error) {
-      console.error('Failed to save push subscription to Supabase', error);
-      return false;
-    }
-
-    console.log('Successfully subscribed to push notifications!');
-    return true;
-
-  } catch (error) {
-    console.error('Error subscribing to push notifications', error);
-    return false;
-  }
-}
-
+/**
+ * Checks if the browser is currently subscribed to push
+ */
 export async function checkPushSubscription(): Promise<boolean> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     return false;
@@ -102,6 +77,88 @@ export async function checkPushSubscription(): Promise<boolean> {
   }
 }
 
+/**
+ * Re-subscribes silently (without prompt) IF permission is already granted.
+ * To be called after PIN unlock on app load. 
+ */
+export async function initPushNotifications(userId: string): Promise<boolean> {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return false;
+  }
+  if (Notification.permission !== 'granted') {
+    // We do NOT auto-prompt the user
+    return false;
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      if (!VAPID_PUBLIC_KEY) {
+        console.error('VITE_VAPID_PUBLIC_KEY is not defined in the environment.');
+        return false;
+      }
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+
+    return await saveSubscriptionToDatabase(userId, subscription);
+  } catch (error) {
+    console.error('Error in initPushNotifications:', error);
+    return false;
+  }
+}
+
+/**
+ * Triggers the permission prompt and subscribes to push.
+ * To be called only when the user explicitly clicks "Enable Notifications".
+ */
+export async function requestAndSubscribe(userId: string): Promise<'granted' | 'denied' | 'error'> {
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+    console.warn('This browser does not support desktop/push notifications');
+    return 'error';
+  }
+
+  // Request explicitly
+  const permission = await Notification.requestPermission();
+  
+  if (permission === 'denied' || permission === 'default') {
+    return 'denied';
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    
+    // Check if already subscribed
+    let subscription = await registration.pushManager.getSubscription();
+
+    if (!subscription) {
+      if (!VAPID_PUBLIC_KEY) {
+        console.error('VITE_VAPID_PUBLIC_KEY is not defined in the environment.');
+        return 'error';
+      }
+
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
+    }
+
+    const saved = await saveSubscriptionToDatabase(userId, subscription);
+    return saved ? 'granted' : 'error';
+
+  } catch (error) {
+    console.error('Error subscribing to push notifications', error);
+    return 'error';
+  }
+}
+
+/**
+ * Unsubscribe from PushManager and delete from Supabase
+ */
 export async function unsubscribeFromPushNotifications(userId: string): Promise<boolean> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
     return false;
@@ -117,7 +174,6 @@ export async function unsubscribeFromPushNotifications(userId: string): Promise<
     
     // Remove from Supabase
     await supabase.from('push_subscriptions').delete().eq('user_id', userId);
-    
     return true;
   } catch (error) {
     console.error('Error unsubscribing from push notifications', error);

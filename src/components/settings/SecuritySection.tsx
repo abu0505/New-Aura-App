@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { getStoredKeyPair, getKeyFingerprint, getPartnerPublicKey } from '../../lib/encryption';
-import { checkPushSubscription, requestNotificationPermission, subscribeToPushNotifications, unsubscribeFromPushNotifications } from '../../lib/pushNotifications';
+import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifications } from '../../lib/pushNotifications';
 import { useAppLock } from '../../contexts/AppLockContext';
+import { useChatSettings } from '../../hooks/useChatSettings';
 import AppLockSetupModal from './AppLockSetupModal';
 
 export default function SecuritySection() {
@@ -13,10 +14,13 @@ export default function SecuritySection() {
   const [partnerFingerprint, setPartnerFingerprint] = useState('');
   const [showVerify, setShowVerify] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
+  const [isTogglingPush, setIsTogglingPush] = useState(false);
   
   const { hasAppPin } = useAppLock();
+  const { settings, updateSettings } = useChatSettings();
   const [showAppLockSetup, setShowAppLockSetup] = useState(false);
   const [appLockSetupMode, setAppLockSetupMode] = useState<'setup' | 'remove'>('setup');
+  const [isTogglingSound, setIsTogglingSound] = useState(false);
 
   useEffect(() => {
     const keys = getStoredKeyPair();
@@ -34,29 +38,36 @@ export default function SecuritySection() {
   }, [partner?.id]);
 
   const togglePush = async () => {
-    if (!user) return;
+    if (!user || isTogglingPush) return; // Guard against double-click
+    setIsTogglingPush(true);
     try {
       if (pushEnabled) {
         await unsubscribeFromPushNotifications(user.id);
         setPushEnabled(false);
-        alert('Universal Notifications disabled.');
       } else {
-        const granted = await requestNotificationPermission();
-        if (granted) {
-          const success = await subscribeToPushNotifications(user.id);
-          if (success) {
-            setPushEnabled(true);
-            alert('Universal Notifications active. Your sanctuary is now linked to your device.');
-          } else {
-            alert('Sanctuary connection failed. Please check your network or browser settings.');
-          }
+        const result = await requestAndSubscribe(user.id);
+        if (result === 'granted') {
+          setPushEnabled(true);
+        } else if (result === 'denied') {
+          alert('Notification permission denied. To enable, go to your browser or Android Settings → Site Settings → Notifications → Allow this site.');
         } else {
-          alert('Notification permission denied. Access the browser settings to enable sanctuary alerts.');
+          alert('Sanctuary connection failed. Please check your network or browser settings.');
         }
       }
     } catch (err: any) {
-      console.error('Push error', err);
-      alert('Notification protocol error: ' + err.message);
+      console.error('Push toggle error', err);
+    } finally {
+      setIsTogglingPush(false);
+    }
+  };
+
+  const toggleSound = async () => {
+    if (isTogglingSound || !settings) return;
+    setIsTogglingSound(true);
+    try {
+      await updateSettings({ notification_sound: !settings.notification_sound });
+    } finally {
+      setIsTogglingSound(false);
     }
   };
 
@@ -69,13 +80,37 @@ export default function SecuritySection() {
         </div>
         
         <div className="space-y-8">
-          <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/10 transition-colors" onClick={togglePush}>
+          <div
+            className={`flex justify-between items-center p-4 rounded-xl cursor-pointer hover:bg-white/10 transition-colors ${
+              isTogglingPush ? 'opacity-50 pointer-events-none' : 'bg-white/5'
+            }`}
+            onClick={togglePush}
+          >
             <span className="text-xs uppercase tracking-widest text-white/60 font-label flex items-center gap-2">
-              <span className="material-symbols-outlined text-[1rem]">notifications_active</span>
-              Universal Notifications
+              <span className="material-symbols-outlined text-[1rem]">
+                {isTogglingPush ? 'sync' : 'notifications_active'}
+              </span>
+              Push Notifications
             </span>
             <div className={`w-10 h-5 rounded-full relative transition-colors ${pushEnabled ? 'bg-[#e6c487]' : 'bg-white/10'}`}>
                <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${pushEnabled ? 'right-1 bg-[#412d00]' : 'left-1 bg-white/40'}`} />
+            </div>
+          </div>
+
+          <div
+            className={`flex justify-between items-center bg-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/10 transition-colors ${
+              isTogglingSound ? 'opacity-50 pointer-events-none' : ''
+            }`}
+            onClick={toggleSound}
+          >
+            <span className="text-xs uppercase tracking-widest text-white/60 font-label flex items-center gap-2">
+              <span className="material-symbols-outlined text-[1rem]">
+                {settings?.notification_sound ? 'volume_up' : 'volume_off'}
+              </span>
+              In-App Notification Sounds
+            </span>
+            <div className={`w-10 h-5 rounded-full relative transition-colors ${settings?.notification_sound ? 'bg-[#e6c487]' : 'bg-white/10'}`}>
+               <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${settings?.notification_sound ? 'right-1 bg-[#412d00]' : 'left-1 bg-white/40'}`} />
             </div>
           </div>
 

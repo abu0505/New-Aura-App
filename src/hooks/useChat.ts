@@ -537,16 +537,13 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
          setMessages((prev) => prev.filter(m => m.id !== optimisticMsg.id));
       }
     } else {
-      // Trigger Web Push Notification asynchronously
+      // Trigger Web Push Notification asynchronously — only send what the Edge Function needs
       supabase.functions.invoke('send-push', {
         body: { 
           record: { 
             id: optimisticMsg.id,
             sender_id: user.id,
             receiver_id: partnerId,
-            ciphertext: ciphertext,
-            encrypted_content: ciphertext,
-            nonce: nonce 
           } 
         }
       }).catch(err => console.error("Failed to trigger push notification", err));
