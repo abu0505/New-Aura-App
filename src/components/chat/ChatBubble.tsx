@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef, memo } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import type { ChatMessage } from '../../hooks/useChat';
 import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
+import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -21,7 +22,7 @@ interface ChatBubbleProps {
   onJumpToMessage?: (msgId: string) => void;
 }
 
-export default function ChatBubble({ 
+function ChatBubble({ 
   message, 
   partnerPublicKey,
   onReact,
@@ -47,12 +48,19 @@ export default function ChatBubble({
   const bubbleRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const [bubbleRect, setBubbleRect] = useState<{ top: number; bottom: number } | null>(null);
 
-  const [swipeOffset, setSwipeOffset] = useState(0);
+  const swipeX = useMotionValue(0);
+  const springX = useSpring(swipeX, { stiffness: 600, damping: 40 });
   const touchStartX = useRef<number | null>(null);
+  const hapticTriggered = useRef(false);
   
   const isMine = isPinnedView ? true : message.is_mine;
   const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(':', ' : ');
+
+  const replyOpacity = useTransform(springX, (v) => Math.min(Math.abs(v) / 45, 1));
+  const replyScale = useTransform(springX, (v) => 0.8 + Math.min(Math.abs(v) / 45, 1) * 0.3);
+  const iconTranslate = useTransform(springX, (v) => -v / 2);
 
   useEffect(() => {
     if (message.media_url && message.media_key && message.media_nonce && partnerPublicKey && !message.is_deleted_for_everyone) {
@@ -83,13 +91,33 @@ export default function ChatBubble({
     const handleClickOutside = (e: MouseEvent) => {
       if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) {
         setInteractionType('none');
-        setShowAllEmojis(false); // Close all emojis when clicking outside
+        setShowAllEmojis(false);
       }
     };
+
     if (interactionType !== 'none') {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    
+    // Elevate parent row z-index to stay above other messages
+    const parentRow = bubbleRef.current?.closest('.message-row') as HTMLElement;
+    if (parentRow) {
+      if (interactionType !== 'none') {
+        parentRow.style.zIndex = '100';
+        parentRow.style.position = 'relative';
+      } else {
+        parentRow.style.zIndex = '';
+        parentRow.style.position = '';
+      }
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (parentRow) {
+        parentRow.style.zIndex = '';
+        parentRow.style.position = '';
+      }
+    };
   }, [interactionType]);
 
   // Hidden if deleted for me
@@ -97,6 +125,9 @@ export default function ChatBubble({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (bubbleRef.current) {
+      setBubbleRect(bubbleRef.current.getBoundingClientRect());
+    }
     setInteractionType('menu');
   };
 
@@ -106,6 +137,9 @@ export default function ChatBubble({
     touchStartX.current = e.touches[0].clientX;
     // Custom long press interval for mobile (250ms, half of default 500ms)
     pressTimer.current = window.setTimeout(() => {
+      if (bubbleRef.current) {
+        setBubbleRect(bubbleRef.current.getBoundingClientRect());
+      }
       setInteractionType('menu');
     }, 250);
   };
@@ -117,10 +151,23 @@ export default function ChatBubble({
     
     // Partner -> swipe right (diff > 0)
     // Mine -> swipe left (diff < 0)
+    let newOffset = 0;
     if (!isMine && diff > 0) {
-      setSwipeOffset(Math.min(diff, 60)); // Max swipe 60px
+      newOffset = Math.min(diff, 70); 
     } else if (isMine && diff < 0) {
-      setSwipeOffset(Math.max(diff, -60));
+      newOffset = Math.max(diff, -70);
+    }
+    
+    swipeX.set(newOffset);
+
+    // Subtle haptic feedback when threshold met
+    if (Math.abs(newOffset) >= 45) {
+      if (!hapticTriggered.current) {
+        if ('vibrate' in navigator) navigator.vibrate(8);
+        hapticTriggered.current = true;
+      }
+    } else {
+      hapticTriggered.current = false;
     }
     
     // Cancel long press if swiping
@@ -133,11 +180,12 @@ export default function ChatBubble({
     if (pressTimer.current) clearTimeout(pressTimer.current);
     
     if (touchStartX.current !== null) {
-      if (Math.abs(swipeOffset) > 40 && onReply) {
+      if (Math.abs(swipeX.get()) >= 45 && onReply) {
         onReply(message.id);
       }
-      setSwipeOffset(0);
+      swipeX.set(0);
       touchStartX.current = null;
+      hapticTriggered.current = false;
     }
   };
 
@@ -266,16 +314,20 @@ export default function ChatBubble({
   return (
     <div 
       ref={bubbleRef}
-      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group md:overflow-visible ${message.reaction ? 'z-20' : 'z-10'}`}
+      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group ${interactionType !== 'none' ? 'z-[100] overflow-visible' : 'md:overflow-visible z-10'}`}
     >
       {/* Reply Icon Indicator for Swipe (Mobile) */}
-      <div 
-        className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 text-[#e6c487] transition-opacity md:hidden z-0
-        ${Math.abs(swipeOffset) > 40 ? 'opacity-100 scale-110' : 'opacity-0 scale-90'}`}
-        style={{ [isMine ? 'right' : 'left']: '-40px', transform: `translate(${isMine ? -swipeOffset/2 : -swipeOffset/2}px, -50%)` }}
+      <motion.div 
+        style={{ 
+          [isMine ? 'right' : 'left']: '-45px', 
+          opacity: replyOpacity,
+          scale: replyScale,
+          x: iconTranslate
+        }}
+        className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 text-[#e6c487] md:hidden z-0"
       >
         <span className="material-symbols-outlined text-[18px]">reply</span>
-      </div>
+      </motion.div>
       {/* Location mini-map message */}
       {locationCoords && locationCoords.length === 2 && (
         <div className={`overflow-hidden rounded-2xl shadow-xl border border-white/10 w-[240px] ${isMine ? 'self-end' : 'self-start'} group cursor-pointer`}
@@ -302,9 +354,13 @@ export default function ChatBubble({
             </div>
             <div className="flex items-center gap-1.5 pt-1">
                <span className="text-[9px] uppercase tracking-tighter text-[#e4e1ed]/40 font-bold">{time}</span>
-               {isMine && !message.is_deleted_for_everyone && (
+              {isMine && !message.is_deleted_for_everyone && (
                 <span 
-                  className={`material-symbols-outlined text-[12px] ${message.is_read ? 'text-[#e6c487]' : 'text-[#e4e1ed]/30'}`} 
+                  className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
+                    message.is_read 
+                      ? 'text-[#38bdf8]' 
+                      : (message.is_delivered ? 'text-[#e4e1ed]/40' : 'text-[#e4e1ed]/20')
+                  }`} 
                   style={{ fontVariationSettings: "'wght' 700" }}
                 >
                   {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
@@ -320,30 +376,64 @@ export default function ChatBubble({
             initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`absolute z-30 ${isMine ? 'right-0' : 'left-0'} bottom-full mb-3 flex flex-col items-center gap-1`}
+            className={`absolute z-30 ${isMine ? 'right-0' : 'left-0'} flex flex-col items-center gap-1 ${
+              bubbleRect && bubbleRect.top < window.innerHeight / 2 
+                ? 'top-full mt-3' 
+                : 'bottom-full mb-3'
+            }`}
           >
             {/* Quick Reactions - Only for chat view */}
-            {interactionType === 'reactions' && !isPinnedView && (
-              <div className={`p-3 bg-[#1b1b23]/95 backdrop-blur-md shadow-2xl border border-white/10 ${showAllEmojis ? 'w-[200px] flex flex-wrap justify-center gap-2 rounded-3xl' : 'flex justify-center gap-2 rounded-full'}`}>
-                {(showAllEmojis ? ['❤️', '😂', '😮', '😢', '🙏', '🔥', '😍', '✨', '🥺', '🎉', '💔', '💯', '🥂', '🫂', '🥰', '😘', '💍', '🙈', '🚀'] : ['❤️', '😂', '😮', '😢', '🔥']).map(emoji => (
-                  <button 
-                    key={emoji}
-                    onClick={() => { onReact?.(message.id, emoji); setInteractionType('none'); setShowAllEmojis(false); }}
-                    className="hover:scale-125 transition-transform text-xl active:scale-90"
-                  >
-                    {emoji}
-                  </button>
-                ))}
-                {!showAllEmojis && (
-                  <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-7 h-7 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-[#e6c487]">
-                    <span className="material-symbols-outlined text-sm">add</span>
-                  </button>
+            {(interactionType === 'reactions' || interactionType === 'menu') && !isPinnedView && (
+              <div className="relative flex flex-col items-center">
+                {!showAllEmojis ? (
+                  <div className="p-2.5 bg-[#1b1b23]/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 flex justify-center gap-1.5 rounded-full">
+                    {['❤️', '😂', '😮', '😢', '🔥'].map(emoji => (
+                      <button 
+                        key={emoji}
+                        onClick={() => { 
+                          const newEmoji = message.reaction === emoji ? null : emoji;
+                          onReact?.(message.id, newEmoji); 
+                          setInteractionType('none'); 
+                          setShowAllEmojis(false); 
+                        }}
+                        className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 text-xl active:scale-90 ${
+                          message.reaction === emoji 
+                            ? 'bg-[#e6c487]/20 border border-[#e6c487]/40 scale-110 shadow-[0_0_15px_rgba(230,196,135,0.2)]' 
+                            : 'hover:bg-white/10'
+                        }`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                    <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-[#e6c487]">
+                      <span className="material-symbols-outlined text-[18px]">add</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-[#1b1b23]/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
+                    <EmojiPicker 
+                      theme={Theme.DARK}
+                      onEmojiClick={(emojiData) => {
+                        const newEmoji = message.reaction === emojiData.emoji ? null : emojiData.emoji;
+                        onReact?.(message.id, newEmoji);
+                        setInteractionType('none');
+                        setShowAllEmojis(false);
+                      }}
+                      lazyLoadEmojis={true}
+                      autoFocusSearch={false}
+                      searchPlaceHolder="Search emoji"
+                      previewConfig={{ showPreview: false }}
+                      skinTonesDisabled={true}
+                      width={300}
+                      height={400}
+                    />
+                  </div>
                 )}
               </div>
             )}
 
             {/* Context Menu Actions */}
-            {interactionType === 'menu' && (
+            {interactionType === 'menu' && !showAllEmojis && (
               isPinnedView ? (
                 <div className="flex flex-col gap-1 w-[160px]">
                   <button 
@@ -381,8 +471,7 @@ export default function ChatBubble({
       </AnimatePresence>
 
       <motion.div 
-        animate={{ x: swipeOffset }} 
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        style={{ x: springX }} 
         className={`flex items-center gap-2 w-full ${isMine ? 'justify-end' : 'justify-start'} relative z-10`}
       >
         {isMine && !isPinnedView && (
@@ -406,6 +495,9 @@ export default function ChatBubble({
                ? `px-4 py-3 bg-gradient-to-br from-[#c9a96e] to-[#e6c487] text-[#13131b] rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
                : `px-4 py-3 bg-[#1b1b23] text-[#e4e1ed] rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
+          data-message-id={message.id}
+          data-is-mine={isMine}
+          data-is-read={message.is_read}
         >
         {decryptionError ? (
           <div className="flex items-center gap-2 py-1 px-1">
@@ -445,9 +537,13 @@ export default function ChatBubble({
         
         {/* Reaction Badge */}
         {message.reaction && (
-          <div className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-[#292932] border border-white/10 rounded-full px-2 py-0.5 text-sm shadow-xl z-30`}>
+          <button 
+            onClick={(e) => { e.stopPropagation(); onReact?.(message.id, null); }}
+            className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-[#292932] border border-[#e6c487]/40 rounded-full px-2.5 py-1 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30 transition-all hover:scale-110 active:scale-90 hover:bg-[#34343d] flex items-center justify-center`}
+            title="Remove reaction"
+          >
             {message.reaction}
-          </div>
+          </button>
         )}
 
         {/* Embedded Timestamp and Status Info */}
@@ -466,10 +562,10 @@ export default function ChatBubble({
           </span>
           {isMine && !message.is_deleted_for_everyone && (
             <span 
-              className={`material-symbols-outlined text-[12px] ${
+              className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
                 isOnlyMedia || isSticker
-                  ? (message.is_read ? 'text-[#e6c487]' : 'text-white/60')
-                  : (message.is_read ? 'text-[#13131b]/70' : 'text-[#13131b]/30')
+                  ? (message.is_read ? 'text-[#38bdf8]' : 'text-white/60')
+                  : (message.is_read ? 'text-[#38bdf8]' : (message.is_delivered ? 'text-[#13131b]/50' : 'text-[#13131b]/25'))
               }`} 
               style={{ fontVariationSettings: "'wght' 700" }}
             >
@@ -494,3 +590,5 @@ export default function ChatBubble({
     </div>
   );
 }
+
+export default memo(ChatBubble);

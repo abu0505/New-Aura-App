@@ -151,6 +151,7 @@ body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -175,30 +176,51 @@ body {
 
 /* ===== Animated Background Gradient (Login) ===== */
 @keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .animated-gradient-bg {
-  background: linear-gradient(
-    -45deg,
-    #0C0C14,
-    #13131E,
-    #1a1520,
-    #0C0C14,
-    #161222
-  );
+  background: linear-gradient(-45deg,
+      #0C0C14,
+      #13131E,
+      #1a1520,
+      #0C0C14,
+      #161222);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
 }
 
 /* ===== Floating Particles (Login) ===== */
 @keyframes float {
-  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
-  10% { opacity: 0.6; }
-  90% { opacity: 0.6; }
-  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 0.6;
+  }
+
+  90% {
+    opacity: 0.6;
+  }
+
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
 }
 
 .particle {
@@ -255,14 +277,29 @@ body {
 }
 
 @keyframes typingBounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-6px); opacity: 1; }
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
 }
 
 /* ===== Story Ring Gradient ===== */
 @keyframes rotateRing {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .story-ring-unviewed {
@@ -275,13 +312,16 @@ body {
 }
 
 /* ===== Focus Styles ===== */
-input:focus, textarea:focus, button:focus-visible {
+input:focus,
+textarea:focus,
+button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.3);
 }
 
 /* ===== Prevent double-tap zoom on mobile ===== */
-button, a {
+button,
+a {
   touch-action: manipulation;
 }
 
@@ -294,13 +334,27 @@ button, a {
 
 /* ===== Toast animation ===== */
 @keyframes toastIn {
-  0% { transform: translateY(100%) scale(0.9); opacity: 0; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
+  0% {
+    transform: translateY(100%) scale(0.9);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes toastOut {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(100%) scale(0.9); opacity: 0; }
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100%) scale(0.9);
+    opacity: 0;
+  }
 }
 
 .toast-enter {
@@ -322,8 +376,15 @@ button, a {
 
 /* ===== Confetti (Streak Celebrations) ===== */
 @keyframes confettiFall {
-  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
-  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
 }
 
 .confetti-piece {
@@ -332,4 +393,71 @@ button, a {
   width: 8px;
   height: 8px;
   animation: confettiFall 3s ease-in forwards;
+}
+
+/* ===== Custom Emoji Picker Overrides ===== */
+.custom-emoji-picker-container {
+  --epr-bg-color: rgba(27, 27, 35, 0.98);
+  --epr-category-label-bg-color: rgba(27, 27, 35, 0.95);
+  --epr-picker-border-color: transparent;
+  --epr-picker-border-radius: 16px;
+  --epr-search-input-bg-color: rgba(0, 0, 0, 0.3);
+  --epr-search-input-text-color: #e4e1ed;
+  --epr-search-input-placeholder-color: rgba(153, 143, 129, 0.4);
+  --epr-focus-bg-color: rgba(230, 196, 135, 0.1);
+  --epr-hover-bg-color: rgba(230, 196, 135, 0.1);
+  --epr-category-icon-active-color: #e6c487;
+  --epr-text-color: #8A8799;
+  --epr-category-label-text-color: #8A8799;
+  --epr-search-border-color: rgba(230, 196, 135, 0.1);
+  --epr-header-padding: 8px 8px 5px 8px;
+  backdrop-filter: blur(12px);
+  overflow-anchor: none !important;
+}
+
+.custom-emoji-picker-container aside.EmojiPickerReact.epr-dark-theme {
+  border: none !important;
+  background-color: #1b1b23 !important; /* Match quick emojis bg */
+}
+
+/* Ensure background is uniform across sections and supports blur */
+.custom-emoji-picker-container .epr-header,
+.custom-emoji-picker-container .epr-search,
+.custom-emoji-picker-container .epr-body,
+.custom-emoji-picker-container .epr-emoji-category-label,
+.custom-emoji-picker-container .epr-category-nav {
+  background-color: rgba(27, 27, 35, 0.95) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.custom-emoji-picker-container .epr-emoji-category-label {
+  top: -1px !important;
+}
+
+.custom-emoji-picker-container .epr-search-container input.epr-search {
+  border-radius: 12px !important;
+  transition: all 0.2s ease;
+}
+
+.custom-emoji-picker-container .epr-search-container input.epr-search:focus {
+  border-color: rgba(230, 196, 135, 0.4) !important;
+  box-shadow: none !important;
+}
+
+.custom-emoji-picker-container .epr-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-emoji-picker-container .epr-body::-webkit-scrollbar-thumb {
+  background: #4A4857;
+  border-radius: 4px;
+}
+
+.custom-emoji-picker-container .epr_-8ygbw8 {
+  padding: 8px !important; /* Charon taraf 10px padding */
+}
+/* Category padding (Top: 0, others: 10px) */
+.custom-emoji-picker-container .epr-category-nav {
+  padding: 0 8px 0 8px !important;
 }

@@ -87,7 +87,7 @@ function InnerApp({
   }, [isLocked, hasAppPin]);
 
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-[#0d0d15]">
+    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#0d0d15]">
       {showLockModal && (
         <AppLockModal onCancel={() => setShowLockModal(false)} />
       )}

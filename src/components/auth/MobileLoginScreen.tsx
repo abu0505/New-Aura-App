@@ -70,7 +70,7 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
         }
       `}</style>
       
-      <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#0a0e17', color: 'white', fontFamily: "'Inter', sans-serif" }}>
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center relative overflow-hidden" style={{ backgroundColor: '#0a0e17', color: 'white', fontFamily: "'Inter', sans-serif" }}>
         {/* Abstract Background */}
         <div className="bg-abstract"></div>
 

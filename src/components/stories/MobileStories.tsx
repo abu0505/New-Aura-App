@@ -13,7 +13,7 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
   const { partner } = usePartner();
 
   return (
-    <div className="min-h-screen pb-32 font-sans bg-[#0d0d15] text-[#e4e1ed] selection:bg-[#e6c487]/30">
+    <div className="min-h-[100dvh] pb-32 font-sans bg-[#0d0d15] text-[#e4e1ed] selection:bg-[#e6c487]/30">
       {/* Top App Bar */}
       <header className="bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-40 border-b border-white/5 flex items-center justify-between px-6 py-4 w-full">
         <div className="flex items-center gap-3">

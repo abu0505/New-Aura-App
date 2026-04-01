@@ -62,6 +62,9 @@ export interface Database {
           is_edited: boolean
           is_deleted_for_me: boolean
           is_deleted_for_everyone: boolean
+          is_forwarded: boolean
+          read_at: string | null
+          delivered_at: string | null
           created_at: string
           updated_at: string
           sender_public_key: string | null
@@ -83,6 +86,9 @@ export interface Database {
           is_edited?: boolean
           is_deleted_for_me?: boolean
           is_deleted_for_everyone?: boolean
+          is_forwarded?: boolean
+          read_at?: string | null
+          delivered_at?: string | null
           created_at?: string
           updated_at?: string
           sender_public_key?: string | null
@@ -104,6 +110,9 @@ export interface Database {
           is_edited?: boolean
           is_deleted_for_me?: boolean
           is_deleted_for_everyone?: boolean
+          is_forwarded?: boolean
+          read_at?: string | null
+          delivered_at?: string | null
           created_at?: string
           updated_at?: string
           sender_public_key?: string | null

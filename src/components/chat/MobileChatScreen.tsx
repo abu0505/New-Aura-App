@@ -9,6 +9,7 @@ import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
 // PinnedMessagesBanner imported later if needed, but removed here
 import TypingIndicator from './TypingIndicator';
+import { SeenIndicator } from './SeenIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 
 function formatLastSeen(lastSeen: string | null): string {
@@ -42,7 +43,11 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
 
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
-  const { messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, hasMore, sendMessage, loadMore, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
+  const { 
+    messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, 
+    hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
+    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead 
+  } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -141,6 +146,50 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
       }
     }
   }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
+  
+  // Real-time "Seen" logic using Intersection Observer
+  useEffect(() => {
+    if (viewMode !== 'chat' || messages.length === 0) return;
+
+    const unreadMessages = new Set<string>();
+    const timerRef: { current: any } = { current: null };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          const msgId = el.getAttribute('data-message-id');
+          const isMine = el.getAttribute('data-is-mine') === 'true';
+          const isRead = el.getAttribute('data-is-read') === 'true';
+
+          if (msgId && !isMine && !isRead) {
+            unreadMessages.add(msgId);
+            
+            // Batch and debounce the "mark as read" call
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+              if (unreadMessages.size > 0) {
+                markAsRead(Array.from(unreadMessages));
+                unreadMessages.clear();
+              }
+            }, 1000); // Wait 1s of visibility or continuous scrolling
+          }
+        }
+      });
+    }, {
+      root: scrollContainerRef.current,
+      threshold: 0.1, // Reduced threshold for better reliability on tall bubbles
+    });
+
+    // Observe all unread partner messages
+    const messageElements = scrollContainerRef.current?.querySelectorAll('[data-message-id]');
+    messageElements?.forEach(el => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [messages, viewMode, markAsRead]);
 
   const getBackgroundStyle = () => {
     if (settings?.background_url === 'silk') return { background: '#1a1a24' };
@@ -164,6 +213,11 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   }, [filteredPinnedMessages, messages, pinnedMessageDetails, viewMode]);
 
+  const listToRender = useMemo(() => {
+    if (viewMode === 'chat') return messages;
+    return pinnedMessagesData;
+  }, [viewMode, messages, pinnedMessagesData]);
+
   return (
     <>
       <style>{`
@@ -174,7 +228,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
       `}</style>
       
       <div 
-        className="flex flex-col h-screen w-full relative overflow-hidden text-[#e4e1ed] font-sans transition-all duration-700"
+        className="flex flex-col h-[100dvh] w-full relative overflow-hidden text-[#e4e1ed] font-sans transition-all duration-700"
       >
         {/* Background Layer */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
@@ -192,7 +246,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
           )}
         </div>
         {/* TopAppBar */}
-        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 py-4 border-b border-white/5">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))} 
@@ -217,7 +271,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-serif italic text-lg text-[#e6c487] leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
-              <span className="text-[10px] font-label uppercase tracking-widest text-[#998f81] truncate">
+              <span className="text-[9px] font-label uppercase tracking-widest text-[#998f81] truncate">
                 {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
               </span>
             </div>
@@ -320,7 +374,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
           <div 
             ref={scrollContainerRef} 
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12 anchor-auto"
+            className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12 anchor-none"
           >
             {hasMore && !loading && viewMode === 'chat' && (
               <div className="flex justify-center py-4 anchor-none">
@@ -343,8 +397,6 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                  <div className="w-6 h-6 border-2 border-[#e6c487] rounded-full border-t-transparent animate-spin"></div>
               </div>
             ) : (() => {
-              const listToRender = viewMode === 'chat' ? messages : pinnedMessagesData;
-              
               if (viewMode === 'pinned' && listToRender.length === 0) {
                 return (
                   <div className="flex-1 flex flex-col items-center justify-center p-8 opacity-60">
@@ -368,7 +420,7 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                 const isLastInGroup = index === listToRender.length - 1 || nextMsg?.sender_id !== msg.sender_id || nextDateStr !== currentDateStr;
 
                 return (
-                  <div key={msg.id} id={viewMode === 'chat' ? `msg-${msg.id}` : `pinned-${msg.id}`} className="flex flex-col gap-1 w-full">
+                  <div key={msg.id} id={viewMode === 'chat' ? `msg-${msg.id}` : `pinned-${msg.id}`} className="flex flex-col gap-1 w-full message-row">
                     {showDateSeparator && (
                       <div className="flex justify-center my-6">
                         <span className="bg-[#292932]/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-[#998f81] uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
@@ -406,6 +458,13 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                   </div>
                 );
               });
+            })()}
+            {(() => {
+              const lastMsg = listToRender[listToRender.length - 1];
+              if (viewMode === 'chat' && lastMsg && lastMsg.is_read && lastMsg.read_at) {
+                return <SeenIndicator timestamp={lastMsg.read_at} />;
+              }
+              return null;
             })()}
             {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
             <div ref={messagesEndRef} />

@@ -170,6 +170,39 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   useEffect(() => {
     if (!user || !partnerId) return;
 
+    const fetchMissedUpdates = async () => {
+      try {
+        // Fetch status updates for MY messages that aren't marked as read yet
+        const unreadMyMessagesIds = messages.filter(m => m.is_mine && !m.is_read).map(m => m.id);
+        if (unreadMyMessagesIds.length === 0) return;
+
+        const { data, error } = await supabase
+          .from('messages')
+          .select('id, is_read, is_delivered, read_at, delivered_at, reaction, is_edited, encrypted_content, nonce, sender_public_key')
+          .in('id', unreadMyMessagesIds);
+
+        if (!error && data) {
+          const myKeyPair = getStoredKeyPair();
+          const currentPartnerKey = partnerKeyRef.current;
+          const currentKeyHistory = partnerKeyHistoryRef.current;
+
+          setMessages(prev => prev.map(m => {
+            const update = data.find(d => d.id === m.id);
+            if (!update) return m;
+
+            // If content changed (edit), re-decrypt
+            if (update.is_edited && update.encrypted_content !== m.encrypted_content) {
+              return decryptRow(update as any, myKeyPair, currentPartnerKey, currentKeyHistory);
+            }
+
+            return { ...m, ...update };
+          }));
+        }
+      } catch (err) {
+        console.error('Failed to sync missed updates', err);
+      }
+    };
+
     const fetchMissedMessages = async () => {
       if (!lastMessageTimeRef.current) return;
       const myKeyPair = getStoredKeyPair();
@@ -201,18 +234,14 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
             return [...prev, ...uniqueNew];
           });
           
-          const unreadIds = data.filter(m => m.sender_id === partnerId && !m.is_read).map(m => m.id);
-          if (unreadIds.length > 0) {
-            if (document.visibilityState === 'visible') {
-              await supabase.from('messages').update({ is_read: true, is_delivered: true }).in('id', unreadIds);
-            } else {
-              const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
-              if (undeliveredIds.length > 0) {
-                await supabase.from('messages').update({ is_delivered: true }).in('id', undeliveredIds);
-              }
-            }
+          const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
+          if (undeliveredIds.length > 0) {
+            await supabase.from('messages').update({ is_delivered: true, delivered_at: new Date().toISOString() }).in('id', undeliveredIds);
           }
         }
+        
+        // Also fetch status updates for existing messages
+        fetchMissedUpdates();
       } catch (err) {
         console.error('Failed to fetch missed messages', err);
       }
@@ -245,17 +274,10 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
             setFirstUnreadId(firstUnread.id);
           }
 
-          // Mark unread messages from partner as read
-          const unreadIds = data.filter(m => m.sender_id === partnerId && !m.is_read).map(m => m.id);
-          if (unreadIds.length > 0) {
-            if (document.visibilityState === 'visible') {
-              await supabase.from('messages').update({ is_read: true, is_delivered: true }).in('id', unreadIds);
-            } else {
-              const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
-              if (undeliveredIds.length > 0) {
-                 await supabase.from('messages').update({ is_delivered: true }).in('id', undeliveredIds);
-              }
-            }
+          // Mark undelivered messages from partner as delivered
+          const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
+          if (undeliveredIds.length > 0) {
+            await supabase.from('messages').update({ is_delivered: true, delivered_at: new Date().toISOString() }).in('id', undeliveredIds);
           }
         } else {
           setMessages((data || []).map(row => ({ ...row, is_mine: row.sender_id === user.id })));
@@ -311,14 +333,20 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
                  return [...prev, newMsg];
               });
 
-              if (document.visibilityState === 'visible') {
-                supabase.from('messages').update({ is_read: true, is_delivered: true }).eq('id', newMsg.id).then();
-              } else {
-                supabase.from('messages').update({ is_delivered: true }).eq('id', newMsg.id).then();
-              }
+              // Always mark as delivered when client receives it
+              supabase.from('messages').update({ is_delivered: true, delivered_at: new Date().toISOString() }).eq('id', newMsg.id).then();
             } else if (payload.eventType === 'UPDATE') {
-               const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
-               setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
+              setMessages((prev) => prev.map(m => {
+                if (m.id !== (payload.new as any).id) return m;
+
+                const mergedRow = { ...m, ...payload.new } as MessageRow;
+                
+                if (payload.new.is_edited && (payload.new as any).encrypted_content) {
+                  return decryptRow(mergedRow, myKeyPair, currentPartnerKey, currentKeyHistory);
+                }
+                
+                return { ...m, ...payload.new };
+              }));
             } else if (payload.eventType === 'DELETE') {
                setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
             }
@@ -349,8 +377,21 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
               });
               setPendingMessages(prev => prev.filter(m => m.id !== newMsg.id));
             } else if (payload.eventType === 'UPDATE') {
-              const updatedMsg = decryptRow(payload.new as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
-              setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
+              const myKeyPair = getStoredKeyPair();
+              const currentPartnerKey = partnerKeyRef.current;
+              const currentKeyHistory = partnerKeyHistoryRef.current;
+
+              setMessages((prev) => prev.map(m => {
+                if (m.id !== (payload.new as any).id) return m;
+
+                const mergedRow = { ...m, ...payload.new } as MessageRow;
+                
+                if (payload.new.is_edited && (payload.new as any).encrypted_content) {
+                  return decryptRow(mergedRow, myKeyPair, currentPartnerKey, currentKeyHistory);
+                }
+                
+                return { ...m, ...payload.new };
+              }));
             } else if (payload.eventType === 'DELETE') {
               setMessages((prev) => prev.filter(m => m.id !== (payload.old as any).id));
             }
@@ -497,6 +538,9 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       is_edited: false,
       is_deleted_for_me: false,
       is_deleted_for_everyone: false,
+      is_forwarded: false,
+      read_at: null,
+      delivered_at: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       sender_public_key: myPublicKeyStr,
@@ -603,9 +647,25 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
   };
 
-  const markAsRead = async (messageIds: string[]) => {
-    await supabase.from('messages').update({ is_read: true }).in('id', messageIds);
-  };
+  const markAsRead = useCallback(async (messageIds: string[]) => {
+    if (messageIds.length === 0) return;
+    
+    // Optimistic update
+    setMessages(prev => prev.map(m => messageIds.includes(m.id) ? { ...m, is_read: true, is_delivered: true } : m));
+    
+    const { error } = await supabase
+      .from('messages')
+      .update({ 
+        is_read: true, 
+        is_delivered: true, 
+        read_at: new Date().toISOString() 
+      })
+      .in('id', messageIds);
+      
+    if (error) {
+      console.error('Failed to mark messages as read', error);
+    }
+  }, []);
 
   const pinMessage = async (messageId: string) => {
     if (!user) return;

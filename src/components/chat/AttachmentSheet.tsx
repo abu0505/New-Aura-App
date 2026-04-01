@@ -8,8 +8,6 @@ interface AttachmentSheetProps {
 
 const attachmentOptions = [
   { id: 'camera', icon: 'photo_camera', label: 'Camera', colorClass: 'text-[#e6c487]', bgClass: 'bg-[#e6c487]/10' },
-  { id: 'photo', icon: 'image', label: 'Photo', colorClass: 'text-[#e6c487]', bgClass: 'bg-[#e6c487]/10' },
-  { id: 'video', icon: 'videocam', label: 'Video', colorClass: 'text-[#e6c487]', bgClass: 'bg-[#e6c487]/10' },
   { id: 'audio', icon: 'mic', label: 'Audio', colorClass: 'text-[#e6c487]', bgClass: 'bg-[#e6c487]/10' },
   { id: 'document', icon: 'description', label: 'Document', colorClass: 'text-[#e6c487]', bgClass: 'bg-[#e6c487]/10' },
   { id: 'location', icon: 'location_on', label: 'Location', colorClass: 'text-[#e6c487]', bgClass: 'bg-[#e6c487]/10' },

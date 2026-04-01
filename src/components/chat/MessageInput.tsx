@@ -255,38 +255,66 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
           />
         </div>
 
-        {/* Attachment Button */}
-        <button
-          onClick={() => setIsAttachmentOpen(true)}
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
-        >
-          <span className="material-symbols-outlined text-2xl">add_circle</span>
-        </button>
+        {/* Toggleable Buttons */}
+        <div className="flex items-center">
+          <AnimatePresence mode="wait">
+            {!text.trim() && !isUploading ? (
+              <motion.div 
+                key="media-actions"
+                initial={{ opacity: 0, scale: 0.8, x: 20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 20 }}
+                className="flex items-center gap-1"
+              >
+                <button
+                  onClick={() => handleAttachmentSelect('photo')}
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+                  title="Photos"
+                >
+                  <span className="material-symbols-outlined text-[22px]">image</span>
+                </button>
+                
+                <button
+                  onClick={() => handleAttachmentSelect('video')}
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+                  title="Videos"
+                >
+                  <span className="material-symbols-outlined text-[22px]">videocam</span>
+                </button>
 
-        {/* Send Button */}
-        <AnimatePresence mode="popLayout">
-          {isUploading ? (
-            <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-              <div className="w-5 h-5 border-2 border-[#e6c487] border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <motion.button
-              key="send"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              onClick={handleSend}
-              disabled={disabled || !text.trim()}
-              className={`w-10 h-10 shrink-0 flex items-center justify-center rounded-full transition-all duration-300 ${
-                text.trim() 
-                  ? 'bg-[#e6c487] text-[#0d0d15] shadow-[0_0_15px_rgba(230,196,135,0.15)] hover:scale-105 active:scale-95' 
-                  : 'bg-[#34343d]/50 text-[#998f81]/40 grayscale cursor-not-allowed'
-              }`}
-            >
-              <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-            </motion.button>
-          )}
-        </AnimatePresence>
+                <button
+                  onClick={() => setIsAttachmentOpen(true)}
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+                  title="More"
+                >
+                  <span className="material-symbols-outlined text-[22px]">add_circle</span>
+                </button>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="send-action"
+                initial={{ opacity: 0, scale: 0.8, x: -20 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: -20 }}
+                className="flex items-center"
+              >
+                {isUploading ? (
+                  <div className="w-10 h-10 shrink-0 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-[#e6c487] border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={disabled}
+                    className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-[#e6c487] text-[#0d0d15] shadow-[0_0_15px_rgba(230,196,135,0.15)] hover:scale-105 active:scale-95 transition-all duration-300"
+                  >
+                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                  </button>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Hidden File Input */}
         <input 

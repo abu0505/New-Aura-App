@@ -9,6 +9,7 @@ import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
 // PinnedMessagesBanner removed in favor of integrated view
 import TypingIndicator from './TypingIndicator';
+import { SeenIndicator } from './SeenIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 
 function formatLastSeen(lastSeen: string | null): string {
@@ -42,7 +43,11 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
 
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
-  const { messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, hasMore, sendMessage, loadMore, reactToMessage, editMessage, deleteMessage, pinMessage, firstUnreadId, isOnline } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
+  const { 
+    messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, 
+    hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
+    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead 
+  } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -148,6 +153,48 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
       }
     }
   }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
+
+  // Real-time "Seen" logic using Intersection Observer
+  useEffect(() => {
+    if (viewMode !== 'chat' || messages.length === 0) return;
+
+    const unreadMessages = new Set<string>();
+    const timerRef: { current: any } = { current: null };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          const msgId = el.getAttribute('data-message-id');
+          const isMine = el.getAttribute('data-is-mine') === 'true';
+          const isRead = el.getAttribute('data-is-read') === 'true';
+
+          if (msgId && !isMine && !isRead) {
+            unreadMessages.add(msgId);
+            
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+              if (unreadMessages.size > 0) {
+                markAsRead(Array.from(unreadMessages));
+                unreadMessages.clear();
+              }
+            }, 1000);
+          }
+        }
+      });
+    }, {
+      root: scrollContainerRef.current,
+      threshold: 0.1,
+    });
+
+    const messageElements = scrollContainerRef.current?.querySelectorAll('[data-message-id]');
+    messageElements?.forEach(el => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [messages, viewMode, markAsRead]);
 
   const getBackgroundStyle = () => {
     if (settings?.background_url === 'silk') return { background: '#1a1a24' };
@@ -398,6 +445,14 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
                   </div>
                 );
               });
+            })()}
+            {(() => {
+              const listToRender = viewMode === 'chat' ? messages : pinnedMessagesData;
+              const lastMsg = listToRender[listToRender.length - 1];
+              if (viewMode === 'chat' && lastMsg && lastMsg.is_read && lastMsg.read_at) {
+                return <SeenIndicator timestamp={lastMsg.read_at} />;
+              }
+              return null;
             })()}
             {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
             <div ref={messagesEndRef} />
