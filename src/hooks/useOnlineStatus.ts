@@ -7,12 +7,16 @@ import { useAuth } from '../contexts/AuthContext';
  *
  * - PIN entered successfully (encryptionStatus === 'ready')  → Online
  * - Signout / PIN re-locked                                  → Offline
- * - Tab hidden / phone sleep (visibilitychange + pagehide)   → Offline  ← KEY FIX
+ * - Tab hidden / phone sleep (visibilitychange + pagehide)   → Offline
  * - Tab visible again (and unlocked)                         → Online
  * - Page unload (beforeunload)                               → Offline
  *
  * Heartbeat: every 20 seconds while unlocked.
  * Edge Function Smart-Skip threshold: 30 seconds (matching heartbeat + buffer).
+ *
+ * KEY FIX: fireOfflineBeacon now uses the user's JWT token (cached in a ref)
+ * instead of the anon key. Previously, RLS blocked the update because
+ * auth.uid() was NULL with the anon key, causing users to stay "Online" forever.
  */
 export function useOnlineStatus(currentPage?: string) {
   const { user, encryptionStatus } = useAuth();
@@ -21,10 +25,32 @@ export function useOnlineStatus(currentPage?: string) {
   const userIdRef = useRef<string | null>(null);
   const isUnlockedRef = useRef<boolean>(false);
   const currentPageRef = useRef<string | undefined>(undefined);
+  // Cache JWT token so it's available during sync unload events
+  const jwtTokenRef = useRef<string | null>(null);
 
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   useEffect(() => { isUnlockedRef.current = encryptionStatus === 'ready'; }, [encryptionStatus]);
   useEffect(() => { currentPageRef.current = currentPage; }, [currentPage]);
+
+  // Keep JWT token ref fresh — runs on mount and whenever auth state changes
+  useEffect(() => {
+    const updateToken = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        jwtTokenRef.current = data.session?.access_token ?? null;
+      } catch {
+        jwtTokenRef.current = null;
+      }
+    };
+    updateToken();
+
+    // Listen for auth state changes (token refresh, sign-in, sign-out)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      jwtTokenRef.current = session?.access_token ?? null;
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // ── Core DB update (async, for use when React is running) ─────────────────
   const executeUpdate = async (userId: string, isOnline: boolean, page?: string) => {
@@ -50,9 +76,17 @@ export function useOnlineStatus(currentPage?: string) {
   };
 
   // ── Fire-and-forget fetch (survives page unload + mobile app switch) ───────
+  // CRITICAL: Uses cached JWT token, NOT the anon key.
+  // The anon key caused auth.uid() to be NULL → RLS blocked the UPDATE silently.
   const fireOfflineBeacon = (uid: string) => {
     const url = `${(supabase as any).supabaseUrl}/rest/v1/profiles?id=eq.${uid}`;
     const apiKey = (supabase as any).supabaseKey;
+    const jwt = jwtTokenRef.current;
+
+    // If no JWT is available, we can't update (RLS will block). Skip silently.
+    // The staleness check on the partner's side will handle this case.
+    if (!jwt) return;
+
     const body = JSON.stringify({
       is_online: false,
       last_seen: new Date().toISOString(),
@@ -63,14 +97,12 @@ export function useOnlineStatus(currentPage?: string) {
       headers: {
         'Content-Type': 'application/json',
         'apikey': apiKey,
-        'Authorization': `Bearer ${apiKey}`,
+        'Authorization': `Bearer ${jwt}`,
         'Prefer': 'return=minimal',
       },
       body,
       keepalive: true, // survives tab close on desktop
     };
-    // Try sendBeacon first (fire-and-forget, survives mobile bfcache)
-    // sendBeacon doesn't support custom headers so we fall through to fetch
     try { fetch(url, fetchOpts); } catch (_) { /* ignore */ }
   };
 
@@ -85,8 +117,6 @@ export function useOnlineStatus(currentPage?: string) {
     // 2. pagehide — MORE reliable on mobile than beforeunload.
     //    Fires when the page enters the bfcache or is truly unloaded.
     const handlePageHide = (_: PageTransitionEvent) => {
-      // e.persisted = true means page is entering bfcache (back/forward cache),
-      // we still want to mark offline since the app is "suspended"
       const uid = userIdRef.current;
       if (uid) fireOfflineBeacon(uid);
     };
@@ -97,10 +127,8 @@ export function useOnlineStatus(currentPage?: string) {
       const uid = userIdRef.current;
       if (!uid) return;
       if (document.visibilityState === 'hidden') {
-        // App went to background / phone locked
         fireOfflineBeacon(uid);
       } else if (document.visibilityState === 'visible' && isUnlockedRef.current) {
-        // App came back to foreground and user is still unlocked
         executeUpdate(uid, true, currentPageRef.current);
       }
     };
@@ -128,11 +156,10 @@ export function useOnlineStatus(currentPage?: string) {
       executeUpdate(user.id, isUnlocked, currentPage);
     }, 300);
 
-    // ── Heartbeat: 20s interval (was 60s — now fast enough for 30s Smart-Skip)
+    // ── Heartbeat: 20s interval
     let heartbeat: ReturnType<typeof setInterval> | null = null;
     if (isUnlocked) {
       heartbeat = setInterval(() => {
-        // Only send heartbeat if tab is visible (don't "wake up" an offline user)
         if (document.visibilityState === 'visible') {
           executeUpdate(user.id, true, currentPage);
         }

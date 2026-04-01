@@ -18,7 +18,35 @@ export interface PartnerProfile {
 export function usePartner() {
   const { user } = useAuth();
   const [partner, setPartner] = useState<PartnerProfile | null>(null);
+  const [isActuallyOnline, setIsActuallyOnline] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Calculate "actually online" status based on is_online boolean AND last_seen timestamp
+  useEffect(() => {
+    const checkStaleness = () => {
+      if (!partner) {
+        setIsActuallyOnline(false);
+        return;
+      }
+      
+      if (!partner.is_online) {
+        setIsActuallyOnline(false);
+        return;
+      }
+
+      const lastSeenTime = partner.last_seen ? new Date(partner.last_seen).getTime() : 0;
+      const now = Date.now();
+      
+      // Heartbeat is every 20s. If we haven't seen a heartbeat in 45s, 
+      // the user is effectively offline (app crashed, forced closed, or network lost).
+      const isStale = (now - lastSeenTime) > 45000;
+      setIsActuallyOnline(!isStale);
+    };
+
+    checkStaleness();
+    const interval = setInterval(checkStaleness, 15000); // Re-check every 15s
+    return () => clearInterval(interval);
+  }, [partner]);
 
   useEffect(() => {
     if (!user) {
@@ -70,5 +98,8 @@ export function usePartner() {
     };
   }, [user]);
 
-  return { partner, loading };
+  return { 
+    partner: partner ? { ...partner, is_online: isActuallyOnline } : null, 
+    loading 
+  };
 }

@@ -11,6 +11,29 @@ import ChatBubble from './ChatBubble';
 import TypingIndicator from './TypingIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 
+function formatLastSeen(lastSeen: string | null): string {
+  if (!lastSeen) return 'Offline';
+  const diff = Date.now() - new Date(lastSeen).getTime();
+  const totalMins = Math.floor(diff / 60000);
+
+  if (totalMins < 1) return 'Last seen just now';
+  if (totalMins < 60) return `Last seen ${totalMins} ${totalMins === 1 ? 'min' : 'mins'} ago`;
+
+  const hours = Math.floor(totalMins / 60);
+  const remainingMins = totalMins % 60;
+
+  if (hours < 24) {
+    const hourLabel = hours === 1 ? 'hour' : 'hours';
+    const minLabel = remainingMins === 1 ? 'min' : 'mins';
+    const minsPart = remainingMins > 0 ? ` ${remainingMins} ${minLabel}` : '';
+    return `Last seen ${hours} ${hourLabel}${minsPart} ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Last seen yesterday';
+  return `Last seen ${days} days ago`;
+}
+
 export default function DesktopChatScreen({ partner }: { partner: PartnerProfile }) {
   const { user } = useAuth();
   const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
@@ -196,7 +219,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
             <div>
               <h2 className="text-xl font-serif italic text-[#e6c487] leading-tight">{partner.display_name || 'Your Partner'}</h2>
               <p className="text-[10px] font-label tracking-[0.2em] text-[#998f81] uppercase mt-0.5">
-                {partner.is_online ? (partner.status_message || 'Online') : 'Offline'}
+                {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
               </p>
             </div>
           </div>
