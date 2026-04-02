@@ -149,53 +149,89 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
   }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
   
   // Real-time "Seen" logic using Intersection Observer
+  // ══ FIXED: Observer is created ONCE and persists across message changes ══
+  // Previously, this effect had `messages` in its deps, which meant:
+  // 1. Every new message → effect re-runs → old observer destroyed → new one created
+  // 2. The 1-second debounce timer (timerRef) was lost on each re-run
+  // 3. markAsRead() never fired → ticks never updated (✓ stayed single)
+  // 
+  // Now we use a MutationObserver to auto-observe new [data-message-id] elements
+  // as they appear in the DOM, without needing to recreate the IntersectionObserver.
   useEffect(() => {
-    if (viewMode !== 'chat' || messages.length === 0) return;
+    if (viewMode !== 'chat') return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
     const unreadMessages = new Set<string>();
-    const timerRef: { current: any } = { current: null };
-    let observer: IntersectionObserver | null = null;
-    let rafId: number;
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const setupObserver = () => {
-      observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            const msgId = el.getAttribute('data-message-id');
-            const isMine = el.getAttribute('data-is-mine') === 'true';
-            const isRead = el.getAttribute('data-is-read') === 'true';
-
-            if (msgId && !isMine && !isRead) {
-              unreadMessages.add(msgId);
-              
-              if (timerRef.current) clearTimeout(timerRef.current);
-              timerRef.current = setTimeout(() => {
-                if (unreadMessages.size > 0) {
-                  markAsRead(Array.from(unreadMessages));
-                  unreadMessages.clear();
-                }
-              }, 1000); // Wait 1s of visibility or continuous scrolling
-            }
-          }
-        });
-      }, {
-        root: scrollContainerRef.current,
-        threshold: 0.1, // Reduced threshold for better reliability on tall bubbles
-      });
-
-      const messageElements = scrollContainerRef.current?.querySelectorAll('[data-message-id]');
-      messageElements?.forEach(el => observer!.observe(el));
+    const flushReads = () => {
+      if (unreadMessages.size > 0) {
+        markAsRead(Array.from(unreadMessages));
+        unreadMessages.clear();
+      }
     };
 
-    rafId = requestAnimationFrame(setupObserver);
+    // Create IntersectionObserver ONCE
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          const msgId = el.getAttribute('data-message-id');
+          const isMine = el.getAttribute('data-is-mine') === 'true';
+          const isRead = el.getAttribute('data-is-read') === 'true';
+
+          if (msgId && !isMine && !isRead) {
+            unreadMessages.add(msgId);
+            
+            // Debounce flush — this timer now persists because the effect doesn't re-run
+            if (flushTimer) clearTimeout(flushTimer);
+            flushTimer = setTimeout(flushReads, 1000);
+          }
+        }
+      });
+    }, {
+      root: container,
+      threshold: 0.1,
+    });
+
+    // Observe all existing message elements
+    const observeAll = () => {
+      container.querySelectorAll('[data-message-id]').forEach(el => {
+        observer.observe(el);
+      });
+    };
+    observeAll();
+
+    // Use MutationObserver to auto-observe NEW message elements added to DOM
+    const mutationObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            // Check if the added node itself is a message element
+            if (node.hasAttribute('data-message-id')) {
+              observer.observe(node);
+            }
+            // Also check descendants
+            node.querySelectorAll?.('[data-message-id]')?.forEach(el => {
+              observer.observe(el);
+            });
+          }
+        }
+      }
+    });
+
+    mutationObserver.observe(container, { childList: true, subtree: true });
 
     return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (observer) observer.disconnect();
-      if (timerRef.current) clearTimeout(timerRef.current);
+      observer.disconnect();
+      mutationObserver.disconnect();
+      if (flushTimer) clearTimeout(flushTimer);
+      // Flush any pending reads on cleanup
+      flushReads();
     };
-  }, [messages, viewMode, markAsRead]);
+  }, [viewMode, markAsRead]);
 
   const getBackgroundStyle = () => {
     if (settings?.background_url === 'silk') return { background: '#1a1a24' };

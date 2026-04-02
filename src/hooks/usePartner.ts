@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { usePresenceChannel } from './usePresenceChannel';
 
 export interface PartnerProfile {
   id: string;
@@ -16,14 +15,17 @@ export interface PartnerProfile {
   key_history: { public_key: string; created_at: string }[] | null;
 }
 
-export function usePartner() {
+/**
+ * Fetches and subscribes to the partner's profile from the DB.
+ * 
+ * `partnerPresenceOnline` is injected from the SINGLE usePresenceChannel
+ * call in App.tsx — this eliminates the previous bug where two separate
+ * presence channels were fighting each other and destroying online status.
+ */
+export function usePartner(partnerPresenceOnline?: boolean) {
   const { user } = useAuth();
   const [partner, setPartner] = useState<PartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Consume Presence state for the partner
-  const { partnerState } = usePresenceChannel(partner?.id || null);
-
 
   useEffect(() => {
     if (!user) {
@@ -53,7 +55,7 @@ export function usePartner() {
 
     fetchPartner();
 
-    // Listen to partner profile realtime changes (like online status)
+    // Listen to partner profile realtime changes (like avatar, display_name, last_seen)
     const subscription = supabase
       .channel(`public:profiles:${user.id}`)
       .on(
@@ -75,8 +77,12 @@ export function usePartner() {
     };
   }, [user]);
 
+  // Merge presence-based online state (from the single App-level presence channel)
+  // If partnerPresenceOnline is undefined (not yet initialized), fall back to DB value
+  const isOnline = partnerPresenceOnline !== undefined ? partnerPresenceOnline : (partner?.is_online ?? false);
+
   return { 
-    partner: partner ? { ...partner, is_online: partnerState.isOnline } : null, 
+    partner: partner ? { ...partner, is_online: isOnline } : null, 
     loading 
   };
 }

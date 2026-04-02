@@ -14,6 +14,10 @@ export interface ChatMessage extends MessageRow {
   is_pending?: boolean;
 }
 
+// ═══ Module-level push debounce — MUST be outside the hook so it persists ═══
+// Previously was inside sendMessage body — recreated every call, breaking debounce entirely.
+const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
 export function useChat(partnerId: string | undefined, partnerPublicKey: string | null | undefined, partnerKeyHistory?: string[]) {
   const { user, encryptionStatus } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -27,6 +31,10 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [firstUnreadId, setFirstUnreadId] = useState<string | null>(null);
   const PAGE_SIZE = 10;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stable ref for encryptionStatus so realtime handlers have fresh value
+  // without needing it in effect deps (which causes full message reset)
+  const encryptionStatusRef = useRef(encryptionStatus);
+  useEffect(() => { encryptionStatusRef.current = encryptionStatus; }, [encryptionStatus]);
 
   // Only fetch columns we actually need — huge egress savings vs select('*')
   const MSG_COLUMNS = 'id,sender_id,receiver_id,encrypted_content,nonce,type,media_url,media_key,media_nonce,thumbnail_url,file_name,file_size,duration,reaction,reply_to,is_read,is_delivered,is_edited,is_deleted_for_everyone,is_deleted_for_sender,is_deleted_for_receiver,updated_at,read_at,delivered_at,created_at,sender_public_key' as const;
@@ -42,6 +50,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   // Track latest message timestamp for gap-fill
   const lastMessageTimeRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>(messages);
+  const pinnedMessageDetailsRef = useRef<Record<string, ChatMessage>>({});
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -50,6 +59,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       lastMessageTimeRef.current = maxTime;
     }
   }, [messages]);
+
+  useEffect(() => { pinnedMessageDetailsRef.current = pinnedMessageDetails; }, [pinnedMessageDetails]);
 
   // Decrypts a single message row — uses per-message sender_public_key when available
   const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
@@ -433,16 +444,27 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (channelMsg) supabase.removeChannel(channelMsg);
     };
-  }, [user, partnerId, encryptionStatus]); // Added encryptionStatus to re-subscribe if needed or at least re-trigger
+  // ══ CRITICAL: encryptionStatus was REMOVED from deps ══
+  // Having it here caused the entire effect (fetchMessages + channel subscribe)
+  // to re-run whenever encryption readiness changed — this would:
+  // 1. Re-fetch only the latest 10 messages, wiping 100+ loaded messages
+  // 2. Destroy and recreate the realtime channel
+  // Encryption readiness is handled by the separate re-decrypt effect below.
+  }, [user, partnerId]);
 
   // Fetch missing pinned message details
+  // ══ FIXED: Removed `messages` and `pinnedMessageDetails` from deps ══
+  // Having them caused this effect to fire on every message change (new msg, status update, etc.),
+  // triggering unnecessary DB fetches and cascading re-renders.
+  // We use refs to check current state without creating dependencies.
   useEffect(() => {
     if (!pinnedMessages || pinnedMessages.length === 0) return;
     
-    // Find message IDs that are NOT in the `messages` array AND NOT already in `pinnedMessageDetails`
+    const currentMessages = messagesRef.current;
+    // Find message IDs that are NOT currently loaded AND NOT already fetched
     const missingIds = pinnedMessages
       .map(p => p.message_id)
-      .filter(id => !messages.find(m => m.id === id) && !pinnedMessageDetails[id]);
+      .filter(id => !currentMessages.find(m => m.id === id) && !pinnedMessageDetailsRef.current[id]);
 
     if (missingIds.length === 0) return;
 
@@ -474,7 +496,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     };
 
     fetchDetails();
-  }, [pinnedMessages, messages, pinnedMessageDetails, decryptRow]);
+  }, [pinnedMessages, decryptRow]);
 
   const sendMessage = async (
     text: string, 
@@ -554,9 +576,6 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         reply_to: replyToId || null,
         sender_public_key: myPublicKeyStr,
       });
-
-// Module-level ref outside hook
-const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
     if (error) {
       console.error('Failed to send message', error);
@@ -688,6 +707,11 @@ const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
     }
   };
 
+  // ══ FIXED: Removed `messages` from deps ══
+  // Having `messages` here means loadMore gets a new identity on every single message
+  // state change, which causes MobileChatScreen's effects that depend on loadMore to
+  // re-fire, creating cascading re-renders and potentially re-triggering scroll loading.
+  // We use messagesRef.current instead to get the oldest timestamp.
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || !user || !partnerId) return;
 
@@ -696,8 +720,9 @@ const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
     const currentPartnerKey = partnerKeyRef.current;
     const currentKeyHistory = partnerKeyHistoryRef.current;
     
-    // Use the oldest message in state as the cursor
-    const oldestTimestamp = messages.length > 0 ? messages[0].created_at : null;
+    // Use ref instead of messages array to avoid dependency
+    const currentMessages = messagesRef.current;
+    const oldestTimestamp = currentMessages.length > 0 ? currentMessages[0].created_at : null;
     if (!oldestTimestamp) {
       setLoadingMore(false);
       return;
@@ -734,7 +759,7 @@ const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
     } finally {
       setLoadingMore(false);
     }
-  }, [user?.id, partnerId, messages, loadingMore, hasMore, decryptRow]);
+  }, [user?.id, partnerId, loadingMore, hasMore, decryptRow]);
 
   return { 
     messages, 

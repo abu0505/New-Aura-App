@@ -156,53 +156,75 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
   }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
 
   // Real-time "Seen" logic using Intersection Observer
+  // ══ FIXED: Observer is created ONCE and persists across message changes ══
+  // Uses MutationObserver to auto-observe new message elements in the DOM.
   useEffect(() => {
-    if (viewMode !== 'chat' || messages.length === 0) return;
+    if (viewMode !== 'chat') return;
+
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
     const unreadMessages = new Set<string>();
-    const timerRef: { current: any } = { current: null };
-    let observer: IntersectionObserver | null = null;
-    let rafId: number;
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const setupObserver = () => {
-      observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            const msgId = el.getAttribute('data-message-id');
-            const isMine = el.getAttribute('data-is-mine') === 'true';
-            const isRead = el.getAttribute('data-is-read') === 'true';
-
-            if (msgId && !isMine && !isRead) {
-              unreadMessages.add(msgId);
-              
-              if (timerRef.current) clearTimeout(timerRef.current);
-              timerRef.current = setTimeout(() => {
-                if (unreadMessages.size > 0) {
-                  markAsRead(Array.from(unreadMessages));
-                  unreadMessages.clear();
-                }
-              }, 1000);
-            }
-          }
-        });
-      }, {
-        root: scrollContainerRef.current,
-        threshold: 0.1,
-      });
-
-      const messageElements = scrollContainerRef.current?.querySelectorAll('[data-message-id]');
-      messageElements?.forEach(el => observer!.observe(el));
+    const flushReads = () => {
+      if (unreadMessages.size > 0) {
+        markAsRead(Array.from(unreadMessages));
+        unreadMessages.clear();
+      }
     };
 
-    rafId = requestAnimationFrame(setupObserver);
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement;
+          const msgId = el.getAttribute('data-message-id');
+          const isMine = el.getAttribute('data-is-mine') === 'true';
+          const isRead = el.getAttribute('data-is-read') === 'true';
+
+          if (msgId && !isMine && !isRead) {
+            unreadMessages.add(msgId);
+            
+            if (flushTimer) clearTimeout(flushTimer);
+            flushTimer = setTimeout(flushReads, 1000);
+          }
+        }
+      });
+    }, {
+      root: container,
+      threshold: 0.1,
+    });
+
+    // Observe all existing message elements
+    container.querySelectorAll('[data-message-id]').forEach(el => {
+      observer.observe(el);
+    });
+
+    // Use MutationObserver to auto-observe NEW message elements added to DOM
+    const mutationObserver = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLElement) {
+            if (node.hasAttribute('data-message-id')) {
+              observer.observe(node);
+            }
+            node.querySelectorAll?.('[data-message-id]')?.forEach(el => {
+              observer.observe(el);
+            });
+          }
+        }
+      }
+    });
+
+    mutationObserver.observe(container, { childList: true, subtree: true });
 
     return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      if (observer) observer.disconnect();
-      if (timerRef.current) clearTimeout(timerRef.current);
+      observer.disconnect();
+      mutationObserver.disconnect();
+      if (flushTimer) clearTimeout(flushTimer);
+      flushReads();
     };
-  }, [messages, viewMode, markAsRead]);
+  }, [viewMode, markAsRead]);
 
   const getBackgroundStyle = () => {
     if (settings?.background_url === 'silk') return { background: '#1a1a24' };

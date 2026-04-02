@@ -27,9 +27,12 @@ function InnerApp({
 }: any) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   
-  // Setup Realtime Presence
-  const { trackMyStatus, untrackMyStatus } = usePresenceChannel(partner?.id || null, activeTab);
+  // Setup Realtime Presence — SINGLE instance for the entire app
+  const { trackMyStatus, untrackMyStatus, partnerState } = usePresenceChannel(partner?.id || null, activeTab);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
+
+  // Merge presence online state into partner object
+  const partnerWithPresence = partner ? { ...partner, is_online: partnerState.isOnline } : partner;
 
   const { isLocked, hasAppPin } = useAppLock();
   const [showLockModal, setShowLockModal] = useState(false);
@@ -118,7 +121,7 @@ function InnerApp({
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
           <div className={activeTab === 'chat' ? 'h-full w-full' : 'hidden'}>
-            <ChatScreen partner={partner} />
+            <ChatScreen partner={partnerWithPresence} />
           </div>
           <div className={activeTab === 'stories' ? 'h-full w-full' : 'hidden'}>
             <StoriesScreen partner={partner} />
@@ -127,7 +130,7 @@ function InnerApp({
             <MemoriesScreen />
           </div>
           <div className={activeTab === 'location' ? 'h-full w-full' : 'hidden'}>
-            <LiveLocationScreen partner={partner} />
+            <LiveLocationScreen partner={partnerWithPresence} />
           </div>
           <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>
             <SettingsScreen />
@@ -149,6 +152,7 @@ function InnerApp({
 
 export default function App() {
   const { session, loading } = useAuth();
+  // usePartner no longer calls usePresenceChannel — the single presence channel is in InnerApp
   const { partner } = usePartner();
   const { streakCount, showCelebration, setShowCelebration } = useStreaks();
 
