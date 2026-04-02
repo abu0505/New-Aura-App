@@ -36,12 +36,38 @@ function formatLastSeen(lastSeen: string | null): string {
   return `Last seen ${days} days ago`;
 }
 
-export default function DesktopChatScreen({ partner }: { partner: PartnerProfile }) {
+interface DesktopChatScreenProps {
+  partner: PartnerProfile;
+  isActive?: boolean;
+}
+
+export default function DesktopChatScreen({ partner, isActive }: DesktopChatScreenProps) {
   const { user } = useAuth();
   const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
   const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
   const [showPinDropdown, setShowPinDropdown] = useState(false);
+  const pinDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+
+  // Click outside listener for the pin dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: Event) => {
+      if (pinDropdownRef.current && !pinDropdownRef.current.contains(e.target as Node)) {
+        setShowPinDropdown(false);
+      }
+    };
+
+    if (showPinDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('pointerdown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
+    };
+  }, [showPinDropdown]);
 
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
   const { 
@@ -308,7 +334,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
             )}
             <span className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors">call</span>
             <span className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors">videocam</span>
-            <div className="relative">
+            <div className="relative" ref={pinDropdownRef}>
               <span 
                 className="material-symbols-outlined text-2xl hover:text-[#e6c487] cursor-pointer transition-colors"
                 onClick={() => setShowPinDropdown(!showPinDropdown)}
@@ -317,7 +343,6 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
               </span>
               {showPinDropdown && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowPinDropdown(false)} />
                   <div className="absolute right-0 top-full mt-4 w-56 rounded-xl bg-[#292932] border border-white/5 shadow-2xl glass-panel z-50 overflow-hidden py-1">
                     {viewMode === 'pinned' && (
                       <button 
@@ -499,6 +524,7 @@ export default function DesktopChatScreen({ partner }: { partner: PartnerProfile
               disabled={!partner.public_key} 
               replyingTo={replyingTo}
               onCancelReply={() => setReplyingTo(null)}
+              isActive={isActive}
             />
           </div>
         )}

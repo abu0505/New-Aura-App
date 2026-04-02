@@ -15,9 +15,10 @@ interface MessageInputProps {
   disabled?: boolean;
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
+  isActive?: boolean;
 }
 
-export default function MessageInput({ onSend, onTyping, disabled, replyingTo, onCancelReply }: MessageInputProps) {
+export default function MessageInput({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive }: MessageInputProps) {
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -37,6 +38,17 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [text]);
+
+  // Handle auto-focus when tab becomes active
+  useEffect(() => {
+    if (isActive && textareaRef.current) {
+      // Small delay to ensure any tab transition or layout shift is done
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -250,6 +262,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
             onKeyDown={handleKeyDown}
             placeholder={isUploading ? "Securing media..." : "Write something beautiful..."}
             disabled={disabled || isUploading}
+            autoFocus
             className="w-full pl-3 bg-transparent border-none text-sm text-[#e4e1ed] placeholder:text-[#998f81]/50 placeholder:italic resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
             rows={1}
           />

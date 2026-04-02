@@ -121,7 +121,7 @@ function InnerApp({
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
           <div className={activeTab === 'chat' ? 'h-full w-full' : 'hidden'}>
-            <ChatScreen partner={partnerWithPresence} />
+            <ChatScreen partner={partnerWithPresence} isActive={activeTab === 'chat'} />
           </div>
           <div className={activeTab === 'stories' ? 'h-full w-full' : 'hidden'}>
             <StoriesScreen partner={partner} />

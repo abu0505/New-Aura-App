@@ -88,7 +88,7 @@ function ChatBubble({
   }, [message.id, partnerPublicKey, message.is_deleted_for_everyone]);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: Event) => {
       if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) {
         setInteractionType('none');
         setShowAllEmojis(false);
@@ -97,6 +97,8 @@ function ChatBubble({
 
     if (interactionType !== 'none') {
       document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('pointerdown', handleClickOutside);
     }
     
     // Elevate parent row z-index to stay above other messages
@@ -113,6 +115,8 @@ function ChatBubble({
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
       if (parentRow) {
         parentRow.style.zIndex = '';
         parentRow.style.position = '';

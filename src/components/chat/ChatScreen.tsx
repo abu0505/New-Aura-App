@@ -5,9 +5,10 @@ import type { PartnerProfile } from '../../hooks/usePartner';
 
 interface ChatScreenProps {
   partner: PartnerProfile | null;
+  isActive?: boolean;
 }
 
-export default function ChatScreen({ partner }: ChatScreenProps) {
+export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
   const { signOut } = useAuth();
 
   if (!partner) {
@@ -31,10 +32,10 @@ export default function ChatScreen({ partner }: ChatScreenProps) {
   return (
     <div className="h-full w-full">
       <div className="hidden lg:block h-full w-full">
-        <DesktopChatScreen partner={partner} />
+        <DesktopChatScreen partner={partner} isActive={isActive} />
       </div>
       <div className="lg:hidden h-full w-full">
-        <MobileChatScreen partner={partner} />
+        <MobileChatScreen partner={partner} isActive={isActive} />
       </div>
     </div>
   );
