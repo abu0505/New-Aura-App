@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { realtimeHub } from '../lib/realtimeHub';
 
 export interface PartnerProfile {
   id: string;
@@ -34,7 +35,6 @@ export function usePartner(partnerPresenceOnline?: boolean) {
     }
 
     const fetchPartner = async () => {
-      // In a 2-person app, the partner is just the other user in the profiles table
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -55,30 +55,24 @@ export function usePartner(partnerPresenceOnline?: boolean) {
 
     fetchPartner();
 
-    // Listen to partner profile realtime changes (like avatar, display_name, last_seen)
-    const subscription = supabase
-      .channel(`public:profiles:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles',
-          filter: `id=neq.${user.id}`,
-        },
-        (payload) => {
-          setPartner(payload.new as PartnerProfile);
+    // ═══ Use RealtimeHub instead of creating a separate channel ═══
+    // The hub already filters profiles to partner only
+    const unsubscribe = realtimeHub.on('profiles', (payload) => {
+      if (payload.eventType !== 'DELETE') {
+        const newProfile = payload.new as PartnerProfile;
+        // Only update if it's not our own profile
+        if (newProfile.id !== user.id) {
+          setPartner(newProfile);
         }
-      )
-      .subscribe();
+      }
+    });
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
     };
-  }, [user]);
+  }, [user?.id]);
 
   // Merge presence-based online state (from the single App-level presence channel)
-  // If partnerPresenceOnline is undefined (not yet initialized), fall back to DB value
   const isOnline = partnerPresenceOnline !== undefined ? partnerPresenceOnline : (partner?.is_online ?? false);
 
   return { 

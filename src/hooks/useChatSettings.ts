@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { realtimeHub } from '../lib/realtimeHub';
 
 export interface ChatSettings {
   id: string;
@@ -18,6 +19,16 @@ export function useChatSettings() {
   const [settings, setSettings] = useState<ChatSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshSettings = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('chat_settings')
+      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin')
+      .eq('user_id', user.id)
+      .single();
+    if (data) setSettings(data);
+  };
+
   useEffect(() => {
     if (!user) return;
 
@@ -29,7 +40,6 @@ export function useChatSettings() {
         .single();
 
       if (error && error.code === 'PGRST116') {
-        // No settings yet, create default
         const { data: newData, error: insertError } = await supabase
           .from('chat_settings')
           .insert({ user_id: user.id })
@@ -45,34 +55,20 @@ export function useChatSettings() {
 
     fetchSettings();
 
-    // Subscribe to ALL chat_settings changes (table has at most 2 rows)
-    // so that partner-initiated background changes are picked up via sync_chat_settings RPC
-    const channel = supabase
-      .channel(`chat_settings_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_settings',
-          filter: `user_id=eq.${user.id}`,
-        },
-        () => {
-          // Re-fetch own row to get synced values
-          refreshSettings();
-        }
-      )
-      .subscribe();
+    // ═══ Use RealtimeHub instead of creating a separate channel ═══
+    // The hub already filters by user_id for chat_settings
+    const unsubscribe = realtimeHub.on('chat_settings', () => {
+      refreshSettings();
+    });
 
     return () => {
-      supabase.removeChannel(channel);
+      unsubscribe();
     };
-  }, [user]);
+  }, [user?.id]);
 
   const updateSettings = async (updates: Partial<ChatSettings>) => {
     if (!user || !settings) return;
     
-    // Optimistic Update
     const previousSettings = { ...settings };
     setSettings({ ...settings, ...updates, updated_at: new Date().toISOString() });
 
@@ -82,7 +78,6 @@ export function useChatSettings() {
       .eq('user_id', user.id);
     
     if (error) {
-      // Rollback on error
       setSettings(previousSettings);
     }
     
@@ -92,7 +87,6 @@ export function useChatSettings() {
   const setSharedPin = async (newPinHash: string | null) => {
     if (!user) return { error: new Error("Not authenticated") };
 
-    // Optimistically update local state so UI responds instantly
     setSettings((prev) => prev ? { ...prev, shared_pin: newPinHash } : null);
 
     const { error } = await supabase.rpc('set_shared_app_pin', {
@@ -101,19 +95,9 @@ export function useChatSettings() {
 
     if (error) {
        console.error("Failed to set shared pin:", error);
-       refreshSettings(); // Rollback to actual state
+       refreshSettings();
     }
     return { error };
-  };
-
-  const refreshSettings = async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from('chat_settings')
-      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin')
-      .eq('user_id', user.id)
-      .single();
-    if (data) setSettings(data);
   };
 
   return { settings, loading, updateSettings, setSharedPin, refreshSettings };

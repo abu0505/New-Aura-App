@@ -17,6 +17,7 @@ import KeySetupModal from './components/auth/KeySetupModal';
 import { initPushNotifications } from './lib/pushNotifications';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
+import { realtimeHub } from './lib/realtimeHub';
 
 function InnerApp({ 
   session, 
@@ -151,10 +152,22 @@ function InnerApp({
 }
 
 export default function App() {
-  const { session, loading } = useAuth();
+  const { session, loading, user } = useAuth();
   // usePartner no longer calls usePresenceChannel — the single presence channel is in InnerApp
   const { partner } = usePartner();
   const { streakCount, showCelebration, setShowCelebration } = useStreaks();
+
+  // ═══ Start RealtimeHub ONCE when user + partner are available ═══
+  // This creates ONE shared Postgres Changes channel for the entire app,
+  // replacing 6+ separate channels that each had their own WebSocket overhead.
+  useEffect(() => {
+    if (user?.id && partner?.id) {
+      realtimeHub.start(user.id, partner.id);
+    }
+    return () => {
+      realtimeHub.stop();
+    };
+  }, [user?.id, partner?.id]);
 
   // Loading state
   if (loading) {

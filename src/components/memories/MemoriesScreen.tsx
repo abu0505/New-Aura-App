@@ -46,7 +46,7 @@ export default function MemoriesScreen() {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('*', { count: 'exact' })
+        .select('id,sender_id,media_url,media_key,media_nonce,type,created_at,sender_public_key', { count: 'exact' })
         .not('media_url', 'is', null)
         .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .range((pageNumber - 1) * LIMIT, pageNumber * LIMIT - 1)

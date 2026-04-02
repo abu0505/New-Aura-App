@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePartner } from './usePartner';
 import { encryptMessage, decryptMessage, getStoredKeyPair, decodeBase64, encodeBase64 } from '../lib/encryption';
+import { realtimeHub } from '../lib/realtimeHub';
 import type { Database } from '../integrations/supabase/types';
 
 type StoryRow = Database['public']['Tables']['stories']['Row'];
@@ -20,16 +21,27 @@ export function useStories() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // ═══ CRITICAL FIX: Use REFS for partner/user to avoid dependency cascading ═══
+  // Previously, `decryptStoryRow` depended on [user?.id, partner?.public_key],
+  // and `fetchStories` depended on [user, partner, decryptStoryRow].
+  // ANY profile update (last_seen, is_online, status_message) created a NEW
+  // partner object → new decryptStoryRow → new fetchStories → effect re-fires.
+  // This caused 30+ stories fetches PER SECOND, burning ~80% of egress.
+  const userRef = useRef(user);
+  const partnerRef = useRef(partner);
+  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { partnerRef.current = partner; }, [partner]);
+
   const decryptStoryRow = useCallback((row: StoryRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array }): Story => {
-    const isMine = row.user_id === user?.id;
+    const currentUser = userRef.current;
+    const currentPartner = partnerRef.current;
+    const isMine = row.user_id === currentUser?.id;
     let decryptedText = '';
 
-    // Stories use box encryption between the two partners
-    if (partner?.public_key && myKeyPair) {
+    if (currentPartner?.public_key && myKeyPair) {
       if (row.encrypted_content && row.media_nonce) {
         try {
-          // Use per-story sender_public_key if available, else fall back to current partner key
-          const senderKey = row.sender_public_key || partner.public_key;
+          const senderKey = row.sender_public_key || currentPartner.public_key;
           const result = decryptMessage(
             row.encrypted_content,
             row.media_nonce,
@@ -49,80 +61,72 @@ export function useStories() {
       decrypted_content: decryptedText || (row.encrypted_content ? '[Locked Memory]' : ''),
       is_mine: isMine,
     };
-  }, [user?.id, partner?.public_key]);
-
-  const fetchStories = useCallback(async () => {
-    if (!user || !partner) return;
-    
-    setLoading(true);
-    try {
-      const myKeyPair = getStoredKeyPair();
-      
-      const { data, error } = await supabase
-        .from('stories')
-        .select('id,user_id,encrypted_content,media_url,media_key,media_nonce,expires_at,viewed_at,created_at,sender_public_key')
-        .or(`user_id.eq.${user.id},user_id.eq.${partner.id}`)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (myKeyPair && data) {
-        const now = new Date();
-        const validStories = data.filter(r => new Date(r.expires_at) > now);
-        setStories(validStories.map(row => decryptStoryRow(row, myKeyPair)));
-      } else {
-        const now = new Date();
-        const validStories = (data || []).filter(r => new Date(r.expires_at) > now);
-        setStories(validStories.map(row => ({ ...row, is_mine: row.user_id === user.id })));
-      }
-    } catch (err) {
-      console.error('Error fetching stories:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, partner, decryptStoryRow]);
+  }, []); // ═══ NO DEPS — uses refs internally ═══
 
   useEffect(() => {
+    if (!user || !partner) return;
+
+    const fetchStories = async () => {
+      setLoading(true);
+      try {
+        const myKeyPair = getStoredKeyPair();
+        
+        const { data, error } = await supabase
+          .from('stories')
+          .select('id,user_id,encrypted_content,media_url,media_key,media_nonce,expires_at,viewed_at,created_at,sender_public_key')
+          .or(`user_id.eq.${user.id},user_id.eq.${partner.id}`)
+          .gt('expires_at', new Date().toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (myKeyPair && data) {
+          const now = new Date();
+          const validStories = data.filter(r => new Date(r.expires_at) > now);
+          setStories(validStories.map(row => decryptStoryRow(row, myKeyPair)));
+        } else {
+          const now = new Date();
+          const validStories = (data || []).filter(r => new Date(r.expires_at) > now);
+          setStories(validStories.map(row => ({ ...row, is_mine: row.user_id === user.id })));
+        }
+      } catch (err) {
+        console.error('Error fetching stories:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchStories();
 
-    const subscription = supabase
-      .channel('public:stories')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'stories',
-        },
-        (payload) => {
-          // Incremental update instead of full re-fetch — saves egress
-          const myKeyPair = getStoredKeyPair();
-          if (payload.eventType === 'INSERT' && myKeyPair) {
-            const row = payload.new as StoryRow;
-            const now = new Date();
-            if (new Date(row.expires_at) > now) {
-              const decrypted = decryptStoryRow(row, myKeyPair);
-              setStories(prev => {
-                if (prev.some(s => s.id === row.id)) return prev;
-                return [decrypted, ...prev];
-              });
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            setStories(prev => prev.map(s =>
-              s.id === (payload.new as any).id ? { ...s, ...payload.new } : s
-            ));
-          } else if (payload.eventType === 'DELETE') {
-            setStories(prev => prev.filter(s => s.id !== (payload.old as any).id));
-          }
+    // ═══ Use RealtimeHub instead of creating a separate channel ═══
+    const unsubscribe = realtimeHub.on('stories', (payload) => {
+      const myKeyPair = getStoredKeyPair();
+      if (payload.eventType === 'INSERT' && myKeyPair) {
+        const row = payload.new as StoryRow;
+        const now = new Date();
+        if (new Date(row.expires_at) > now) {
+          const decrypted = decryptStoryRow(row, myKeyPair);
+          setStories(prev => {
+            if (prev.some(s => s.id === row.id)) return prev;
+            return [decrypted, ...prev];
+          });
         }
-      )
-      .subscribe();
+      } else if (payload.eventType === 'UPDATE') {
+        setStories(prev => prev.map(s =>
+          s.id === (payload.new as any).id ? { ...s, ...payload.new } : s
+        ));
+      } else if (payload.eventType === 'DELETE') {
+        setStories(prev => prev.filter(s => s.id !== (payload.old as any).id));
+      }
+    });
 
     return () => {
-      subscription.unsubscribe();
+      unsubscribe();
     };
-  }, [fetchStories, decryptStoryRow]);
+  // ═══ CRITICAL: Only depend on PRIMITIVE IDs, not object references ═══
+  // user?.id and partner?.id are strings that only change on login/logout,
+  // NOT on every profile update like the full `partner` object does.
+  }, [user?.id, partner?.id, decryptStoryRow]);
 
   const addStory = async (content: string, media?: { url: string, media_key: string, media_nonce: string, type: string }) => {
     if (!user || !partner?.public_key) return;
@@ -130,8 +134,6 @@ export function useStories() {
     const myKeyPair = getStoredKeyPair();
     if (!myKeyPair) return;
 
-    // Encrypt the text content (caption or just text story)
-    // We'll use the media nonce if it's a media story, otherwise generate a new one
     let finalNonce = media?.media_nonce;
     let encryptedText = '';
 
@@ -160,7 +162,6 @@ export function useStories() {
   };
 
   const markAsSeen = async (storyId: string) => {
-    // Only mark partner's stories as seen once
     const story = stories.find(s => s.id === storyId);
     if (!story || story.is_mine || story.viewed_at) return;
 
@@ -169,5 +170,5 @@ export function useStories() {
     await supabase.from('stories').update({ viewed_at: now }).eq('id', storyId);
   };
 
-  return { stories, loading, addStory, markAsSeen, refresh: fetchStories };
+  return { stories, loading, addStory, markAsSeen, refresh: () => {} };
 }

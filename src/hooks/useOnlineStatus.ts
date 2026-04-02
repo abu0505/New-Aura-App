@@ -124,20 +124,27 @@ export function useOnlineStatus(trackMyStatus: (userId: string, page?: string) =
 
     // 3. visibilitychange — THE most reliable signal on Android.
     //    Fires when: phone locks, user switches apps, tab goes to background.
+    let visibilityTimeout: ReturnType<typeof setTimeout>;
     const handleVisibilityChange = () => {
       const uid = userIdRef.current;
       if (!uid) return;
+      
+      if (visibilityTimeout) clearTimeout(visibilityTimeout);
+      
       if (document.visibilityState === 'hidden') {
         untrackMyStatus();
-        fireOfflineBeacon(uid);
+        visibilityTimeout = setTimeout(() => {
+           fireOfflineBeacon(uid);
+        }, 1000);
       } else if (document.visibilityState === 'visible') {
         // Prevent race condition where React state hasn't updated yet
-        setTimeout(() => {
+        // and add a larger debounce so rapid app-switching doesn't hammer the DB
+        visibilityTimeout = setTimeout(() => {
           if (isUnlockedRef.current && userIdRef.current) {
             trackMyStatus(userIdRef.current, currentPageRef.current);
             executeUpdate(userIdRef.current, true, currentPageRef.current);
           }
-        }, 400); // 400ms delay to ensure state settles
+        }, 2000); // 2000ms delay to ensure state settles and prevent thrashing
       }
     };
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { encryptMessage, decryptMessageWithFallback, getStoredKeyPair, decodeBase64, encodeBase64 } from '../lib/encryption';
+import { realtimeHub } from '../lib/realtimeHub';
 import type { Database } from '../integrations/supabase/types';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
@@ -315,134 +316,83 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     fetchMessages();
 
-    let channelMsg: ReturnType<typeof supabase.channel> | null = null;
-    let isSubscribing = false;
+    // ═══ Use RealtimeHub instead of creating a separate channel ═══
+    const unsubMessages = realtimeHub.on('messages', (payload) => {
+      const myKeyPair = getStoredKeyPair();
+      const currentPartnerKey = partnerKeyRef.current;
+      const currentKeyHistory = partnerKeyHistoryRef.current;
+      if (!myKeyPair) return;
 
-    const setupSubscriptions = () => {
-      if (isSubscribing) return;
-      isSubscribing = true;
+      const row = payload.new as any;
+      const oldRow = payload.old as any;
 
-      // Clean up existing channel if any
-      if (channelMsg) supabase.removeChannel(channelMsg);
-
-      // SINGLE subscription for ALL messages between us (no filter = no double events)
-      // Client-side filtering is trivial for a 2-person app and halves realtime egress
-      channelMsg = supabase
-        .channel(`messages:${user.id}:${partnerId}:${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'messages',
-          },
-          (payload) => {
-            const myKeyPair = getStoredKeyPair();
-            const currentPartnerKey = partnerKeyRef.current;
-            const currentKeyHistory = partnerKeyHistoryRef.current;
-            if (!myKeyPair) return;
-
-            const row = payload.new as any;
-            const oldRow = payload.old as any;
-
-            // Client-side filter: only care about messages between us
-            if (payload.eventType !== 'DELETE') {
-              if (row.sender_id !== user.id && row.sender_id !== partnerId) return;
-              if (row.receiver_id !== user.id && row.receiver_id !== partnerId) return;
-            }
-
-            if (payload.eventType === 'INSERT') {
-              const newMsg = decryptRow(row as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
-              
-              if (row.sender_id === user.id) {
-                // My own message echoed back — reconcile with optimistic
-                setMessages((prev) => {
-                  const exists = prev.find(m => m.id === newMsg.id);
-                  if (exists) {
-                    return prev.map(m => m.id === newMsg.id ? { ...m, ...newMsg, is_pending: false } : m);
-                  }
-                  return [...prev, newMsg];
-                });
-                setPendingMessages(prev => prev.filter(m => m.id !== newMsg.id));
-              } else {
-                // Partner's message
-                setMessages((prev) => {
-                  if (prev.some(m => m.id === newMsg.id)) return prev;
-                  return [...prev, newMsg];
-                });
-                // Mark as delivered
-                supabase.from('messages').update({ is_delivered: true, delivered_at: new Date().toISOString() }).eq('id', newMsg.id).then();
-              }
-            } else if (payload.eventType === 'UPDATE') {
-              setMessages((prev) => prev.map(m => {
-                if (m.id !== row.id) return m;
-                const mergedRow = { ...m, ...row } as MessageRow;
-                if (row.is_edited && row.encrypted_content) {
-                  return decryptRow(mergedRow, myKeyPair, currentPartnerKey, currentKeyHistory);
-                }
-                return { ...m, ...row };
-              }));
-            } else if (payload.eventType === 'DELETE') {
-              setMessages((prev) => prev.filter(m => m.id !== oldRow?.id));
-            }
-          }
-        )
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'pinned_messages' }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setPinnedMessages(prev => {
-               if (prev.some(p => p.id === (payload.new as any).id)) return prev;
-               return [...prev, payload.new as Database['public']['Tables']['pinned_messages']['Row']];
-            });
-          } else if (payload.eventType === 'DELETE') {
-            setPinnedMessages(prev => prev.filter(p => p.id !== (payload.old as any).id));
-          }
-        });
-
-      channelMsg.subscribe((status, err) => {
-        isSubscribing = false;
-        if (status === 'SUBSCRIBED') {
-          fetchMissedUpdates();
-        } else if (status === 'TIMED_OUT' || status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-          console.warn(`Message channel status: ${status}. Attempting reconnect...`, err);
-          if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-          reconnectTimeoutRef.current = setTimeout(setupSubscriptions, 5000);
-        }
-      });
-    };
-
-    setupSubscriptions();
-
-    // Only gap-fill on visibility change — do NOT re-subscribe if channel is healthy
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchMissedMessages();
-        // Only re-subscribe if channel is broken, not on every tab switch
-        if (!channelMsg || (channelMsg as any).state !== 'joined') {
-          setupSubscriptions();
-        }
+      // Client-side filter: only care about messages between us
+      if (payload.eventType !== 'DELETE') {
+        if (row.sender_id !== user.id && row.sender_id !== partnerId) return;
+        if (row.receiver_id !== user.id && row.receiver_id !== partnerId) return;
       }
-    };
 
-    const handleOnlineEvent = () => {
-      fetchMissedMessages();
-      // Only re-subscribe if channel is broken
-      if (!channelMsg || (channelMsg as any).state !== 'joined') {
-        setupSubscriptions();
+      if (payload.eventType === 'INSERT') {
+        const newMsg = decryptRow(row as MessageRow, myKeyPair, currentPartnerKey, currentKeyHistory);
+        
+        if (row.sender_id === user.id) {
+          setMessages((prev) => {
+            const exists = prev.find(m => m.id === newMsg.id);
+            if (exists) {
+              return prev.map(m => m.id === newMsg.id ? { ...m, ...newMsg, is_pending: false } : m);
+            }
+            return [...prev, newMsg];
+          });
+          setPendingMessages(prev => prev.filter(m => m.id !== newMsg.id));
+        } else {
+          setMessages((prev) => {
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          supabase.from('messages').update({ is_delivered: true, delivered_at: new Date().toISOString() }).eq('id', newMsg.id).then();
+        }
+      } else if (payload.eventType === 'UPDATE') {
+        setMessages((prev) => prev.map(m => {
+          if (m.id !== row.id) return m;
+          const mergedRow = { ...m, ...row } as MessageRow;
+          if (row.is_edited && row.encrypted_content) {
+            return decryptRow(mergedRow, myKeyPair, currentPartnerKey, currentKeyHistory);
+          }
+          return { ...m, ...row };
+        }));
+      } else if (payload.eventType === 'DELETE') {
+        setMessages((prev) => prev.filter(m => m.id !== oldRow?.id));
       }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('online', handleOnlineEvent);
-
-    // REMOVED: 30-second polling interval — this was the #1 egress waster
-    // Realtime subscriptions already handle new messages instantly
+    });
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnlineEvent);
       
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (channelMsg) supabase.removeChannel(channelMsg);
+      unsubMessages();
+    };
+
+    // Gap-fill on visibility/online change (no channel management needed — hub handles it)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMissedMessages();
+      }
+    };
+
+    const handleOnlineEvent = () => {
+      fetchMissedMessages();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnlineEvent);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnlineEvent);
+      
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      unsubMessages();
     };
   // ══ CRITICAL: encryptionStatus was REMOVED from deps ══
   // Having it here caused the entire effect (fetchMessages + channel subscribe)
