@@ -65,7 +65,7 @@ export default function SecuritySection() {
     if (isTogglingSound || !settings) return;
     setIsTogglingSound(true);
     try {
-      await updateSettings({ notification_sound: !settings.notification_sound });
+      await updateSettings({ notification_enabled: !settings.notification_enabled });
     } finally {
       setIsTogglingSound(false);
     }
@@ -105,12 +105,12 @@ export default function SecuritySection() {
           >
             <span className="text-xs uppercase tracking-widest text-white/60 font-label flex items-center gap-2">
               <span className="material-symbols-outlined text-[1rem]">
-                {settings?.notification_sound ? 'volume_up' : 'volume_off'}
+                {settings?.notification_enabled ? 'volume_up' : 'volume_off'}
               </span>
               In-App Notification Sounds
             </span>
-            <div className={`w-10 h-5 rounded-full relative transition-colors ${settings?.notification_sound ? 'bg-[#e6c487]' : 'bg-white/10'}`}>
-               <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${settings?.notification_sound ? 'right-1 bg-[#412d00]' : 'left-1 bg-white/40'}`} />
+            <div className={`w-10 h-5 rounded-full relative transition-colors ${settings?.notification_enabled ? 'bg-[#e6c487]' : 'bg-white/10'}`}>
+               <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${settings?.notification_enabled ? 'right-1 bg-[#412d00]' : 'left-1 bg-white/40'}`} />
             </div>
           </div>
 

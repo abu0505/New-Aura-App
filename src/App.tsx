@@ -12,6 +12,7 @@ import AppLayout from './components/layout/AppLayout';
 import { useStreaks } from './hooks/useStreaks';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { usePresenceChannel } from './hooks/usePresenceChannel';
 import KeySetupModal from './components/auth/KeySetupModal'; 
 import { initPushNotifications } from './lib/pushNotifications';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
@@ -25,7 +26,11 @@ function InnerApp({
   setShowCelebration 
 }: any) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
-  useOnlineStatus(activeTab);
+  
+  // Setup Realtime Presence
+  const { trackMyStatus, untrackMyStatus } = usePresenceChannel(partner?.id || null, activeTab);
+  useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
+
   const { isLocked, hasAppPin } = useAppLock();
   const [showLockModal, setShowLockModal] = useState(false);
   const { encryptionStatus } = useAuth();
@@ -50,8 +55,21 @@ function InnerApp({
       const setupPush = async () => {
         await initPushNotifications(session.user.id);
       };
+      
+      // Auto-setup initially
       const timer = setTimeout(setupPush, 2000);
-      return () => clearTimeout(timer);
+      
+      // Listen for rotation events from main.tsx
+      const handleResubscribe = () => {
+        console.log('[InnerApp] Resubscribing due to key rotation event');
+        setupPush();
+      };
+      window.addEventListener('push-resubscribe', handleResubscribe);
+      
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('push-resubscribe', handleResubscribe);
+      };
     }
   }, [session?.user?.id, encryptionStatus]);
 

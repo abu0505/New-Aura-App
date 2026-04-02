@@ -120,8 +120,8 @@ function ChatBubble({
     };
   }, [interactionType]);
 
-  // Hidden if deleted for me
-  if (message.is_deleted_for_me) return null;
+  // Hidden if deleted for this user (sender sees is_deleted_for_sender, receiver sees is_deleted_for_receiver)
+  if ((message.is_mine && message.is_deleted_for_sender) || (!message.is_mine && message.is_deleted_for_receiver)) return null;
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();

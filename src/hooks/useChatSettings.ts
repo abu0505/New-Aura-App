@@ -8,7 +8,7 @@ export interface ChatSettings {
   background_url: string | null;
   background_key: string | null;
   background_nonce: string | null;
-  notification_sound: boolean;
+  notification_enabled: boolean;
   updated_at: string;
   shared_pin: string | null;
 }
@@ -24,7 +24,7 @@ export function useChatSettings() {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('chat_settings')
-        .select('*')
+        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin')
         .eq('user_id', user.id)
         .single();
 
@@ -110,7 +110,7 @@ export function useChatSettings() {
     if (!user) return;
     const { data } = await supabase
       .from('chat_settings')
-      .select('*')
+      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin')
       .eq('user_id', user.id)
       .single();
     if (data) setSettings(data);

@@ -55,14 +55,18 @@ export interface Database {
           media_url: string | null
           media_key: string | null
           media_nonce: string | null
+          thumbnail_url: string | null
+          file_name: string | null
+          file_size: number | null
+          duration: number | null
           reaction: string | null
           reply_to: string | null
           is_read: boolean
           is_delivered: boolean
           is_edited: boolean
-          is_deleted_for_me: boolean
+          is_deleted_for_sender: boolean
+          is_deleted_for_receiver: boolean
           is_deleted_for_everyone: boolean
-          is_forwarded: boolean
           read_at: string | null
           delivered_at: string | null
           created_at: string
@@ -79,14 +83,18 @@ export interface Database {
           media_url?: string | null
           media_key?: string | null
           media_nonce?: string | null
+          thumbnail_url?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          duration?: number | null
           reaction?: string | null
           reply_to?: string | null
           is_read?: boolean
           is_delivered?: boolean
           is_edited?: boolean
-          is_deleted_for_me?: boolean
+          is_deleted_for_sender?: boolean
+          is_deleted_for_receiver?: boolean
           is_deleted_for_everyone?: boolean
-          is_forwarded?: boolean
           read_at?: string | null
           delivered_at?: string | null
           created_at?: string
@@ -103,14 +111,18 @@ export interface Database {
           media_url?: string | null
           media_key?: string | null
           media_nonce?: string | null
+          thumbnail_url?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          duration?: number | null
           reaction?: string | null
           reply_to?: string | null
           is_read?: boolean
           is_delivered?: boolean
           is_edited?: boolean
-          is_deleted_for_me?: boolean
+          is_deleted_for_sender?: boolean
+          is_deleted_for_receiver?: boolean
           is_deleted_for_everyone?: boolean
-          is_forwarded?: boolean
           read_at?: string | null
           delivered_at?: string | null
           created_at?: string

@@ -14,7 +14,8 @@ if ('serviceWorker' in navigator) {
         // Listen for messages from the service worker (e.g., push subscription changed)
         navigator.serviceWorker.addEventListener('message', (event) => {
           if (event.data?.type === 'PUSH_SUBSCRIPTION_CHANGED') {
-            console.log('[App] Push subscription changed, user may need to re-subscribe.');
+            console.log('[App] Push subscription changed, dispatching event to re-subscribe.');
+            window.dispatchEvent(new CustomEvent('push-resubscribe'));
           }
         });
       },

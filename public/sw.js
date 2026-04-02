@@ -10,7 +10,7 @@ self.addEventListener('push', function(event) {
 
     const title = 'AURA';
     const options = {
-      body: 'You have a new message \uD83D\uDC8C',
+      body: 'A new message from aura app \uD83D\uDC8C',
       icon: '/favicon.svg',
       badge: '/favicon.svg',
       data: {
@@ -29,7 +29,7 @@ self.addEventListener('push', function(event) {
     // Fallback notification if JSON parsing fails
     event.waitUntil(
       self.registration.showNotification('AURA', {
-        body: 'You have a new message \uD83D\uDC8C',
+        body: 'A new message from aura app \uD83D\uDC8C',
         icon: '/favicon.svg',
         badge: '/favicon.svg',
         vibrate: [200, 100, 200]

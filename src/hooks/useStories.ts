@@ -60,7 +60,7 @@ export function useStories() {
       
       const { data, error } = await supabase
         .from('stories')
-        .select('*')
+        .select('id,user_id,encrypted_content,media_url,media_key,media_nonce,expires_at,viewed_at,created_at,sender_public_key')
         .or(`user_id.eq.${user.id},user_id.eq.${partner.id}`)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false });
@@ -95,8 +95,26 @@ export function useStories() {
           schema: 'public',
           table: 'stories',
         },
-        () => {
-          fetchStories();
+        (payload) => {
+          // Incremental update instead of full re-fetch — saves egress
+          const myKeyPair = getStoredKeyPair();
+          if (payload.eventType === 'INSERT' && myKeyPair) {
+            const row = payload.new as StoryRow;
+            const now = new Date();
+            if (new Date(row.expires_at) > now) {
+              const decrypted = decryptStoryRow(row, myKeyPair);
+              setStories(prev => {
+                if (prev.some(s => s.id === row.id)) return prev;
+                return [decrypted, ...prev];
+              });
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            setStories(prev => prev.map(s =>
+              s.id === (payload.new as any).id ? { ...s, ...payload.new } : s
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setStories(prev => prev.filter(s => s.id !== (payload.old as any).id));
+          }
         }
       )
       .subscribe();
@@ -104,7 +122,7 @@ export function useStories() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchStories]);
+  }, [fetchStories, decryptStoryRow]);
 
   const addStory = async (content: string, media?: { url: string, media_key: string, media_nonce: string, type: string }) => {
     if (!user || !partner?.public_key) return;

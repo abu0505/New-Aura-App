@@ -16,7 +16,7 @@ export function useStreaks() {
     const fetchStreak = async () => {
       const { data } = await supabase
         .from('streaks')
-        .select('*')
+        .select('id,user1_id,user2_id,current_streak,longest_streak')
         .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
         .single();
 

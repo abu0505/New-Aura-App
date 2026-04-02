@@ -3,22 +3,23 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
 /**
- * Online status is tied EXCLUSIVELY to PIN unlock state.
+ * Online status is tracked via Supabase Realtime Presence (`usePresenceChannel`)
+ * combined with regular DB updates for the `last_seen` timestamp.
  *
- * - PIN entered successfully (encryptionStatus === 'ready')  → Online
- * - Signout / PIN re-locked                                  → Offline
- * - Tab hidden / phone sleep (visibilitychange + pagehide)   → Offline
- * - Tab visible again (and unlocked)                         → Online
- * - Page unload (beforeunload)                               → Offline
  *
- * Heartbeat: every 20 seconds while unlocked.
- * Edge Function Smart-Skip threshold: 30 seconds (matching heartbeat + buffer).
+ * - PIN entered successfully (encryptionStatus === 'ready')  → Online (Presence Track + DB Update)
+ * - Signout / PIN re-locked                                  → Offline (Presence Untrack + DB Update)
+ * - Tab hidden / phone sleep (visibilitychange + pagehide)   → Offline (Presence Untrack + Offline Beacon)
+ * - Tab visible again (and unlocked)                         → Online (Presence Track + DB Update)
+ * - Page unload (beforeunload)                               → Offline (Presence Untrack + Offline Beacon)
+ *
+ * Edge Function Smart-Skip threshold: 60 seconds.
  *
  * KEY FIX: fireOfflineBeacon now uses the user's JWT token (cached in a ref)
  * instead of the anon key. Previously, RLS blocked the update because
  * auth.uid() was NULL with the anon key, causing users to stay "Online" forever.
  */
-export function useOnlineStatus(currentPage?: string) {
+export function useOnlineStatus(trackMyStatus: (userId: string, page?: string) => Promise<void>, untrackMyStatus: () => Promise<void>, currentPage?: string) {
   const { user, encryptionStatus } = useAuth();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stable refs so event listeners always have fresh values
@@ -127,9 +128,16 @@ export function useOnlineStatus(currentPage?: string) {
       const uid = userIdRef.current;
       if (!uid) return;
       if (document.visibilityState === 'hidden') {
+        untrackMyStatus();
         fireOfflineBeacon(uid);
-      } else if (document.visibilityState === 'visible' && isUnlockedRef.current) {
-        executeUpdate(uid, true, currentPageRef.current);
+      } else if (document.visibilityState === 'visible') {
+        // Prevent race condition where React state hasn't updated yet
+        setTimeout(() => {
+          if (isUnlockedRef.current && userIdRef.current) {
+            trackMyStatus(userIdRef.current, currentPageRef.current);
+            executeUpdate(userIdRef.current, true, currentPageRef.current);
+          }
+        }, 400); // 400ms delay to ensure state settles
       }
     };
 
@@ -141,8 +149,10 @@ export function useOnlineStatus(currentPage?: string) {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Untrack cleanly on component unmount
+      untrackMyStatus();
     };
-  }, []); // mount once
+  }, [trackMyStatus, untrackMyStatus]); // mount and bind to functions
 
   // ── React to PIN unlock / lock state ──────────────────────────────────────
   useEffect(() => {
@@ -153,22 +163,16 @@ export function useOnlineStatus(currentPage?: string) {
     // Debounce to avoid rapid state thrashing
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
+      if (isUnlocked) {
+        trackMyStatus(user.id, currentPage);
+      } else {
+        untrackMyStatus();
+      }
       executeUpdate(user.id, isUnlocked, currentPage);
     }, 300);
 
-    // ── Heartbeat: 20s interval
-    let heartbeat: ReturnType<typeof setInterval> | null = null;
-    if (isUnlocked) {
-      heartbeat = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-          executeUpdate(user.id, true, currentPage);
-        }
-      }, 20_000); // 20 seconds
-    }
-
     return () => {
-      if (heartbeat) clearInterval(heartbeat);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [user, encryptionStatus, currentPage]);
+  }, [user, encryptionStatus, currentPage, trackMyStatus, untrackMyStatus]);
 }

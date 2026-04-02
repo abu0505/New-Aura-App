@@ -28,7 +28,7 @@ export function SeenIndicator({ timestamp }: SeenIndicatorProps) {
 
   return (
     <div className="flex justify-end px-6 py-1 pb-4 animate-fade-in">
-      <span className="text-[11px] font-medium text-[#e6c487]/60 tracking-tight italic">
+      <span className="text-[11px] font-medium text-[#38bdf8]/70 tracking-tight italic">
         {displayText}
       </span>
     </div>

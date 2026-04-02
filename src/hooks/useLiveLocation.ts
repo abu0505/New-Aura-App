@@ -169,7 +169,7 @@ export function useLiveLocation() {
     const fetchInitial = async () => {
       const { data } = await supabase
         .from('live_locations')
-        .select('*')
+        .select('id,user_id,encrypted_lat,encrypted_lng,is_sharing,updated_at')
         .eq('user_id', partner.id)
         .single();
       

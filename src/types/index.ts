@@ -26,10 +26,10 @@ export interface Message {
   is_edited: boolean;
   edited_at: string | null;
   is_deleted_for_sender: boolean;
+  is_deleted_for_receiver: boolean;
   is_deleted_for_everyone: boolean;
   reactions: Record<string, string[]>;
   is_pinned: boolean;
-  is_forwarded: boolean;
   read_at: string | null;
   delivered_at: string | null;
   created_at: string;
@@ -95,7 +95,7 @@ export interface ChatSettings {
   background_url: string | null;
   background_key: string | null;
   background_nonce: string | null;
-  notification_sound: boolean;
+  notification_enabled: boolean;
   updated_at: string;
 }
 

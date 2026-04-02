@@ -237,7 +237,7 @@ Deno.serve(async (req) => {
       const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
       const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
       
-      if (secondsSinceLastSeen < 30) {
+      if (secondsSinceLastSeen < 60) {
         // Reduced logging to optimize speed
         return new Response(JSON.stringify({ success: true, message: "Skipped" }), { headers });
       }
@@ -270,8 +270,8 @@ Deno.serve(async (req) => {
 
         if (response.status === 201 || response.status === 200) {
           successCount++;
-        } else if (response.status === 410 || response.status === 404) {
-          console.log("[send-push] Subscription expired, deleting from DB.");
+        } else if (response.status === 410 || response.status === 404 || response.status === 400) {
+          console.log("[send-push] Subscription expired or invalid, deleting from DB.");
           await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
         } else {
           const respBody = await response.text();

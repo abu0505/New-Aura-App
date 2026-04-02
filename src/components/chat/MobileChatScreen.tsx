@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
+import { ChatBubbleErrorBoundary } from './ChatBubbleErrorBoundary';
 // PinnedMessagesBanner imported later if needed, but removed here
 import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
@@ -153,40 +154,45 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
 
     const unreadMessages = new Set<string>();
     const timerRef: { current: any } = { current: null };
+    let observer: IntersectionObserver | null = null;
+    let rafId: number;
 
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const el = entry.target as HTMLElement;
-          const msgId = el.getAttribute('data-message-id');
-          const isMine = el.getAttribute('data-is-mine') === 'true';
-          const isRead = el.getAttribute('data-is-read') === 'true';
+    const setupObserver = () => {
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            const msgId = el.getAttribute('data-message-id');
+            const isMine = el.getAttribute('data-is-mine') === 'true';
+            const isRead = el.getAttribute('data-is-read') === 'true';
 
-          if (msgId && !isMine && !isRead) {
-            unreadMessages.add(msgId);
-            
-            // Batch and debounce the "mark as read" call
-            if (timerRef.current) clearTimeout(timerRef.current);
-            timerRef.current = setTimeout(() => {
-              if (unreadMessages.size > 0) {
-                markAsRead(Array.from(unreadMessages));
-                unreadMessages.clear();
-              }
-            }, 1000); // Wait 1s of visibility or continuous scrolling
+            if (msgId && !isMine && !isRead) {
+              unreadMessages.add(msgId);
+              
+              if (timerRef.current) clearTimeout(timerRef.current);
+              timerRef.current = setTimeout(() => {
+                if (unreadMessages.size > 0) {
+                  markAsRead(Array.from(unreadMessages));
+                  unreadMessages.clear();
+                }
+              }, 1000); // Wait 1s of visibility or continuous scrolling
+            }
           }
-        }
+        });
+      }, {
+        root: scrollContainerRef.current,
+        threshold: 0.1, // Reduced threshold for better reliability on tall bubbles
       });
-    }, {
-      root: scrollContainerRef.current,
-      threshold: 0.1, // Reduced threshold for better reliability on tall bubbles
-    });
 
-    // Observe all unread partner messages
-    const messageElements = scrollContainerRef.current?.querySelectorAll('[data-message-id]');
-    messageElements?.forEach(el => observer.observe(el));
+      const messageElements = scrollContainerRef.current?.querySelectorAll('[data-message-id]');
+      messageElements?.forEach(el => observer!.observe(el));
+    };
+
+    rafId = requestAnimationFrame(setupObserver);
 
     return () => {
-      observer.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+      if (observer) observer.disconnect();
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [messages, viewMode, markAsRead]);
@@ -406,6 +412,10 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                 );
               }
 
+              const lastReadMyMsg = viewMode === 'chat' 
+                ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at)
+                : null;
+
               return listToRender.map((msg, index) => {
                 const currentDateStr = new Date(msg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
                 const previousMsg = index > 0 ? listToRender[index - 1] : null;
@@ -436,35 +446,33 @@ export default function MobileChatScreen({ partner }: { partner: PartnerProfile 
                       </div>
                     )}
                     <div className={`flex w-full ${msg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
-                      <ChatBubble 
-                        message={msg} 
-                        partnerPublicKey={msg.sender_id === user?.id ? partner.public_key : null}
-                        onReact={viewMode === 'chat' ? reactToMessage : undefined}
-                        onEdit={viewMode === 'chat' ? editMessage : undefined}
-                        onDelete={viewMode === 'chat' ? deleteMessage : undefined}
-                        onPin={pinMessage}
-                        isFirst={isFirstInGroup}
-                        isLast={isLastInGroup}
-                        isPinnedView={viewMode === 'pinned'}
-                        onRedirect={viewMode === 'pinned' ? (id) => {
-                          setViewMode('chat');
-                          handleJumpToMessage(id);
-                        } : undefined}
-                        onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
-                        repliedMessage={msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined}
-                        onJumpToMessage={handleJumpToMessage}
-                      />
+                      <ChatBubbleErrorBoundary messageId={msg.id}>
+                        <ChatBubble 
+                          message={msg} 
+                          partnerPublicKey={msg.sender_id === user?.id ? partner.public_key : null}
+                          onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                          onEdit={viewMode === 'chat' ? editMessage : undefined}
+                          onDelete={viewMode === 'chat' ? deleteMessage : undefined}
+                          onPin={pinMessage}
+                          isFirst={isFirstInGroup}
+                          isLast={isLastInGroup}
+                          isPinnedView={viewMode === 'pinned'}
+                          onRedirect={viewMode === 'pinned' ? (id) => {
+                            setViewMode('chat');
+                            handleJumpToMessage(id);
+                          } : undefined}
+                          onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
+                          repliedMessage={msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined}
+                          onJumpToMessage={handleJumpToMessage}
+                        />
+                      </ChatBubbleErrorBoundary>
                     </div>
+                    {lastReadMyMsg && lastReadMyMsg.id === msg.id && (
+                      <SeenIndicator timestamp={lastReadMyMsg.read_at!} />
+                    )}
                   </div>
                 );
               });
-            })()}
-            {(() => {
-              const lastMsg = listToRender[listToRender.length - 1];
-              if (viewMode === 'chat' && lastMsg && lastMsg.is_read && lastMsg.read_at) {
-                return <SeenIndicator timestamp={lastMsg.read_at} />;
-              }
-              return null;
             })()}
             {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
             <div ref={messagesEndRef} />
