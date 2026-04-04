@@ -28,6 +28,10 @@ export interface ProcessedMedia {
 let ffmpegInstance: FFmpeg | null = null;
 let ffmpegLoaded = false;
 
+// Global cache for decrypted blobs to save egress and decryption CPU
+const decryptedBlobCache = new Map<string, Blob>();
+const MAX_CACHE_SIZE = 200;
+
 export function useMedia() {
   const { user } = useAuth();
   const { partner } = usePartner();
@@ -172,6 +176,10 @@ export function useMedia() {
     if (!myKeyPair) return null;
 
     try {
+      if (decryptedBlobCache.has(url)) {
+        return decryptedBlobCache.get(url)!;
+      }
+
       const [keyNonce, encryptedKey] = packedKey.split(':');
       if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
 
@@ -200,7 +208,16 @@ export function useMedia() {
       const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
       if (!decrypted) return null;
 
-      return new Blob([decrypted as any]);
+      const blob = new Blob([decrypted as any]);
+      
+      // Cache management (simple LRU by Map insertion order)
+      if (decryptedBlobCache.size >= MAX_CACHE_SIZE) {
+        const firstKey = decryptedBlobCache.keys().next().value;
+        if (firstKey) decryptedBlobCache.delete(firstKey);
+      }
+      decryptedBlobCache.set(url, blob);
+
+      return blob;
     } catch (error) {
       console.error('Decryption failed', error);
       return null;

@@ -57,7 +57,7 @@ export function useLiveLocation() {
         .update({ is_sharing: false, updated_at: new Date().toISOString() })
         .eq('user_id', user.id);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const startSharing = useCallback(async () => {
     if (!user || !partner) {
@@ -131,6 +131,10 @@ export function useLiveLocation() {
   useEffect(() => {
     if (!user || !partner) return;
 
+    // TEMPORARILY DISABLED TO SAVE EGRESS
+    const disabled = true;
+    if (disabled) return;
+
     let myKeys = getStoredKeyPair();
     if (!myKeys) return;
 
@@ -171,7 +175,7 @@ export function useLiveLocation() {
         .from('live_locations')
         .select('id,user_id,encrypted_lat,encrypted_lng,is_sharing,updated_at')
         .eq('user_id', partner.id)
-        .single();
+        .maybeSingle();
       
       if (data) fetchAndDecryptPartnerLocation(data);
     };
@@ -184,7 +188,7 @@ export function useLiveLocation() {
         .from('live_locations')
         .select('is_sharing')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
       
       if (data && data.is_sharing && !isSharing) {
          // Auto-resume if we refresh while sharing?
@@ -211,9 +215,8 @@ export function useLiveLocation() {
 
     return () => {
       subscription.unsubscribe();
-      stopSharing();
     };
-  }, [user, partner, stopSharing]); // Added dependencies safely, stopSharing is stable
+  }, [user?.id, partner?.id]); // Use IDs as dependencies to prevent infinite re-renders
 
   // Haversine formula for distance
   const getDistanceInKm = () => {

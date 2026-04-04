@@ -50,7 +50,7 @@ export default function MediaViewer({ url, type, onClose }: MediaViewerProps) {
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.95, opacity: 0 }}
           transition={{ duration: 0.25 }}
-          style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={(e) => e.stopPropagation()}
         >
           {type === 'image' ? (
@@ -59,16 +59,17 @@ export default function MediaViewer({ url, type, onClose }: MediaViewerProps) {
               minScale={0.5}
               maxScale={6}
               centerOnInit
+              centerZoomedOut
               panning={{ velocityDisabled: true }}
             >
               <TransformComponent
-                wrapperStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                contentStyle={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                wrapperStyle={{ width: '100%', height: '100%' }}
+                contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <img
                   src={url}
                   alt="Secure Media"
-                  style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain', userSelect: 'none' }}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', userSelect: 'none', pointerEvents: 'none' }}
                   draggable={false}
                 />
               </TransformComponent>
@@ -78,7 +79,7 @@ export default function MediaViewer({ url, type, onClose }: MediaViewerProps) {
               src={url}
               controls
               autoPlay
-              style={{ maxWidth: '95vw', maxHeight: '90vh', borderRadius: '0.75rem', background: 'black', boxShadow: '0 25px 60px rgba(0,0,0,0.8)' }}
+              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '0.75rem', background: 'black', boxShadow: '0 25px 60px rgba(0,0,0,0.8)' }}
             />
           )}
         </motion.div>

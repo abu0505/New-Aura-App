@@ -365,14 +365,6 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       }
     });
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('online', handleOnlineEvent);
-      
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      unsubMessages();
-    };
-
     // Gap-fill on visibility/online change (no channel management needed — hub handles it)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {

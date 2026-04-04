@@ -119,16 +119,16 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
 
     // If I sent the message, always scroll to bottom. 
     // If it's from partner, only scroll if already near bottom.
-    if (hasNewMessage && (sentByMe || isNearBottom)) {
+    if (viewMode === 'chat' && hasNewMessage && (sentByMe || isNearBottom)) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
 
     previousMessageCountRef.current = messages.length;
-  }, [messages, loading]);
+  }, [messages, loading, viewMode]);
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
-    if (!container || loadingMore || !hasMore) return;
+    if (!container || loadingMore || !hasMore || viewMode === 'pinned') return;
 
     // Trigger load more when user stays near the top (e.g., < 100px)
     if (container.scrollTop < 100) {
@@ -320,7 +320,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
               )}
             </div>
             <div>
-              <h2 className="text-xl font-serif italic text-[#e6c487] leading-tight">{partner.display_name || 'Your Partner'}</h2>
+              <h2 className="text-xl font-serif text-[#e6c487] leading-tight">{partner.display_name || 'Your Partner'}</h2>
               <p className="text-[10px] font-label tracking-[0.2em] text-[#998f81] uppercase mt-0.5">
                 {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
               </p>

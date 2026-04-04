@@ -65,6 +65,13 @@ export function useStories() {
 
   useEffect(() => {
     if (!user || !partner) return;
+    
+    // TEMPORARILY DISABLED TO SAVE EGRESS
+    const disabled = true;
+    if (disabled) {
+      setLoading(false);
+      return;
+    }
 
     const fetchStories = async () => {
       setLoading(true);

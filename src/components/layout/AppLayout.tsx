@@ -13,15 +13,24 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
   const { signOut } = useAuth();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [forceNav, setForceNav] = useState(false);
+  const [hideNav, setHideNav] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
     const handleToggle = () => setForceNav(v => !v);
+    const handleHide = () => setHideNav(true);
+    const handleShow = () => setHideNav(false);
+    
     window.addEventListener('resize', handleResize);
     document.addEventListener('toggle-nav', handleToggle);
+    document.addEventListener('hide-global-nav', handleHide);
+    document.addEventListener('show-global-nav', handleShow);
+    
     return () => {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('toggle-nav', handleToggle);
+      document.removeEventListener('hide-global-nav', handleHide);
+      document.removeEventListener('show-global-nav', handleShow);
     };
   }, []);
 
@@ -109,7 +118,7 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[#13131b]/80 backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 ${activeTab === 'chat' && !forceNav ? 'translate-y-full' : 'translate-y-0'}`}>
+      <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[#13131b]/80 backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 ${(activeTab === 'chat' && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-0'}`}>
         {/* Chat */}
         <button
           onClick={() => changeTab('chat')}

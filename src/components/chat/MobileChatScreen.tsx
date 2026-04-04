@@ -18,22 +18,20 @@ function formatLastSeen(lastSeen: string | null): string {
   const diff = Date.now() - new Date(lastSeen).getTime();
   const totalMins = Math.floor(diff / 60000);
 
-  if (totalMins < 1) return 'Last seen just now';
-  if (totalMins < 60) return `Last seen ${totalMins} ${totalMins === 1 ? 'min' : 'mins'} ago`;
+  if (totalMins < 1) return 'Just now';
+  if (totalMins < 60) return `${totalMins} mins ago`;
 
   const hours = Math.floor(totalMins / 60);
   const remainingMins = totalMins % 60;
 
   if (hours < 24) {
-    const hourLabel = hours === 1 ? 'hour' : 'hours';
-    const minLabel = remainingMins === 1 ? 'min' : 'mins';
-    const minsPart = remainingMins > 0 ? ` ${remainingMins} ${minLabel}` : '';
-    return `Last seen ${hours} ${hourLabel}${minsPart} ago`;
+    const minsPart = remainingMins > 0 ? ` ${remainingMins}M` : '';
+    return `${hours}H${minsPart} ago`;
   }
 
   const days = Math.floor(hours / 24);
-  if (days === 1) return 'Last seen yesterday';
-  return `Last seen ${days} days ago`;
+  if (days === 1) return 'Yesterday';
+  return `${days} days ago`;
 }
 
 interface MobileChatScreenProps {
@@ -118,16 +116,16 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
 
     // If I sent the message, always scroll to bottom. 
     // If it's from partner, only scroll if already near bottom.
-    if (hasNewMessage && (sentByMe || isNearBottom)) {
+    if (viewMode === 'chat' && hasNewMessage && (sentByMe || isNearBottom)) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
 
     previousMessageCountRef.current = messages.length;
-  }, [messages, loading]);
+  }, [messages, loading, viewMode]);
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
-    if (!container || loadingMore || !hasMore) return;
+    if (!container || loadingMore || !hasMore || viewMode === 'pinned') return;
 
     if (container.scrollTop < 100) {
       previousScrollHeightRef.current = container.scrollHeight;
@@ -314,8 +312,8 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
           )}
         </div>
         {/* TopAppBar */}
-        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 py-4 border-b border-white/5">
-          <div className="flex items-center gap-3">
+        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 py-4 border-b border-white/5 gap-2">
+          <div className="flex items-center gap-3 min-w-0">
             <button 
               onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))} 
               className="text-[#998f81] hover:text-[#e6c487] transition-colors active:scale-90 mr-1 flex items-center justify-center p-2 rounded-full"
@@ -338,7 +336,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
               )}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-serif italic text-lg text-[#e6c487] leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
+              <span className="font-serif text-lg text-[#e6c487] leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
               <span className="text-[9px] font-label uppercase tracking-widest text-[#998f81] truncate">
                 {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
               </span>
