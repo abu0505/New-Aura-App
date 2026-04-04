@@ -10,6 +10,8 @@ import MediaViewer from '../chat/MediaViewer';
 import SearchOverlay from './SearchOverlay';
 import FoldersPanel from './FoldersPanel';
 import FolderView from './FolderView';
+import OnThisDayCard from './OnThisDayCard';
+import TimelineScrubber from './TimelineScrubber';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -27,8 +29,10 @@ export default function MemoriesScreen() {
   const { getDecryptedBlob } = useMedia();
   const { folders, addItemsToFolder } = useMediaFolders();
   const [memories, setMemories] = useState<MemoryItem[]>([]);
+  const [throwbacks, setThrowbacks] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document'>('all');
+  const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string } | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -43,18 +47,62 @@ export default function MemoriesScreen() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const generatedUrlsRef = useRef<Set<string>>(new Set());
+
+  // ── Phase 4: Pinch-to-Zoom grid density ─────────────────────────────
+  type GridDensity = 2 | 3 | 4;
+  const [gridDensity, setGridDensity] = useState<GridDensity>(() => {
+    if (typeof window === 'undefined') return 2;
+    const saved = parseInt(localStorage.getItem('aura_grid_density') ?? '2', 10);
+    return ([2, 3, 4].includes(saved) ? saved : 2) as GridDensity;
+  });
+  const [densityFlash, setDensityFlash] = useState(false);
+  const pinchState = useRef<{
+    active: boolean;
+    startDist: number;
+    lastChangeTime: number;
+  }>({ active: false, startDist: 0, lastChangeTime: 0 });
+
+  // ── Phase 5: Timeline Scrubber ───────────────────────────────────────
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchMemories(1);
+    fetchThrowbacks();
   }, [user?.id, partner?.id]);
 
   useEffect(() => {
     return () => {
-      memories.forEach(m => {
-        if (m.decryptedUrl) URL.revokeObjectURL(m.decryptedUrl);
-      });
+      generatedUrlsRef.current.forEach((url: string) => URL.revokeObjectURL(url));
     };
-  }, [memories]);
+  }, []);
+
+  // ── Phase 6: Load favorites from localStorage ──────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem('aura_favorites');
+    if (saved) {
+      try {
+        setFavorites(new Set(JSON.parse(saved)));
+      } catch (e) {
+        console.error('Failed to parse favorites', e);
+      }
+    }
+  }, []);
+
+  const toggleFavorite = (id: string) => {
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+        // Haptic feedback only on favoriting
+        navigator.vibrate?.(10);
+      }
+      localStorage.setItem('aura_favorites', JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
 
   // Hide mobile navbar when overlays or selection modes are active
   useEffect(() => {
@@ -70,6 +118,60 @@ export default function MemoriesScreen() {
       document.dispatchEvent(new CustomEvent('show-global-nav'));
     };
   }, []);
+
+  // ── Pinch gesture on mobile ───────────────────────────────────────────
+  const getDist = (touches: React.TouchList) =>
+    Math.hypot(
+      touches[0].clientX - touches[1].clientX,
+      touches[0].clientY - touches[1].clientY,
+    );
+
+  const handleGridTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 2) return;
+    pinchState.current.active = true;
+    pinchState.current.startDist = getDist(e.touches);
+  };
+
+  const handleGridTouchMove = (e: React.TouchEvent) => {
+    if (!pinchState.current.active || e.touches.length !== 2) return;
+    const COOLDOWN = 350; // ms between density changes
+    const THRESHOLD = 40; // px delta to trigger change
+    const now = Date.now();
+    if (now - pinchState.current.lastChangeTime < COOLDOWN) return;
+
+    const currentDist = getDist(e.touches);
+    const delta = currentDist - pinchState.current.startDist;
+
+    if (Math.abs(delta) < THRESHOLD) return;
+
+    // Compute next density outside the state updater to avoid side-effects in Strict Mode
+    setGridDensity(prev => {
+      let next: GridDensity = prev;
+      if (delta < 0 && prev < 4) next = (prev + 1) as GridDensity; // pinch apart = more columns
+      if (delta > 0 && prev > 2) next = (prev - 1) as GridDensity; // pinch together = fewer columns
+      return next;
+    });
+
+    // Compute next independently for side-effect logic
+    const next: GridDensity =
+      delta < 0 && gridDensity < 4 ? (gridDensity + 1) as GridDensity :
+      delta > 0 && gridDensity > 2 ? (gridDensity - 1) as GridDensity :
+      gridDensity;
+
+    if (next !== gridDensity) {
+      localStorage.setItem('aura_grid_density', String(next));
+      setDensityFlash(true);
+      setTimeout(() => setDensityFlash(false), 350);
+      navigator.vibrate?.(8);
+    }
+
+    pinchState.current.startDist = currentDist;
+    pinchState.current.lastChangeTime = now;
+  };
+
+  const handleGridTouchEnd = () => {
+    pinchState.current.active = false;
+  };
 
   const fetchMemories = async (pageNumber = 1) => {
     if (!user || !partner) return;
@@ -104,6 +206,28 @@ export default function MemoriesScreen() {
     }
   };
 
+  const fetchThrowbacks = async () => {
+    if (!user || !partner) return;
+    try {
+      const now = new Date();
+      const month = now.getMonth() + 1; // 1-indexed for PG extract
+      const day = now.getDate();
+
+      const { data, error } = await supabase.rpc('get_throwbacks', {
+        u_id: user.id,
+        p_id: partner.id,
+        current_month: month,
+        current_day: day,
+        limit_count: 6
+      });
+
+      if (error) throw error;
+      setThrowbacks(data as MemoryItem[]);
+    } catch (err) {
+      console.error('Error fetching throwbacks:', err);
+    }
+  };
+
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -120,10 +244,12 @@ export default function MemoriesScreen() {
         memory.media_url,
         memory.media_key,
         memory.media_nonce,
-        partner.public_key
+        partner.public_key,
+        memory.sender_public_key
       );
       if (blob) {
         const url = URL.createObjectURL(blob);
+        generatedUrlsRef.current.add(url);
         setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, decryptedUrl: url, loading: false } : m));
       }
     } catch (err) {
@@ -134,6 +260,7 @@ export default function MemoriesScreen() {
 
   const filteredMemories = memories.filter(m => {
     if (filter === 'all') return true;
+    if (filter === 'favorites') return favorites.has(m.id);
     return m.type === filter;
   });
 
@@ -236,7 +363,7 @@ export default function MemoriesScreen() {
             <div className="relative flex items-center">
               {/* Scrollable Filters */}
               <div className="flex-1 overflow-x-auto no-scrollbar scroll-smooth flex gap-2 pr-12">
-                {['all', 'image', 'video', 'audio', 'document'].map((f) => (
+                {['all', 'favorites', 'image', 'video', 'audio', 'document'].map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f as any)}
@@ -245,7 +372,7 @@ export default function MemoriesScreen() {
                         : 'bg-transparent text-[#998f81] border-white/10 hover:border-white/20'
                       }`}
                   >
-                    {f === 'all' ? 'All' : f + 's'}
+                    {f === 'all' ? 'All' : f === 'favorites' ? 'Favorites' : f + 's'}
                   </button>
                 ))}
               </div>
@@ -265,9 +392,14 @@ export default function MemoriesScreen() {
         )}
       </header>
 
-      {/* Grid */}
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+      {/* Grid + Scrubber wrapper */}
+      <div className="flex-1 relative overflow-hidden">
+        <div
+          ref={scrollContainerRef}
+          className="w-full h-full overflow-y-auto p-4 custom-scrollbar pr-8"
+        >
         {loading ? (
+
           <div className="h-full flex flex-col items-center justify-center gap-4">
             <div className="w-12 h-12 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
             <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[#e6c487]/40">Gathering Echoes...</p>
@@ -280,7 +412,27 @@ export default function MemoriesScreen() {
           </div>
         ) : (
           <div className="flex flex-col gap-8 pb-32">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 auto-rows-[200px]">
+            {throwbacks.length > 0 && !selectionMode && filter === 'all' && (
+              <OnThisDayCard 
+                throwbacks={throwbacks} 
+                partnerPublicKey={partner?.public_key || ''} 
+                onOpenMedia={(url, type) => setSelectedMedia({ url, type })}
+              />
+            )}
+
+            <div
+              className={`grid gap-2 transition-all duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
+                densityFlash ? 'ring-2 ring-[#e6c487]/30 rounded-xl' : ''
+              } ${
+                gridDensity === 2 ? 'grid-cols-2 auto-rows-[250px]' :
+                gridDensity === 3 ? 'grid-cols-3 auto-rows-[200px]' :
+                'grid-cols-4 auto-rows-[150px]'
+              }`}
+              onTouchStart={handleGridTouchStart}
+              onTouchMove={handleGridTouchMove}
+              onTouchEnd={handleGridTouchEnd}
+              style={{ touchAction: 'pan-y' }}
+            >
               {filteredMemories.map((memory, index) => (
                 <MemoryCard
                   key={memory.id}
@@ -293,6 +445,8 @@ export default function MemoriesScreen() {
                   onTouchEnd={handleTouchEnd}
                   isSelected={selectedIds.has(memory.id)}
                   selectionMode={selectionMode}
+                  isFavorited={favorites.has(memory.id)}
+                  onToggleFavorite={() => toggleFavorite(memory.id)}
                 />
               ))}
             </div>
@@ -314,6 +468,15 @@ export default function MemoriesScreen() {
               </p>
             )}
           </div>
+        )}
+        </div>
+
+        {/* Timeline Scrubber – only visible when gallery is loaded */}
+        {!loading && filteredMemories.length > 0 && (
+          <TimelineScrubber
+            items={filteredMemories}
+            scrollContainerRef={scrollContainerRef}
+          />
         )}
       </div>
 
@@ -422,11 +585,42 @@ interface MemoryCardProps {
   onTouchEnd: () => void;
   isSelected: boolean;
   selectionMode: boolean;
+  isFavorited: boolean;
+  onToggleFavorite: () => void;
 }
 
-function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchStart, onTouchEnd, isSelected, selectionMode }: MemoryCardProps) {
+function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchStart, onTouchEnd, isSelected, selectionMode, isFavorited, onToggleFavorite }: MemoryCardProps) {
   const isTall = index % 5 === 0;
   const isWide = index % 7 === 0;
+  const lastTapRef = useRef<number>(0);
+  const [showHeart, setShowHeart] = useState(false);
+  const suppressClickRef = useRef<boolean>(false);
+
+  const handlePointerDown = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      // Double tap detected
+      suppressClickRef.current = true;
+      onToggleFavorite();
+      if (!isFavorited) {
+        setShowHeart(true);
+        setTimeout(() => setShowHeart(false), 800);
+      }
+      lastTapRef.current = 0; // Reset to avoid triple tap
+    } else {
+      lastTapRef.current = now;
+      suppressClickRef.current = false;
+    }
+  };
+
+  const handleInternalClick = (e: React.MouseEvent) => {
+    if (suppressClickRef.current) {
+      e.stopPropagation();
+      suppressClickRef.current = false;
+      return;
+    }
+    onClick();
+  };
 
   return (
     <motion.div
@@ -436,7 +630,8 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
       whileHover={{ scale: selectionMode ? 1 : 1.02 }}
       viewport={{ once: true, margin: "300px" }}
       onViewportEnter={onDecrypt}
-      onClick={onClick}
+      onPointerDown={handlePointerDown}
+      onClick={handleInternalClick}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
@@ -494,6 +689,37 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
               </div>
             </div>
           )}
+
+          {/* Favorite Badge */}
+          {isFavorited && !selectionMode && (
+            <div className="absolute bottom-3 right-3 z-10">
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="material-symbols-outlined text-red-500 fill-current text-[18px]"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                favorite
+              </motion.span>
+            </div>
+          )}
+
+          {/* Pop Heart Animation */}
+          <AnimatePresence>
+            {showHeart && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.6, times: [0, 0.4, 1] }}
+                className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+              >
+                <span className="material-symbols-outlined text-red-500 text-6xl fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  favorite
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </>
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20">

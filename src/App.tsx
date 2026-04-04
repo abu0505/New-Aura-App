@@ -18,6 +18,7 @@ import { initPushNotifications } from './lib/pushNotifications';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
 import { realtimeHub } from './lib/realtimeHub';
+import ThemeProvider from './components/common/ThemeProvider';
 
 function InnerApp({ 
   session, 
@@ -109,10 +110,11 @@ function InnerApp({
   }, [isLocked, hasAppPin]);
 
   return (
-    <div className="relative h-[100dvh] w-full overflow-hidden bg-[#0d0d15]">
-      {showLockModal && (
-        <AppLockModal onCancel={() => setShowLockModal(false)} />
-      )}
+    <ThemeProvider>
+      <div className="relative h-[100dvh] w-full overflow-hidden bg-[var(--bg-primary)] transition-colors duration-500">
+        {showLockModal && (
+          <AppLockModal onCancel={() => setShowLockModal(false)} />
+        )}
       <KeySetupModal />
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} streakCount={streakCount}>
         <Suspense fallback={
@@ -147,7 +149,8 @@ function InnerApp({
           onClose={() => setShowCelebration(false)}
         />
       </Suspense>
-    </div>
+      </div>
+    </ThemeProvider>
   );
 }
 

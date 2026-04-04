@@ -4,6 +4,7 @@ import { useMedia } from '../../hooks/useMedia';
 import type { ChatMessage } from '../../hooks/useChat';
 import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
+import AudioWaveformPlayer from './AudioWaveformPlayer';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 
 interface ChatBubbleProps {
@@ -264,10 +265,11 @@ function ChatBubble({
         );
       case 'audio':
         return (
-          <div className="flex items-center gap-3 bg-black/20 rounded-full px-4 py-2 min-w-[200px]">
-            <span className="material-symbols-outlined text-[#e6c487]">mic</span>
-            <audio src={decryptedMediaUrl} controls className="h-8 w-full" />
-          </div>
+          <AudioWaveformPlayer 
+            src={decryptedMediaUrl} 
+            isMine={isMine}
+            duration={message.duration || undefined}
+          />
         );
       default:
         return (

@@ -1,26 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { getStoredKeyPair, getKeyFingerprint, getPartnerPublicKey } from '../../lib/encryption';
-import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifications } from '../../lib/pushNotifications';
 import { useAppLock } from '../../contexts/AppLockContext';
-import { useChatSettings } from '../../hooks/useChatSettings';
 import AppLockSetupModal from './AppLockSetupModal';
 
 export default function SecuritySection() {
-  const { user } = useAuth();
   const { partner } = usePartner();
   const [userFingerprint, setUserFingerprint] = useState('');
   const [partnerFingerprint, setPartnerFingerprint] = useState('');
   const [showVerify, setShowVerify] = useState(false);
-  const [pushEnabled, setPushEnabled] = useState(false);
-  const [isTogglingPush, setIsTogglingPush] = useState(false);
   
   const { hasAppPin } = useAppLock();
-  const { settings, updateSettings } = useChatSettings();
   const [showAppLockSetup, setShowAppLockSetup] = useState(false);
   const [appLockSetupMode, setAppLockSetupMode] = useState<'setup' | 'remove'>('setup');
-  const [isTogglingSound, setIsTogglingSound] = useState(false);
 
   useEffect(() => {
     const keys = getStoredKeyPair();
@@ -33,43 +25,7 @@ export default function SecuritySection() {
         setPartnerFingerprint(getKeyFingerprint(key));
       }).catch(console.error);
     }
-
-    checkPushSubscription().then(setPushEnabled);
   }, [partner?.id]);
-
-  const togglePush = async () => {
-    if (!user || isTogglingPush) return; // Guard against double-click
-    setIsTogglingPush(true);
-    try {
-      if (pushEnabled) {
-        await unsubscribeFromPushNotifications(user.id);
-        setPushEnabled(false);
-      } else {
-        const result = await requestAndSubscribe(user.id);
-        if (result === 'granted') {
-          setPushEnabled(true);
-        } else if (result === 'denied') {
-          alert('Notification permission denied. To enable, go to your browser or Android Settings → Site Settings → Notifications → Allow this site.');
-        } else {
-          alert('Sanctuary connection failed. Please check your network or browser settings.');
-        }
-      }
-    } catch (err: any) {
-      console.error('Push toggle error', err);
-    } finally {
-      setIsTogglingPush(false);
-    }
-  };
-
-  const toggleSound = async () => {
-    if (isTogglingSound || !settings) return;
-    setIsTogglingSound(true);
-    try {
-      await updateSettings({ notification_enabled: !settings.notification_enabled });
-    } finally {
-      setIsTogglingSound(false);
-    }
-  };
 
   return (
     <>
@@ -79,51 +35,17 @@ export default function SecuritySection() {
           <h3 className="font-serif italic text-xl text-white">Privacy Protocol</h3>
         </div>
         
-        <div className="space-y-8">
-          <div
-            className={`flex justify-between items-center p-4 rounded-xl cursor-pointer hover:bg-white/10 transition-colors ${
-              isTogglingPush ? 'opacity-50 pointer-events-none' : 'bg-white/5'
-            }`}
-            onClick={togglePush}
-          >
-            <span className="text-xs uppercase tracking-widest text-white/60 font-label flex items-center gap-2">
-              <span className="material-symbols-outlined text-[1rem]">
-                {isTogglingPush ? 'sync' : 'notifications_active'}
-              </span>
-              Push Notifications
-            </span>
-            <div className={`w-10 h-5 rounded-full relative transition-colors ${pushEnabled ? 'bg-[#e6c487]' : 'bg-white/10'}`}>
-               <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${pushEnabled ? 'right-1 bg-[#412d00]' : 'left-1 bg-white/40'}`} />
-            </div>
-          </div>
-
-          <div
-            className={`flex justify-between items-center bg-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/10 transition-colors ${
-              isTogglingSound ? 'opacity-50 pointer-events-none' : ''
-            }`}
-            onClick={toggleSound}
-          >
-            <span className="text-xs uppercase tracking-widest text-white/60 font-label flex items-center gap-2">
-              <span className="material-symbols-outlined text-[1rem]">
-                {settings?.notification_enabled ? 'volume_up' : 'volume_off'}
-              </span>
-              In-App Notification Sounds
-            </span>
-            <div className={`w-10 h-5 rounded-full relative transition-colors ${settings?.notification_enabled ? 'bg-[#e6c487]' : 'bg-white/10'}`}>
-               <div className={`absolute top-1 w-3 h-3 rounded-full transition-all ${settings?.notification_enabled ? 'right-1 bg-[#412d00]' : 'left-1 bg-white/40'}`} />
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all" onClick={() => setShowVerify(true)}>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all font-label text-[11px] bg-white/5 cursor-pointer" onClick={() => setShowVerify(true)}>
             <div className="flex flex-col gap-1">
-              <span className="text-xs uppercase tracking-widest text-white/60 font-label">Encryption Check</span>
+              <span className="text-xs uppercase tracking-widest text-white/60">Encryption Check</span>
               <span className="text-[10px] text-[#e6c487]/60 italic">Verify fingerprints for absolute trust</span>
             </div>
             <span className="material-symbols-outlined text-[#e6c487] text-lg">verified_user</span>
           </div>
 
           {!hasAppPin ? (
-            <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
+            <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all cursor-pointer" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
               <div className="flex flex-col gap-1">
                 <span className="text-xs uppercase tracking-widest text-white/60 font-label">Sanctuary Lock</span>
                 <span className="text-[10px] text-[#e6c487]/60 italic">Require a PIN to access the app</span>
@@ -132,14 +54,14 @@ export default function SecuritySection() {
             </div>
           ) : (
             <>
-              <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
+              <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[#e6c487]/20 transition-all cursor-pointer" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
                 <div className="flex flex-col gap-1">
                   <span className="text-xs uppercase tracking-widest text-white/60 font-label">Change Lock PIN</span>
                   <span className="text-[10px] text-[#e6c487]/60 italic">App Lock is active</span>
                 </div>
                 <span className="material-symbols-outlined text-[#e6c487] text-lg">password</span>
               </div>
-              <div className="flex justify-between items-center p-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition-all" onClick={() => { setAppLockSetupMode('remove'); setShowAppLockSetup(true); }}>
+              <div className="flex justify-between items-center p-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition-all cursor-pointer" onClick={() => { setAppLockSetupMode('remove'); setShowAppLockSetup(true); }}>
                 <div className="flex flex-col gap-1">
                  <span className="text-xs uppercase tracking-widest text-red-400 font-label">Remove Lock</span>
                 </div>

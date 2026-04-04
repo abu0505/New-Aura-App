@@ -1,12 +1,14 @@
 import ProfileSection from './ProfileSection';
+import AppearanceSettings from './AppearanceSettings';
 import BackgroundPicker from './BackgroundPicker';
 import SecuritySection from './SecuritySection';
+import NotificationSettings from './NotificationSettings';
 import StorageSection from './StorageSection';
 
 /**
- * SettingsScreen - Refactored for AURA Phase 7
+ * SettingsScreen - Refactored for AURA Phase 7 & 8
  * Follows "The Digital Sanctuary" design philosophy from Stitch.
- * Uses modular components for Identity, Ambience, Privacy, and Storage.
+ * Uses modular components for Identity, Ambience, Privacy, Notifications, and Storage.
  */
 export default function SettingsScreen() {
   return (
@@ -16,10 +18,16 @@ export default function SettingsScreen() {
 
       {/* 2. Settings Grid */}
       <div className="px-8 py-16 lg:py-24 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+        {/* Appearance & Themes */}
+        <AppearanceSettings />
+
         {/* Chat Customization */}
         <BackgroundPicker />
 
-        {/* Security & Notifications */}
+        {/* Notifications Management */}
+        <NotificationSettings />
+
+        {/* Security & Privacy */}
         <SecuritySection />
 
         {/* Storage, Versioning & Logout */}

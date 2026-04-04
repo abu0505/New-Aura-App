@@ -224,5 +224,25 @@ export function useMedia() {
     }
   }, [user]);
 
-  return { processAndUpload, getDecryptedBlob, isProcessing, uploadProgress };
+  const getRecentCachedMedia = useCallback((): { url: string; blob: Blob }[] => {
+    return Array.from(decryptedBlobCache.entries())
+      .filter(([_, blob]) => blob.type.startsWith('image/') || blob.type.startsWith('video/'))
+      .map(([url, blob]) => ({ url, blob }))
+      .reverse(); // Latest items to the top
+  }, []);
+
+  const getCacheSize = useCallback(() => {
+    let size = 0;
+    decryptedBlobCache.forEach(blob => {
+      size += blob.size;
+    });
+    return size;
+  }, []);
+
+  const clearCache = useCallback(() => {
+    decryptedBlobCache.forEach((_, url) => URL.revokeObjectURL(url));
+    decryptedBlobCache.clear();
+  }, []);
+
+  return { processAndUpload, getDecryptedBlob, getRecentCachedMedia, getCacheSize, clearCache, isProcessing, uploadProgress };
 }

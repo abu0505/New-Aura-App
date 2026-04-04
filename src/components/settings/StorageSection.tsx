@@ -1,7 +1,10 @@
 import { useAuth } from '../../contexts/AuthContext';
+import { useMedia } from '../../hooks/useMedia';
+import StorageDashboard from './StorageDashboard';
 
 export default function StorageSection() {
   const { signOut } = useAuth();
+  const { clearCache } = useMedia();
 
   const handleClearCache = () => {
     // Clear localStorage items related to media or temporary state
@@ -10,11 +13,18 @@ export default function StorageSection() {
         localStorage.removeItem(key);
       }
     });
+
+    // Clear runtime Blob URL map (this frees actual RAM/Egress)
+    clearCache();
+
     alert('Local cache cleared. Only non-essential data was removed.');
   };
 
   return (
     <div className="md:col-span-2 space-y-8 mt-8">
+      {/* Visual Storage Dashboard */}
+      <StorageDashboard />
+
       {/* Cache Management */}
       <div className="flex flex-col md:flex-row gap-4">
         <button 

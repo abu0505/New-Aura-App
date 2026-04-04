@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import AttachmentSheet from './AttachmentSheet';
+import MediaGalleryDrawer from './MediaGalleryDrawer';
 import AudioRecorder from './AudioRecorder';
 import QualityChoiceModal from './QualityChoiceModal';
 import { StickerPicker } from './StickerPicker';
@@ -24,8 +25,10 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showQualityModal, setShowQualityModal] = useState(false);
+  const [isMediaGalleryOpen, setIsMediaGalleryOpen] = useState(false);
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [pendingCaption, setPendingCaption] = useState('');
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -146,13 +149,13 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
       }
     } else if (type === 'sticker') {
       setIsStickerPickerOpen(true);
+    } else if (type === 'photo' || type === 'video') {
+      setIsMediaGalleryOpen(true);
     } else {
       // Delay file input click until sheet is fully unmounted (animation takes ~300ms)
       setTimeout(() => {
         if (fileInputRef.current) {
-          fileInputRef.current.accept =
-            type === 'photo' || type === 'camera' ? 'image/*' :
-            type === 'video' ? 'video/*' : '*/*';
+          fileInputRef.current.accept = '*/*';
           fileInputRef.current.click();
         }
       }, 350);
@@ -167,10 +170,21 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
     // Check if any file requires quality selection (images or videos)
     if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
       setPendingFiles(files);
+      setPendingCaption('');
       setShowQualityModal(true);
     } else {
       // Direct upload for all
       performUpload(files, false, '');
+    }
+  };
+
+  const handleGallerySend = (files: File[], caption: string) => {
+    if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
+      setPendingFiles(files);
+      setPendingCaption(caption);
+      setShowQualityModal(true);
+    } else {
+      performUpload(files, false, caption);
     }
   };
 
@@ -280,7 +294,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
                 className="flex items-center gap-1"
               >
                 <button
-                  onClick={() => handleAttachmentSelect('photo')}
+                  onClick={() => setIsMediaGalleryOpen(true)}
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
                   title="Photos"
                 >
@@ -347,10 +361,16 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
             onSelect={handleAttachmentSelect}
           />
 
+          <MediaGalleryDrawer
+            isOpen={isMediaGalleryOpen}
+            onClose={() => setIsMediaGalleryOpen(false)}
+            onSend={handleGallerySend}
+          />
+
           <QualityChoiceModal 
             isOpen={showQualityModal}
             onClose={() => setShowQualityModal(false)}
-            onSelect={(opt) => pendingFiles.length > 0 && performUpload(pendingFiles, opt, '')}
+            onSelect={(opt) => pendingFiles.length > 0 && performUpload(pendingFiles, opt, pendingCaption)}
             fileSize={pendingFiles[0]?.size || 0}
           />
 
