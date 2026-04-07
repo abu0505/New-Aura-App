@@ -6,7 +6,6 @@ import {
   encryptMessage,
   decryptMessage,
   getStoredKeyPair,
-  getPartnerPublicKey,
   decodeBase64,
   encodeBase64,
 } from '../lib/encryption';
@@ -39,7 +38,6 @@ export function useMediaFolders() {
   const decryptFolderName = useCallback((folder: MediaFolder): string => {
     try {
       const myKeys = getStoredKeyPair();
-      const currentPartner = partnerRef.current;
       if (!myKeys || !folder.sender_public_key) return '[Encrypted Folder]';
 
       // Try decrypting with the sender's public key
