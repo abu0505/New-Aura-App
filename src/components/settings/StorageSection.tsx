@@ -50,7 +50,7 @@ export default function StorageSection() {
       </div>
 
       <footer className="text-center opacity-30 pt-10 pb-20">
-        <h2 className="font-serif italic text-2xl text-[#e6c487] mb-2 tracking-widest">AURA</h2>
+        <h2 className="font-serif italic text-2xl text-[var(--gold)] mb-2 tracking-widest">AURA</h2>
         <p className="font-label text-[8px] uppercase tracking-[0.5em] text-white">Version 1.0.4 • Digital Sanctuary Protocol</p>
       </footer>
     </div>

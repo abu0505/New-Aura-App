@@ -53,15 +53,15 @@ export default function QualityChoiceModal({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[120] bg-[#0d0d15]/90 backdrop-blur-xl flex items-center justify-center p-6 font-sans"
+        className="fixed inset-0 z-[120] bg-background/90 backdrop-blur-xl flex items-center justify-center p-6 font-sans"
       >
         <motion.div 
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
-          className="bg-[#1b1b23] border border-white/5 rounded-[2.5rem] w-full max-w-sm overflow-hidden flex flex-col shadow-3xl p-8"
+          className="bg-aura-bg-elevated border border-white/5 rounded-[2.5rem] w-full max-w-sm overflow-hidden flex flex-col shadow-3xl p-8"
         >
-          <h2 className="font-serif italic text-2xl text-[#e6c487] mb-2">Preserve the Moment?</h2>
-          <p className="text-[#998f81] text-xs mb-8 leading-relaxed">Choose how much detail you wish to carry into our sanctuary.</p>
+          <h2 className="font-serif italic text-2xl text-primary mb-2">Preserve the Moment?</h2>
+          <p className="text-aura-text-secondary text-xs mb-8 leading-relaxed">Choose how much detail you wish to carry into our sanctuary.</p>
 
           <div className="flex flex-col gap-4 mb-8">
             {/* Optimized Option */}
@@ -69,20 +69,20 @@ export default function QualityChoiceModal({
               onClick={() => setSelected('optimized')}
               className={`flex items-center justify-between p-6 border rounded-3xl transition-all group relative ${
                 selected === 'optimized' 
-                  ? 'bg-[#e6c487]/10 border-[#e6c487]/50 shadow-[0_0_20px_rgba(230,196,135,0.1)]' 
+                  ? 'bg-primary/10 border-primary/50 shadow-[0_0_20px_var(--gold-glow)]' 
                   : 'bg-white/5 border-white/10 hover:border-white/20'
               }`}
             >
               <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2">
-                <span className="bg-[#6ECB8A] text-[#0d0d15] font-bold text-[8px] uppercase tracking-widest px-2 py-1 rounded-full shadow-lg">Recommended</span>
+                <span className="bg-aura-success text-background font-bold text-[8px] uppercase tracking-widest px-2 py-1 rounded-full shadow-lg">Recommended</span>
               </div>
               <div className="text-left flex-1 pl-2">
-                <span className={`block font-label text-[10px] uppercase tracking-widest mb-1 ${selected === 'optimized' ? 'text-[#e6c487]' : 'text-[#e6c487]/60'}`}>⚡ Optimized</span>
+                <span className={`block font-label text-[10px] uppercase tracking-widest mb-1 ${selected === 'optimized' ? 'text-primary' : 'text-primary/60'}`}>⚡ Optimized</span>
                 <span className="block text-white text-sm font-medium">Saves significant space</span>
               </div>
               <div className="text-right flex flex-col items-end">
                 <span className="block text-white/40 text-[10px] uppercase tracking-tighter line-through">{formatSize(fileSize)}</span>
-                <span className={`font-bold text-xs ${selected === 'optimized' ? 'text-[#e6c487]' : 'text-[#e6c487]/60'}`}>{getOptimizedEstimate()}</span>
+                <span className={`font-bold text-xs ${selected === 'optimized' ? 'text-primary' : 'text-primary/60'}`}>{getOptimizedEstimate()}</span>
               </div>
             </button>
 
@@ -107,7 +107,7 @@ export default function QualityChoiceModal({
 
           <button 
             onClick={handleSend}
-            className="w-full bg-[#e6c487] text-[#0d0d15] font-label text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded-full hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_15px_rgba(230,196,135,0.2)] mb-4"
+            className="w-full bg-primary text-background font-label text-[10px] font-bold uppercase tracking-[0.2em] py-4 rounded-full hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_15px_var(--gold-glow)] mb-4"
           >
             Send Collection
           </button>

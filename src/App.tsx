@@ -118,8 +118,8 @@ function InnerApp({
       <KeySetupModal />
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} streakCount={streakCount}>
         <Suspense fallback={
-          <div className="flex-1 flex items-center justify-center bg-[#0d0d15] w-full h-full">
-            <p className="text-[#C9A96E]/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>
+          <div className="flex-1 flex items-center justify-center bg-background w-full h-full">
+            <p className="text-primary/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>
           </div>
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
@@ -175,12 +175,12 @@ export default function App() {
   // Loading state
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-[#0d0d15] flex items-center justify-center">
+      <div className="fixed inset-0 bg-background flex items-center justify-center">
         <div className="text-center">
           <h1
             className="font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse"
             style={{
-              background: 'linear-gradient(135deg, #C9A96E 0%, #E2CA9A 50%, #C9A96E 100%)',
+              background: 'linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
@@ -188,7 +188,7 @@ export default function App() {
           >
             AURA
           </h1>
-          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[#e6c487]/40">Your Sanctuary Awaits</p>
+          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40">Your Sanctuary Awaits</p>
         </div>
       </div>
     );

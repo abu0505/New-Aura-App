@@ -16,8 +16,11 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  // StrictMode guard — prevents double-mount from creating 2 concurrent timers/recorders
+  const isStartedRef = useRef(false);
+  // Freeze duration display while processing so the timer appears stopped
+  const frozenDurationRef = useRef(0);
   const { processAndUpload } = useMedia();
-  // ═══ Ref to avoid stale closure in recorder.onstop callback ═══
   const processAndUploadRef = useRef(processAndUpload);
   useEffect(() => { processAndUploadRef.current = processAndUpload; }, [processAndUpload]);
 
@@ -29,7 +32,6 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
 
   const BAR_COUNT = 24;
 
-  // Animate waveform bars from analyser frequency data
   const updateWaveform = useCallback(() => {
     const analyser = analyserRef.current;
     if (!analyser) return;
@@ -37,11 +39,9 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(dataArray);
 
-    // Sample evenly from the frequency data to get BAR_COUNT values
     const bars: number[] = [];
     const step = Math.floor(dataArray.length / BAR_COUNT);
     for (let i = 0; i < BAR_COUNT; i++) {
-      // Average a small window of frequencies for smoother display
       const start = i * step;
       const end = Math.min(start + step, dataArray.length);
       let sum = 0;
@@ -49,7 +49,6 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
         sum += dataArray[j];
       }
       const avg = sum / (end - start);
-      // Map 0-255 to 4-28 (pixel height range)
       bars.push(Math.max(4, (avg / 255) * 28));
     }
 
@@ -58,19 +57,22 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
   }, []);
 
   const startRecording = async () => {
+    // StrictMode guard: only start once per mount
+    if (isStartedRef.current) return;
+    isStartedRef.current = true;
+
     try {
       setError(null);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // ═══ Set up Web Audio API analyser for real-time waveform ═══
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       analyser.smoothingTimeConstant = 0.7;
       source.connect(analyser);
-      // Don't connect analyser to destination — we don't want to hear our own mic
+      // Don't connect to destination — we don't want to hear our own mic
 
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
@@ -127,7 +129,6 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
               type: 'audio'
             });
           } else {
-            // processAndUpload returned null — likely missing partner key or auth
             setError('Upload failed — encryption keys may not be ready. Please try again.');
             console.error('processAndUpload returned null. Ensure partner public_key is available.');
           }
@@ -141,19 +142,24 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
         cleanupStream();
       };
 
-      recorder.start(100); // Collect data every 100ms for smoother onstop
+      recorder.start(100);
       setIsRecording(true);
       setDuration(0);
+      frozenDurationRef.current = 0;
+      // Single interval — only one will exist because of isStartedRef guard
       timerRef.current = window.setInterval(() => {
-        setDuration(prev => prev + 1);
+        setDuration(prev => {
+          const next = prev + 1;
+          frozenDurationRef.current = next;
+          return next;
+        });
       }, 1000);
 
-      // Start waveform animation loop
       animationFrameRef.current = requestAnimationFrame(updateWaveform);
     } catch (err) {
       console.error('Failed to start recording', err);
       setError('Microphone access denied');
-      // Don't auto-cancel — show the error so user knows what happened
+      isStartedRef.current = false; // Allow retry
     }
   };
 
@@ -166,24 +172,23 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
+      // Stop timer immediately so UI freezes at current duration
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
     }
   };
 
   const handleCancel = () => {
-    // Stop recording if active
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.ondataavailable = null;
       mediaRecorderRef.current.onstop = null;
       mediaRecorderRef.current.stop();
     }
     
-    // Cleanup
     if (timerRef.current) clearInterval(timerRef.current);
     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
@@ -218,14 +223,17 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-4 bg-black/40 backdrop-blur-3xl rounded-full px-6 py-2 border border-[#e6c487]/30 shadow-2xl">
+      <div className="flex items-center gap-4 bg-background/40 backdrop-blur-3xl rounded-full px-6 py-2 border border-primary/30 shadow-2xl">
         <div className="flex items-center gap-3">
           <motion.div 
             animate={{ scale: isRecording ? [1, 1.2, 1] : 1 }}
             transition={{ repeat: Infinity, duration: 1.5 }}
-            className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500' : isProcessing ? 'bg-[#e6c487]' : 'bg-white/30'}`}
+            className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500' : isProcessing ? 'bg-primary' : 'bg-white/30'}`}
           />
-          <span className="font-mono text-[#e6c487] text-sm tabular-nums">{formatDuration(duration)}</span>
+          {/* Show frozen duration while processing so timer appears stopped */}
+          <span className="font-mono text-primary text-sm tabular-nums">
+            {formatDuration(isProcessing ? frozenDurationRef.current : duration)}
+          </span>
         </div>
 
         {/* ═══ Live Waveform — driven by Web Audio API analyser ═══ */}
@@ -233,9 +241,11 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
           {waveformBars.map((height, i) => (
             <div
               key={i}
-              className="w-[3px] bg-[#e6c487]/50 rounded-full transition-all duration-75"
+              className="w-[3px] rounded-full transition-all duration-75"
               style={{ 
                 height: `${isRecording ? height : 4}px`,
+                // Use inline style with CSS var so it respects any accent color theme
+                backgroundColor: 'var(--primary)',
                 opacity: isRecording ? 0.4 + (height / 28) * 0.6 : 0.3
               }}
             />
@@ -252,10 +262,10 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
           <button 
             onClick={stopRecording}
             disabled={isProcessing || !isRecording}
-            className="w-10 h-10 flex items-center justify-center bg-[#e6c487] text-[#412d00] rounded-full shadow-lg active:scale-90 transition-all disabled:opacity-50"
+            className="w-10 h-10 flex items-center justify-center bg-primary text-background rounded-full shadow-lg active:scale-95 transition-all disabled:opacity-50"
           >
             {isProcessing ? (
-              <div className="w-4 h-4 border-2 border-[#412d00] border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-background border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <span className="material-symbols-outlined font-bold">send</span>
             )}

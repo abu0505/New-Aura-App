@@ -43,12 +43,12 @@ export default function NotificationSettings() {
   };
 
   return (
-    <div className="bg-[#1b1b23]/40 border border-white/5 rounded-[2.5rem] p-10 shadow-2xl hover:border-[#e6c487]/20 transition-all duration-500 group relative overflow-hidden">
+    <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group relative overflow-hidden">
       <div className="flex items-center gap-4 mb-8">
-        <span className="material-symbols-outlined text-[#e6c487] group-hover:scale-110 transition-transform">notifications</span>
+        <span className="material-symbols-outlined text-[var(--gold)] group-hover:scale-110 transition-transform">notifications</span>
         <div>
           <h3 className="font-serif italic text-xl text-white">Sanctuary Signals</h3>
-          <p className="font-label text-[10px] uppercase tracking-widest text-[#998f81]">Notification Management</p>
+          <p className="font-label text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">Notification Management</p>
         </div>
       </div>
 
@@ -57,15 +57,15 @@ export default function NotificationSettings() {
         <div 
           onClick={togglePush}
           className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-            pushEnabled ? 'bg-[#e6c487]/5 border-[#e6c487]/20' : 'bg-white/5 border-transparent opacity-60'
+            pushEnabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
           } ${isTogglingPush ? 'animate-pulse' : ''}`}
         >
           <div className="flex flex-col gap-1">
             <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Signal Reception</span>
-            <span className="text-[9px] text-[#998f81] italic">Allow the sanctuary to reach you</span>
+            <span className="text-[9px] text-[var(--text-secondary)] italic">Allow the sanctuary to reach you</span>
           </div>
-          <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[#e6c487]' : 'bg-black/40'}`}>
-            <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-[#412d00] shadow-glow' : 'left-1 bg-white/20'}`} />
+          <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+            <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
           </div>
         </div>
 
@@ -85,18 +85,18 @@ export default function NotificationSettings() {
                   className="flex justify-between items-center px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 cursor-pointer hover:bg-white/[0.06] transition-all"
                 >
                   <div className="flex items-center gap-4">
-                    <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-[#e6c487]' : 'text-[#998f81]/40'}`}>
+                    <span className={`material-symbols-outlined text-[18px] ${isActive ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/40'}`}>
                       {item.icon}
                     </span>
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase tracking-widest text-[#e6c487] font-bold">
+                      <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] font-bold">
                         {item.label}
                       </span>
-                      <span className="text-[9px] text-[#998f81] leading-none mt-1">{item.desc}</span>
+                      <span className="text-[9px] text-[var(--text-secondary)] leading-none mt-1">{item.desc}</span>
                     </div>
                   </div>
-                  <div className={`w-8 h-4 rounded-full relative transition-all ${isActive ? 'bg-[#e6c487]/40' : 'bg-white/5'}`}>
-                    <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${isActive ? 'right-0.5 bg-[#e6c487]' : 'left-0.5 bg-white/20'}`} />
+                  <div className={`w-8 h-4 rounded-full relative transition-all ${isActive ? 'bg-[var(--gold)]/40' : 'bg-white/5'}`}>
+                    <div className={`absolute top-0.5 w-3 h-3 rounded-full transition-all ${isActive ? 'right-0.5 bg-[var(--gold)]' : 'left-0.5 bg-white/20'}`} />
                   </div>
                 </div>
               );

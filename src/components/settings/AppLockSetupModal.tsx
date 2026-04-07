@@ -108,42 +108,42 @@ export default function AppLockSetupModal({ onClose, isRemoving }: AppLockSetupM
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0d0d15]/90 backdrop-blur-xl animate-in fade-in duration-300">
-      <div className="bg-[#13131b] border border-[#e6c487]/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-3xl overflow-hidden relative group">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#e6c487]/50 to-transparent" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[var(--bg-primary)]/90 backdrop-blur-xl animate-in fade-in duration-300">
+      <div className="bg-[var(--bg-secondary)] border border-[var(--gold)]/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-3xl overflow-hidden relative group">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--gold)]/50 to-transparent" />
         
         <div className="flex flex-col items-center text-center space-y-6">
-          <div className="w-16 h-16 bg-[#e6c487]/10 rounded-2xl flex items-center justify-center border border-[#e6c487]/20">
-            <span className="material-symbols-outlined text-3xl text-[#e6c487]">
+          <div className="w-16 h-16 bg-[var(--gold)]/10 rounded-2xl flex items-center justify-center border border-[var(--gold)]/20">
+            <span className="material-symbols-outlined text-3xl text-[var(--gold)]">
               {isRemoving ? 'lock_open_right' : step === 'current' ? 'password' : 'lock'}
             </span>
           </div>
 
           <div className="space-y-2">
-             <h2 className="font-serif italic text-2xl text-[#e6c487] tracking-wider">
+             <h2 className="font-serif italic text-2xl text-[var(--gold)] tracking-wider">
                {getTitle()}
              </h2>
-             <p className="font-label text-xs tracking-widest uppercase text-[#998f81]/60">
+             <p className="font-label text-xs tracking-widest uppercase text-[var(--text-secondary)]/60">
                {getSubtitle()}
              </p>
           </div>
 
           <form onSubmit={handleSubmit} className="w-full space-y-4">
              <div className="relative">
-               <input
-                 type="password"
-                 value={step === 'confirm' ? confirmPin : pin}
-                 onChange={(e) => {
-                   if (step === 'confirm') setConfirmPin(e.target.value);
-                   else setPin(e.target.value);
-                   setError(null);
-                 }}
-                 placeholder={step === 'confirm' ? 'CONFIRM PIN' : 'ENTER PIN'}
-                 className="w-full bg-[#0d0d15]/50 border border-white/5 rounded-2xl px-6 py-4 text-center text-3xl tracking-[0.5em] text-[#e4e1ed] focus:outline-none focus:border-[#e6c487]/40 transition-all placeholder:text-[10px] placeholder:tracking-[0.3em] placeholder:uppercase placeholder:text-[#998f81]/30"
-                 maxLength={6}
-                 autoFocus
-                 disabled={loading}
-               />
+                <input
+                  type="password"
+                  value={step === 'confirm' ? confirmPin : pin}
+                  onChange={(e) => {
+                    if (step === 'confirm') setConfirmPin(e.target.value);
+                    else setPin(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder={step === 'confirm' ? 'CONFIRM PIN' : 'ENTER PIN'}
+                  className="w-full bg-[var(--bg-primary)]/50 border border-white/5 rounded-2xl px-6 py-4 text-center text-3xl tracking-[0.5em] text-[var(--text-primary)] focus:outline-none focus:border-[var(--gold)]/40 transition-all placeholder:text-[10px] placeholder:tracking-[0.3em] placeholder:uppercase placeholder:text-[var(--text-secondary)]/30"
+                  maxLength={6}
+                  autoFocus
+                  disabled={loading}
+                />
                {error && (
                  <p className="absolute -bottom-6 left-0 right-0 text-center text-[10px] text-red-400 uppercase tracking-widest font-bold">
                    {error}
@@ -154,7 +154,7 @@ export default function AppLockSetupModal({ onClose, isRemoving }: AppLockSetupM
              <button
                type="submit"
                disabled={loading || (step === 'confirm' ? confirmPin.length < 4 : pin.length < 4)}
-               className="w-full bg-[#e6c487] text-[#0d0d15] font-bold py-4 rounded-2xl mt-8 disabled:opacity-50 transition-all flex justify-center uppercase tracking-widest text-[11px]"
+               className="w-full bg-[var(--gold)] text-black font-bold py-4 rounded-2xl mt-8 disabled:opacity-50 transition-all flex justify-center uppercase tracking-widest text-[11px]"
              >
                {loading ? 'Processing...' : step === 'new' ? 'Continue' : isRemoving ? 'Remove Lock' : 'Confirm'}
              </button>

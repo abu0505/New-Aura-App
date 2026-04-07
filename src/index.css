@@ -6,19 +6,19 @@
 
 /* ===== CSS Custom Properties (Design Tokens) ===== */
 :root {
-  /* Backgrounds */
-  --bg-primary: #0C0C14;
-  --bg-secondary: #13131E;
-  --bg-elevated: #1C1C2E;
-  --bg-surface: #222236;
-
-  /* Accent — Gold */
+  /* Dynamic Theme Bases (Settable via ThemeProvider) */
   --gold: #C9A96E;
   --gold-light: #E2CA9A;
   --gold-deep: #B8965A;
   --gold-glow: rgba(201, 169, 110, 0.15);
+  --bg-primary: #0C0C14;
+  --bg-secondary: #13131E;
 
-  /* Accent — Rose Gold (secondary) */
+  /* Static Design Tokens */
+  --bg-elevated: #1C1C2E;
+  --bg-surface: #222236;
+
+  /* Accent — Rose Gold (secondary variant) */
   --rose: #D4A0A0;
   --rose-light: #E8C4C4;
   --rose-muted: rgba(212, 160, 160, 0.12);
@@ -29,11 +29,11 @@
   --text-muted: #4A4857;
 
   /* Borders */
-  --border-subtle: rgba(201, 169, 110, 0.12);
+  --border-subtle: rgba(201, 169, 110, 0.12); /* Note: Ideally these map to opacity variants of --gold */
   --border-medium: rgba(201, 169, 110, 0.25);
 
-  /* Bubbles */
-  --sender-bubble: linear-gradient(135deg, #C9A96E, #A8845A);
+  /* Bubbles & Interactive */
+  --sender-bubble: linear-gradient(135deg, var(--gold), var(--gold-deep));
   --receiver-bubble: #1C1C2E;
 
   /* Status */
@@ -41,7 +41,7 @@
   --danger: #E87676;
   --warning: #E8C46E;
 
-  /* Spacing */
+  /* Spacing & Effects */
   --radius-bubble: 18px;
   --glass-blur: 12px;
 
@@ -107,7 +107,7 @@ body {
 
 /* ===== Selection ===== */
 ::selection {
-  background-color: rgba(201, 169, 110, 0.3);
+  background-color: var(--gold-glow);
   color: var(--text-primary);
 }
 
@@ -241,7 +241,7 @@ body {
   right: -6px;
   width: 12px;
   height: 12px;
-  background: #A8845A;
+  background: var(--gold-deep);
   border-bottom-left-radius: 12px;
   clip-path: polygon(0 0, 0 100%, 100% 100%);
 }

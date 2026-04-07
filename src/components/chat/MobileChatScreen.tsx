@@ -258,11 +258,11 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   }, [viewMode, markAsRead]);
 
   const getBackgroundStyle = () => {
-    if (settings?.background_url === 'silk') return { background: '#1a1a24' };
-    if (settings?.background_url === 'stars') return { background: 'linear-gradient(45deg, #0d0d15 0%, #1b1b23 100%)' };
-    if (settings?.background_url === 'gold') return { background: 'linear-gradient(135deg, #13131b 0%, #2a2212 100%)' };
+    if (settings?.background_url === 'silk') return { background: 'var(--bg-primary)' };
+    if (settings?.background_url === 'stars') return { background: 'linear-gradient(45deg, var(--bg-primary) 0%, var(--bg-elevated) 100%)' };
+    if (settings?.background_url === 'gold') return { background: 'linear-gradient(135deg, var(--bg-primary) 0%, var(--gold-deep) 100%)' };
     
-    return { background: '#0d0d15' };
+    return { background: 'var(--bg-primary)' };
   };
 
   const filteredPinnedMessages = pinnedMessages.filter(p => {
@@ -287,14 +287,21 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   return (
     <>
       <style>{`
-        .glass-header { background: rgba(13, 13, 21, 0.8); backdrop-filter: blur(20px); }
+        .glass-header { 
+          background: var(--bg-primary-rgb) / 0.8; 
+          backdrop-filter: blur(20px); 
+        }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(230, 196, 135, 0.2); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { 
+          background: var(--gold-light); 
+          opacity: 0.2;
+          border-radius: 10px; 
+        }
       `}</style>
       
       <div 
-        className="flex flex-col h-[100dvh] w-full relative overflow-hidden text-[#e4e1ed] font-sans transition-all duration-700"
+        className="flex flex-col h-[100dvh] w-full relative overflow-hidden text-aura-text-primary font-sans transition-all duration-700"
       >
         {/* Background Layer */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
@@ -307,7 +314,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                 alt="Chat Background"
                 className="w-full h-full object-cover opacity-30"
               />
-              <div className="absolute inset-0 bg-[#0d0d15]/60 backdrop-blur-[2px]" />
+              <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" />
             </div>
           )}
         </div>
@@ -316,61 +323,61 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
           <div className="flex items-center gap-3 min-w-0">
             <button 
               onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))} 
-              className="text-[#998f81] hover:text-[#e6c487] transition-colors active:scale-90 mr-1 flex items-center justify-center p-2 rounded-full"
+              className="text-aura-text-secondary hover:text-primary transition-colors active:scale-90 mr-1 flex items-center justify-center p-2 rounded-full"
             >
               <span className="material-symbols-outlined text-xl">arrow_back</span>
             </button>
             <div className="relative">
-              <div className="w-10 h-10 rounded-full border-2 border-[#e6c487]/30 overflow-hidden bg-[#1b1b23]">
+              <div className="w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden bg-aura-bg-elevated">
                 <EncryptedImage
                   url={partner.avatar_url}
                   encryptionKey={partner.avatar_key}
                   nonce={partner.avatar_nonce}
                   alt="Partner Avatar"
                   className="w-full h-full object-cover"
-                  placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
+                  placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=000000`}
                 />
               </div>
               {partner.is_online && (
-                <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0d0d15]"></div>
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-aura-success rounded-full border-2 border-background"></div>
               )}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-serif text-lg text-[#e6c487] leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
-              <span className="text-[9px] font-label uppercase tracking-widest text-[#998f81] truncate">
+              <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
+              <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate">
                 {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-[#998f81]">
+          <div className="flex items-center gap-4 text-aura-text-secondary">
             {!isOnline && (
               <div className="flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 mr-2">
                 <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
                 <span className="text-[9px] uppercase tracking-widest text-red-200 font-bold">Offline</span>
               </div>
             )}
-            <button className="hover:text-[#e6c487] transition-colors active:scale-90">
+            <button className="hover:text-primary transition-colors active:scale-90">
               <span className="material-symbols-outlined">call</span>
             </button>
-            <button className="hover:text-[#e6c487] transition-colors active:scale-90">
+            <button className="hover:text-primary transition-colors active:scale-90">
               <span className="material-symbols-outlined">videocam</span>
             </button>
             
             <div className="relative" ref={pinDropdownRef}>
               <button 
                 onClick={() => setShowPinDropdown(!showPinDropdown)}
-                className="hover:text-[#e6c487] transition-colors active:scale-90 flex items-center justify-center p-1 -m-1"
+                className="hover:text-primary transition-colors active:scale-90 flex items-center justify-center p-1 -m-1"
               >
                 <span className="material-symbols-outlined">more_vert</span>
               </button>
               
               {showPinDropdown && (
                 <>
-                  <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-[#292932] border border-white/5 shadow-xl glass-panel z-50 overflow-hidden py-1">
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-xl glass-panel z-50 overflow-hidden py-1">
                     {viewMode === 'pinned' && (
                       <button 
                         onClick={() => { setViewMode('chat'); setShowPinDropdown(false); }}
-                        className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-[#e6c487] bg-white/5 font-bold mb-1"
+                        className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-primary bg-white/5 font-bold mb-1"
                       >
                         <span className="material-symbols-outlined text-[18px]">forum</span>
                         Back to Normal Chat
@@ -378,21 +385,21 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                     )}
                     <button 
                       onClick={() => { setViewMode('pinned'); setPinFilter('me'); setShowPinDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 ${pinFilter === 'me' && viewMode === 'pinned' ? 'text-[#e6c487] bg-white/5' : 'text-[#e4e1ed] hover:bg-white/5'}`}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 ${pinFilter === 'me' && viewMode === 'pinned' ? 'text-primary bg-white/5' : 'text-aura-text-primary hover:bg-white/5'}`}
                     >
                       <span className="material-symbols-outlined text-[18px]">push_pin</span>
                       My Pinned Messages
                     </button>
                     <button 
                       onClick={() => { setViewMode('pinned'); setPinFilter('partner'); setShowPinDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'partner' && viewMode === 'pinned' ? 'text-[#e6c487] bg-white/5' : 'text-[#e4e1ed] hover:bg-white/5'}`}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'partner' && viewMode === 'pinned' ? 'text-primary bg-white/5' : 'text-aura-text-primary hover:bg-white/5'}`}
                     >
                       <span className="material-symbols-outlined text-[18px]">person</span>
                       Partner's Pinned Messages
                     </button>
                     <button 
                       onClick={() => { setViewMode('pinned'); setPinFilter('all'); setShowPinDropdown(false); }}
-                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'all' && viewMode === 'pinned' ? 'text-[#e6c487] bg-white/5' : 'text-[#e4e1ed] hover:bg-white/5'}`}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'all' && viewMode === 'pinned' ? 'text-primary bg-white/5' : 'text-aura-text-primary hover:bg-white/5'}`}
                     >
                       <span className="material-symbols-outlined text-[18px]">library_add_check</span>
                       Combined Pinned Messages
@@ -408,19 +415,19 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
         <main className="flex-1 flex flex-col relative overflow-hidden">
           
           {viewMode === 'pinned' && (
-            <div className="bg-[#e6c487]/10 backdrop-blur-md border-b border-[#e6c487]/20 px-4 py-3 flex items-center justify-between shadow-lg z-30 relative shrink-0">
+            <div className="bg-primary/10 backdrop-blur-md border-b border-primary/20 px-4 py-3 flex items-center justify-between shadow-lg z-30 relative shrink-0">
                <div className="flex flex-col">
-                  <span className="text-[#e6c487] text-xs font-label uppercase tracking-widest font-bold flex items-center gap-1">
+                  <span className="text-primary text-xs font-label uppercase tracking-widest font-bold flex items-center gap-1">
                     <span className="material-symbols-outlined text-sm">push_pin</span>
                     Pinned Messages
                   </span>
-                  <span className="text-[#998f81] text-[10px] uppercase tracking-widest mt-0.5">
+                  <span className="text-aura-text-secondary text-[10px] uppercase tracking-widest mt-0.5">
                      {pinFilter === 'all' ? 'Combined View' : pinFilter === 'me' ? 'My Pins' : 'Partner\'s Pins'}
                   </span>
                </div>
                <button 
                  onClick={() => setViewMode('chat')}
-                 className="bg-[#292932] px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-[#e6c487] border border-[#e6c487]/30 hover:bg-[#e6c487]/20 transition-colors"
+                 className="bg-aura-bg-elevated px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-primary border border-primary/30 hover:bg-primary/20 transition-colors"
                >
                  Close
                </button>
@@ -429,8 +436,8 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
           
           {/* Jumping loading indicator */}
           {isJumpingToPinned && (
-            <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-[#292932]/90 text-[#e6c487] text-xs px-4 py-2 rounded-full border border-[#e6c487]/30 shadow-xl backdrop-blur-md flex items-center gap-2 z-40">
-              <span className="w-3 h-3 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></span>
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-aura-bg-elevated/90 text-primary text-xs px-4 py-2 rounded-full border border-primary/30 shadow-xl backdrop-blur-md flex items-center gap-2 z-40">
+              <span className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
               Loading history...
             </div>
           )}
@@ -444,29 +451,29 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
             {hasMore && !loading && viewMode === 'chat' && (
               <div className="flex justify-center py-4 anchor-none">
                 {loadingMore ? (
-                  <div className="w-5 h-5 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                 ) : (
-                  <div className="text-[9px] text-[#998f81] uppercase tracking-[0.2em] opacity-60 font-bold">Scroll up for older memories</div>
+                  <div className="text-[9px] text-aura-text-secondary uppercase tracking-[0.2em] opacity-60 font-bold">Scroll up for older memories</div>
                 )}
               </div>
             )}
 
             {!partner.public_key && (
-              <div className="text-center p-6 bg-[#e6c487]/5 border border-[#e6c487]/20 text-[#e6c487] rounded-[2rem] text-[10px] font-label uppercase tracking-widest leading-loose shadow-xl">
+              <div className="text-center p-6 bg-primary/5 border border-primary/20 text-primary rounded-[2rem] text-[10px] font-label uppercase tracking-widest leading-loose shadow-xl">
                 Establishing Sanctuary Connection...<br/>Generating Encryption Keys.
               </div>
             )}
 
             {loading ? (
               <div className="flex justify-center p-12">
-                 <div className="w-6 h-6 border-2 border-[#e6c487] rounded-full border-t-transparent animate-spin"></div>
+                 <div className="w-6 h-6 border-2 border-primary rounded-full border-t-transparent animate-spin"></div>
               </div>
             ) : (() => {
               if (viewMode === 'pinned' && listToRender.length === 0) {
                 return (
                   <div className="flex-1 flex flex-col items-center justify-center p-8 opacity-60">
-                    <span className="material-symbols-outlined text-4xl text-[#e6c487] mb-2">push_pin</span>
-                    <span className="text-sm text-[#e4e1ed] font-label uppercase tracking-widest text-center">No Pinned Messages Found</span>
+                    <span className="material-symbols-outlined text-4xl text-primary mb-2">push_pin</span>
+                    <span className="text-sm text-aura-text-primary font-label uppercase tracking-widest text-center">No Pinned Messages Found</span>
                   </div>
                 );
               }
@@ -492,16 +499,16 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                   <div key={msg.id} id={viewMode === 'chat' ? `msg-${msg.id}` : `pinned-${msg.id}`} className="flex flex-col gap-1 w-full message-row">
                     {showDateSeparator && (
                       <div className="flex justify-center my-6">
-                        <span className="bg-[#292932]/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-[#998f81] uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
+                        <span className="bg-aura-bg-elevated/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-aura-text-secondary uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
                           {currentDateStr}
                         </span>
                       </div>
                     )}
                     {viewMode === 'chat' && firstUnreadId === msg.id && (
                       <div className="flex items-center gap-4 py-6">
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
-                        <span className="text-[10px] uppercase tracking-[0.2em] text-[#e6c487]/60 font-bold">New Messages</span>
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-[#e6c487]/20 to-transparent" />
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-primary/60 font-bold">New Messages</span>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                       </div>
                     )}
                     <div className={`flex w-full ${msg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>

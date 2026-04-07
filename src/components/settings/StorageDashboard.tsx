@@ -71,7 +71,7 @@ export default function StorageDashboard() {
   };
 
   const colors = {
-    image: '#e6c487', // gold
+    image: 'var(--gold)', // gold
     video: '#D4A0A0', // rose
     audio: '#6ECB8A', // green
     document: '#8A8799', // muted
@@ -92,7 +92,7 @@ export default function StorageDashboard() {
 
   if (loading) {
     return (
-      <div className="bg-[#1b1b23] rounded-3xl p-6 border border-white/5 animate-pulse">
+      <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-white/5 animate-pulse">
         <div className="h-6 w-32 bg-white/10 rounded-full mb-6"></div>
         <div className="h-4 w-full bg-white/10 rounded-full mb-4"></div>
         <div className="flex gap-4">
@@ -104,7 +104,7 @@ export default function StorageDashboard() {
   }
 
   return (
-    <div className="bg-[#1b1b23] rounded-3xl p-6 border border-white/5 relative overflow-hidden">
+    <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-white/5 relative overflow-hidden">
       {/* Background glow based on primary color */}
       {segments.length > 0 && (
         <div 
@@ -115,8 +115,8 @@ export default function StorageDashboard() {
 
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h3 className="font-serif italic text-xl text-[#e6c487]">Storage</h3>
-          <p className="font-label text-[10px] uppercase tracking-widest text-[#998f81] mt-1">
+          <h3 className="font-serif italic text-xl text-[var(--gold)]">Storage</h3>
+          <p className="font-label text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mt-1">
             Data secured in the sanctuary
           </p>
         </div>

@@ -97,14 +97,14 @@ export default function ProfileSection() {
   };
 
   return (
-    <section className="relative px-8 pt-20 pb-16 lg:pt-32 lg:pb-24 border-b border-white/5 bg-gradient-to-b from-[#1b1b23]/50 to-transparent">
+    <section className="relative px-8 pt-20 pb-16 lg:pt-32 lg:pb-24 border-b border-white/5 bg-gradient-to-b from-[var(--bg-secondary)]/50 to-transparent">
       <div className="max-w-4xl mx-auto flex flex-col lg:flex-row items-center gap-12">
         {/* Avatar Handle */}
         <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-          <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[3rem] border-2 border-[#e6c487] p-1.5 shadow-3xl overflow-hidden transition-transform duration-700 group-hover:scale-105">
+          <div className="w-32 h-32 lg:w-48 lg:h-48 rounded-[3rem] border-2 border-[var(--gold)] p-1.5 shadow-3xl overflow-hidden transition-transform duration-700 group-hover:scale-105">
             {uploading ? (
-              <div className="w-full h-full bg-[#1b1b23] flex items-center justify-center animate-pulse">
-                <span className="material-symbols-outlined text-[#e6c487] animate-spin">sync</span>
+              <div className="w-full h-full bg-[var(--bg-secondary)] flex items-center justify-center animate-pulse">
+                <span className="material-symbols-outlined text-[var(--gold)] animate-spin">sync</span>
               </div>
             ) : (
               <EncryptedImage 
@@ -113,11 +113,11 @@ export default function ProfileSection() {
                 nonce={user?.user_metadata?.avatar_nonce ? (typeof user.user_metadata.avatar_nonce === 'string' ? user.user_metadata.avatar_nonce : JSON.stringify(user.user_metadata.avatar_nonce)) : null}
                 alt="Your Avatar" 
                 className="w-full h-full object-cover rounded-[2.5rem]" 
-                placeholder={`https://ui-avatars.com/api/?name=${user?.user_metadata?.display_name || 'You'}&background=c9a96e&color=13131b`}
+                placeholder={`https://ui-avatars.com/api/?name=${user?.user_metadata?.display_name || 'You'}&background=c9a96e&color=000000`}
               />
             )}
           </div>
-          <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#e6c487] text-[#412d00] rounded-2xl flex items-center justify-center shadow-xl group-hover:rotate-12 transition-transform">
+          <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[var(--gold)] text-black rounded-2xl flex items-center justify-center shadow-xl group-hover:rotate-12 transition-transform">
             <span className="material-symbols-outlined text-sm">edit</span>
           </div>
           <input 
@@ -137,7 +137,7 @@ export default function ProfileSection() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="bg-white/5 border-b border-[#e6c487] text-[#e6c487] font-serif italic text-4xl lg:text-5xl outline-none px-2 py-1 w-full max-w-md"
+                className="bg-white/5 border-b border-[var(--gold)] text-[var(--gold)] font-serif italic text-4xl lg:text-5xl outline-none px-2 py-1 w-full max-w-md"
                 autoFocus
                 onBlur={handleUpdateName}
                 onKeyDown={(e) => e.key === 'Enter' && handleUpdateName()}
@@ -146,7 +146,7 @@ export default function ProfileSection() {
             </div>
           ) : (
             <h1 
-              className="font-serif italic text-4xl lg:text-6xl text-[#e6c487] mb-4 cursor-pointer hover:opacity-80 transition-opacity"
+              className="font-serif italic text-4xl lg:text-6xl text-[var(--gold)] mb-4 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setEditingName(true)}
             >
               {user?.user_metadata?.display_name || 'Sanctuary Keeper'}
@@ -157,11 +157,11 @@ export default function ProfileSection() {
           
           <div className="flex flex-wrap justify-center lg:justify-start gap-4">
             <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-3 flex items-center gap-3">
-              <span className="material-symbols-outlined text-[#e6c487] text-sm">verified_user</span>
+              <span className="material-symbols-outlined text-[var(--gold)] text-sm">verified_user</span>
               <span className="font-label text-[10px] tracking-widest text-white/60">E2E SECURED</span>
             </div>
             <div className="bg-white/5 border border-white/10 rounded-2xl px-6 py-3 flex items-center gap-3">
-              <span className="material-symbols-outlined text-[#e6c487] text-sm">cloud_done</span>
+              <span className="material-symbols-outlined text-[var(--gold)] text-sm">cloud_done</span>
               <span className="font-label text-[10px] tracking-widest text-white/60">MEMENTO SYNC ACTIVE</span>
             </div>
           </div>

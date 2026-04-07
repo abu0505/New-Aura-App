@@ -91,10 +91,10 @@ export default function BackgroundPicker() {
   const currentBg = optimisticBg !== undefined ? optimisticBg : settings?.background_url;
 
   return (
-    <div className="bg-[#1b1b23]/40 border border-white/5 rounded-[2.5rem] p-8 lg:p-10 shadow-2xl hover:border-[#e6c487]/20 transition-all duration-500 group">
+    <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-8 lg:p-10 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group relative overflow-hidden">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined text-[#e6c487] group-hover:rotate-12 transition-transform">wallpaper</span>
+          <span className="material-symbols-outlined text-[var(--gold)] group-hover:rotate-12 transition-transform">wallpaper</span>
           <h3 className="font-serif italic text-xl text-white">Chat Ambience</h3>
         </div>
       </div>
@@ -105,21 +105,21 @@ export default function BackgroundPicker() {
             key={preset.id}
             onClick={() => handlePresetSelect(preset.id)}
             className={`h-24 rounded-2xl border transition-all relative overflow-hidden group/preset ${
-              (preset.id === 'none' ? !currentBg : currentBg === preset.id) ? 'border-[#e6c487] ring-1 ring-[#e6c487]' : 'border-white/10 hover:border-white/30'
+              (preset.id === 'none' ? !currentBg : currentBg === preset.id) ? 'border-[var(--gold)] ring-1 ring-[var(--gold)]' : 'border-white/10 hover:border-white/30'
             }`}
             style={{ background: preset.color }}
           >
             <span className="absolute bottom-2 left-2 font-label text-[8px] uppercase tracking-widest text-white/40">{preset.name}</span>
             {(preset.id === 'none' ? !currentBg : currentBg === preset.id) && (
-              <span className="absolute top-2 right-2 material-symbols-outlined text-[#e6c487] text-sm">check_circle</span>
+              <span className="absolute top-2 right-2 material-symbols-outlined text-[var(--gold)] text-sm">check_circle</span>
             )}
           </button>
         ))}
         
         {/* Custom Upload */}
-        <label className="h-24 rounded-2xl border border-dashed border-white/20 hover:border-[#e6c487]/40 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-white/5">
+        <label className="h-24 rounded-2xl border border-dashed border-white/20 hover:border-[var(--gold)]/40 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-white/5">
           {uploading ? (
-            <span className="material-symbols-outlined text-[#e6c487] animate-spin">sync</span>
+            <span className="material-symbols-outlined text-[var(--gold)] animate-spin">sync</span>
           ) : (
             <>
               <span className="material-symbols-outlined text-white/40">add_photo_alternate</span>
@@ -136,7 +136,7 @@ export default function BackgroundPicker() {
 
       {toast && (
         <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full flex items-center gap-3 backdrop-blur-md border shadow-2xl z-50 animate-fade-in ${
-          toast.isError ? 'bg-red-950/80 border-red-500/50 text-red-200' : 'bg-[#1b1b23]/90 border-[#e6c487]/30 text-[#e6c487]'
+          toast.isError ? 'bg-red-950/80 border-red-500/50 text-red-200' : 'bg-[var(--bg-secondary)]/90 border-[var(--gold)]/30 text-[var(--gold)]'
         }`}>
           <span className="material-symbols-outlined text-sm">
             {toast.isError ? 'error' : 'check_circle'}

@@ -169,7 +169,8 @@ export function useMedia() {
     mediaNonce: string, 
     partnerPublicKey: string,
     senderPublicKey?: string | null,
-    partnerKeyHistory?: string[]
+    partnerKeyHistory?: string[],
+    mediaType?: string | null   // Pass the known message type for correct MIME detection
   ): Promise<Blob | null> => {
     if (!user) return null;
     const myKeyPair = getStoredKeyPair();
@@ -208,7 +209,31 @@ export function useMedia() {
       const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
       if (!decrypted) return null;
 
-      const blob = new Blob([decrypted as any]);
+      // Determine MIME type: prefer the explicit mediaType param (from message.type)
+      // Cloudinary raw upload URLs don't have file extensions, so URL-sniffing is unreliable
+      let mimeType = 'application/octet-stream';
+      if (mediaType === 'audio') {
+        mimeType = 'audio/webm';
+      } else if (mediaType === 'video') {
+        mimeType = 'video/mp4';
+      } else if (mediaType === 'image') {
+        // Try to detect from URL; fall back to jpeg
+        if (url.includes('.png')) mimeType = 'image/png';
+        else if (url.includes('.gif')) mimeType = 'image/gif';
+        else if (url.includes('.webp')) mimeType = 'image/webp';
+        else mimeType = 'image/jpeg';
+      } else {
+        // Fallback: sniff from URL when no type provided
+        if (url.includes('.webm')) mimeType = 'audio/webm';
+        else if (url.includes('.mp4')) mimeType = 'video/mp4';
+        else if (url.includes('.jpg') || url.includes('.jpeg')) mimeType = 'image/jpeg';
+        else if (url.includes('.png')) mimeType = 'image/png';
+        else if (url.includes('.gif')) mimeType = 'image/gif';
+        else if (url.includes('.mp3')) mimeType = 'audio/mpeg';
+        else if (url.includes('.ogg')) mimeType = 'audio/ogg';
+      }
+
+      const blob = new Blob([decrypted as any], { type: mimeType });
       
       // Cache management (simple LRU by Map insertion order)
       if (decryptedBlobCache.size >= MAX_CACHE_SIZE) {

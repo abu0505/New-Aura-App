@@ -11,6 +11,15 @@ const BAR_WIDTH = 2.5;
 const BAR_MIN_HEIGHT = 3;
 const BAR_MAX_HEIGHT = 28;
 
+// Shared context to avoid hitting browser limits (6 max)
+let sharedAudioContext: AudioContext | null = null;
+const getSharedAudioContext = () => {
+  if (!sharedAudioContext) {
+    sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  }
+  return sharedAudioContext;
+};
+
 function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: AudioWaveformPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -28,16 +37,28 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
   useEffect(() => {
     if (!src) return;
     let cancelled = false;
+    let timeoutId: number;
 
     const generateWaveform = async () => {
       try {
         const response = await fetch(src);
         const arrayBuffer = await response.arrayBuffer();
         
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        // Use shared context to prevent QuotaExceededError
+        const audioContext = getSharedAudioContext();
         
-        // Get the raw PCM data from channel 0
+        // Safely decode data with a generous timeout to prevent hanging forever
+        const decodePromise = typeof audioContext.decodeAudioData === 'function' && audioContext.decodeAudioData.length > 1
+           ? new Promise<AudioBuffer>((resolve, reject) => audioContext.decodeAudioData(arrayBuffer, resolve, reject))
+           : audioContext.decodeAudioData(arrayBuffer);
+
+        const timeoutPromise = new Promise<AudioBuffer>((_, reject) => {
+          timeoutId = window.setTimeout(() => reject(new Error('Decode timeout')), 3000);
+        });
+
+        const audioBuffer = await Promise.race([decodePromise, timeoutPromise]);
+        if (timeoutId) clearTimeout(timeoutId);
+        
         const rawData = audioBuffer.getChannelData(0);
         const blockSize = Math.floor(rawData.length / BAR_COUNT);
         const bars: number[] = [];
@@ -51,7 +72,6 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
           bars.push(sum / blockSize);
         }
 
-        // Normalize to pixel height range
         const maxVal = Math.max(...bars, 0.01);
         const normalized = bars.map(v => 
           BAR_MIN_HEIGHT + (v / maxVal) * (BAR_MAX_HEIGHT - BAR_MIN_HEIGHT)
@@ -63,14 +83,15 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
           setIsLoaded(true);
         }
 
-        audioContext.close();
       } catch (err) {
-        console.error('Waveform generation failed:', err);
-        // Fallback: generate a pseudo-random waveform for visual appeal
+        console.error('Waveform static decoding skipped/failed:', err);
+        // Fallback: pseudo-random waveform derived from string length to stay mostly consistent
         if (!cancelled) {
+          const pseudoSeed = src.length + (preDuration || 10);
           const fallback = Array.from({ length: BAR_COUNT }, (_, i) => {
-            const x = i / BAR_COUNT;
-            return BAR_MIN_HEIGHT + Math.sin(x * Math.PI) * (BAR_MAX_HEIGHT - BAR_MIN_HEIGHT) * (0.3 + Math.random() * 0.7);
+            const seed = (pseudoSeed * i) % 100 / 100; // 0 to 1
+            const bell = Math.sin((i / BAR_COUNT) * Math.PI); // shape it like a wave
+            return BAR_MIN_HEIGHT + bell * (BAR_MAX_HEIGHT - BAR_MIN_HEIGHT) * (0.4 + seed * 0.6);
           });
           setWaveformData(fallback);
           setIsLoaded(true);
@@ -79,8 +100,11 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
     };
 
     generateWaveform();
-    return () => { cancelled = true; };
-  }, [src]);
+    return () => { 
+      cancelled = true; 
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [src, preDuration]);
 
   // ═══ Set up the HTML Audio element ═══
   useEffect(() => {
@@ -199,10 +223,10 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
   const progressBarIndex = Math.floor(progress * BAR_COUNT);
 
   // Accent colors based on sender
-  const accentColor = isMine ? '#412d00' : '#e6c487';
-  const accentBg = isMine ? 'rgba(65,45,0,0.3)' : 'rgba(230,196,135,0.15)';
-  const barPlayedColor = isMine ? '#412d00' : '#e6c487';
-  const barUnplayedColor = isMine ? 'rgba(65,45,0,0.3)' : 'rgba(230,196,135,0.25)';
+  const accentColor = isMine ? 'var(--background)' : 'var(--primary)';
+  const accentBg = isMine ? 'rgba(var(--background-rgb), 0.3)' : 'rgba(var(--primary-rgb), 0.15)';
+  const barPlayedColor = isMine ? 'var(--background)' : 'var(--primary)';
+  const barUnplayedColor = isMine ? 'rgba(var(--background-rgb), 0.3)' : 'rgba(var(--primary-rgb), 0.25)';
 
   return (
     <div 
@@ -258,7 +282,7 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
         <div className="flex items-center justify-between">
           <span 
             className="text-[10px] tabular-nums font-mono"
-            style={{ color: isMine ? 'rgba(65,45,0,0.6)' : 'rgba(230,196,135,0.5)' }}
+            style={{ color: isMine ? 'rgba(var(--background-rgb), 0.6)' : 'rgba(var(--primary-rgb), 0.5)' }}
           >
             {isPlaying || currentTime > 0 
               ? `${formatTime(currentTime)} / ${formatTime(totalDuration)}`
@@ -272,9 +296,9 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
             className="px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider transition-all active:scale-90"
             style={{
               backgroundColor: playbackRate !== 1 ? accentBg : 'transparent',
-              color: isMine ? 'rgba(65,45,0,0.7)' : 'rgba(230,196,135,0.6)',
+              color: isMine ? 'rgba(var(--background-rgb), 0.7)' : 'rgba(var(--primary-rgb), 0.6)',
               border: playbackRate !== 1 
-                ? `1px solid ${isMine ? 'rgba(65,45,0,0.15)' : 'rgba(230,196,135,0.15)'}` 
+                ? `1px solid ${isMine ? 'rgba(var(--background-rgb), 0.15)' : 'rgba(var(--primary-rgb), 0.15)'}` 
                 : '1px solid transparent',
             }}
           >

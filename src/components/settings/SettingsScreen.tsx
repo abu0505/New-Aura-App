@@ -12,7 +12,7 @@ import StorageSection from './StorageSection';
  */
 export default function SettingsScreen() {
   return (
-    <div className="h-full w-full bg-[#0d0d15] overflow-y-auto font-sans pb-32 lg:pb-12 custom-scrollbar">
+    <div className="h-full w-full bg-[var(--background)] overflow-y-auto font-sans pb-32 lg:pb-12 custom-scrollbar">
       {/* 1. Identity & Hero */}
       <ProfileSection />
 

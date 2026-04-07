@@ -69,7 +69,9 @@ function ChatBubble({
       getDecryptedBlob(
         message.media_url, message.media_key, message.media_nonce, 
         partnerPublicKey,
-        message.sender_public_key
+        message.sender_public_key,
+        undefined,         // partnerKeyHistory — not available here
+        message.type       // Pass media type for correct MIME tagging (fixes alien audio sound)
       )
         .then(blob => {
           if (blob) {
@@ -214,8 +216,8 @@ function ChatBubble({
     if (loading) {
       return (
         <div className="w-48 h-32 flex flex-col items-center justify-center bg-black/20 rounded-xl gap-2">
-          <div className="w-5 h-5 border-2 border-[#e6c487]/30 border-t-[#e6c487] rounded-full animate-spin" />
-          <span className="text-[8px] uppercase tracking-widest text-[#e6c487]/60 font-label">Securing...</span>
+          <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          <span className="text-[8px] uppercase tracking-widest text-primary/60 font-label">Securing...</span>
         </div>
       );
     }
@@ -276,7 +278,7 @@ function ChatBubble({
           <a 
             href={decryptedMediaUrl} 
             target="_blank" 
-            className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl text-xs text-[#e6c487] underline"
+            className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl text-xs text-primary underline"
           >
             <span className="material-symbols-outlined">description</span>
             View Attachment
@@ -291,9 +293,9 @@ function ChatBubble({
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }} 
           animate={{ opacity: 1, scale: 1 }} 
-          className="bg-[#1b1b23] p-4 rounded-3xl w-full max-w-sm border border-[#e6c487]/20 shadow-2xl relative"
+          className="bg-aura-bg-elevated p-4 rounded-3xl w-full max-w-sm border border-primary/20 shadow-2xl relative"
         >
-          <div className="flex items-center gap-2 mb-3 text-[#e6c487] px-1">
+          <div className="flex items-center gap-2 mb-3 text-primary px-1">
              <span className="material-symbols-outlined text-sm">edit_note</span>
              <span className="text-[10px] uppercase tracking-widest font-label font-bold">Edit Sanctuary Note</span>
           </div>
@@ -301,12 +303,12 @@ function ChatBubble({
             ref={editInputRef}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            className="w-full bg-black/30 rounded-2xl px-4 py-3 text-sm text-[#e4e1ed] placeholder:text-[#998f81]/40 border border-[#e6c487]/10 focus:border-[#e6c487]/40 outline-none resize-none font-body custom-scrollbar transition-colors"
+            className="w-full bg-black/30 rounded-2xl px-4 py-3 text-sm text-aura-text-primary placeholder:text-aura-text-secondary/40 border border-primary/10 focus:border-primary/40 outline-none resize-none font-body custom-scrollbar transition-colors"
             rows={3}
           />
           <div className="flex justify-end gap-3 mt-4 pr-1">
-            <button onClick={() => setIsEditing(false)} className="px-5 py-2 rounded-full text-[10px] font-label uppercase tracking-widest text-[#998f81] hover:text-white transition-colors">Cancel</button>
-            <button onClick={handleEditSubmit} className="px-6 py-2 rounded-full text-[10px] font-label uppercase tracking-widest bg-gradient-to-r from-[#c9a96e] to-[#e6c487] text-[#13131b] font-bold hover:shadow-[0_0_15px_rgba(230,196,135,0.4)] transition-all active:scale-95">Save Changes</button>
+            <button onClick={() => setIsEditing(false)} className="px-5 py-2 rounded-full text-[10px] font-label uppercase tracking-widest text-aura-text-secondary hover:text-white transition-colors">Cancel</button>
+            <button onClick={handleEditSubmit} className="px-6 py-2 rounded-full text-[10px] font-label uppercase tracking-widest bg-gradient-to-r from-primary to-primary-600 text-background font-bold hover:shadow-glow-gold transition-all active:scale-95">Save Changes</button>
           </div>
         </motion.div>
       </div>
@@ -330,7 +332,7 @@ function ChatBubble({
           scale: replyScale,
           x: iconTranslate
         }}
-        className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 text-[#e6c487] md:hidden z-0"
+        className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 text-primary md:hidden z-0"
       >
         <span className="material-symbols-outlined text-[18px]">reply</span>
       </motion.div>
@@ -345,27 +347,27 @@ function ChatBubble({
               className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500"
               onError={(e) => {
                 // Fallback if the static service is down
-                e.currentTarget.src = 'https://ui-avatars.com/api/?name=Map&background=1b1b23&color=e6c487&size=240';
+                e.currentTarget.src = 'https://ui-avatars.com/api/?name=Map&background=1b1b23&color=primary&size=240';
               }}
             />
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
             
             {/* Dark mode overlay since OSM default tiles are light */}
-            <div className="absolute inset-0 bg-[#0d0d15]/40 mix-blend-multiply pointer-events-none" />
+            <div className="absolute inset-0 bg-background/40 mix-blend-multiply pointer-events-none" />
           </div>
-          <div className="bg-[#1b1b23] px-3 py-2 flex items-center justify-between border-t border-white/5">
+          <div className="bg-aura-bg-elevated px-3 py-2 flex items-center justify-between border-t border-white/5">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#e6c487] text-sm">location_on</span>
-              <span className="text-[10px] text-[#e4e1ed] font-label uppercase tracking-widest">Sanctuary Live</span>
+              <span className="material-symbols-outlined text-primary text-sm">location_on</span>
+              <span className="text-[10px] text-aura-text-primary font-label uppercase tracking-widest">Sanctuary Live</span>
             </div>
             <div className="flex items-center gap-1.5 pt-1">
-               <span className="text-[9px] uppercase tracking-tighter text-[#e4e1ed]/40 font-bold">{time}</span>
+               <span className="text-[9px] uppercase tracking-tighter text-aura-text-primary/40 font-bold">{time}</span>
               {isMine && !message.is_deleted_for_everyone && (
                 <span 
                   className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
                     message.is_read 
-                      ? 'text-[#38bdf8]' 
-                      : (message.is_delivered ? 'text-[#e4e1ed]/40' : 'text-[#e4e1ed]/20')
+                      ? 'text-blue-400' 
+                      : (message.is_delivered ? 'text-aura-text-primary/40' : 'text-aura-text-primary/20')
                   }`} 
                   style={{ fontVariationSettings: "'wght' 700" }}
                 >
@@ -392,7 +394,7 @@ function ChatBubble({
             {(interactionType === 'reactions' || interactionType === 'menu') && !isPinnedView && (
               <div className="relative flex flex-col items-center">
                 {!showAllEmojis ? (
-                  <div className="p-2.5 bg-[#1b1b23]/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 flex justify-center gap-1.5 rounded-full">
+                  <div className="p-2.5 bg-aura-bg-elevated/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 flex justify-center gap-1.5 rounded-full">
                     {['❤️', '😂', '😮', '😢', '🔥'].map(emoji => (
                       <button 
                         key={emoji}
@@ -404,19 +406,19 @@ function ChatBubble({
                         }}
                         className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 text-xl active:scale-90 ${
                           message.reaction === emoji 
-                            ? 'bg-[#e6c487]/20 border border-[#e6c487]/40 scale-110 shadow-[0_0_15px_rgba(230,196,135,0.2)]' 
+                            ? 'bg-primary/20 border border-primary/40 scale-110 shadow-glow-gold' 
                             : 'hover:bg-white/10'
                         }`}
                       >
                         {emoji}
                       </button>
                     ))}
-                    <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-[#e6c487]">
+                    <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-primary">
                       <span className="material-symbols-outlined text-[18px]">add</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-[#1b1b23]/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
+                  <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
                     <EmojiPicker 
                       theme={Theme.DARK}
                       onEmojiClick={(emojiData) => {
@@ -444,14 +446,14 @@ function ChatBubble({
                 <div className="flex flex-col gap-1 w-[160px]">
                   <button 
                     onClick={() => { onRedirect?.(message.id); setInteractionType('none'); }}
-                    className="flex items-center justify-between w-full px-4 py-3 bg-[#1b1b23]/95 hover:bg-white/10 backdrop-blur-md rounded-2xl border border-white/5 transition-colors text-sm text-[#e4e1ed]"
+                    className="flex items-center justify-between w-full px-4 py-3 bg-aura-bg-elevated/95 hover:bg-white/10 backdrop-blur-md rounded-2xl border border-white/5 transition-colors text-sm text-aura-text-primary"
                   >
                     Jump to Message
-                    <span className="material-symbols-outlined text-[16px] text-[#e6c487]">open_in_new</span>
+                    <span className="material-symbols-outlined text-[16px] text-primary">open_in_new</span>
                   </button>
                   <button 
                     onClick={() => { onPin?.(message.id); setInteractionType('none'); }}
-                    className="flex items-center justify-between w-full px-4 py-3 bg-[#1b1b23]/95 hover:bg-white/10 backdrop-blur-md rounded-2xl border border-white/5 transition-colors text-sm text-red-400"
+                    className="flex items-center justify-between w-full px-4 py-3 bg-aura-bg-elevated/95 hover:bg-white/10 backdrop-blur-md rounded-2xl border border-white/5 transition-colors text-sm text-red-400"
                   >
                     Unpin
                     <span className="material-symbols-outlined text-[16px]">push_pin</span>
@@ -482,9 +484,9 @@ function ChatBubble({
       >
         {isMine && !isPinnedView && (
           <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button onClick={handleContextMenu} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">more_vert</span></button>
-            <button onClick={() => onReply?.(message.id)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">reply</span></button>
-            <button onClick={() => setInteractionType('reactions')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">add_reaction</span></button>
+            <button onClick={handleContextMenu} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"><span className="material-symbols-outlined text-[18px]">more_vert</span></button>
+            <button onClick={() => onReply?.(message.id)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"><span className="material-symbols-outlined text-[18px]">reply</span></button>
+            <button onClick={() => setInteractionType('reactions')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"><span className="material-symbols-outlined text-[18px]">add_reaction</span></button>
           </div>
         )}
 
@@ -498,8 +500,8 @@ function ChatBubble({
           isOnlyMedia || isSticker
              ? 'bg-transparent shadow-none' 
              : isMine 
-               ? `px-4 py-3 bg-gradient-to-br from-[#c9a96e] to-[#e6c487] text-[#13131b] rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
-               : `px-4 py-3 bg-[#1b1b23] text-[#e4e1ed] rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
+               ? `px-4 py-3 bg-gradient-to-br from-primary to-primary-600 text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
+               : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
           data-message-id={message.id}
           data-is-mine={isMine}
@@ -524,9 +526,9 @@ function ChatBubble({
         {repliedMessage && !isOnlyMedia && !isSticker && (
           <div 
             onClick={(e) => { e.stopPropagation(); onJumpToMessage?.(repliedMessage.id); }}
-            className={`mb-2 pl-3 py-1.5 pr-2 rounded-lg cursor-pointer transition-colors border-l-2 active:scale-95 ${isMine ? 'bg-black/10 border-l-[#13131b]/30 hover:bg-black/20 text-[#13131b]/80' : 'bg-white/5 border-l-[#e6c487]/50 hover:bg-white/10 text-[#e4e1ed]/80'}`}
+            className={`mb-2 pl-3 py-1.5 pr-2 rounded-lg cursor-pointer transition-colors border-l-2 active:scale-95 ${isMine ? 'bg-black/10 border-l-background/30 hover:bg-black/20 text-background/80' : 'bg-white/5 border-l-primary/50 hover:bg-white/10 text-aura-text-primary/80'}`}
           >
-            <div className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1 ${isMine ? 'text-[#13131b]' : 'text-[#e6c487]'}`}>
+            <div className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1 ${isMine ? 'text-background' : 'text-primary'}`}>
               <span className="material-symbols-outlined text-[10px]">reply</span>
               {repliedMessage.is_mine ? 'You' : 'Partner'}
             </div>
@@ -545,7 +547,7 @@ function ChatBubble({
         {message.reaction && (
           <button 
             onClick={(e) => { e.stopPropagation(); onReact?.(message.id, null); }}
-            className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-[#292932] border border-[#e6c487]/40 rounded-full px-2.5 py-1 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30 transition-all hover:scale-110 active:scale-90 hover:bg-[#34343d] flex items-center justify-center`}
+            className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-aura-bg-elevated border border-primary/40 rounded-full px-2.5 py-1 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30 transition-all hover:scale-110 active:scale-90 hover:bg-aura-bg-elevated/80 flex items-center justify-center`}
             title="Remove reaction"
           >
             {message.reaction}
@@ -558,8 +560,8 @@ function ChatBubble({
             isOnlyMedia || isSticker
               ? 'text-white/90'
               : isMine 
-                ? 'text-[#13131b]/80 font-bold' 
-                : 'text-[#e4e1ed]/60 font-bold'
+                ? 'text-background/80 font-bold' 
+                : 'text-aura-text-primary/60 font-bold'
           }`}>
             {message.is_edited && !message.is_deleted_for_everyone && (
               <span className="mr-1 opacity-70">(edited) </span>
@@ -570,8 +572,8 @@ function ChatBubble({
             <span 
               className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
                 isOnlyMedia || isSticker
-                  ? (message.is_read ? 'text-[#38bdf8]' : 'text-white/60')
-                  : (message.is_read ? 'text-[#38bdf8]' : (message.is_delivered ? 'text-[#13131b]/50' : 'text-[#13131b]/25'))
+                  ? (message.is_read ? 'text-blue-400' : 'text-white/60')
+                  : (message.is_read ? 'text-blue-400' : (message.is_delivered ? 'text-background/50' : 'text-background/25'))
               }`} 
               style={{ fontVariationSettings: "'wght' 700" }}
             >
@@ -579,7 +581,7 @@ function ChatBubble({
             </span>
           )}
           {isMine && message.is_pending && (
-            <span className={`material-symbols-outlined text-[12px] animate-pulse ${isOnlyMedia || isSticker ? 'text-[#e6c487]' : 'text-[#13131b]/40'}`}>schedule</span>
+            <span className={`material-symbols-outlined text-[12px] animate-pulse ${isOnlyMedia || isSticker ? 'text-primary' : 'text-background/40'}`}>schedule</span>
           )}
         </div>
       </div>
@@ -587,9 +589,9 @@ function ChatBubble({
 
       {!isMine && !isPinnedView && (
         <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button onClick={() => setInteractionType('reactions')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">add_reaction</span></button>
-          <button onClick={() => onReply?.(message.id)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">reply</span></button>
-          <button onClick={handleContextMenu} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-[#998f81] hover:text-[#e4e1ed] transition-colors"><span className="material-symbols-outlined text-[18px]">more_vert</span></button>
+          <button onClick={() => setInteractionType('reactions')} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"><span className="material-symbols-outlined text-[18px]">add_reaction</span></button>
+          <button onClick={() => onReply?.(message.id)} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"><span className="material-symbols-outlined text-[18px]">reply</span></button>
+          <button onClick={handleContextMenu} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"><span className="material-symbols-outlined text-[18px]">more_vert</span></button>
         </div>
       )}
       </motion.div>

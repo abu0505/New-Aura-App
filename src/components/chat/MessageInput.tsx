@@ -221,7 +221,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
 
   if (isRecording) {
     return (
-      <div className="px-6 py-4 bg-[#0d0d15]/80 backdrop-blur-3xl border-t border-white/5">
+      <div className="px-6 py-4 bg-background/80 backdrop-blur-3xl border-t border-white/5">
         <div className="max-w-4xl mx-auto">
           <AudioRecorder 
             onRecordingComplete={handleAudioComplete}
@@ -233,7 +233,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
   }
 
   return (
-    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end bg-gradient-to-t from-[#0d0d15] via-[#0d0d15] to-transparent">
+    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end bg-gradient-to-t from-background via-background to-transparent">
       
       <AnimatePresence>
         {replyingTo && (
@@ -241,32 +241,32 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="w-full max-w-[720px] mx-auto mb-2 bg-[#292932]/90 backdrop-blur-md rounded-2xl px-5 py-3 shadow-lg border-l-4 border-l-[#e6c487] border border-white/5 relative overflow-hidden flex-shrink-0"
+            className="w-full max-w-[720px] mx-auto mb-2 bg-aura-bg-elevated/90 backdrop-blur-md rounded-2xl px-5 py-3 shadow-lg border-l-4 border-l-primary border border-white/5 relative overflow-hidden flex-shrink-0"
           >
             <div className="flex justify-between items-start">
               <div className="flex flex-col flex-1 pr-6 overflow-hidden">
-                <span className="text-[#e6c487] text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
+                <span className="text-primary text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-2">
                   <span className="material-symbols-outlined text-[14px]">reply</span>
                   Replying to {replyingTo.is_mine ? 'Yourself' : 'Partner'}
                 </span>
-                <span className="text-[#e4e1ed]/80 text-sm truncate font-medium">
+                <span className="text-aura-text-primary/80 text-sm truncate font-medium">
                   {replyingTo.decrypted_content || (replyingTo.type !== 'text' ? `[${replyingTo.type}]` : 'Message...')}
                 </span>
               </div>
               <button 
                 onClick={onCancelReply} 
-                className="absolute top-1/2 -translate-y-1/2 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/5 text-[#998f81] hover:text-[#e4e1ed] hover:bg-white/10 transition-colors z-10"
+                className="absolute top-1/2 -translate-y-1/2 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/5 text-aura-text-secondary hover:text-aura-text-primary hover:bg-white/10 transition-colors z-10"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
             {/* Subtle background glow */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-[#e6c487]/10 to-transparent blur-2xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent blur-2xl rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none" />
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-[#1b1b23]/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border-t border-white/5">
+      <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border-t border-white/5">
         {/* Input Area */}
         <div className="flex-1 flex items-center min-h-[40px] py-1">
           <textarea
@@ -277,7 +277,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
             placeholder={isUploading ? "Securing media..." : "Write something beautiful..."}
             disabled={disabled || isUploading}
             autoFocus
-            className="w-full pl-3 bg-transparent border-none text-sm text-[#e4e1ed] placeholder:text-[#998f81]/50 placeholder:italic resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
+            className="w-full pl-3 bg-transparent border-none text-sm text-aura-text-primary placeholder:text-aura-text-secondary/50 placeholder:italic resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
             rows={1}
           />
         </div>
@@ -295,7 +295,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
               >
                 <button
                   onClick={() => setIsMediaGalleryOpen(true)}
-                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="Photos"
                 >
                   <span className="material-symbols-outlined text-[22px]">image</span>
@@ -303,7 +303,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
                 
                 <button
                   onClick={() => handleAttachmentSelect('video')}
-                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="Videos"
                 >
                   <span className="material-symbols-outlined text-[22px]">videocam</span>
@@ -311,7 +311,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
 
                 <button
                   onClick={() => setIsAttachmentOpen(true)}
-                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-[#998f81]/60 hover:text-[#e6c487] transition-all active:scale-90"
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="More"
                 >
                   <span className="material-symbols-outlined text-[22px]">add_circle</span>
@@ -327,13 +327,13 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
               >
                 {isUploading ? (
                   <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-[#e6c487] border-t-transparent rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                   </div>
                 ) : (
                   <button
                     onClick={handleSend}
                     disabled={disabled}
-                    className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-[#e6c487] text-[#0d0d15] shadow-[0_0_15px_rgba(230,196,135,0.15)] hover:scale-105 active:scale-95 transition-all duration-300"
+                    className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-primary text-background shadow-glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
                   >
                     <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
                   </button>
