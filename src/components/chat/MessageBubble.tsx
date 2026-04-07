@@ -34,7 +34,7 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
       <div
         className={`relative max-w-[75%] px-4 py-2.5 flex flex-col gap-1 ${
           isOwn
-            ? `rounded-2xl ${showTail ? 'rounded-tr-sm' : 'rounded-tr-2xl'} bg-gradient-to-br from-[#C9A96E] to-[#A8845A] text-[#0C0C14]`
+            ? `rounded-2xl ${showTail ? 'rounded-tr-sm' : 'rounded-tr-2xl'} bg-[#C9A96E] text-[#0C0C14]`
             : `rounded-2xl ${showTail ? 'rounded-tl-sm' : 'rounded-tl-2xl'} text-[#E4E1ED]`
         }`}
         style={

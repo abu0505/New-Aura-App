@@ -74,7 +74,7 @@ export default function ThemeProvider({ children }: { children: React.ReactNode 
     root.style.setProperty('--aura-text-primary', '#F0EDE8'); // Standard AURA text
     
     // Complex Mappings
-    root.style.setProperty('--sender-bubble', `linear-gradient(135deg, ${accentColor}, ${deepColor})`);
+    root.style.setProperty('--sender-bubble', accentColor);
     root.style.setProperty('--border-subtle', hexToRgba(accentColor, 0.12));
     root.style.setProperty('--border-medium', hexToRgba(accentColor, 0.25));
 

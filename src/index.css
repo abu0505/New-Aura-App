@@ -33,7 +33,7 @@
   --border-medium: rgba(201, 169, 110, 0.25);
 
   /* Bubbles & Interactive */
-  --sender-bubble: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  --sender-bubble: var(--gold);
   --receiver-bubble: #1C1C2E;
 
   /* Status */

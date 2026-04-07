@@ -317,7 +317,7 @@ function ChatBubble({
 
   // Safety guard: If it's a text message but has no decrypted content yet, 
   // don't render an empty bubble (unless it's a media/location type which handle their own loading)
-  if (message.type === 'text' && !message.decrypted_content && !message.is_deleted_for_everyone) return null;
+  if ((!message.type || message.type === 'text') && !message.decrypted_content && !message.is_deleted_for_everyone) return null;
 
   return (
     <div 
@@ -500,7 +500,7 @@ function ChatBubble({
           isOnlyMedia || isSticker
              ? 'bg-transparent shadow-none' 
              : isMine 
-               ? `px-4 py-3 bg-gradient-to-br from-primary to-primary-600 text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
+               ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
                : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
           data-message-id={message.id}
