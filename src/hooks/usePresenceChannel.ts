@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,19 @@ interface PartnerState {
   page?: string;
 }
 
+/**
+ * WhatsApp-style Presence Channel
+ * ════════════════════════════════
+ * 
+ * CRITICAL: `trackMyStatus` and `untrackMyStatus` must have STABLE references.
+ * They are dependencies of `useOnlineStatus` effects. If they change identity
+ * on every render, the effect cleanup calls `untrackMyStatus()` → the partner
+ * sees a `leave` event → then the effect re-runs and calls `trackMyStatus()`
+ * → partner sees a `join` event → infinite Online/Offline flicker every 1-2s.
+ *
+ * Solution: Both functions are wrapped in `useCallback(fn, [])` with zero deps
+ * because they only use refs (channelRef, joinStatusRef) which are stable.
+ */
 export function usePresenceChannel(partnerId: string | null, currentPage?: string) {
   const { user, encryptionStatus } = useAuth();
   const [partnerState, setPartnerState] = useState<PartnerState>({ isOnline: false, hasSynced: false });
@@ -32,14 +45,9 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
   useEffect(() => {
     if (!user) return;
 
-    // 1. Use a stable shared channel name (both users must share the same channel
-    //    so their presence keys are visible to each other).
     const channelName = 'aura-presence';
 
-    // Before creating the channel, forcefully remove any stale existing channel
-    // with the same name from Supabase's internal registry. Without this,
-    // supabase.channel() returns the already-subscribed channel, and adding
-    // .on('presence', ...) to it throws "cannot add presence callbacks after joining".
+    // Remove any stale channel before creating a new one
     const allChannels = supabase.getChannels();
     const stale = allChannels.find(ch => ch.topic === `realtime:${channelName}`);
     if (stale) {
@@ -57,41 +65,58 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
     channelRef.current = channel;
     joinStatusRef.current = 'JOINING';
 
-    // 2. Subscribe to channel with presence event listeners
     channel
       .on('presence', { event: 'sync' }, () => {
         const state = channel.presenceState<PresenceState>();
         
-        // Update our view of the partner if their key exists in the current state
         if (partnerId) {
           const partnerPresence = state[partnerId];
           const isPartnerOnline = !!(partnerPresence && partnerPresence.length > 0);
-          setPartnerState({
-            isOnline: isPartnerOnline,
-            hasSynced: true,
-            page: partnerPresence?.[0]?.page,
-            // If partner just went offline, stamp the time
-            ...(!isPartnerOnline ? { lastOnlineAt: new Date().toISOString() } : {}),
+          const newPage = partnerPresence?.[0]?.page;
+
+          // ═══ Smart update: only trigger re-render if values ACTUALLY changed ═══
+          // Without this guard, every sync event (including from OUR OWN track calls)
+          // creates a new state object → re-render → new function refs → flicker loop.
+          setPartnerState(prev => {
+            if (prev.hasSynced && prev.isOnline === isPartnerOnline && prev.page === newPage) {
+              return prev; // Exact same reference → React skips re-render
+            }
+            return {
+              isOnline: isPartnerOnline,
+              hasSynced: true,
+              page: newPage,
+              // Preserve lastOnlineAt if partner is still online, stamp it if going offline
+              lastOnlineAt: !isPartnerOnline
+                ? (prev.isOnline ? new Date().toISOString() : prev.lastOnlineAt)
+                : prev.lastOnlineAt,
+            };
           });
         }
       })
       .on('presence', { event: 'join' }, ({ key, newPresences }) => {
         if (key === partnerId) {
-          setPartnerState({
-            isOnline: true,
-            hasSynced: true,
-            page: (newPresences[0] as unknown as PresenceState)?.page,
+          setPartnerState(prev => {
+            if (prev.isOnline && prev.hasSynced) return prev; // Already online, skip
+            return {
+              isOnline: true,
+              hasSynced: true,
+              page: (newPresences[0] as unknown as PresenceState)?.page,
+              lastOnlineAt: prev.lastOnlineAt,
+            };
           });
         }
       })
       .on('presence', { event: 'leave' }, ({ key }) => {
         if (key === partnerId) {
-          setPartnerState((prev) => ({
-            ...prev,
-            isOnline: false,
-            hasSynced: true,
-            lastOnlineAt: new Date().toISOString(),
-          }));
+          setPartnerState(prev => {
+            if (!prev.isOnline && prev.hasSynced) return prev; // Already offline, skip
+            return {
+              ...prev,
+              isOnline: false,
+              hasSynced: true,
+              lastOnlineAt: new Date().toISOString(),
+            };
+          });
         }
       })
       .subscribe((status) => {
@@ -99,33 +124,36 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
           joinStatusRef.current = 'JOINED';
           // Ensure we start off tracked if we're currently unlocked/visible
           if (encryptionStatus === 'ready' && document.visibilityState === 'visible') {
-            trackMyStatus(user.id, currentPage);
+            channelRef.current?.track({
+              user_id: user.id,
+              page: currentPage,
+              online_at: new Date().toISOString(),
+            }).catch(() => {});
           }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           joinStatusRef.current = 'DISCONNECTED';
           if (partnerId) {
-             setPartnerState(prev => ({ ...prev, isOnline: false, hasSynced: false }));
+            setPartnerState(prev => ({ ...prev, isOnline: false, hasSynced: false }));
           }
         }
       });
 
     return () => {
-      // Cleanup: remove channel completely on unmount
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
       channelRef.current = null;
       joinStatusRef.current = 'DISCONNECTED';
     };
-  }, [user, partnerId]); // Reacts to user auth changes, and partnerId binding
+  }, [user, partnerId]); // Only re-runs on auth/partner change
 
   /**
-   * Pushes our presence config into the channel
+   * Pushes our presence into the channel.
+   * ═══ STABLE REFERENCE via useCallback ═══
+   * Only uses refs (channelRef, joinStatusRef) — zero reactive deps.
    */
-  const trackMyStatus = async (userId: string, page?: string) => {
-    if (!channelRef.current || joinStatusRef.current !== 'JOINED') {
-       return;
-    }
+  const trackMyStatus = useCallback(async (userId: string, page?: string) => {
+    if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
 
     try {
       await channelRef.current.track({
@@ -136,22 +164,21 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
     } catch (err) {
       console.error('Failed to track presence', err);
     }
-  };
+  }, []);
 
   /**
-   * Removes our presence from the channel (without leaving the channel completely)
+   * Removes our presence from the channel (without leaving the channel).
+   * ═══ STABLE REFERENCE via useCallback ═══
    */
-  const untrackMyStatus = async () => {
-    if (!channelRef.current || joinStatusRef.current !== 'JOINED') {
-       return;
-    }
+  const untrackMyStatus = useCallback(async () => {
+    if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
 
     try {
       await channelRef.current.untrack();
     } catch (err) {
       console.error('Failed to untrack presence', err);
     }
-  };
+  }, []);
 
   return {
     partnerState,
