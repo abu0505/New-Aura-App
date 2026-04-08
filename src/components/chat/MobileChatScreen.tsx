@@ -528,7 +528,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                         {isGroup ? (
                           <MediaGridBubble 
                             messages={item}
-                            partnerPublicKey={firstMsg.sender_id === user?.id ? partner.public_key : null}
+                            partnerPublicKey={partner.public_key}
                             isMine={firstMsg.sender_id === user?.id}
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
@@ -536,7 +536,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                         ) : (
                           <ChatBubble 
                             message={item} 
-                            partnerPublicKey={item.sender_id === user?.id ? partner.public_key : null}
+                            partnerPublicKey={partner.public_key}
                             onReact={viewMode === 'chat' ? reactToMessage : undefined}
                             onEdit={viewMode === 'chat' ? editMessage : undefined}
                             onDelete={viewMode === 'chat' ? deleteMessage : undefined}
