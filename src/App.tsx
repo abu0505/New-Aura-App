@@ -33,19 +33,26 @@ function InnerApp({
   const { trackMyStatus, untrackMyStatus, partnerState } = usePresenceChannel(partner?.id || null, activeTab);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
 
-  // Merge presence online state into partner object
-  // Use OR logic: partner is online if EITHER presence channel reports them
-  // OR the DB profile says so. This prevents the case where presence hasn't
-  // synced yet but the DB correctly has is_online=true.
+  // ═══ Presence Authority Pattern ═══
+  // Once the presence channel has synced, it becomes the SOLE source of truth.
+  // This fixes the bug where the stale DB `is_online=true` would override
+  // a legitimate presence `leave` event, keeping the header stuck on "Online".
+  //
+  // Before sync: DB is the fallback (shows correct status on initial render).
+  // After  sync: Presence is authoritative (sub-second offline detection).
+  const resolvedIsOnline = partnerState.hasSynced
+    ? partnerState.isOnline          // Presence is live → trust it completely
+    : partner?.is_online ?? false;   // Presence hasn't connected yet → use DB
+
+  // For last_seen: prefer presence-based lastOnlineAt (exact moment we saw
+  // the partner leave) over the DB timestamp, which may be stale if the
+  // offline beacon didn't reach the server in time.
+  const resolvedLastSeen = partnerState.lastOnlineAt ?? partner?.last_seen ?? null;
+
   const partnerWithPresence = partner ? { 
     ...partner, 
-    is_online: partnerState.isOnline || partner.is_online,
-    // When partner IS online (by any signal), update last_seen to NOW
-    // so that if presence drops momentarily, the header shows "just now"
-    // instead of a stale timestamp from the last offline transition.
-    last_seen: (partnerState.isOnline || partner.is_online) 
-      ? new Date().toISOString() 
-      : partner.last_seen,
+    is_online: resolvedIsOnline,
+    last_seen: resolvedLastSeen,
   } : partner;
 
   const { isLocked, hasAppPin } = useAppLock();

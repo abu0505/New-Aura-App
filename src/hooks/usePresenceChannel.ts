@@ -11,12 +11,19 @@ interface PresenceState {
 
 interface PartnerState {
   isOnline: boolean;
+  /** True once the presence channel has completed its first sync.
+   *  Before this, the DB `is_online` field is used as a fallback. */
+  hasSynced: boolean;
+  /** ISO timestamp of when we last detected the partner going offline
+   *  via presence. Used as a reliable "last seen" that doesn't depend
+   *  on the offline beacon reaching the DB. */
+  lastOnlineAt?: string;
   page?: string;
 }
 
 export function usePresenceChannel(partnerId: string | null, currentPage?: string) {
   const { user, encryptionStatus } = useAuth();
-  const [partnerState, setPartnerState] = useState<PartnerState>({ isOnline: false });
+  const [partnerState, setPartnerState] = useState<PartnerState>({ isOnline: false, hasSynced: false });
   const channelRef = useRef<RealtimeChannel | null>(null);
   
   // Track if we've successfully joined so we can safely track/untrack
@@ -61,7 +68,10 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
           const isPartnerOnline = !!(partnerPresence && partnerPresence.length > 0);
           setPartnerState({
             isOnline: isPartnerOnline,
+            hasSynced: true,
             page: partnerPresence?.[0]?.page,
+            // If partner just went offline, stamp the time
+            ...(!isPartnerOnline ? { lastOnlineAt: new Date().toISOString() } : {}),
           });
         }
       })
@@ -69,13 +79,19 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
         if (key === partnerId) {
           setPartnerState({
             isOnline: true,
+            hasSynced: true,
             page: (newPresences[0] as unknown as PresenceState)?.page,
           });
         }
       })
       .on('presence', { event: 'leave' }, ({ key }) => {
         if (key === partnerId) {
-          setPartnerState((prev) => ({ ...prev, isOnline: false }));
+          setPartnerState((prev) => ({
+            ...prev,
+            isOnline: false,
+            hasSynced: true,
+            lastOnlineAt: new Date().toISOString(),
+          }));
         }
       })
       .subscribe((status) => {
@@ -88,7 +104,7 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           joinStatusRef.current = 'DISCONNECTED';
           if (partnerId) {
-             setPartnerState({ isOnline: false });
+             setPartnerState(prev => ({ ...prev, isOnline: false, hasSynced: false }));
           }
         }
       });
