@@ -25,12 +25,14 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [pendingMessages, setPendingMessages] = useState<ChatMessage[]>([]);
   const [pinnedMessages, setPinnedMessages] = useState<Database['public']['Tables']['pinned_messages']['Row'][]>([]);
   const [pinnedMessageDetails, setPinnedMessageDetails] = useState<Record<string, ChatMessage>>({});
+  // Cache of reply target messages — persists even after they scroll out of the loaded window
+  const [replyMessageCache, setReplyMessageCache] = useState<Record<string, ChatMessage>>({});
   const [dataLoading, setDataLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
   const [firstUnreadId, setFirstUnreadId] = useState<string | null>(null);
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 25;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stable ref for encryptionStatus so realtime handlers have fresh value
   // without needing it in effect deps (which causes full message reset)
@@ -52,6 +54,10 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const lastMessageTimeRef = useRef<string | null>(null);
   const messagesRef = useRef<ChatMessage[]>(messages);
   const pinnedMessageDetailsRef = useRef<Record<string, ChatMessage>>({});
+  const replyMessageCacheRef = useRef<Record<string, ChatMessage>>({});
+  // Tracks IDs we've already attempted to fetch — prevents ANY re-fetch on message state changes
+  // (read receipts, reactions, realtime ticks all update `messages`, but egress stays O(1) per unique reply ID)
+  const replyFetchAttemptedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -62,6 +68,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   }, [messages]);
 
   useEffect(() => { pinnedMessageDetailsRef.current = pinnedMessageDetails; }, [pinnedMessageDetails]);
+  useEffect(() => { replyMessageCacheRef.current = replyMessageCache; }, [replyMessageCache]);
 
   // Decrypts a single message row — uses per-message sender_public_key when available
   const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
@@ -392,7 +399,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   // 1. Re-fetch only the latest 10 messages, wiping 100+ loaded messages
   // 2. Destroy and recreate the realtime channel
   // Encryption readiness is handled by the separate re-decrypt effect below.
-  }, [user, partnerId]);
+  }, [user?.id, partnerId]);
 
   // Fetch missing pinned message details
   // ══ FIXED: Removed `messages` and `pinnedMessageDetails` from deps ══
@@ -439,6 +446,102 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     fetchDetails();
   }, [pinnedMessages, decryptRow]);
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // REPLY MESSAGE CACHE — Two-Layer Strategy (EGRESS-OPTIMIZED)
+  // ═══════════════════════════════════════════════════════════════════════
+  //
+  // LAYER 1 — Proactive In-Memory Cache (ZERO egress)
+  //   Every time `messages` changes, scan for messages that are reply targets.
+  //   Cache them NOW so they persist when they paginate out later.
+  //   Example: Messages [A, B(reply→A), C] — A gets cached immediately.
+  //   When user scrolls down and A unloads, the cache still has it.
+  //
+  // LAYER 2 — DB Fetch for Truly Missing Messages (at most 1 fetch per ID)
+  //   If a reply target was NEVER in the loaded window (e.g., reply to a
+  //   message from weeks ago), fetch it once from DB.
+  //   `replyFetchAttemptedRef` ensures no duplicate fetches.
+  //
+  // Total egress cost: O(N) where N = unique reply targets not already
+  // in any loaded page. For typical usage: ≈0–5 small fetches per session.
+  // ═══════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const currentMessages = messagesRef.current;
+    const currentCache = replyMessageCacheRef.current;
+    const attempted = replyFetchAttemptedRef.current;
+
+    // ─── LAYER 1: Pre-cache loaded messages that are reply targets ───
+    // Collect all reply_to IDs from currently loaded messages
+    const replyTargetIds = new Set(
+      messages
+        .map(m => m.reply_to)
+        .filter((id): id is string => !!id)
+    );
+
+    // For each reply target that IS in the loaded window, cache it proactively
+    // (no DB call needed — the data is right here in memory)
+    if (replyTargetIds.size > 0) {
+      const newProactiveEntries: Record<string, ChatMessage> = {};
+      for (const targetId of replyTargetIds) {
+        if (currentCache[targetId]) continue; // Already cached
+        const loadedMsg = currentMessages.find(m => m.id === targetId);
+        if (loadedMsg) {
+          newProactiveEntries[targetId] = loadedMsg;
+          attempted.add(targetId); // Mark as handled so Layer 2 skips it
+        }
+      }
+      if (Object.keys(newProactiveEntries).length > 0) {
+        setReplyMessageCache(prev => ({ ...prev, ...newProactiveEntries }));
+      }
+    }
+
+    // ─── LAYER 2: Fetch truly missing reply targets from DB ───
+    const missingReplyIds = Array.from(replyTargetIds).filter(id =>
+      !currentMessages.find(m => m.id === id) &&
+      !currentCache[id] &&
+      !attempted.has(id)
+    );
+
+    if (missingReplyIds.length === 0) return;
+
+    // Mark ALL ids as attempted SYNCHRONOUSLY before the async fetch.
+    // Prevents duplicate fetches even if the effect fires again
+    // (due to a realtime tick) before the first fetch resolves.
+    missingReplyIds.forEach(id => attempted.add(id));
+
+    const fetchReplyMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .in('id', missingReplyIds);
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const myKeyPair = getStoredKeyPair();
+          const currentPartnerKey = partnerKeyRef.current;
+          const currentKeyHistory = partnerKeyHistoryRef.current;
+
+          const newEntries: Record<string, ChatMessage> = {};
+          for (const row of data) {
+            const decrypted = decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory);
+            newEntries[row.id] = decrypted;
+          }
+
+          setReplyMessageCache(prev => ({ ...prev, ...newEntries }));
+        }
+      } catch (err) {
+        console.error('Error fetching reply messages:', err);
+        // On error, remove from attempted so retry is possible
+        missingReplyIds.forEach(id => attempted.delete(id));
+      }
+    };
+
+    fetchReplyMessages();
+  }, [messages, decryptRow]);
 
   const sendMessage = async (
     text: string, 
@@ -528,8 +631,9 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
          setMessages((prev) => prev.filter(m => m.id !== optimisticMsg.id));
       }
     } else {
-      // Trigger Web Push Notification asynchronously with a 1.5s debounce
-      // This prevents rapid message bursts from causing multiple notifications
+      // Trigger Web Push Notification asynchronously with a 5s debounce
+      // This prevents rapid message bursts from triggering Chrome's spam detection.
+      // Chrome flags sites that send many identical notifications in quick succession.
       const existingTimer = pushDebounceTimers.get(partnerId);
       if (existingTimer) clearTimeout(existingTimer);
       
@@ -544,7 +648,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           }
         }).catch(err => console.error("Failed to trigger push notification", err));
         pushDebounceTimers.delete(partnerId);
-      }, 1500);
+      }, 5000);
       
       pushDebounceTimers.set(partnerId, newTimer);
     }
@@ -707,6 +811,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     messages, 
     pinnedMessages,
     pinnedMessageDetails,
+    replyMessageCache,
     loading: dataLoading || (encryptionStatus !== 'ready' && encryptionStatus !== 'error' && encryptionStatus !== 'pin_setup_required'), 
     loadingMore,
     hasMore,

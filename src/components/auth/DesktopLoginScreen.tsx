@@ -43,12 +43,12 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
     <>
       <style>{`
         .aurora-gradient-desktop {
-            background: radial-gradient(circle at 20% 30%, rgba(230, 196, 135, 0.08) 0%, transparent 40%),
+            background: radial-gradient(circle at 20% 30%, rgba(var(--primary-rgb), 0.08) 0%, transparent 40%),
                         radial-gradient(circle at 80% 70%, rgba(65, 45, 0, 0.15) 0%, transparent 50%),
                         radial-gradient(circle at 50% 50%, rgba(19, 19, 27, 1) 0%, rgba(13, 13, 21, 1) 100%);
         }
         .text-glow-gold {
-            text-shadow: 0 0 20px rgba(230, 196, 135, 0.3);
+            text-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
         }
       `}</style>
       <main className="flex min-h-screen w-full bg-surface-container-lowest text-on-surface font-body selection:bg-primary-container selection:text-on-primary overflow-hidden">
@@ -64,7 +64,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
           </div>
           
           <div className="z-10 flex flex-col justify-center flex-grow">
-            <img src="/aura-logo.png" alt="AURA Logo" className="w-32 h-32 mb-6 object-contain drop-shadow-[0_0_20px_rgba(230,196,135,0.4)]" />
+            <img src="/aura-logo.png" alt="AURA Logo" className="w-32 h-32 mb-6 object-contain drop-shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)]" />
             <h1 className="font-headline text-8xl font-light tracking-[0.25em] text-primary text-glow-gold leading-tight mb-4">
               AURA
             </h1>
@@ -186,9 +186,9 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
         <footer className="fixed bottom-0 left-0 w-full px-12 py-8 z-50 pointer-events-none hidden lg:block">
           <div className="flex justify-between items-center w-full opacity-60">
             <div className="flex gap-8 pointer-events-auto">
-              <a className="text-[#4D463A] hover:text-[#E6C487] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Privacy</a>
-              <a className="text-[#4D463A] hover:text-[#E6C487] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Terms</a>
-              <a className="text-[#4D463A] hover:text-[#E6C487] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Concierge</a>
+              <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Privacy</a>
+              <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Terms</a>
+              <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Concierge</a>
             </div>
             <div className="text-[#4D463A] font-body text-[10px] tracking-[0.2em] uppercase">
                 © 2024 AURA. THE DIGITAL SANCTUARY.

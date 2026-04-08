@@ -6,35 +6,19 @@ import { useChatSettings } from '../../hooks/useChatSettings';
 import { useAuth } from '../../contexts/AuthContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
+import type { MessageInputHandle } from './MessageInput';
 import ChatBubble from './ChatBubble';
+import MediaGridBubble from './MediaGridBubble';
 import { ChatBubbleErrorBoundary } from './ChatBubbleErrorBoundary';
+import { groupMessages, isMessageGroup } from '../../utils/messageGrouping';
 // PinnedMessagesBanner removed in favor of integrated view
 import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
 import EncryptedImage from '../common/EncryptedImage';
+import { AnimatePresence, motion } from 'framer-motion';
+import { LastSeenStatus } from './LastSeenStatus';
 
-function formatLastSeen(lastSeen: string | null): string {
-  if (!lastSeen) return 'Offline';
-  const diff = Date.now() - new Date(lastSeen).getTime();
-  const totalMins = Math.floor(diff / 60000);
 
-  if (totalMins < 1) return 'Last seen just now';
-  if (totalMins < 60) return `Last seen ${totalMins} ${totalMins === 1 ? 'min' : 'mins'} ago`;
-
-  const hours = Math.floor(totalMins / 60);
-  const remainingMins = totalMins % 60;
-
-  if (hours < 24) {
-    const hourLabel = hours === 1 ? 'hour' : 'hours';
-    const minLabel = remainingMins === 1 ? 'min' : 'mins';
-    const minsPart = remainingMins > 0 ? ` ${remainingMins} ${minLabel}` : '';
-    return `Last seen ${hours} ${hourLabel}${minsPart} ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'Last seen yesterday';
-  return `Last seen ${days} days ago`;
-}
 
 interface DesktopChatScreenProps {
   partner: PartnerProfile;
@@ -48,6 +32,10 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   const [showPinDropdown, setShowPinDropdown] = useState(false);
   const pinDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  
+  const messageInputRef = useRef<MessageInputHandle>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounterRef = useRef(0);
 
   // Click outside listener for the pin dropdown
   useEffect(() => {
@@ -71,7 +59,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
 
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
   const { 
-    messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, 
+    messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
     hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
     deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead 
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
@@ -83,6 +71,40 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   const isInitialMount = useRef(true);
 
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) {
+      setIsDraggingOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    dragCounterRef.current = 0;
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files);
+      messageInputRef.current?.handleDroppedFiles(files);
+    }
+  };
 
   useLayoutEffect(() => {
     const container = scrollContainerRef.current;
@@ -130,12 +152,26 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
     const container = scrollContainerRef.current;
     if (!container || loadingMore || !hasMore || viewMode === 'pinned') return;
 
-    // Trigger load more when user stays near the top (e.g., < 100px)
-    if (container.scrollTop < 100) {
+    // Trigger load more when user stays near the top (e.g., < 300px)
+    if (container.scrollTop < 300) {
       previousScrollHeightRef.current = container.scrollHeight;
       loadMore();
     }
   };
+
+  // Auto-load more if the initial batch is dominated by media messages
+  // (no text visible = user can't scroll to find context above the images)
+  useEffect(() => {
+    if (loading || loadingMore || !hasMore || viewMode !== 'chat') return;
+    if (messages.length === 0) return;
+    const nonMediaCount = messages.filter(m => m.type === 'text' || m.type === 'sticker').length;
+    if (nonMediaCount / messages.length < 0.2) {
+      const container = scrollContainerRef.current;
+      if (container) previousScrollHeightRef.current = container.scrollHeight;
+      loadMore();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const handleSend = (text: string, media?: any, replyToId?: string) => {
     sendMessage(text, media, replyToId);
@@ -277,7 +313,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   return (
     <>
       <style>{`
-        .glass-header { background: rgba(var(--background-rgb, 13, 13, 21), 0.8); backdrop-filter: blur(20px); }
+        .glass-header { background: var(--bg-elevated); backdrop-filter: blur(12px); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -285,7 +321,33 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb, 230, 196, 135), 0.1); border-radius: 10px; }
       `}</style>
 
-      <div className="absolute inset-0 grid grid-rows-[auto_auto_1fr_auto] text-aura-text-primary font-sans overflow-hidden transition-all duration-700 bg-background">
+      <div 
+        className="absolute inset-0 grid grid-rows-[auto_auto_1fr_auto] text-aura-text-primary font-sans overflow-hidden transition-all duration-700 bg-background"
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <AnimatePresence>
+          {isDraggingOver && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[9999] bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-12 pointer-events-none"
+            >
+              <div className="w-[400px] h-[300px] rounded-3xl border-2 border-dashed border-primary/50 bg-primary/10 flex flex-col items-center justify-center gap-6 shadow-2xl">
+                <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[48px] text-primary">upload_file</span>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-2xl font-serif text-primary mb-2">Drop Files Here</h3>
+                  <p className="text-aura-text-secondary text-sm">Send media to {partner.display_name || 'your partner'}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* Background Layer */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
           {settings?.background_url?.startsWith('http') && (
@@ -322,7 +384,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
             <div>
               <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
               <p className="text-[10px] font-label tracking-[0.2em] text-aura-text-secondary uppercase mt-0.5">
-                {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
+                <LastSeenStatus isOnline={partner.is_online} statusMessage={partner.status_message} lastSeen={partner.last_seen} />
               </p>
             </div>
           </div>
@@ -415,6 +477,10 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
           ref={scrollContainerRef} 
           onScroll={handleScroll}
           className="min-h-0 w-full overflow-y-auto custom-scrollbar relative z-10 anchor-auto"
+          style={{
+            maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%)',
+          }}
         >
           <div className="max-w-[800px] mx-auto px-6 md:px-10 py-10 flex flex-col gap-1 min-h-full">
             {!partner.public_key && (
@@ -439,6 +505,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
               </div>
             ) : (() => {
               const listToRender = viewMode === 'chat' ? messages : pinnedMessagesData;
+              const groupedList = groupMessages(listToRender);
               
               if (viewMode === 'pinned' && listToRender.length === 0) {
                 return (
@@ -453,20 +520,26 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
                 ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at)
                 : null;
 
-              return listToRender.map((msg, index) => {
-                const currentDateStr = new Date(msg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-                const previousMsg = index > 0 ? listToRender[index - 1] : null;
-                const previousDateStr = previousMsg ? new Date(previousMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+              return groupedList.map((item, index) => {
+                const isGroup = isMessageGroup(item);
+                const firstMsg = isGroup ? item[0] : item;
+                const lastMsg = isGroup ? item[item.length - 1] : item;
+
+                const currentDateStr = new Date(firstMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+                const prevItem = index > 0 ? groupedList[index - 1] : null;
+                const prevMsg = prevItem ? (isMessageGroup(prevItem) ? prevItem[prevItem.length - 1] : prevItem) : null;
+                const previousDateStr = prevMsg ? new Date(prevMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
                 
                 const showDateSeparator = currentDateStr !== previousDateStr;
-                const isFirstInGroup = index === 0 || previousMsg?.sender_id !== msg.sender_id || showDateSeparator;
+                const isFirstInGroup = index === 0 || prevMsg?.sender_id !== firstMsg.sender_id || showDateSeparator;
                 
-                const nextMsg = index < listToRender.length - 1 ? listToRender[index + 1] : null;
+                const nextItem = index < groupedList.length - 1 ? groupedList[index + 1] : null;
+                const nextMsg = nextItem ? (isMessageGroup(nextItem) ? nextItem[0] : nextItem) : null;
                 const nextDateStr = nextMsg ? new Date(nextMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-                const isLastInGroup = index === listToRender.length - 1 || nextMsg?.sender_id !== msg.sender_id || nextDateStr !== currentDateStr;
+                const isLastInGroup = index === groupedList.length - 1 || nextMsg?.sender_id !== lastMsg.sender_id || nextDateStr !== currentDateStr;
 
                 return (
-                  <div key={msg.id} id={viewMode === 'chat' ? `msg-${msg.id}` : `pinned-${msg.id}`} className="flex flex-col gap-1 w-full">
+                  <div key={isGroup ? `group-${firstMsg.id}` : firstMsg.id} id={viewMode === 'chat' ? `msg-${firstMsg.id}` : `pinned-${firstMsg.id}`} className="flex flex-col gap-1 w-full">
                     {showDateSeparator && (
                       <div className="flex justify-center my-8">
                         <span className="bg-aura-bg-elevated/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] text-aura-text-secondary uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
@@ -474,41 +547,52 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
                         </span>
                       </div>
                     )}
-                    {viewMode === 'chat' && firstUnreadId === msg.id && (
+                    {viewMode === 'chat' && firstUnreadId === firstMsg.id && (
                       <div className="flex items-center gap-6 py-10">
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                         <span className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-bold whitespace-nowrap">New Sanctuary Messages</span>
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                       </div>
                     )}
-                    <div className={`flex w-full ${msg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
-                      <ChatBubbleErrorBoundary messageId={msg.id}>
-                        <ChatBubble
-                          message={msg}
-                          partnerPublicKey={msg.sender_id === user?.id ? partner.public_key : null}
-                          onReact={viewMode === 'chat' ? reactToMessage : undefined}
-                          onEdit={viewMode === 'chat' ? editMessage : undefined}
-                          onDelete={viewMode === 'chat' ? deleteMessage : undefined}
-                          onPin={pinMessage}
-                          isFirst={isFirstInGroup}
-                          isLast={isLastInGroup}
-                          isPinnedView={viewMode === 'pinned'}
-                          onRedirect={viewMode === 'pinned' ? (id) => {
-                            setViewMode('chat');
-                            handleJumpToMessage(id);
-                          } : undefined}
-                          onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
-                          repliedMessage={msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined}
-                          onJumpToMessage={handleJumpToMessage}
-                        />
+                    <div className={`flex w-full ${firstMsg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
+                      <ChatBubbleErrorBoundary messageId={firstMsg.id}>
+                        {isGroup ? (
+                          <MediaGridBubble 
+                            messages={item}
+                            partnerPublicKey={firstMsg.sender_id === user?.id ? partner.public_key : null}
+                            isMine={firstMsg.sender_id === user?.id}
+                            isFirst={isFirstInGroup}
+                            isLast={isLastInGroup}
+                          />
+                        ) : (
+                          <ChatBubble
+                            message={item}
+                            partnerPublicKey={item.sender_id === user?.id ? partner.public_key : null}
+                            onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                            onEdit={viewMode === 'chat' ? editMessage : undefined}
+                            onDelete={viewMode === 'chat' ? deleteMessage : undefined}
+                            onPin={pinMessage}
+                            isFirst={isFirstInGroup}
+                            isLast={isLastInGroup}
+                            isPinnedView={viewMode === 'pinned'}
+                            onRedirect={viewMode === 'pinned' ? (id) => {
+                              setViewMode('chat');
+                              handleJumpToMessage(id);
+                            } : undefined}
+                            onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
+                            repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
+                            onJumpToMessage={handleJumpToMessage}
+                          />
+                        )}
                       </ChatBubbleErrorBoundary>
                     </div>
-                    {lastReadMyMsg && lastReadMyMsg.id === msg.id && (
+                    {lastReadMyMsg && lastReadMyMsg.id === lastMsg.id && (
                       <SeenIndicator timestamp={lastReadMyMsg.read_at!} />
                     )}
                   </div>
                 );
               });
+
             })()}
             {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
             <div ref={messagesEndRef} />
@@ -519,6 +603,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
         {viewMode === 'chat' && (
           <div className="w-full bg-background relative z-20">
             <MessageInput 
+              ref={messageInputRef}
               onSend={handleSend} 
               onTyping={sendTypingEvent} 
               disabled={!partner.public_key} 

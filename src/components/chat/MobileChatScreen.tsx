@@ -7,32 +7,16 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
+import MediaGridBubble from './MediaGridBubble';
 import { ChatBubbleErrorBoundary } from './ChatBubbleErrorBoundary';
+import { groupMessages, isMessageGroup } from '../../utils/messageGrouping';
 // PinnedMessagesBanner imported later if needed, but removed here
 import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
+import { LastSeenStatus } from './LastSeenStatus';
 import EncryptedImage from '../common/EncryptedImage';
 
-function formatLastSeen(lastSeen: string | null): string {
-  if (!lastSeen) return 'Offline';
-  const diff = Date.now() - new Date(lastSeen).getTime();
-  const totalMins = Math.floor(diff / 60000);
 
-  if (totalMins < 1) return 'Just now';
-  if (totalMins < 60) return `${totalMins} mins ago`;
-
-  const hours = Math.floor(totalMins / 60);
-  const remainingMins = totalMins % 60;
-
-  if (hours < 24) {
-    const minsPart = remainingMins > 0 ? ` ${remainingMins}M` : '';
-    return `${hours}H${minsPart} ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'Yesterday';
-  return `${days} days ago`;
-}
 
 interface MobileChatScreenProps {
   partner: PartnerProfile;
@@ -69,7 +53,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
 
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
   const { 
-    messages, pinnedMessages, pinnedMessageDetails, loading, loadingMore, 
+    messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
     hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
     deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead 
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
@@ -127,11 +111,28 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
     const container = scrollContainerRef.current;
     if (!container || loadingMore || !hasMore || viewMode === 'pinned') return;
 
-    if (container.scrollTop < 100) {
+    // Raise threshold to 300px — better UX for touch scrolling
+    if (container.scrollTop < 300) {
       previousScrollHeightRef.current = container.scrollHeight;
       loadMore();
     }
   };
+
+  // Auto-load more if the initial batch is dominated by media messages
+  // (no text visible = user can't scroll to find context above the images)
+  useEffect(() => {
+    if (loading || loadingMore || !hasMore || viewMode !== 'chat') return;
+    if (messages.length === 0) return;
+    const nonMediaCount = messages.filter(m => m.type === 'text' || m.type === 'sticker').length;
+    // If 80%+ of loaded messages are media, auto-load more to surface text context
+    if (nonMediaCount / messages.length < 0.2) {
+      const container = scrollContainerRef.current;
+      if (container) previousScrollHeightRef.current = container.scrollHeight;
+      loadMore();
+    }
+  // Only run once after initial load completes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const handleSend = (text: string, media?: any, replyToId?: string) => {
     sendMessage(text, media, replyToId);
@@ -288,8 +289,8 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
     <>
       <style>{`
         .glass-header { 
-          background: var(--bg-primary-rgb) / 0.8; 
-          backdrop-filter: blur(20px); 
+          background: var(--bg-elevated); 
+          backdrop-filter: blur(12px); 
         }
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -345,7 +346,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
               <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate">
-                {partner.is_online ? (partner.status_message || 'Online') : formatLastSeen(partner.last_seen)}
+                <LastSeenStatus isOnline={partner.is_online} statusMessage={partner.status_message} lastSeen={partner.last_seen} compact />
               </span>
             </div>
           </div>
@@ -447,6 +448,10 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
             ref={scrollContainerRef} 
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12 anchor-none"
+            style={{
+              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
+            }}
           >
             {hasMore && !loading && viewMode === 'chat' && (
               <div className="flex justify-center py-4 anchor-none">
@@ -482,21 +487,28 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                 ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at)
                 : null;
 
-              return listToRender.map((msg, index) => {
-                const currentDateStr = new Date(msg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-                const previousMsg = index > 0 ? listToRender[index - 1] : null;
-                const previousDateStr = previousMsg ? new Date(previousMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+              const groupedList = groupMessages(listToRender);
+
+              return groupedList.map((item, index) => {
+                const isGroup = isMessageGroup(item);
+                const firstMsg = isGroup ? item[0] : item;
+                const lastMsg = isGroup ? item[item.length - 1] : item;
+                
+                const currentDateStr = new Date(firstMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+                const prevItem = index > 0 ? groupedList[index - 1] : null;
+                const prevMsg = prevItem ? (isMessageGroup(prevItem) ? prevItem[prevItem.length - 1] : prevItem) : null;
+                const previousDateStr = prevMsg ? new Date(prevMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
                 
                 const showDateSeparator = currentDateStr !== previousDateStr;
-                const isFirstInGroup = index === 0 || previousMsg?.sender_id !== msg.sender_id || showDateSeparator;
+                const isFirstInGroup = index === 0 || prevMsg?.sender_id !== firstMsg.sender_id || showDateSeparator;
                 
-                // For last in group, we also check if the next message has a different date
-                const nextMsg = index < listToRender.length - 1 ? listToRender[index + 1] : null;
+                const nextItem = index < groupedList.length - 1 ? groupedList[index + 1] : null;
+                const nextMsg = nextItem ? (isMessageGroup(nextItem) ? nextItem[0] : nextItem) : null;
                 const nextDateStr = nextMsg ? new Date(nextMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-                const isLastInGroup = index === listToRender.length - 1 || nextMsg?.sender_id !== msg.sender_id || nextDateStr !== currentDateStr;
+                const isLastInGroup = index === groupedList.length - 1 || nextMsg?.sender_id !== lastMsg.sender_id || nextDateStr !== currentDateStr;
 
                 return (
-                  <div key={msg.id} id={viewMode === 'chat' ? `msg-${msg.id}` : `pinned-${msg.id}`} className="flex flex-col gap-1 w-full message-row">
+                  <div key={isGroup ? `group-${firstMsg.id}` : firstMsg.id} id={viewMode === 'chat' ? `msg-${firstMsg.id}` : `pinned-${firstMsg.id}`} className="flex flex-col gap-1 w-full message-row">
                     {showDateSeparator && (
                       <div className="flex justify-center my-6">
                         <span className="bg-aura-bg-elevated/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-aura-text-secondary uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
@@ -504,36 +516,46 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                         </span>
                       </div>
                     )}
-                    {viewMode === 'chat' && firstUnreadId === msg.id && (
+                    {viewMode === 'chat' && firstUnreadId === firstMsg.id && (
                       <div className="flex items-center gap-4 py-6">
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                         <span className="text-[10px] uppercase tracking-[0.2em] text-primary/60 font-bold">New Messages</span>
                         <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                       </div>
                     )}
-                    <div className={`flex w-full ${msg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
-                      <ChatBubbleErrorBoundary messageId={msg.id}>
-                        <ChatBubble 
-                          message={msg} 
-                          partnerPublicKey={msg.sender_id === user?.id ? partner.public_key : null}
-                          onReact={viewMode === 'chat' ? reactToMessage : undefined}
-                          onEdit={viewMode === 'chat' ? editMessage : undefined}
-                          onDelete={viewMode === 'chat' ? deleteMessage : undefined}
-                          onPin={pinMessage}
-                          isFirst={isFirstInGroup}
-                          isLast={isLastInGroup}
-                          isPinnedView={viewMode === 'pinned'}
-                          onRedirect={viewMode === 'pinned' ? (id) => {
-                            setViewMode('chat');
-                            handleJumpToMessage(id);
-                          } : undefined}
-                          onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
-                          repliedMessage={msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined}
-                          onJumpToMessage={handleJumpToMessage}
-                        />
+                    <div className={`flex w-full ${firstMsg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
+                      <ChatBubbleErrorBoundary messageId={firstMsg.id}>
+                        {isGroup ? (
+                          <MediaGridBubble 
+                            messages={item}
+                            partnerPublicKey={firstMsg.sender_id === user?.id ? partner.public_key : null}
+                            isMine={firstMsg.sender_id === user?.id}
+                            isFirst={isFirstInGroup}
+                            isLast={isLastInGroup}
+                          />
+                        ) : (
+                          <ChatBubble 
+                            message={item} 
+                            partnerPublicKey={item.sender_id === user?.id ? partner.public_key : null}
+                            onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                            onEdit={viewMode === 'chat' ? editMessage : undefined}
+                            onDelete={viewMode === 'chat' ? deleteMessage : undefined}
+                            onPin={pinMessage}
+                            isFirst={isFirstInGroup}
+                            isLast={isLastInGroup}
+                            isPinnedView={viewMode === 'pinned'}
+                            onRedirect={viewMode === 'pinned' ? (id) => {
+                              setViewMode('chat');
+                              handleJumpToMessage(id);
+                            } : undefined}
+                            onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
+                            repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
+                            onJumpToMessage={handleJumpToMessage}
+                          />
+                        )}
                       </ChatBubbleErrorBoundary>
                     </div>
-                    {lastReadMyMsg && lastReadMyMsg.id === msg.id && (
+                    {lastReadMyMsg && lastReadMyMsg.id === lastMsg.id && (
                       <SeenIndicator timestamp={lastReadMyMsg.read_at!} />
                     )}
                   </div>

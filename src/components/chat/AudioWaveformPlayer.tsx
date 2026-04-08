@@ -239,7 +239,7 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
         className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full transition-all active:scale-90"
         style={{ 
           backgroundColor: accentBg,
-          border: `1px solid ${isMine ? 'rgba(65,45,0,0.2)' : 'rgba(230,196,135,0.2)'}` 
+          border: `1px solid ${isMine ? 'rgba(var(--background-rgb),0.2)' : 'rgba(var(--primary-rgb),0.2)'}` 
         }}
       >
         <span 

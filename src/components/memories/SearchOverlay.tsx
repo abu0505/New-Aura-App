@@ -94,16 +94,16 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 bg-[#0d0d15] flex flex-col"
+      className="absolute inset-0 z-50 bg-[var(--bg-primary)] flex flex-col"
     >
       {/* Header */}
       <div className="px-4 pt-6 pb-4 border-b border-white/5 bg-black/20 shrink-0">
         <div className="flex items-center gap-4 mb-4">
-          <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[#e6c487] transition-all">
+          <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all">
             <span className="material-symbols-outlined text-[20px] block">arrow_back</span>
           </button>
           <div>
-            <h2 className="font-serif italic text-xl text-[#e6c487]">Search Memories</h2>
+            <h2 className="font-serif italic text-xl text-[var(--gold)]">Search Memories</h2>
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">Find fragments by date</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
             value={selectedDate}
             onChange={(e) => handleSearch(e.target.value)}
             max={new Date().toISOString().split('T')[0]}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-sm focus:outline-none focus:border-[#e6c487]/40 transition-colors [color-scheme:dark]"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-sm focus:outline-none focus:border-[rgba(var(--primary-rgb),_0.4)] transition-colors [color-scheme:dark]"
           />
         </div>
 
@@ -130,19 +130,19 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {!selectedDate ? (
           <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-            <span className="material-symbols-outlined text-6xl mb-4 text-[#e6c487]">calendar_month</span>
-            <p className="font-serif italic text-xl text-[#e6c487]">Pick a date</p>
+            <span className="material-symbols-outlined text-6xl mb-4 text-[var(--gold)]">calendar_month</span>
+            <p className="font-serif italic text-xl text-[var(--gold)]">Pick a date</p>
             <p className="text-xs tracking-widest uppercase mt-2">to uncover hidden fragments</p>
           </div>
         ) : searching ? (
           <div className="h-full flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
-            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[#e6c487]/40">Searching...</p>
+            <div className="w-12 h-12 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
+            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[rgba(var(--primary-rgb),_0.4)]">Searching...</p>
           </div>
         ) : results.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
-            <span className="material-symbols-outlined text-6xl mb-4 text-[#e6c487]">search_off</span>
-            <p className="font-serif italic text-xl text-[#e6c487]">No fragments found</p>
+            <span className="material-symbols-outlined text-6xl mb-4 text-[var(--gold)]">search_off</span>
+            <p className="font-serif italic text-xl text-[var(--gold)]">No fragments found</p>
             <p className="text-xs tracking-widest uppercase mt-2">Nothing was shared on this day</p>
           </div>
         ) : (
@@ -159,7 +159,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
               >
                 {memory.loading ? (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-6 h-6 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
+                    <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
                   </div>
                 ) : memory.decryptedUrl ? (
                   <>
@@ -175,15 +175,15 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                       </div>
                     )}
                     {memory.type === 'audio' && (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1b1b23] gap-3">
-                        <span className="material-symbols-outlined text-4xl text-[#e6c487]">mic</span>
-                        <span className="font-label text-[8px] uppercase tracking-widest text-[#e6c487]/60">Voice</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-elevated)] gap-3">
+                        <span className="material-symbols-outlined text-4xl text-[var(--gold)]">mic</span>
+                        <span className="font-label text-[8px] uppercase tracking-widest text-[rgba(var(--primary-rgb),_0.6)]">Voice</span>
                       </div>
                     )}
                     {memory.type === 'document' && (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1b1b23] gap-3">
-                        <span className="material-symbols-outlined text-4xl text-[#e6c487]">description</span>
-                        <span className="font-label text-[8px] uppercase tracking-widest text-[#e6c487]/60">Document</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-elevated)] gap-3">
+                        <span className="material-symbols-outlined text-4xl text-[var(--gold)]">description</span>
+                        <span className="font-label text-[8px] uppercase tracking-widest text-[rgba(var(--primary-rgb),_0.6)]">Document</span>
                       </div>
                     )}
 

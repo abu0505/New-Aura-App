@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
@@ -10,6 +10,10 @@ import { StickerPicker } from './StickerPicker';
 
 import type { ChatMessage } from '../../hooks/useChat';
 
+export interface MessageInputHandle {
+  handleDroppedFiles: (files: File[]) => void;
+}
+
 interface MessageInputProps {
   onSend: (text: string, media?: { url: string, media_key: string, media_nonce: string, type: string }, replyToId?: string) => void;
   onTyping?: (isTyping: boolean) => void;
@@ -19,7 +23,7 @@ interface MessageInputProps {
   isActive?: boolean;
 }
 
-export default function MessageInput({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive }: MessageInputProps) {
+const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive }, ref) => {
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -33,6 +37,19 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { processAndUpload } = useMedia();
+
+  useImperativeHandle(ref, () => ({
+    handleDroppedFiles: (files: File[]) => {
+      if (files.length === 0) return;
+      if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
+        setPendingFiles(files);
+        setPendingCaption('');
+        setShowQualityModal(true);
+      } else {
+        performUpload(files, false, '');
+      }
+    }
+  }));
 
   // Auto-resize textarea
   useEffect(() => {
@@ -52,6 +69,18 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
       return () => clearTimeout(timer);
     }
   }, [isActive]);
+
+  // Auto-focus when replying to a message
+  useEffect(() => {
+    if (replyingTo && textareaRef.current) {
+      // Small delay helps with keyboard popping up reliably on mobile 
+      // during the reply banner entrance animation
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [replyingTo]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -124,6 +153,27 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/') || items[i].type.startsWith('video/')) {
+        const file = items[i].getAsFile();
+        if (file) files.push(file);
+      }
+    }
+
+    if (files.length > 0) {
+      // Prevent pasting the file as text if it's already being handled as a media file
+      e.preventDefault();
+      setPendingFiles(files);
+      setPendingCaption('');
+      setShowQualityModal(true);
     }
   };
 
@@ -233,7 +283,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
   }
 
   return (
-    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end bg-gradient-to-t from-background via-background to-transparent">
+    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end">
       
       <AnimatePresence>
         {replyingTo && (
@@ -266,7 +316,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border-t border-white/5">
+      <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
         {/* Input Area */}
         <div className="flex-1 flex items-center min-h-[40px] py-1">
           <textarea
@@ -274,6 +324,7 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder={isUploading ? "Securing media..." : "Write something beautiful..."}
             disabled={disabled || isUploading}
             autoFocus
@@ -398,4 +449,6 @@ export default function MessageInput({ onSend, onTyping, disabled, replyingTo, o
       ) : null}
     </footer>
   );
-}
+});
+
+export default MessageInput;

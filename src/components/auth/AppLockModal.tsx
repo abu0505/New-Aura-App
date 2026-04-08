@@ -38,21 +38,21 @@ export default function AppLockModal({ onCancel }: AppLockModalProps) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-6 transition-all duration-500">
-      <div className="w-full max-w-md bg-[#13131b] border border-[#e6c487]/10 rounded-3xl p-8 shadow-[0_0_50px_rgba(230,196,135,0.05)] relative overflow-hidden group">
+      <div className="w-full max-w-md bg-[var(--bg-secondary)] border border-[rgba(var(--primary-rgb),_0.1)] rounded-3xl p-8 shadow-[0_0_50px_rgba(var(--primary-rgb),0.05)] relative overflow-hidden group">
         
         {/* Aesthetic Background Elements */}
-        <div className="absolute -top-32 -left-32 w-64 h-64 bg-[#e6c487]/5 blur-[120px] rounded-full" />
+        <div className="absolute -top-32 -left-32 w-64 h-64 bg-[rgba(var(--primary-rgb),_0.05)] blur-[120px] rounded-full" />
         <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-red-900/10 blur-[120px] rounded-full" />
 
         <div className="flex flex-col items-center text-center space-y-8 relative z-10">
-          <div className="w-20 h-20 bg-[#e6c487]/5 rounded-full flex items-center justify-center border border-[#e6c487]/20 shadow-[0_0_30px_rgba(230,196,135,0.1)]">
-            <span className="material-symbols-outlined text-4xl text-[#e6c487] animate-pulse">
+          <div className="w-20 h-20 bg-[rgba(var(--primary-rgb),_0.05)] rounded-full flex items-center justify-center border border-[rgba(var(--primary-rgb),_0.2)] shadow-[0_0_30px_rgba(var(--primary-rgb),0.1)]">
+            <span className="material-symbols-outlined text-4xl text-[var(--gold)] animate-pulse">
               lock
             </span>
           </div>
 
           <div className="space-y-3 lg:px-4">
-            <h2 className="font-serif italic text-3xl text-[#e6c487] tracking-wide">
+            <h2 className="font-serif italic text-3xl text-[var(--gold)] tracking-wide">
               Sanctuary Locked
             </h2>
             <p className="text-xs text-[#998f81]/70 leading-relaxed font-label uppercase tracking-widest">
@@ -70,7 +70,7 @@ export default function AppLockModal({ onCancel }: AppLockModalProps) {
                    setError(null);
                 }}
                 placeholder="ENTER PIN"
-                className="w-full bg-[#0d0d15]/50 border border-white/5 rounded-2xl px-6 py-5 text-center text-3xl tracking-[0.5em] text-[#e4e1ed] focus:outline-none focus:border-[#e6c487]/40 focus:bg-[#0d0d15]/80 transition-all placeholder:text-[10px] placeholder:tracking-[0.3em] placeholder:uppercase placeholder:text-[#998f81]/30"
+                className="w-full bg-transparent border border-[var(--gold)]/20 rounded-2xl px-6 py-5 text-center text-3xl tracking-[0.5em] text-[#e4e1ed] focus:outline-none focus:border-[var(--gold)] focus:bg-white/[0.02] transition-all placeholder:text-[10px] placeholder:tracking-[0.3em] placeholder:uppercase placeholder:text-[#998f81]/30"
                 maxLength={10} // Just in case they want a longer pin
                 disabled={loading}
                 autoFocus
@@ -87,10 +87,10 @@ export default function AppLockModal({ onCancel }: AppLockModalProps) {
             <button
               type="submit"
               disabled={loading || pin.length < 4}
-              className="w-full bg-gradient-to-r from-[#e6c487] to-[#d4b070] text-[#0d0d15] font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(230,196,135,0.15)] hover:shadow-[0_0_30px_rgba(230,196,135,0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100 flex items-center justify-center gap-2 mt-4"
+              className="w-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] text-[var(--bg-primary)] font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(var(--primary-rgb),0.15)] hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100 flex items-center justify-center gap-2 mt-4"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-[#0d0d15]/30 border-t-[#0d0d15] rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-[var(--bg-primary)]/30 border-t-[var(--bg-primary)] rounded-full animate-spin" />
               ) : (
                 <span className="uppercase tracking-[0.2em] text-[11px]">
                   Unlock App

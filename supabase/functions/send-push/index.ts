@@ -222,15 +222,27 @@ Deno.serve(async (req) => {
     }
 
     const receiverId = message.receiver_id;
+    const senderId = message.sender_id;
 
-    // Fetch profile and subscriptions in parallel to save processing time
-    const [profileRes, subsRes] = await Promise.all([
+    // Fetch profile, subscriptions, sender profile, AND receiver's notification settings in parallel
+    const [profileRes, subsRes, senderProfileRes, settingsRes] = await Promise.all([
       supabase.from("profiles").select("is_online, last_seen").eq("id", receiverId).single(),
-      supabase.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", receiverId)
+      supabase.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", receiverId),
+      supabase.from("profiles").select("display_name").eq("id", senderId).single(),
+      supabase.from("chat_settings").select("notify_messages, notify_reactions, notify_streaks").eq("user_id", receiverId).single()
     ]);
 
     const receiverProfile = profileRes.data;
     const subscriptions = subsRes.data;
+    const senderName = senderProfileRes.data?.display_name || "Your partner";
+    const receiverSettings = settingsRes.data;
+
+    // ── CHECK NOTIFICATION PREFERENCES ──
+    // If receiver has explicitly disabled message notifications, skip
+    if (receiverSettings && receiverSettings.notify_messages === false) {
+      console.log("[send-push] Receiver has disabled message notifications. Skipping.");
+      return new Response(JSON.stringify({ success: true, message: "Notifications disabled by receiver" }), { headers });
+    }
 
     // SMART SKIP: Check if user is actively online
     if (receiverProfile?.is_online) {
@@ -238,7 +250,6 @@ Deno.serve(async (req) => {
       const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
       
       if (secondsSinceLastSeen < 60) {
-        // Reduced logging to optimize speed
         return new Response(JSON.stringify({ success: true, message: "Skipped" }), { headers });
       }
     }
@@ -247,10 +258,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
-    console.log(`[send-push] Found ${subscriptions.length} subscription(s). Sending…`);
+    console.log(`[send-push] Found ${subscriptions.length} subscription(s). Sending to ${senderName}…`);
 
+    // Send personalized payload so the service worker can display meaningful content
     const pushPayload = JSON.stringify({
       messageId: message.id,
+      senderId: senderId,
+      senderName: senderName,
+      body: "Sent you a message",
       url: "/",
     });
 

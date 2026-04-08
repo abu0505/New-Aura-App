@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase';
 import imageCompression from 'browser-image-compression';
 
 const PRESETS = [
-  { id: 'none', name: 'Original', color: '#0d0d15' },
+  { id: 'none', name: 'Original', color: 'var(--bg-primary)' },
   { id: 'silk', name: 'Dark Silk', color: '#1a1a24' },
   { id: 'stars', name: 'Starfield', color: 'linear-gradient(45deg, #0d0d15 0%, #1b1b23 100%)' },
   { id: 'gold', name: 'Morning Glow', color: 'linear-gradient(135deg, #13131b 0%, #2a2212 100%)' },

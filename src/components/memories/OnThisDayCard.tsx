@@ -57,16 +57,16 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative mb-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[#1b1b23] to-[#13131b] border border-[#e6c487]/20 p-6 shadow-2xl group"
+      className="relative mb-10 overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-secondary)] border border-[rgba(var(--primary-rgb),_0.2)] p-6 shadow-2xl group"
     >
       {/* Decorative Glow */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#e6c487]/10 blur-[80px] rounded-full group-hover:bg-[#e6c487]/20 transition-all duration-1000" />
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-[rgba(var(--primary-rgb),_0.1)] blur-[80px] rounded-full group-hover:bg-[rgba(var(--primary-rgb),_0.2)] transition-all duration-1000" />
       
       <div className="relative flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-serif italic text-2xl text-[#e6c487] flex items-center gap-3">
-              <span className="material-symbols-outlined text-[#e6c487] animate-pulse">auto_awesome</span>
+            <h2 className="font-serif italic text-2xl text-[var(--gold)] flex items-center gap-3">
+              <span className="material-symbols-outlined text-[var(--gold)] animate-pulse">auto_awesome</span>
               On This Day
             </h2>
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81] mt-1">Fragments of our shared history</p>
@@ -102,7 +102,7 @@ function ThrowbackThumb({ item, onDecrypt, onClick }: { item: ThrowbackItem, onD
     >
       {item.loading ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
+          <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
         </div>
       ) : item.decryptedUrl ? (
         <>
@@ -118,7 +118,7 @@ function ThrowbackThumb({ item, onDecrypt, onClick }: { item: ThrowbackItem, onD
           
           {/* Year Badge */}
           <div className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md border border-white/10">
-            <span className="text-[10px] font-bold text-[#e6c487] tracking-wider">{year}</span>
+            <span className="text-[10px] font-bold text-[var(--gold)] tracking-wider">{year}</span>
           </div>
 
           {/* Hover highlight */}

@@ -8,9 +8,13 @@ self.addEventListener('push', function(event) {
     const pushData = event.data.json();
     console.log('[Service Worker] Push Received.');
 
-    const title = 'AURA';
+    // Use sender name from payload for personalized notifications
+    const senderName = pushData.senderName || 'Your partner';
+    const title = senderName;
+    const body = pushData.body || 'Sent you a message';
+
     const options = {
-      body: 'A new message from aura app \uD83D\uDC8C',
+      body: body,
       icon: '/favicon.svg',
       badge: '/favicon.svg',
       data: {
@@ -18,7 +22,14 @@ self.addEventListener('push', function(event) {
         messageId: pushData.messageId
       },
       vibrate: [200, 100, 200],
-      requireInteraction: false
+      requireInteraction: false,
+      // Tag ensures only ONE notification per sender is shown at a time,
+      // newer notification replaces the old one (prevents spam stacking)
+      tag: 'aura-msg-' + (pushData.senderId || 'default'),
+      // Renotify so the device alerts even when replacing a tagged notification
+      renotify: true,
+      // Silent = false so the user hears/feels the notification
+      silent: false
     };
 
     event.waitUntil(
@@ -29,10 +40,11 @@ self.addEventListener('push', function(event) {
     // Fallback notification if JSON parsing fails
     event.waitUntil(
       self.registration.showNotification('AURA', {
-        body: 'A new message from aura app \uD83D\uDC8C',
+        body: 'You have a new message',
         icon: '/favicon.svg',
         badge: '/favicon.svg',
-        vibrate: [200, 100, 200]
+        tag: 'aura-msg-fallback',
+        renotify: true
       })
     );
   }

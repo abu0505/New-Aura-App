@@ -34,7 +34,19 @@ function InnerApp({
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
 
   // Merge presence online state into partner object
-  const partnerWithPresence = partner ? { ...partner, is_online: partnerState.isOnline } : partner;
+  // Use OR logic: partner is online if EITHER presence channel reports them
+  // OR the DB profile says so. This prevents the case where presence hasn't
+  // synced yet but the DB correctly has is_online=true.
+  const partnerWithPresence = partner ? { 
+    ...partner, 
+    is_online: partnerState.isOnline || partner.is_online,
+    // When partner IS online (by any signal), update last_seen to NOW
+    // so that if presence drops momentarily, the header shows "just now"
+    // instead of a stale timestamp from the last offline transition.
+    last_seen: (partnerState.isOnline || partner.is_online) 
+      ? new Date().toISOString() 
+      : partner.last_seen,
+  } : partner;
 
   const { isLocked, hasAppPin } = useAppLock();
   const [showLockModal, setShowLockModal] = useState(false);

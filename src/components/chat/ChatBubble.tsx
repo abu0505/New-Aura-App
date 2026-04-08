@@ -88,7 +88,16 @@ function ChatBubble({
         blobUrlRef.current = null;
       }
     };
-  }, [message.id, partnerPublicKey, message.is_deleted_for_everyone]);
+  }, [
+    message.id, 
+    partnerPublicKey, 
+    message.is_deleted_for_everyone, 
+    message.media_url, 
+    message.media_key, 
+    message.media_nonce, 
+    message.type, 
+    message.sender_public_key
+  ]);
 
   useEffect(() => {
     const handleClickOutside = (e: Event) => {
@@ -142,13 +151,13 @@ function ChatBubble({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
-    // Custom long press interval for mobile (250ms, half of default 500ms)
+    // Custom long press interval for mobile (600ms, increased to prevent scroll triggers)
     pressTimer.current = window.setTimeout(() => {
       if (bubbleRef.current) {
         setBubbleRect(bubbleRef.current.getBoundingClientRect());
       }
       setInteractionType('menu');
-    }, 250);
+    }, 600);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {

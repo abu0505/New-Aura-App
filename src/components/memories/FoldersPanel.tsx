@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaFolders, type MediaFolder } from '../../hooks/useMediaFolders';
 import { useMedia } from '../../hooks/useMedia';
@@ -56,16 +56,16 @@ function FolderCover({ messageId }: { messageId: string }) {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#e6c487]/5">
-        <div className="w-4 h-4 border border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
+      <div className="w-full h-full flex items-center justify-center bg-[rgba(var(--primary-rgb),_0.05)]">
+        <div className="w-4 h-4 border border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
       </div>
     );
   }
 
   if (!url) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-[#e6c487]/5">
-        <span className="material-symbols-outlined text-[48px] text-[#e6c487]/20">folder</span>
+      <div className="w-full h-full flex items-center justify-center bg-[rgba(var(--primary-rgb),_0.05)]">
+        <span className="material-symbols-outlined text-[48px] text-[rgba(var(--primary-rgb),_0.2)]">folder</span>
       </div>
     );
   }
@@ -124,17 +124,17 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 bg-[#0d0d15] flex flex-col"
+      className="absolute inset-0 z-50 bg-[var(--bg-primary)] flex flex-col"
     >
       {/* Header */}
       <div className="px-4 pt-6 pb-4 border-b border-white/5 bg-black/20 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[#e6c487] transition-all">
+            <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all">
               <span className="material-symbols-outlined text-[20px] block">arrow_back</span>
             </button>
             <div>
-              <h2 className="font-serif italic text-xl text-[#e6c487]">Collections</h2>
+              <h2 className="font-serif italic text-xl text-[var(--gold)]">Collections</h2>
               <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">
                 {folders.length} collection{folders.length !== 1 ? 's' : ''}
               </p>
@@ -144,7 +144,7 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowCreate(true)}
-              className="p-2 rounded-xl bg-[#e6c487]/10 border border-[#e6c487]/20 text-[#e6c487] hover:bg-[#e6c487]/20 transition-all"
+              className="p-2 rounded-xl bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] hover:bg-[rgba(var(--primary-rgb),_0.2)] transition-all"
             >
               <span className="material-symbols-outlined text-[20px] block">create_new_folder</span>
             </button>
@@ -159,7 +159,7 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
             <button
               key={mode}
               onClick={() => setLayoutMode(mode)}
-              className={`relative px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-2 z-10 ${layoutMode === mode ? 'text-[#1b1b23]' : 'text-white/40 hover:text-white/80'}`}
+              className={`relative px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-2 z-10 ${layoutMode === mode ? 'text-[var(--bg-elevated)]' : 'text-white/40 hover:text-white/80'}`}
               title={`${mode} view`}
             >
               <span className={`material-symbols-outlined block relative z-10 ${
@@ -189,7 +189,7 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
               {layoutMode === mode && (
                 <motion.div
                   layoutId="activeLayoutCollection"
-                  className="absolute inset-0 bg-[#e6c487] rounded-xl -z-10 shadow-[0_4px_15px_rgba(230,196,135,0.3)]"
+                  className="absolute inset-0 bg-[var(--gold)] rounded-xl -z-10 shadow-[0_4px_15px_rgba(var(--primary-rgb),0.3)]"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
@@ -218,12 +218,12 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
                   maxLength={50}
                   autoFocus
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white/80 text-sm placeholder:text-white/20 focus:outline-none focus:border-[#e6c487]/40 transition-colors"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white/80 text-sm placeholder:text-white/20 focus:outline-none focus:border-[rgba(var(--primary-rgb),_0.4)] transition-colors"
                 />
                 <button
                   onClick={handleCreate}
                   disabled={!newFolderName.trim() || creating}
-                  className="px-4 py-2.5 rounded-xl bg-[#e6c487] text-[#412d00] font-bold text-xs uppercase tracking-wider disabled:opacity-30 hover:bg-[#d4b070] transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-[var(--gold)] text-[var(--on-accent)] font-bold text-xs uppercase tracking-wider disabled:opacity-30 hover:bg-[var(--gold-deep)] transition-colors"
                 >
                   {creating ? '...' : 'Create'}
                 </button>
@@ -243,13 +243,13 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
-            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[#e6c487]/40">Loading...</p>
+            <div className="w-12 h-12 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
+            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[rgba(var(--primary-rgb),_0.4)]">Loading...</p>
           </div>
         ) : folders.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-12 opacity-40">
-            <span className="material-symbols-outlined text-6xl mb-4 text-[#e6c487]">folder_off</span>
-            <p className="font-serif italic text-xl text-[#e6c487]">No collections yet</p>
+            <span className="material-symbols-outlined text-6xl mb-4 text-[var(--gold)]">folder_off</span>
+            <p className="font-serif italic text-xl text-[var(--gold)]">No collections yet</p>
             <p className="text-xs tracking-widest uppercase mt-2">Create a collection to organize your memories</p>
           </div>
         ) : (
@@ -270,14 +270,14 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
                 }}
                 whileHover={{ scale: 1.02 }}
                 onClick={() => onOpenFolder(folder)}
-                className="relative group bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden cursor-pointer hover:border-[#e6c487]/20 transition-all"
+                className="relative group bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden cursor-pointer hover:border-[rgba(var(--primary-rgb),_0.2)] transition-all"
               >
                 {/* Cover area */}
-                <div className={`${getCoverHeight()} bg-gradient-to-br from-[#e6c487]/5 to-[#e6c487]/10 flex items-center justify-center overflow-hidden transition-all duration-500`}>
+                <div className={`${getCoverHeight()} bg-gradient-to-br from-[rgba(var(--primary-rgb),_0.05)] to-[rgba(var(--primary-rgb),_0.1)] flex items-center justify-center overflow-hidden transition-all duration-500`}>
                   {folder.cover_message_id ? (
                     <FolderCover messageId={folder.cover_message_id} />
                   ) : (
-                    <span className="material-symbols-outlined text-[48px] text-[#e6c487]/30">folder</span>
+                    <span className="material-symbols-outlined text-[48px] text-[rgba(var(--primary-rgb),_0.3)]">folder</span>
                   )}
                 </div>
 
@@ -317,9 +317,9 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#1b1b23] border border-white/10 rounded-2xl p-6 max-w-sm w-full"
+              className="bg-[var(--bg-elevated)] border border-white/10 rounded-2xl p-6 max-w-sm w-full"
             >
-              <h3 className="font-serif italic text-lg text-[#e6c487] mb-2">Delete Collection?</h3>
+              <h3 className="font-serif italic text-lg text-[var(--gold)] mb-2">Delete Collection?</h3>
               <p className="text-sm text-white/50 mb-6">This will remove the collection. The media files themselves won't be deleted.</p>
               <div className="flex gap-3">
                 <button

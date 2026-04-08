@@ -14,6 +14,20 @@
   --bg-primary: #0C0C14;
   --bg-secondary: #13131E;
 
+  /* On-accent text: computed by ThemeProvider based on luminance. */
+  /* Default is a dark tone for the default gold accent. */
+  --on-accent: #2a1e00;
+
+  /* Accent tint shades — used for icon backgrounds, card tints, etc. */
+  /* All properly updated by ThemeProvider when accent changes. */
+  --accent-subtle: rgba(201, 169, 110, 0.05);
+  --accent-muted:  rgba(201, 169, 110, 0.12);
+  --accent-soft:   rgba(201, 169, 110, 0.20);
+  --accent-medium: rgba(201, 169, 110, 0.35);
+
+  /* Focus ring — dynamic from ThemeProvider */
+  --focus-ring: rgba(201, 169, 110, 0.3);
+
   /* Static Design Tokens */
   --bg-elevated: #1C1C2E;
   --bg-surface: #222236;
@@ -29,7 +43,7 @@
   --text-muted: #4A4857;
 
   /* Borders */
-  --border-subtle: rgba(201, 169, 110, 0.12); /* Note: Ideally these map to opacity variants of --gold */
+  --border-subtle: rgba(201, 169, 110, 0.12);
   --border-medium: rgba(201, 169, 110, 0.25);
 
   /* Bubbles & Interactive */
@@ -136,7 +150,7 @@ body {
 
   .border-glow {
     border: 1px solid var(--border-medium);
-    box-shadow: 0 0 15px var(--gold-glow), inset 0 0 15px rgba(201, 169, 110, 0.05);
+    box-shadow: 0 0 15px var(--gold-glow), inset 0 0 15px var(--accent-subtle);
   }
 
   .text-aura-brand {
@@ -316,7 +330,7 @@ input:focus,
 textarea:focus,
 button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.3);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 /* ===== Prevent double-tap zoom on mobile ===== */
@@ -404,12 +418,12 @@ a {
   --epr-search-input-bg-color: rgba(0, 0, 0, 0.3);
   --epr-search-input-text-color: #e4e1ed;
   --epr-search-input-placeholder-color: rgba(153, 143, 129, 0.4);
-  --epr-focus-bg-color: rgba(230, 196, 135, 0.1);
-  --epr-hover-bg-color: rgba(230, 196, 135, 0.1);
-  --epr-category-icon-active-color: #e6c487;
+  --epr-focus-bg-color: rgba(var(--primary-rgb), 0.1);
+  --epr-hover-bg-color: rgba(var(--primary-rgb), 0.1);
+  --epr-category-icon-active-color: var(--gold);
   --epr-text-color: #8A8799;
   --epr-category-label-text-color: #8A8799;
-  --epr-search-border-color: rgba(230, 196, 135, 0.1);
+  --epr-search-border-color: rgba(var(--primary-rgb), 0.1);
   --epr-header-padding: 8px 8px 5px 8px;
   backdrop-filter: blur(12px);
   overflow-anchor: none !important;
@@ -441,7 +455,7 @@ a {
 }
 
 .custom-emoji-picker-container .epr-search-container input.epr-search:focus {
-  border-color: rgba(230, 196, 135, 0.4) !important;
+  border-color: rgba(var(--primary-rgb), 0.4) !important;
   box-shadow: none !important;
 }
 

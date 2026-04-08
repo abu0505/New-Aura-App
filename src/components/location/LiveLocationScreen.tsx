@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import Map, { Marker, NavigationControl, Layer, useMap } from 'react-map-gl/maplibre';
 import { useLiveLocation } from '../../hooks/useLiveLocation';
 import type { PartnerProfile } from '../../hooks/usePartner';
@@ -83,14 +83,14 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
   }, [userLocation, partnerLocation]);
 
   return (
-    <div className="h-full w-full bg-[#0d0d15] relative overflow-hidden flex flex-col font-sans map-gpu-container">
+    <div className="h-full w-full bg-[var(--bg-primary)] relative overflow-hidden flex flex-col font-sans map-gpu-container">
       {/* Header Overlay */}
       <header className="absolute top-0 left-0 w-full z-[1000] p-6 lg:p-12 pointer-events-none">
         <div className="flex justify-between items-start w-full gap-4">
-          <div className="bg-[#1b1b23]/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/5 shadow-2xl pointer-events-auto flex-1 min-w-[200px] max-w-sm">
-            <h1 className="font-serif italic text-3xl text-[#e6c487] mb-1">Our Sanctuary</h1>
+          <div className="bg-[var(--bg-elevated)]/80 backdrop-blur-xl p-6 rounded-[2rem] border border-white/5 shadow-2xl pointer-events-auto flex-1 min-w-[200px] max-w-sm">
+            <h1 className="font-serif italic text-3xl text-[var(--gold)] mb-1">Our Sanctuary</h1>
             <div className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#e6c487] animate-pulse"></span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)] animate-pulse"></span>
               <p className="text-white/60 text-xs uppercase tracking-widest font-bold">
                 {distanceKm ? `${distanceKm} km apart` : 'Live Synchronicity'}
               </p>
@@ -100,9 +100,9 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
 
           <button 
             onClick={toggleSharing}
-            className={`pointer-events-auto px-6 py-3 rounded-full font-label font-bold tracking-widest uppercase text-[10px] transition-all duration-500 shadow-2xl flex items-center gap-3 ${isSharing ? 'bg-[#e6c487] text-[#412d00]' : 'bg-[#1b1b23] text-white/40 border border-white/5'}`}
+            className={`pointer-events-auto px-6 py-3 rounded-full font-label font-bold tracking-widest uppercase text-[10px] transition-all duration-500 shadow-2xl flex items-center gap-3 ${isSharing ? 'bg-[var(--gold)] text-[var(--on-accent)]' : 'bg-[var(--bg-elevated)] text-white/40 border border-white/5'}`}
           >
-            <span className={`w-2 h-2 rounded-full ${isSharing ? 'bg-[#412d00] animate-pulse' : 'bg-white/20'}`}></span>
+            <span className={`w-2 h-2 rounded-full ${isSharing ? 'bg-[var(--on-accent)] animate-pulse' : 'bg-white/20'}`}></span>
             {isSharing ? 'SHARING LOCATION' : 'LOCATION PRIVATE'}
           </button>
         </div>
@@ -130,8 +130,8 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
           {/* User Marker */}
           {userLocation && (
             <Marker longitude={userLocation.lng} latitude={userLocation.lat} anchor="bottom">
-              <div className="w-8 h-8 bg-white rounded-full border-2 border-[#13131b] flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-[#13131b] text-sm">home</span>
+              <div className="w-8 h-8 bg-white rounded-full border-2 border-[var(--bg-secondary)] flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform">
+                <span className="material-symbols-outlined text-[var(--bg-secondary)] text-sm">home</span>
               </div>
             </Marker>
           )}
@@ -140,15 +140,15 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
           {partnerLocation && (
             <Marker longitude={partnerLocation.lng} latitude={partnerLocation.lat} anchor="center">
               <div className="relative cursor-pointer hover:scale-110 transition-transform">
-                <div className="w-10 h-10 rounded-full border-2 border-[#e6c487] overflow-hidden shadow-2xl bg-[#1b1b23]">
+                <div className="w-10 h-10 rounded-full border-2 border-[var(--gold)] overflow-hidden shadow-2xl bg-[var(--bg-elevated)]">
                   <img 
                     src={partner?.avatar_url || `https://ui-avatars.com/api/?name=${partner?.display_name || 'P'}&background=c9a96e&color=13131b`} 
                     className="w-full h-full object-cover" 
                     alt="Partner"
                   />
                 </div>
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#e6c487] rounded-full flex items-center justify-center shadow-lg">
-                  <span className="material-symbols-outlined text-[#412d00] text-[10px] font-bold">favorite</span>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-[var(--gold)] rounded-full flex items-center justify-center shadow-lg">
+                  <span className="material-symbols-outlined text-[var(--on-accent)] text-[10px] font-bold">favorite</span>
                 </div>
               </div>
             </Marker>
@@ -160,9 +160,9 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
 
       {/* Bottom Info Bar */}
       <footer className="absolute bottom-12 left-0 w-full z-[1000] px-6 lg:px-12 pointer-events-none">
-        <div className="max-w-md mx-auto bg-[#1b1b23]/80 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-8 shadow-3xl pointer-events-auto flex items-center justify-between">
+        <div className="max-w-md mx-auto bg-[var(--bg-elevated)]/80 backdrop-blur-xl rounded-[2.5rem] border border-white/5 p-8 shadow-3xl pointer-events-auto flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <div className={`w-14 h-14 rounded-full border-2 p-1 transition-colors duration-500 ${partnerLocation ? 'border-[#e6c487]' : 'border-white/10'}`}>
+            <div className={`w-14 h-14 rounded-full border-2 p-1 transition-colors duration-500 ${partnerLocation ? 'border-[var(--gold)]' : 'border-white/10'}`}>
               <img 
                 src={partner?.avatar_url || `https://ui-avatars.com/api/?name=${partner?.display_name || 'P'}&background=c9a96e&color=13131b`} 
                 alt="Partner" 
@@ -170,7 +170,7 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
               />
             </div>
             <div>
-              <p className={`font-serif italic text-lg leading-tight transition-colors duration-500 ${partnerLocation ? 'text-[#e6c487]' : 'text-white/40'}`}>
+              <p className={`font-serif italic text-lg leading-tight transition-colors duration-500 ${partnerLocation ? 'text-[var(--gold)]' : 'text-white/40'}`}>
                 {partner?.display_name || 'Partner'}
               </p>
               <p className="text-white/40 text-[10px] uppercase tracking-widest font-bold mt-1">
@@ -180,7 +180,7 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
           </div>
           
           <button 
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${partnerLocation ? 'bg-[#e6c487]/10 text-[#e6c487] hover:bg-[#e6c487]/20' : 'bg-white/5 text-white/20'}`}
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${partnerLocation ? 'bg-[rgba(var(--primary-rgb),_0.1)] text-[var(--gold)] hover:bg-[rgba(var(--primary-rgb),_0.2)]' : 'bg-white/5 text-white/20'}`}
             disabled={!partnerLocation}
           >
             <span className="material-symbols-outlined">navigation</span>

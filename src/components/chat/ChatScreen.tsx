@@ -13,15 +13,15 @@ export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
 
   if (!partner) {
     return (
-      <div className="flex flex-col h-screen items-center justify-center bg-[#0d0d15] text-[#e4e1ed] p-8 text-center space-y-6">
-        <span className="material-symbols-outlined text-6xl text-[#e6c487] opacity-50">diversity_2</span>
-        <h2 className="font-serif italic text-2xl text-[#e6c487]">Awaiting Your Partner</h2>
+      <div className="flex flex-col h-screen items-center justify-center bg-[var(--bg-primary)] text-[#e4e1ed] p-8 text-center space-y-6">
+        <span className="material-symbols-outlined text-6xl text-[var(--gold)] opacity-50">diversity_2</span>
+        <h2 className="font-serif italic text-2xl text-[var(--gold)]">Awaiting Your Partner</h2>
         <p className="text-sm text-[#998f81]/60 max-w-sm">
           AURA is designed for two. Have your partner sign up on this instance to establish the connection and generate the end-to-end encryption keys.
         </p>
         <button 
           onClick={signOut}
-          className="mt-8 px-6 py-2 border border-[#998f81]/20 rounded-full text-[10px] font-bold uppercase tracking-widest hover:text-[#e6c487] hover:border-[#e6c487] transition-all"
+          className="mt-8 px-6 py-2 border border-[#998f81]/20 rounded-full text-[10px] font-bold uppercase tracking-widest hover:text-[var(--gold)] hover:border-[var(--gold)] transition-all"
         >
           Sign Out
         </button>

@@ -111,7 +111,7 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[3rem] overflow-hidden bg-[#13131b] border-t border-white/5 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.9)] max-h-[85vh] flex flex-col"
+            className="fixed bottom-0 left-0 right-0 z-50 rounded-t-[3rem] overflow-hidden bg-[var(--bg-secondary)] border-t border-white/5 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.9)] max-h-[85vh] flex flex-col"
           >
             {/* Grip Handle */}
             <div className="flex justify-center pt-6 pb-2 shrink-0" onClick={onClose}>
@@ -119,7 +119,7 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 pb-6 no-scrollbar flex flex-col">
-              <h3 className="font-serif italic text-2xl text-[#e6c487] mb-6">Media Gallery</h3>
+              <h3 className="font-serif italic text-2xl text-[var(--gold)] mb-6">Media Gallery</h3>
 
               {/* Hidden File Input */}
               <input 
@@ -137,7 +137,7 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
                   <span className="font-label text-xs tracking-[0.2em] text-white/40 uppercase">Recent</span>
                   <button 
                     onClick={handleBrowseAll}
-                    className="text-[#e6c487] text-xs uppercase tracking-wider font-bold hover:opacity-80 transition-opacity flex items-center gap-1"
+                    className="text-[var(--gold)] text-xs uppercase tracking-wider font-bold hover:opacity-80 transition-opacity flex items-center gap-1"
                   >
                     <span>Browse All</span>
                     <span className="material-symbols-outlined text-sm">open_in_new</span>
@@ -149,8 +149,8 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
                     onClick={handleBrowseAll}
                     className="shrink-0 w-24 h-32 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors snap-start"
                   >
-                    <div className="w-10 h-10 rounded-full bg-[#e6c487]/10 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-[#e6c487]">add_photo_alternate</span>
+                    <div className="w-10 h-10 rounded-full bg-[rgba(var(--primary-rgb),_0.1)] flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[var(--gold)]">add_photo_alternate</span>
                     </div>
                     <span className="text-[10px] uppercase font-label tracking-widest text-white/40">Browse</span>
                   </button>
@@ -163,7 +163,7 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
                       <button
                         key={item.id}
                         onClick={() => toggleRecentItem(item)}
-                        className={`shrink-0 w-24 h-32 rounded-2xl relative overflow-hidden snap-start transition-all ${isSelected ? 'ring-2 ring-[#e6c487] scale-95' : 'ring-1 ring-white/10'}`}
+                        className={`shrink-0 w-24 h-32 rounded-2xl relative overflow-hidden snap-start transition-all ${isSelected ? 'ring-2 ring-[var(--gold)] scale-95' : 'ring-1 ring-white/10'}`}
                       >
                         {isVideo ? (
                           <div className="w-full h-full bg-black flex items-center justify-center">
@@ -173,9 +173,9 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
                           <img src={item.objUrl} alt="Recent" className="w-full h-full object-cover" />
                         )}
                         {isSelected && (
-                          <div className="absolute inset-0 bg-[#e6c487]/20 flex items-center justify-center">
-                            <div className="w-8 h-8 rounded-full bg-[#e6c487] flex items-center justify-center shadow-lg">
-                              <span className="material-symbols-outlined text-[#13131b] text-xl font-bold">check</span>
+                          <div className="absolute inset-0 bg-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-[var(--gold)] flex items-center justify-center shadow-lg">
+                              <span className="material-symbols-outlined text-[var(--bg-secondary)] text-xl font-bold">check</span>
                             </div>
                           </div>
                         )}
@@ -207,7 +207,7 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
                   </div>
 
                   <div className="flex gap-3 items-end">
-                    <div className="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5 focus-within:border-[#e6c487]/30 transition-colors">
+                    <div className="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5 focus-within:border-[rgba(var(--primary-rgb),_0.3)] transition-colors">
                       <input
                         type="text"
                         placeholder="Add a caption..."
@@ -221,7 +221,7 @@ export default function MediaGalleryDrawer({ isOpen, onClose, onSend }: MediaGal
                     </div>
                     <button
                       onClick={handleSend}
-                      className="w-12 h-12 shrink-0 bg-[#e6c487] text-[#13131b] rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all"
+                      className="w-12 h-12 shrink-0 bg-[var(--gold)] text-[var(--bg-secondary)] rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all"
                     >
                       <span className="material-symbols-outlined font-bold">send</span>
                     </button>

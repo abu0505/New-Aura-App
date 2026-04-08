@@ -40,7 +40,7 @@ export default function StoriesScreen({ partner }: StoriesScreenProps) {
   };
 
   return (
-    <div className="w-full h-full bg-[#0d0d15] overflow-hidden">
+    <div className="w-full h-full bg-[var(--bg-primary)] overflow-hidden">
       {isDesktop ? (
         <DesktopStories stories={stories} onStoryClick={handleStoryClick} onAddStory={handleAddStory} />
       ) : (

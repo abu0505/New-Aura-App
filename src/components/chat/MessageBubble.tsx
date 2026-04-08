@@ -17,7 +17,7 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
   let statusIcon = null;
   if (isOwn) {
     if (message.read_at) {
-      statusIcon = <span className="material-symbols-outlined text-[14px] text-[#C9A96E]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>;
+      statusIcon = <span className="material-symbols-outlined text-[14px] text-[var(--gold)]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>;
     } else if (message.delivered_at) {
       statusIcon = <span className="material-symbols-outlined text-[14px] text-[#998f81]/60">done_all</span>;
     } else {
@@ -34,7 +34,7 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
       <div
         className={`relative max-w-[75%] px-4 py-2.5 flex flex-col gap-1 ${
           isOwn
-            ? `rounded-2xl ${showTail ? 'rounded-tr-sm' : 'rounded-tr-2xl'} bg-[#C9A96E] text-[#0C0C14]`
+            ? `rounded-2xl ${showTail ? 'rounded-tr-sm' : 'rounded-tr-2xl'} bg-[var(--gold)] text-[var(--bg-primary)]`
             : `rounded-2xl ${showTail ? 'rounded-tl-sm' : 'rounded-tl-2xl'} text-[#E4E1ED]`
         }`}
         style={
@@ -56,7 +56,7 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
         
         <div 
           className={`flex items-center justify-end gap-1 text-[10px] select-none ${
-            isOwn ? 'text-[#0C0C14]/70' : 'text-[#8A8799]'
+            isOwn ? 'text-[var(--bg-primary)]/70' : 'text-[#8A8799]'
           }`}
         >
           <span>{time}</span>

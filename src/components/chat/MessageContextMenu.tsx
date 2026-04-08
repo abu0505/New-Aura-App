@@ -20,7 +20,7 @@ export default function MessageContextMenu({
     >
       <button 
         onClick={onPin}
-        className="flex items-center gap-3 px-4 py-3 hover:bg-[#c9a96e]/10 text-[#e4e1ed] transition-colors text-sm text-left font-body"
+        className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(var(--primary-rgb),_0.1)] text-[#e4e1ed] transition-colors text-sm text-left font-body"
       >
         <span className="material-symbols-outlined text-[18px]">push_pin</span>
         Pin Message
@@ -29,7 +29,7 @@ export default function MessageContextMenu({
       {isMine && onEdit && (
         <button 
           onClick={onEdit}
-          className="flex items-center gap-3 px-4 py-3 hover:bg-[#c9a96e]/10 text-[#e4e1ed] transition-colors text-sm text-left font-body border-t border-white/5"
+          className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(var(--primary-rgb),_0.1)] text-[#e4e1ed] transition-colors text-sm text-left font-body border-t border-white/5"
         >
           <span className="material-symbols-outlined text-[18px]">edit</span>
           Edit

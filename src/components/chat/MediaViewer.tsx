@@ -1,35 +1,110 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+
+interface MediaItem {
+  id: string;
+  url: string;
+  type: 'image' | 'video';
+}
 
 interface MediaViewerProps {
   url: string;
   type: 'image' | 'video';
   onClose: () => void;
+  allMedia?: MediaItem[];
+  initialIndex?: number;
 }
 
-export default function MediaViewer({ url, type, onClose }: MediaViewerProps) {
+export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0 }: MediaViewerProps) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [direction, setDirection] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  
+  const currentMedia = allMedia ? allMedia[currentIndex] : { url: initialUrl, type: initialType };
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, []);
 
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (allMedia && currentIndex < allMedia.length - 1) {
+      setDirection(1);
+      setCurrentIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (allMedia && currentIndex > 0) {
+      setDirection(-1);
+      setCurrentIndex(prev => prev - 1);
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX - touchEndX;
+
+    if (distance > 50) {
+      handleNext();
+    } else if (distance < -50) {
+      handlePrev();
+    }
+    setTouchStartX(null);
+  };
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 50 : -50,
+      opacity: 0,
+      scale: 0.95
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+      scale: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 50 : -50,
+      opacity: 0,
+      scale: 0.95
+    })
+  };
+
   const content = (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
-        key="media-viewer"
+        key="media-viewer-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.97)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         onClick={onClose}
       >
-        {/* Top Controls: Download + Close */}
+        {/* Top left info */}
+        <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 10000 }}>
+          {allMedia && allMedia.length > 1 && (
+            <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-primary font-bold text-xs uppercase tracking-widest border border-white/5">
+              {currentIndex + 1} / {allMedia.length}
+            </div>
+          )}
+        </div>
+
         <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.75rem', zIndex: 10000 }}>
           <a
-            href={url}
+            href={currentMedia.url}
             download
             onClick={(e) => e.stopPropagation()}
             className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
@@ -44,39 +119,65 @@ export default function MediaViewer({ url, type, onClose }: MediaViewerProps) {
           </button>
         </div>
 
+        {/* Navigation Arrows */}
+        {allMedia && allMedia.length > 1 && (
+          <div className="hidden md:block">
+            {currentIndex > 0 && (
+              <button 
+                onClick={handlePrev}
+                className="absolute left-4 z-[10001] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all backdrop-blur-sm top-1/2 -translate-y-1/2"
+              >
+                <span className="material-symbols-outlined text-3xl">chevron_left</span>
+              </button>
+            )}
+            {currentIndex < allMedia.length - 1 && (
+              <button 
+                onClick={handleNext}
+                className="absolute right-4 z-[10001] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all backdrop-blur-sm top-1/2 -translate-y-1/2"
+              >
+                <span className="material-symbols-outlined text-3xl">chevron_right</span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Viewer Content */}
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.25 }}
+          key={currentMedia.url}
+          custom={direction}
+          variants={slideVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={(e) => e.stopPropagation()}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
-          {type === 'image' ? (
+          {currentMedia.type === 'image' ? (
             <TransformWrapper
               initialScale={1}
               minScale={0.5}
               maxScale={6}
               centerOnInit
               centerZoomedOut
-              panning={{ velocityDisabled: true }}
             >
               <TransformComponent
                 wrapperStyle={{ width: '100%', height: '100%' }}
                 contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <img
-                  src={url}
+                  src={currentMedia.url}
                   alt="Secure Media"
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', userSelect: 'none', pointerEvents: 'none' }}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', userSelect: 'none' }}
                   draggable={false}
                 />
               </TransformComponent>
             </TransformWrapper>
           ) : (
             <video
-              src={url}
+              src={currentMedia.url}
               controls
               autoPlay
               style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '0.75rem', background: 'black', boxShadow: '0 25px 60px rgba(0,0,0,0.8)' }}
@@ -89,3 +190,4 @@ export default function MediaViewer({ url, type, onClose }: MediaViewerProps) {
 
   return createPortal(content, document.body);
 }
+

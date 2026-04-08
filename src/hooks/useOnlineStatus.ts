@@ -54,6 +54,12 @@ export function useOnlineStatus(trackMyStatus: (userId: string, page?: string) =
   }, []);
 
   // ── Core DB update (async, for use when React is running) ─────────────────
+  // KEY FIX: `last_seen` is ONLY updated when going offline.
+  // When going online we intentionally skip it so that `last_seen` always
+  // represents the last time the user was *seen going offline*, not the time
+  // they came online. This prevents the "seen just now" bug where presence
+  // sync lag causes the UI to fall back to formatLastSeen() and show the
+  // login timestamp instead of "Online".
   const executeUpdate = async (userId: string, isOnline: boolean, page?: string) => {
     try {
       let statusMessage: string | null = null;
@@ -66,11 +72,19 @@ export function useOnlineStatus(trackMyStatus: (userId: string, page?: string) =
           statusMessage = 'Online';
         }
       }
-      await supabase.from('profiles').update({
+
+      const update: Record<string, unknown> = {
         is_online: isOnline,
-        last_seen: new Date().toISOString(),
         status_message: statusMessage,
-      }).eq('id', userId);
+      };
+
+      // Only stamp last_seen when going OFFLINE so formatLastSeen() always
+      // reflects "last time seen offline", never the login time.
+      if (!isOnline) {
+        update.last_seen = new Date().toISOString();
+      }
+
+      await supabase.from('profiles').update(update).eq('id', userId);
     } catch (err) {
       console.error('Failed to update online status', err);
     }
@@ -90,6 +104,7 @@ export function useOnlineStatus(trackMyStatus: (userId: string, page?: string) =
 
     const body = JSON.stringify({
       is_online: false,
+      // Stamp last_seen on offline beacon too — this is an offline transition
       last_seen: new Date().toISOString(),
       status_message: null,
     });

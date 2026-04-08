@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import QualityChoiceModal from '../chat/QualityChoiceModal';
@@ -72,16 +72,16 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[110] bg-[#0d0d15]/95 backdrop-blur-xl flex items-center justify-center p-6 font-sans"
+        className="fixed inset-0 z-[110] bg-[var(--bg-primary)]/95 backdrop-blur-xl flex items-center justify-center p-6 font-sans"
       >
         <motion.div 
           initial={{ scale: 0.9, y: 20 }}
           animate={{ scale: 1, y: 0 }}
-          className="bg-[#1b1b23] border border-white/5 rounded-[2.5rem] w-full max-w-lg overflow-hidden flex flex-col shadow-3xl"
+          className="bg-[var(--bg-elevated)] border border-white/5 rounded-[2.5rem] w-full max-w-lg overflow-hidden flex flex-col shadow-3xl"
         >
           {/* Header */}
           <div className="px-8 py-6 flex justify-between items-center border-b border-white/5 bg-black/20">
-            <h2 className="font-serif italic text-2xl text-[#e6c487]">New Memory</h2>
+            <h2 className="font-serif italic text-2xl text-[var(--gold)]">New Memory</h2>
             <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -92,9 +92,9 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
             {!preview ? (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-[2rem] border-2 border-dashed border-[#998f81]/20 bg-black/20 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[#e6c487]/50 hover:bg-black/40 transition-all group"
+                className="aspect-square rounded-[2rem] border-2 border-dashed border-[#998f81]/20 bg-black/20 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[rgba(var(--primary-rgb),_0.5)] hover:bg-black/40 transition-all group"
               >
-                <span className="material-symbols-outlined text-5xl text-[#998f81] group-hover:text-[#e6c487] transition-colors">add_photo_alternate</span>
+                <span className="material-symbols-outlined text-5xl text-[#998f81] group-hover:text-[var(--gold)] transition-colors">add_photo_alternate</span>
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-[#998f81] group-hover:text-white">Select a visual fragment</p>
                 <input 
                   type="file" 
@@ -127,7 +127,7 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 placeholder="Describe this moment..."
-                className="w-full bg-black/20 border border-white/5 rounded-2xl p-4 text-[#e4e1ed] placeholder:text-[#998f81]/40 focus:ring-1 focus:ring-[#e6c487] outline-none transition-all resize-none font-sans italic text-sm"
+                className="w-full bg-black/20 border border-white/5 rounded-2xl p-4 text-[#e4e1ed] placeholder:text-[#998f81]/40 focus:ring-1 focus:ring-[var(--gold)] outline-none transition-all resize-none font-sans italic text-sm"
                 rows={3}
               />
             </div>
@@ -135,7 +135,7 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
             <button 
               disabled={isUploading || (!file && !caption.trim())}
               onClick={handleUploadClick}
-              className="w-full bg-[#e6c487] text-[#412d00] py-4 rounded-full font-label font-bold tracking-widest uppercase text-xs hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-[#e6c487]/10"
+              className="w-full bg-[var(--gold)] text-[var(--on-accent)] py-4 rounded-full font-label font-bold tracking-widest uppercase text-xs hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-[rgba(var(--primary-rgb),_0.1)]"
             >
               {isUploading ? 'Securing with Encryption...' : 'Share to Sanctuary'}
             </button>

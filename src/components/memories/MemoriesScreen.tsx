@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -52,9 +52,13 @@ export default function MemoriesScreen() {
   // ── Phase 4: Pinch-to-Zoom grid density ─────────────────────────────
   type GridDensity = 2 | 3 | 4;
   const [gridDensity, setGridDensity] = useState<GridDensity>(() => {
-    if (typeof window === 'undefined') return 2;
-    const saved = parseInt(localStorage.getItem('aura_grid_density') ?? '2', 10);
-    return ([2, 3, 4].includes(saved) ? saved : 2) as GridDensity;
+    if (typeof window === 'undefined') return 3;
+    const saved = localStorage.getItem('aura_grid_density');
+    if (saved) {
+      const parsed = parseInt(saved, 10);
+      if ([2, 3, 4].includes(parsed)) return parsed as GridDensity;
+    }
+    return (window.innerWidth < 768 ? 2 : 3) as GridDensity;
   });
   const [densityFlash, setDensityFlash] = useState(false);
   const pinchState = useRef<{
@@ -106,18 +110,10 @@ export default function MemoriesScreen() {
 
   // Hide mobile navbar when overlays or selection modes are active
   useEffect(() => {
-    if (viewMode !== 'gallery' || selectionMode || showFolderPicker) {
+    if (selectionMode || showFolderPicker) {
       document.dispatchEvent(new CustomEvent('hide-global-nav'));
-    } else {
-      document.dispatchEvent(new CustomEvent('show-global-nav'));
     }
-  }, [viewMode, selectionMode, showFolderPicker]);
-
-  useEffect(() => {
-    return () => {
-      document.dispatchEvent(new CustomEvent('show-global-nav'));
-    };
-  }, []);
+  }, [selectionMode, showFolderPicker]);
 
   // ── Pinch gesture on mobile ───────────────────────────────────────────
   const getDist = (touches: React.TouchList) =>
@@ -234,6 +230,23 @@ export default function MemoriesScreen() {
     fetchMemories(nextPage);
   };
 
+  // ── Infinite Scroll Observer ──────────────────────────────────────────
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const sentinel = document.getElementById('infinite-scroll-sentinel');
+    if (sentinel) observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadMore]);
+
   const decryptMedia = async (memory: MemoryItem) => {
     if (memory.decryptedUrl || !partner?.public_key || !memory.media_url || !memory.media_key || !memory.media_nonce) return;
 
@@ -263,6 +276,23 @@ export default function MemoriesScreen() {
     if (filter === 'favorites') return favorites.has(m.id);
     return m.type === filter;
   });
+
+  const groupedMemories = useMemo(() => {
+    const groups: { dateLabel: string; items: MemoryItem[] }[] = [];
+    let currentGroup: { dateLabel: string; items: MemoryItem[] } | null = null;
+    
+    filteredMemories.forEach(memory => {
+      const d = new Date(memory.created_at);
+      const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+      
+      if (!currentGroup || currentGroup.dateLabel !== dateLabel) {
+        currentGroup = { dateLabel, items: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.items.push(memory);
+    });
+    return groups;
+  }, [filteredMemories]);
 
   // Selection handlers
   const handleLongPress = (id: string) => {
@@ -306,11 +336,27 @@ export default function MemoriesScreen() {
     }
   };
 
+  const touchStartPos = useRef<{ x: number, y: number } | null>(null);
+
   // Touch event handlers for long-press
-  const handleTouchStart = (id: string) => {
+  const handleTouchStart = (id: string, e: React.TouchEvent) => {
+    touchStartPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     longPressTimerRef.current = setTimeout(() => {
       handleLongPress(id);
-    }, 500);
+    }, 750);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPos.current) return;
+    const dx = e.touches[0].clientX - touchStartPos.current.x;
+    const dy = e.touches[0].clientY - touchStartPos.current.y;
+    // Cancel if moved more than 10px
+    if (Math.hypot(dx, dy) > 10) {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    }
   };
 
   const handleTouchEnd = () => {
@@ -318,17 +364,21 @@ export default function MemoriesScreen() {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+    touchStartPos.current = null;
   };
 
   return (
-    <div className="w-full h-full bg-[#0d0d15] flex flex-col font-sans overflow-hidden relative">
+    <div 
+      className="w-full h-full bg-[var(--bg-primary)] flex flex-col font-sans overflow-hidden relative"
+      onClick={() => document.dispatchEvent(new CustomEvent('hide-global-nav'))}
+    >
       {/* Header */}
       <header className="px-4 pt-6 pb-4 flex flex-col gap-4 border-b border-white/5 bg-black/20 shrink-0">
         {selectionMode ? (
           /* Selection Mode Header */
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <button onClick={cancelSelection} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[#e6c487] transition-all">
+              <button onClick={cancelSelection} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all">
                 <span className="material-symbols-outlined text-[20px] block">close</span>
               </button>
               <p className="text-sm text-white/80 font-medium">{selectedIds.size} selected</p>
@@ -336,7 +386,7 @@ export default function MemoriesScreen() {
             <button
               onClick={() => setShowFolderPicker(true)}
               disabled={selectedIds.size === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#e6c487]/10 border border-[#e6c487]/20 text-[#e6c487] hover:bg-[#e6c487]/20 transition-all disabled:opacity-30"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] hover:bg-[rgba(var(--primary-rgb),_0.2)] transition-all disabled:opacity-30"
             >
               <span className="material-symbols-outlined text-[18px]">folder</span>
               <span className="text-xs font-bold uppercase tracking-wider">Add to Collection</span>
@@ -345,15 +395,29 @@ export default function MemoriesScreen() {
         ) : (
           /* Normal Header */
           <>
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="font-serif italic text-2xl text-[#e6c487]">Sanctuary Gallery</h1>
-                <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">A visual archive of our shared journey</p>
+            <div className="flex items-center justify-between pointer-events-none">
+              <div className="flex items-center gap-2 pointer-events-auto">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    document.dispatchEvent(new CustomEvent('toggle-nav'));
+                  }}
+                  className="p-2 -ml-2 rounded-full lg:hidden text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center"
+                >
+                  <span className="material-symbols-outlined text-xl">arrow_back</span>
+                </button>
+                <div>
+                  <h1 className="font-serif italic text-2xl text-[var(--gold)]">Sanctuary Gallery</h1>
+                  <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">A visual archive of our shared journey</p>
+                </div>
               </div>
               
               <button
-                onClick={() => setViewMode('folders')}
-                className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[#e6c487] hover:bg-white/10 transition-all group"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setViewMode('folders');
+                }}
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10 transition-all group pointer-events-auto"
               >
                 <span className="material-symbols-outlined text-[20px] block group-hover:scale-110 transition-transform">folder</span>
               </button>
@@ -368,7 +432,7 @@ export default function MemoriesScreen() {
                     key={f}
                     onClick={() => setFilter(f as any)}
                     className={`px-5 py-1.5 rounded-full text-[10px] font-label uppercase tracking-widest border transition-all whitespace-nowrap ${filter === f
-                        ? 'bg-[#e6c487] text-[#412d00] border-[#e6c487] font-bold shadow-md shadow-[#e6c487]/10'
+                        ? 'bg-[var(--gold)] text-[var(--on-accent)] border-[var(--gold)] font-bold shadow-md shadow-[rgba(var(--primary-rgb),_0.1)]'
                         : 'bg-transparent text-[#998f81] border-white/10 hover:border-white/20'
                       }`}
                   >
@@ -378,10 +442,10 @@ export default function MemoriesScreen() {
               </div>
 
               {/* Static Search Icon / Bar with Fade */}
-              <div className="absolute right-0 top-0 bottom-0 flex items-center pl-8 bg-gradient-to-l from-[#0d0d15] via-[#0d0d15]/90 to-transparent">
+              <div className="absolute right-0 top-0 bottom-0 flex items-center pl-8 bg-gradient-to-l from-[var(--bg-primary)] via-[var(--bg-primary)]/90 to-transparent">
                 <button
                   onClick={() => setViewMode('search')}
-                  className="flex items-center gap-3 p-2 px-3 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[#e6c487] hover:bg-white/10 hover:border-white/20 transition-all group lg:min-w-[200px]"
+                  className="flex items-center gap-3 p-2 px-3 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10 hover:border-white/20 transition-all group lg:min-w-[200px]"
                 >
                   <span className="material-symbols-outlined text-[20px] block group-hover:scale-110 transition-transform">search</span>
                   <span className="hidden lg:block text-[10px] font-label uppercase tracking-[0.2em] text-[#998f81]/60 font-bold whitespace-nowrap">Search by date</span>
@@ -396,18 +460,25 @@ export default function MemoriesScreen() {
       <div className="flex-1 relative overflow-hidden">
         <div
           ref={scrollContainerRef}
-          className="w-full h-full overflow-y-auto p-4 custom-scrollbar pr-8"
+          className="w-full h-full overflow-y-auto p-4 pr-3 [&::-webkit-scrollbar]:hidden"
+          style={{
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+            WebkitOverflowScrolling: 'touch',
+            willChange: 'scroll-position',
+            transform: 'translateZ(0)',
+          }}
         >
         {loading ? (
 
           <div className="h-full flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
-            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[#e6c487]/40">Gathering Echoes...</p>
+            <div className="w-12 h-12 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
+            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[rgba(var(--primary-rgb),_0.4)]">Gathering Echoes...</p>
           </div>
         ) : filteredMemories.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-12 opacity-40">
-            <span className="material-symbols-outlined text-6xl mb-4 text-[#e6c487]">auto_awesome</span>
-            <p className="font-serif italic text-xl text-[#e6c487]">The gallery is a blank canvas.</p>
+            <span className="material-symbols-outlined text-6xl mb-4 text-[var(--gold)]">auto_awesome</span>
+            <p className="font-serif italic text-xl text-[var(--gold)]">The gallery is a blank canvas.</p>
             <p className="text-xs tracking-widest uppercase mt-2">Shared media will bloom here.</p>
           </div>
         ) : (
@@ -421,46 +492,56 @@ export default function MemoriesScreen() {
             )}
 
             <div
-              className={`grid gap-2 transition-all duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
-                densityFlash ? 'ring-2 ring-[#e6c487]/30 rounded-xl' : ''
-              } ${
-                gridDensity === 2 ? 'grid-cols-2 auto-rows-[250px]' :
-                gridDensity === 3 ? 'grid-cols-3 auto-rows-[200px]' :
-                'grid-cols-4 auto-rows-[150px]'
-              }`}
+              className="flex flex-col gap-6"
               onTouchStart={handleGridTouchStart}
               onTouchMove={handleGridTouchMove}
               onTouchEnd={handleGridTouchEnd}
               style={{ touchAction: 'pan-y' }}
             >
-              {filteredMemories.map((memory, index) => (
-                <MemoryCard
-                  key={memory.id}
-                  memory={memory}
-                  index={index}
-                  onDecrypt={() => decryptMedia(memory)}
-                  onClick={() => handleTap(memory)}
-                  onLongPress={() => handleLongPress(memory.id)}
-                  onTouchStart={() => handleTouchStart(memory.id)}
-                  onTouchEnd={handleTouchEnd}
-                  isSelected={selectedIds.has(memory.id)}
-                  selectionMode={selectionMode}
-                  isFavorited={favorites.has(memory.id)}
-                  onToggleFavorite={() => toggleFavorite(memory.id)}
-                />
+              {groupedMemories.map(group => (
+                <div key={group.dateLabel} className="flex flex-col gap-2">
+                  <h2 className="sticky top-[-1rem] z-10 py-4 font-bold text-sm text-white/80 bg-aura-bg-elevated/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] -mx-4 px-4">
+                    {group.dateLabel}
+                  </h2>
+                  <div
+                    className={`grid gap-2 grid-flow-dense ${
+                      densityFlash ? 'ring-2 ring-[rgba(var(--primary-rgb),_0.3)] rounded-xl' : ''
+                    } ${
+                      gridDensity === 2 ? 'grid-cols-2 auto-rows-[250px]' :
+                      gridDensity === 3 ? 'grid-cols-3 auto-rows-[200px]' :
+                      'grid-cols-4 auto-rows-[150px]'
+                    }`}
+                  >
+                    {group.items.map((memory, index) => (
+                      <MemoryCard
+                        key={memory.id}
+                        memory={memory}
+                        index={index}
+                        onDecrypt={() => decryptMedia(memory)}
+                        onClick={() => handleTap(memory)}
+                        onLongPress={() => handleLongPress(memory.id)}
+                        onTouchStart={(e) => handleTouchStart(memory.id, e)}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        isSelected={selectedIds.has(memory.id)}
+                        selectionMode={selectionMode}
+                        isFavorited={favorites.has(memory.id)}
+                        onToggleFavorite={() => toggleFavorite(memory.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
 
-            {hasMore && (
-              <div className="flex justify-center mt-4">
-                <button
-                  onClick={loadMore}
-                  className="px-8 py-3 rounded-full border border-white/10 text-[#e6c487] font-serif italic hover:bg-white/5 transition-colors"
-                >
-                  Load More Fragments
-                </button>
-              </div>
-            )}
+            <div id="infinite-scroll-sentinel" className="h-20 flex items-center justify-center">
+              {hasMore && (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
+                  <span className="font-label text-[8px] uppercase tracking-[0.2em] text-[rgba(var(--primary-rgb),_0.4)]">Fetching fragments...</span>
+                </div>
+              )}
+            </div>
 
             {!hasMore && filteredMemories.length > 0 && (
               <p className="text-center font-label text-[10px] text-white/20 uppercase tracking-[0.4em] mt-8">
@@ -532,11 +613,11 @@ export default function MemoriesScreen() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#1b1b23] border-t border-white/10 rounded-t-3xl w-full max-w-lg max-h-[60vh] flex flex-col"
+              className="bg-[var(--bg-elevated)] border-t border-white/10 rounded-t-3xl w-full max-w-lg max-h-[60vh] flex flex-col"
             >
               <div className="p-4 border-b border-white/5 shrink-0">
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
-                <h3 className="font-serif italic text-lg text-[#e6c487]">Add to Collection</h3>
+                <h3 className="font-serif italic text-lg text-[var(--gold)]">Add to Collection</h3>
                 <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81] mt-1">
                   {selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
                 </p>
@@ -551,9 +632,9 @@ export default function MemoriesScreen() {
                       <button
                         key={folder.id}
                         onClick={() => handleAddToFolder(folder.id)}
-                        className="w-full flex items-center gap-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-[#e6c487]/20 hover:bg-white/[0.06] transition-all text-left"
+                        className="w-full flex items-center gap-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-[rgba(var(--primary-rgb),_0.2)] hover:bg-white/[0.06] transition-all text-left"
                       >
-                        <span className="material-symbols-outlined text-[24px] text-[#e6c487]/50">folder</span>
+                        <span className="material-symbols-outlined text-[24px] text-[rgba(var(--primary-rgb),_0.5)]">folder</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-white/80 truncate">{folder.name || 'Encrypted Folder'}</p>
                           <p className="font-label text-[9px] uppercase tracking-widest text-[#998f81]">
@@ -581,7 +662,8 @@ interface MemoryCardProps {
   onDecrypt: () => void;
   onClick: () => void;
   onLongPress: () => void;
-  onTouchStart: () => void;
+  onTouchStart: (e: React.TouchEvent) => void;
+  onTouchMove: (e: React.TouchEvent) => void;
   onTouchEnd: () => void;
   isSelected: boolean;
   selectionMode: boolean;
@@ -589,7 +671,7 @@ interface MemoryCardProps {
   onToggleFavorite: () => void;
 }
 
-function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchStart, onTouchEnd, isSelected, selectionMode, isFavorited, onToggleFavorite }: MemoryCardProps) {
+function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchStart, onTouchMove, onTouchEnd, isSelected, selectionMode, isFavorited, onToggleFavorite }: MemoryCardProps) {
   const isTall = index % 5 === 0;
   const isWide = index % 7 === 0;
   const lastTapRef = useRef<number>(0);
@@ -624,25 +706,31 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      whileHover={{ scale: selectionMode ? 1 : 1.02 }}
-      viewport={{ once: true, margin: "300px" }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      viewport={{ once: true, margin: "400px" }}
       onViewportEnter={onDecrypt}
       onPointerDown={handlePointerDown}
       onClick={handleInternalClick}
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(); }}
       className={`relative group rounded-[2rem] overflow-hidden bg-black/40 border cursor-pointer shadow-xl select-none ${
         isTall ? 'row-span-2' : isWide ? 'col-span-2' : ''
-      } ${isSelected ? 'border-[#e6c487] ring-2 ring-[#e6c487]/40' : 'border-white/5'}`}
+      } ${isSelected ? 'border-[var(--gold)] ring-2 ring-[rgba(var(--primary-rgb),_0.4)]' : 'border-white/5'}`}
+      style={{
+        contain: 'content',
+        willChange: 'opacity',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden',
+      }}
     >
       {memory.loading ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-6 h-6 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
+          <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
         </div>
       ) : memory.decryptedUrl ? (
         <>
@@ -658,15 +746,15 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
             </div>
           )}
           {memory.type === 'audio' && (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#1b1b23] gap-3">
-              <span className="material-symbols-outlined text-4xl text-[#e6c487]">mic</span>
-              <span className="font-label text-[8px] uppercase tracking-widest text-[#e6c487]/60">Voice Fragment</span>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-elevated)] gap-3">
+              <span className="material-symbols-outlined text-4xl text-[var(--gold)]">mic</span>
+              <span className="font-label text-[8px] uppercase tracking-widest text-[rgba(var(--primary-rgb),_0.6)]">Voice Fragment</span>
             </div>
           )}
           {memory.type === 'document' && (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-[#1b1b23] gap-3">
-              <span className="material-symbols-outlined text-4xl text-[#e6c487]">description</span>
-              <span className="font-label text-[8px] uppercase tracking-widest text-[#e6c487]/60">Document</span>
+            <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-elevated)] gap-3">
+              <span className="material-symbols-outlined text-4xl text-[var(--gold)]">description</span>
+              <span className="font-label text-[8px] uppercase tracking-widest text-[rgba(var(--primary-rgb),_0.6)]">Document</span>
             </div>
           )}
 
@@ -683,9 +771,9 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
           {selectionMode && (
             <div className="absolute top-3 right-3 z-10">
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                isSelected ? 'bg-[#e6c487] border-[#e6c487]' : 'bg-black/40 border-white/30 backdrop-blur-sm'
+                isSelected ? 'bg-[var(--gold)] border-[var(--gold)]' : 'bg-black/40 border-white/30 backdrop-blur-sm'
               }`}>
-                {isSelected && <span className="material-symbols-outlined text-[16px] text-[#412d00]">check</span>}
+                {isSelected && <span className="material-symbols-outlined text-[16px] text-[var(--on-accent)]">check</span>}
               </div>
             </div>
           )}

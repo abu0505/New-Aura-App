@@ -42,7 +42,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
   };
 
   const getItemClasses = (index: number) => {
-    const base = "relative group rounded-2xl overflow-hidden bg-black/40 border border-white/5 cursor-pointer hover:border-[#e6c487]/30 transition-all duration-300";
+    const base = "relative group rounded-2xl overflow-hidden bg-black/40 border border-white/5 cursor-pointer hover:border-[rgba(var(--primary-rgb),_0.3)] transition-all duration-300";
     if (layoutMode !== 'bento') return base;
     
     const pattern = index % 8;
@@ -151,16 +151,16 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 z-50 bg-[#0d0d15] flex flex-col"
+      className="absolute inset-0 z-50 bg-[var(--bg-primary)] flex flex-col"
     >
       {/* Header */}
       <div className="px-4 pt-6 pb-3 border-b border-white/5 bg-black/20 shrink-0">
         <div className="flex items-center gap-4 flex-1 min-w-0">
-          <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[#e6c487] transition-all">
+          <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all">
             <span className="material-symbols-outlined text-[20px] block">arrow_back</span>
           </button>
           <div className="flex-1 min-w-0">
-            <h2 className="font-serif italic text-xl text-[#e6c487] truncate">{folder.name || 'Encrypted Folder'}</h2>
+            <h2 className="font-serif italic text-xl text-[var(--gold)] truncate">{folder.name || 'Encrypted Folder'}</h2>
             <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">
               {items.length} item{items.length !== 1 ? 's' : ''}
             </p>
@@ -175,7 +175,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
             <button
               key={mode}
               onClick={() => setLayoutMode(mode)}
-              className={`relative px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-2 z-10 ${layoutMode === mode ? 'text-[#1b1b23]' : 'text-white/40 hover:text-white/80'}`}
+              className={`relative px-4 py-2 rounded-xl transition-all flex items-center justify-center gap-2 z-10 ${layoutMode === mode ? 'text-[var(--bg-elevated)]' : 'text-white/40 hover:text-white/80'}`}
               title={`${mode} view`}
             >
               <span className={`material-symbols-outlined block relative z-10 ${
@@ -208,7 +208,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
               {layoutMode === mode && (
                 <motion.div
                   layoutId="activeLayout"
-                  className="absolute inset-0 bg-[#e6c487] rounded-xl -z-10 shadow-[0_4px_15px_rgba(230,196,135,0.3)]"
+                  className="absolute inset-0 bg-[var(--gold)] rounded-xl -z-10 shadow-[0_4px_15px_rgba(var(--primary-rgb),0.3)]"
                   transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 />
               )}
@@ -221,13 +221,13 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {loadingItems ? (
           <div className="h-full flex flex-col items-center justify-center gap-4">
-            <div className="w-12 h-12 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
-            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[#e6c487]/40">Loading Collection...</p>
+            <div className="w-12 h-12 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
+            <p className="font-label text-[10px] uppercase tracking-[0.4em] text-[rgba(var(--primary-rgb),_0.4)]">Loading Collection...</p>
           </div>
         ) : items.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-12 opacity-40">
-            <span className="material-symbols-outlined text-6xl mb-4 text-[#e6c487]">folder_open</span>
-            <p className="font-serif italic text-xl text-[#e6c487]">Empty collection</p>
+            <span className="material-symbols-outlined text-6xl mb-4 text-[var(--gold)]">folder_open</span>
+            <p className="font-serif italic text-xl text-[var(--gold)]">Empty collection</p>
             <p className="text-xs tracking-widest uppercase mt-2">Add media from the gallery to this collection</p>
           </div>
         ) : (
@@ -254,7 +254,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
                 <div className="w-full h-full" onClick={() => memory.decryptedUrl && setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' })}>
                   {memory.loading ? (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-6 h-6 border-2 border-[#e6c487]/20 border-t-[#e6c487] rounded-full animate-spin"></div>
+                      <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
                     </div>
                   ) : memory.decryptedUrl ? (
                     <>
@@ -270,15 +270,15 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
                         </div>
                       )}
                       {memory.type === 'audio' && (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#1b1b23] gap-3">
-                          <span className="material-symbols-outlined text-4xl text-[#e6c487]">mic</span>
-                          <span className="font-label text-[8px] uppercase tracking-widest text-[#e6c487]/60">Voice</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-elevated)] gap-3">
+                          <span className="material-symbols-outlined text-4xl text-[var(--gold)]">mic</span>
+                          <span className="font-label text-[8px] uppercase tracking-widest text-[rgba(var(--primary-rgb),_0.6)]">Voice</span>
                         </div>
                       )}
                       {memory.type === 'document' && (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-[#1b1b23] gap-3">
-                          <span className="material-symbols-outlined text-4xl text-[#e6c487]">description</span>
-                          <span className="font-label text-[8px] uppercase tracking-widest text-[#e6c487]/60">Document</span>
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-[var(--bg-elevated)] gap-3">
+                          <span className="material-symbols-outlined text-4xl text-[var(--gold)]">description</span>
+                          <span className="font-label text-[8px] uppercase tracking-widest text-[rgba(var(--primary-rgb),_0.6)]">Document</span>
                         </div>
                       )}
 
@@ -325,9 +325,9 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#1b1b23] border border-white/10 rounded-2xl p-6 max-w-sm w-full"
+              className="bg-[var(--bg-elevated)] border border-white/10 rounded-2xl p-6 max-w-sm w-full"
             >
-              <h3 className="font-serif italic text-lg text-[#e6c487] mb-2">Remove from Collection?</h3>
+              <h3 className="font-serif italic text-lg text-[var(--gold)] mb-2">Remove from Collection?</h3>
               <p className="text-sm text-white/50 mb-6">This will only remove it from this collection. The file won't be deleted.</p>
               <div className="flex gap-3">
                 <button

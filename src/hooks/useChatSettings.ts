@@ -60,6 +60,12 @@ export function useChatSettings() {
 
     fetchSettings();
 
+    const handleLocalUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setSettings(customEvent.detail);
+    };
+    window.addEventListener('chat-settings-updated', handleLocalUpdate);
+
     // ═══ Use RealtimeHub instead of creating a separate channel ═══
     // The hub already filters by user_id for chat_settings
     const unsubscribe = realtimeHub.on('chat_settings', () => {
@@ -68,6 +74,7 @@ export function useChatSettings() {
 
     return () => {
       unsubscribe();
+      window.removeEventListener('chat-settings-updated', handleLocalUpdate);
     };
   }, [user?.id]);
 
@@ -75,7 +82,10 @@ export function useChatSettings() {
     if (!user || !settings) return;
     
     const previousSettings = { ...settings };
-    setSettings({ ...settings, ...updates, updated_at: new Date().toISOString() });
+    const newSettings = { ...settings, ...updates, updated_at: new Date().toISOString() };
+    
+    setSettings(newSettings);
+    window.dispatchEvent(new CustomEvent('chat-settings-updated', { detail: newSettings }));
 
     const { error } = await supabase
       .from('chat_settings')
@@ -84,6 +94,7 @@ export function useChatSettings() {
     
     if (error) {
       setSettings(previousSettings);
+      window.dispatchEvent(new CustomEvent('chat-settings-updated', { detail: previousSettings }));
     }
     
     return { error };
@@ -92,7 +103,11 @@ export function useChatSettings() {
   const setSharedPin = async (newPinHash: string | null) => {
     if (!user) return { error: new Error("Not authenticated") };
 
-    setSettings((prev) => prev ? { ...prev, shared_pin: newPinHash } : null);
+    const newSettings = settings ? { ...settings, shared_pin: newPinHash } : null;
+    setSettings(newSettings);
+    if (newSettings) {
+      window.dispatchEvent(new CustomEvent('chat-settings-updated', { detail: newSettings }));
+    }
 
     const { error } = await supabase.rpc('set_shared_app_pin', {
       new_pin: newPinHash

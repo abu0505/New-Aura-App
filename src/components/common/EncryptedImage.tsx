@@ -86,8 +86,8 @@ export default function EncryptedImage({
 
   if (loading) {
     return (
-      <div className={`animate-pulse bg-[#1b1b23] flex items-center justify-center ${className}`}>
-        <span className="material-symbols-outlined text-[#e6c487] animate-spin">sync</span>
+      <div className={`animate-pulse bg-[var(--bg-elevated)] flex items-center justify-center ${className}`}>
+        <span className="material-symbols-outlined text-[var(--gold)] animate-spin">sync</span>
       </div>
     );
   }
