@@ -196,5 +196,5 @@ export function useOnlineStatus(trackMyStatus: (userId: string, page?: string) =
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [user, encryptionStatus, currentPage, trackMyStatus, untrackMyStatus]);
+  }, [user?.id, encryptionStatus, currentPage, trackMyStatus, untrackMyStatus]);
 }

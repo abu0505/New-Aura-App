@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/auth/LoginScreen';
 import type { Tab } from './types';
@@ -33,25 +33,61 @@ function InnerApp({
   const { trackMyStatus, untrackMyStatus, partnerState } = usePresenceChannel(partner?.id || null, activeTab);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
 
-  // ═══ Presence Authority Pattern ═══
-  // Once the presence channel has synced, it becomes the SOLE source of truth.
-  // This fixes the bug where the stale DB `is_online=true` would override
-  // a legitimate presence `leave` event, keeping the header stuck on "Online".
-  //
-  // Before sync: DB is the fallback (shows correct status on initial render).
-  // After  sync: Presence is authoritative (sub-second offline detection).
-  const resolvedIsOnline = partnerState.hasSynced
-    ? partnerState.isOnline          // Presence is live → trust it completely
-    : partner?.is_online ?? false;   // Presence hasn't connected yet → use DB
+  // ═══ Online Status — Stability Filter ═══
+  // Raw presence events can flicker (sync races, reconnects, network hiccups).
+  // This filter ensures:
+  //   ONLINE  → shown INSTANTLY (no delay, ever)
+  //   OFFLINE → confirmed after 8 seconds of no online signal
+  // Any flicker within 8 seconds is completely invisible to the user.
+  
+  const rawIsOnline = partnerState.hasSynced
+    ? partnerState.isOnline
+    : partner?.is_online ?? false;
 
-  // For last_seen: prefer presence-based lastOnlineAt (exact moment we saw
-  // the partner leave) over the DB timestamp, which may be stale if the
-  // offline beacon didn't reach the server in time.
-  const resolvedLastSeen = partnerState.lastOnlineAt ?? partner?.last_seen ?? null;
+  const [stableOnline, setStableOnline] = useState(false);
+  const stableOnlineRef = useRef(false);
+  const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wentOfflineAtRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (rawIsOnline) {
+      // ── GOING ONLINE: Instant ──
+      if (offlineTimerRef.current) {
+        clearTimeout(offlineTimerRef.current);
+        offlineTimerRef.current = null;
+      }
+      wentOfflineAtRef.current = null;
+      if (!stableOnlineRef.current) {
+        stableOnlineRef.current = true;
+        setStableOnline(true);
+      }
+    } else {
+      // ── GOING OFFLINE: Debounced 8 seconds ──
+      if (stableOnlineRef.current && !offlineTimerRef.current) {
+        // Capture the exact moment the first offline signal arrived
+        wentOfflineAtRef.current = new Date().toISOString();
+        offlineTimerRef.current = setTimeout(() => {
+          offlineTimerRef.current = null;
+          stableOnlineRef.current = false;
+          setStableOnline(false);
+        }, 8000);
+      }
+    }
+  }, [rawIsOnline]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (offlineTimerRef.current) clearTimeout(offlineTimerRef.current);
+    };
+  }, []);
+
+  // Use presence-captured offline time, or DB's last_seen, or null
+  const resolvedLastSeen = wentOfflineAtRef.current ?? partner?.last_seen ?? null;
 
   const partnerWithPresence = partner ? { 
     ...partner, 
-    is_online: resolvedIsOnline,
+    is_online: stableOnline,
     last_seen: resolvedLastSeen,
   } : partner;
 
