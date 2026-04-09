@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 /**
  * Formats a last_seen ISO timestamp into a human-readable string.
- * This is the single source of truth used by both Mobile and Desktop headers.
+ * Single source of truth used by both Mobile and Desktop headers.
  */
 export function formatLastSeen(lastSeen: string | null, compact?: boolean): string {
   if (!lastSeen) return compact ? 'Offline' : 'Offline';
@@ -37,29 +37,28 @@ export function formatLastSeen(lastSeen: string | null, compact?: boolean): stri
 
 interface LastSeenStatusProps {
   isOnline: boolean;
-  statusMessage: string | null;
   lastSeen: string | null;
   /** Use compact format for mobile (no "Last seen" prefix) */
   compact?: boolean;
 }
 
 /**
- * Auto-refreshing last-seen status text.
- * When partner is online → shows status_message or "Online".
- * When offline → shows "Last seen X ago" with a 30s auto-refresh.
+ * Auto-refreshing last-seen status text — WhatsApp style.
+ *   Online  → "Online"
+ *   Offline → "Last seen X ago" (refreshes every 30s)
  */
-export function LastSeenStatus({ isOnline, statusMessage, lastSeen, compact }: LastSeenStatusProps) {
+export function LastSeenStatus({ isOnline, lastSeen, compact }: LastSeenStatusProps) {
   // Tick state forces re-render every 30s for time freshness
   const [, setTick] = useState(0);
 
   useEffect(() => {
-    if (isOnline) return; // No need to tick while online
+    if (isOnline) return; // Online needs no tick
     const interval = setInterval(() => setTick(t => t + 1), 30_000);
     return () => clearInterval(interval);
   }, [isOnline]);
 
   if (isOnline) {
-    return <>{statusMessage || 'Online'}</>;
+    return <>Online</>;
   }
 
   return <>{formatLastSeen(lastSeen, compact)}</>;

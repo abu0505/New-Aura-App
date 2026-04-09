@@ -384,7 +384,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
             <div>
               <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
               <p className="text-[10px] font-label tracking-[0.2em] text-aura-text-secondary uppercase mt-0.5">
-                <LastSeenStatus isOnline={partner.is_online} statusMessage={partner.status_message} lastSeen={partner.last_seen} />
+                <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
               </p>
             </div>
           </div>

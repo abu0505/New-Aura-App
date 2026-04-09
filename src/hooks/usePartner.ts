@@ -19,11 +19,12 @@ export interface PartnerProfile {
 /**
  * Fetches and subscribes to the partner's profile from the DB.
  * 
- * `partnerPresenceOnline` is injected from the SINGLE usePresenceChannel
- * call in App.tsx — this eliminates the previous bug where two separate
- * presence channels were fighting each other and destroying online status.
+ * IMPORTANT: This hook returns RAW DB data. The online status
+ * (is_online / last_seen) is only used as a fallback for "Last seen" text.
+ * The LIVE online/offline state comes exclusively from the presence channel
+ * and is merged in App.tsx's stability filter.
  */
-export function usePartner(partnerPresenceOnline?: boolean) {
+export function usePartner() {
   const { user } = useAuth();
   const [partner, setPartner] = useState<PartnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,11 +73,6 @@ export function usePartner(partnerPresenceOnline?: boolean) {
     };
   }, [user?.id]);
 
-  // Merge presence-based online state (from the single App-level presence channel)
-  const isOnline = partnerPresenceOnline !== undefined ? partnerPresenceOnline : (partner?.is_online ?? false);
-
-  return { 
-    partner: partner ? { ...partner, is_online: isOnline } : null, 
-    loading 
-  };
+  return { partner, loading };
 }
+

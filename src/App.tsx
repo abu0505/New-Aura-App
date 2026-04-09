@@ -29,25 +29,33 @@ function InnerApp({
 }: any) {
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   
-  // Setup Realtime Presence — SINGLE instance for the entire app
-  const { trackMyStatus, untrackMyStatus, partnerState } = usePresenceChannel(partner?.id || null);
+  // ═══════════════════════════════════════════════════════════════════
+  // ONLINE STATUS — WhatsApp Architecture
+  // ═══════════════════════════════════════════════════════════════════
+  //
+  // 1. usePresenceChannel → raw WebSocket presence (sole authority)
+  // 2. useOnlineStatus    → manages when to track/untrack + DB beacon
+  // 3. Stability filter   → instant online, 10s debounced offline
+  //
+  // KEY RULE: DB `is_online` is NEVER used for display.
+  //   Before presence syncs → show "Last seen" (from DB timestamp)
+  //   After presence syncs  → show whatever presence says
+  // This eliminates the stale-DB "Online flash" on page reload.
+  // ═══════════════════════════════════════════════════════════════════
+
+  const { trackMyStatus, untrackMyStatus, partnerPresence } = usePresenceChannel(partner?.id || null);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
 
-  // ═══ Online Status — Stability Filter ═══
-  // Raw presence events can flicker (sync races, reconnects, network hiccups).
-  // This filter ensures:
-  //   ONLINE  → shown INSTANTLY (no delay, ever)
-  //   OFFLINE → confirmed after 8 seconds of no online signal
-  // Any flicker within 8 seconds is completely invisible to the user.
-  
-  const rawIsOnline = partnerState.hasSynced
-    ? partnerState.isOnline
-    : partner?.is_online ?? false;
+  // ── Raw signal: NEVER fall back to DB is_online ──
+  const rawIsOnline = partnerPresence.hasSynced ? partnerPresence.isOnline : false;
 
+  // ── Stability filter ──
+  // Absorbs ALL flicker from presence (sync races, reconnects, network blips).
+  //   ONLINE  → shown INSTANTLY (zero delay)
+  //   OFFLINE → confirmed after 10 seconds of no online signal
   const [stableOnline, setStableOnline] = useState(false);
   const stableOnlineRef = useRef(false);
   const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const wentOfflineAtRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (rawIsOnline) {
@@ -56,21 +64,18 @@ function InnerApp({
         clearTimeout(offlineTimerRef.current);
         offlineTimerRef.current = null;
       }
-      wentOfflineAtRef.current = null;
       if (!stableOnlineRef.current) {
         stableOnlineRef.current = true;
         setStableOnline(true);
       }
     } else {
-      // ── GOING OFFLINE: Debounced 8 seconds ──
+      // ── GOING OFFLINE: Debounced 10 seconds ──
       if (stableOnlineRef.current && !offlineTimerRef.current) {
-        // Capture the exact moment the first offline signal arrived
-        wentOfflineAtRef.current = new Date().toISOString();
         offlineTimerRef.current = setTimeout(() => {
           offlineTimerRef.current = null;
           stableOnlineRef.current = false;
           setStableOnline(false);
-        }, 8000);
+        }, 10_000);
       }
     }
   }, [rawIsOnline]);
@@ -82,13 +87,13 @@ function InnerApp({
     };
   }, []);
 
-  // Use presence-captured offline time, or DB's last_seen, or null
-  const resolvedLastSeen = wentOfflineAtRef.current ?? partner?.last_seen ?? null;
-
+  // ── Merge into partner object for downstream components ──
+  // `is_online` comes from stability filter (presence-only)
+  // `last_seen` comes from DB (updated by partner's offline beacon via realtimeHub)
   const partnerWithPresence = partner ? { 
     ...partner, 
     is_online: stableOnline,
-    last_seen: resolvedLastSeen,
+    last_seen: partner.last_seen, // DB value — always the real offline timestamp
   } : partner;
 
   const { isLocked, hasAppPin } = useAppLock();
@@ -211,7 +216,6 @@ function InnerApp({
 
 export default function App() {
   const { session, loading, user } = useAuth();
-  // usePartner no longer calls usePresenceChannel — the single presence channel is in InnerApp
   const { partner } = usePartner();
   const { streakCount, showCelebration, setShowCelebration } = useStreaks();
 

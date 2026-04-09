@@ -3,47 +3,47 @@ import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-interface PresenceState {
-  user_id: string;
-  page?: string;
-  online_at: string;
-}
-
-export interface PartnerState {
+export interface PartnerPresence {
+  /** True when partner is tracked in the presence channel. */
   isOnline: boolean;
-  /** True once the presence channel has completed its first sync. */
+  /** True after the presence channel has completed its first sync. */
   hasSynced: boolean;
-  page?: string;
 }
 
 /**
- * Raw Presence Channel
- * ════════════════════
- * Reports presence events AS-IS with identity-check guards
- * to prevent unnecessary re-renders. NO debounce logic here.
+ * Presence Channel — WhatsApp Architecture
+ * ═════════════════════════════════════════
+ * Manages ONE Supabase Realtime Presence channel for the whole app.
  *
- * The stability filter (debounced offline) lives in App.tsx,
- * keeping this hook simple and predictable.
+ * DESIGN PRINCIPLES:
+ *   1. Reports RAW presence state — no debounce here
+ *   2. `desiredTrackRef` solves the connection race condition:
+ *      if trackMyStatus() is called before WebSocket is JOINED,
+ *      the intention is saved and auto-applied on SUBSCRIBED
+ *   3. Callbacks use useCallback([]) for stable references —
+ *      prevents parent effects from re-firing
  *
- * CRITICAL: trackMyStatus / untrackMyStatus use useCallback([])
- * for stable references — prevents useOnlineStatus effect re-fires.
+ * EGRESS: 0 bytes — presence runs over WebSocket, not REST
  */
 export function usePresenceChannel(partnerId: string | null) {
   const { user } = useAuth();
-  const [partnerState, setPartnerState] = useState<PartnerState>({ isOnline: false, hasSynced: false });
+  const [partnerPresence, setPartnerPresence] = useState<PartnerPresence>({
+    isOnline: false,
+    hasSynced: false,
+  });
+
   const channelRef = useRef<RealtimeChannel | null>(null);
   const joinStatusRef = useRef<'DISCONNECTED' | 'JOINING' | 'JOINED'>('DISCONNECTED');
-  // Store the user's intended tracking state to handle connection race conditions
-  const desiredTrackStateRef = useRef<{ userId: string; page?: string } | null>(null);
+  /** Stores the INTENTION to be tracked, survives connection phases */
+  const desiredTrackRef = useRef<{ userId: string; page?: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
     const channelName = 'aura-presence';
 
-    // Remove any stale channel
-    const allChannels = supabase.getChannels();
-    const stale = allChannels.find(ch => ch.topic === `realtime:${channelName}`);
+    // Clean up any stale channel with the same topic
+    const stale = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
     if (stale) supabase.removeChannel(stale);
 
     const channel = supabase.channel(channelName, {
@@ -56,41 +56,36 @@ export function usePresenceChannel(partnerId: string | null) {
     channel
       .on('presence', { event: 'sync' }, () => {
         if (!partnerId) return;
-        const state = channel.presenceState<PresenceState>();
-        const partnerPresence = state[partnerId];
-        const isOnline = !!(partnerPresence && partnerPresence.length > 0);
-        const page = partnerPresence?.[0]?.page;
+        const state = channel.presenceState();
+        const entries = state[partnerId];
+        const isOnline = !!(entries && entries.length > 0);
 
-        // Identity guard: only update if values actually changed
-        setPartnerState(prev => {
-          if (prev.hasSynced && prev.isOnline === isOnline && prev.page === page) {
-            return prev; // Same reference → React skips re-render
-          }
-          return { isOnline, hasSynced: true, page };
+        setPartnerPresence(prev => {
+          if (prev.hasSynced && prev.isOnline === isOnline) return prev;
+          return { isOnline, hasSynced: true };
         });
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      .on('presence', { event: 'join' }, ({ key }) => {
         if (key !== partnerId) return;
-        const page = (newPresences[0] as unknown as PresenceState)?.page;
-        setPartnerState(prev => {
+        setPartnerPresence(prev => {
           if (prev.isOnline && prev.hasSynced) return prev;
-          return { isOnline: true, hasSynced: true, page };
+          return { isOnline: true, hasSynced: true };
         });
       })
       .on('presence', { event: 'leave' }, ({ key }) => {
         if (key !== partnerId) return;
-        setPartnerState(prev => {
+        setPartnerPresence(prev => {
           if (!prev.isOnline && prev.hasSynced) return prev;
-          return { ...prev, isOnline: false, hasSynced: true };
+          return { isOnline: false, hasSynced: true };
         });
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           joinStatusRef.current = 'JOINED';
-          // Immediately apply the desired tracking state! No stale closures!
-          const desired = desiredTrackStateRef.current;
+          // Apply saved intention — eliminates the race condition
+          const desired = desiredTrackRef.current;
           if (desired) {
-            channelRef.current?.track({
+            channel.track({
               user_id: desired.userId,
               page: desired.page,
               online_at: new Date().toISOString(),
@@ -98,9 +93,7 @@ export function usePresenceChannel(partnerId: string | null) {
           }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           joinStatusRef.current = 'DISCONNECTED';
-          if (partnerId) {
-            setPartnerState(prev => ({ ...prev, isOnline: false, hasSynced: false }));
-          }
+          setPartnerPresence({ isOnline: false, hasSynced: false });
         }
       });
 
@@ -111,29 +104,29 @@ export function usePresenceChannel(partnerId: string | null) {
     };
   }, [user?.id, partnerId]);
 
-  /** STABLE reference — only uses refs */
+  /** Track self in presence channel. Stable ref — never recreated. */
   const trackMyStatus = useCallback(async (userId: string, page?: string) => {
-    desiredTrackStateRef.current = { userId, page }; // Save intention
+    desiredTrackRef.current = { userId, page }; // Save intention
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.track({
         user_id: userId, page, online_at: new Date().toISOString(),
       });
     } catch (err) {
-      console.error('Failed to track presence', err);
+      console.error('[Presence] Track failed:', err);
     }
   }, []);
 
-  /** STABLE reference — only uses refs */
+  /** Untrack self from presence channel. Stable ref — never recreated. */
   const untrackMyStatus = useCallback(async () => {
-    desiredTrackStateRef.current = null; // Clear intention
+    desiredTrackRef.current = null; // Clear intention
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.untrack();
     } catch (err) {
-      console.error('Failed to untrack presence', err);
+      console.error('[Presence] Untrack failed:', err);
     }
   }, []);
 
-  return { partnerState, trackMyStatus, untrackMyStatus };
+  return { partnerPresence, trackMyStatus, untrackMyStatus };
 }

@@ -346,7 +346,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
             <div className="flex flex-col min-w-0 flex-1">
               <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
               <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate">
-                <LastSeenStatus isOnline={partner.is_online} statusMessage={partner.status_message} lastSeen={partner.last_seen} compact />
+                <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} compact />
               </span>
             </div>
           </div>
