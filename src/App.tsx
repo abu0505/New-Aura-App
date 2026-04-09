@@ -58,27 +58,38 @@ function InnerApp({
   const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // ── DIAGNOSTIC LOG ──
+    console.log(`%c[STABILITY] ${new Date().toLocaleTimeString()}`, 'color: #9c27b0; font-weight: bold', {
+      rawIsOnline,
+      hasSynced: partnerPresence.hasSynced,
+      currentStableOnline: stableOnlineRef.current,
+    });
+
     if (rawIsOnline) {
       // ── GOING ONLINE: Instant ──
       if (offlineTimerRef.current) {
         clearTimeout(offlineTimerRef.current);
         offlineTimerRef.current = null;
+        console.log('%c[STABILITY] Offline timer CANCELLED — partner came back', 'color: #4caf50; font-weight: bold'); // DIAGNOSTIC
       }
       if (!stableOnlineRef.current) {
         stableOnlineRef.current = true;
         setStableOnline(true);
+        console.log('%c[STABILITY] → SET ONLINE ✅', 'color: #4caf50; font-weight: bold'); // DIAGNOSTIC
       }
     } else {
       // ── GOING OFFLINE: Debounced 10 seconds ──
       if (stableOnlineRef.current && !offlineTimerRef.current) {
+        console.log('%c[STABILITY] Starting 10s offline timer...', 'color: #ff9800; font-weight: bold'); // DIAGNOSTIC
         offlineTimerRef.current = setTimeout(() => {
           offlineTimerRef.current = null;
           stableOnlineRef.current = false;
           setStableOnline(false);
+          console.log('%c[STABILITY] → SET OFFLINE ❌ (10s timer fired)', 'color: #f44336; font-weight: bold'); // DIAGNOSTIC
         }, 10_000);
       }
     }
-  }, [rawIsOnline]);
+  }, [rawIsOnline, partnerPresence.hasSynced]);
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -97,22 +108,7 @@ function InnerApp({
   } : partner;
 
   const { isLocked, hasAppPin } = useAppLock();
-  const [showLockModal, setShowLockModal] = useState(false);
   const { encryptionStatus } = useAuth();
-
-  // Initial Lock Modal State - show it once on load if locked
-  useEffect(() => {
-    if (isLocked) {
-      setShowLockModal(true);
-    }
-  }, [isLocked]);
-
-  // Tab Enforcement
-  useEffect(() => {
-    if (isLocked && activeTab !== 'settings') {
-      setActiveTab('settings');
-    }
-  }, [isLocked, activeTab]);
 
   // Handle push notification setup silently
   useEffect(() => {
@@ -142,7 +138,7 @@ function InnerApp({
   useEffect(() => {
     const handleSwitchTab = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
-        if (isLocked && e.detail !== 'settings') {
+        if (isLocked) {
            // Prevent switching 
            return;
         }
@@ -154,9 +150,7 @@ function InnerApp({
   }, [isLocked]);
 
   const handleTabChangeWrapper = (tab: Tab) => {
-    if (isLocked && tab !== 'settings') {
-      // Just briefly flash the lock modal again if they try to escape settings via navbar
-      setShowLockModal(true);
+    if (isLocked) {
       return; 
     }
     setActiveTab(tab);
@@ -172,9 +166,7 @@ function InnerApp({
   return (
     <ThemeProvider>
       <div className="relative h-[100dvh] w-full overflow-hidden bg-[var(--bg-primary)] transition-colors duration-500">
-        {showLockModal && (
-          <AppLockModal onCancel={() => setShowLockModal(false)} />
-        )}
+        <AppLockModal />
       <KeySetupModal />
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} streakCount={streakCount}>
         <Suspense fallback={

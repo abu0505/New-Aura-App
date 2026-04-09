@@ -1,11 +1,7 @@
 import React, { useState } from 'react';
 import { useAppLock } from '../../contexts/AppLockContext';
 
-interface AppLockModalProps {
-  onCancel: () => void;
-}
-
-export default function AppLockModal({ onCancel }: AppLockModalProps) {
+export default function AppLockModal() {
   const { isLocked, unlockApp } = useAppLock();
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,14 +94,6 @@ export default function AppLockModal({ onCancel }: AppLockModalProps) {
               )}
             </button>
           </form>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            className="text-[10px] uppercase tracking-widest text-[#998f81]/50 hover:text-[#998f81] transition-colors mt-2"
-          >
-            Cancel & Go to Settings
-          </button>
         </div>
       </div>
     </div>

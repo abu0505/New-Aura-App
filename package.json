@@ -22,6 +22,7 @@
     "maplibre-gl": "^5.21.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-easy-crop": "^5.5.7",
     "react-map-gl": "^8.1.0",
     "react-router-dom": "^7.13.2",
     "react-zoom-pan-pinch": "^3.7.0",

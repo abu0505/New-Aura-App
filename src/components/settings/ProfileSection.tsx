@@ -6,6 +6,7 @@ import { encryptFile } from '../../lib/encryption';
 import { uploadToCloudinary } from '../../lib/cloudinary';
 import imageCompression from 'browser-image-compression';
 import EncryptedImage from '../common/EncryptedImage';
+import ImageCropperModal from '../common/ImageCropperModal';
 
 export default function ProfileSection() {
   const { user, refreshUser } = useAuth();
@@ -13,6 +14,7 @@ export default function ProfileSection() {
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name || '');
   const [uploading, setUploading] = useState(false);
+  const [selectedImageToCrop, setSelectedImageToCrop] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameUpdateInProgress = useRef(false);
 
@@ -46,6 +48,25 @@ export default function ProfileSection() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    // Create a local object URL for the cropper to display
+    const fileUrl = URL.createObjectURL(file);
+    setSelectedImageToCrop(fileUrl);
+    
+    // Clear the input so the exact same file can be selected again if cancelled
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    if (!user) return;
+
+    // Clean up
+    if (selectedImageToCrop) {
+      URL.revokeObjectURL(selectedImageToCrop);
+    }
+    setSelectedImageToCrop(null);
+
     setUploading(true);
     try {
       // 1. Compress
@@ -54,7 +75,7 @@ export default function ProfileSection() {
         maxWidthOrHeight: 800,
         useWebWorker: true,
       };
-      const compressedFile = await imageCompression(file, options);
+      const compressedFile = await imageCompression(croppedFile, options);
       
       // 2. Encrypt (Avatar is personal, but we'll encrypt it for the vault theme)
       // Actually, for avatar, we can use standard upload if we want it public,
@@ -94,6 +115,13 @@ export default function ProfileSection() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleCropCancel = () => {
+    if (selectedImageToCrop) {
+      URL.revokeObjectURL(selectedImageToCrop);
+    }
+    setSelectedImageToCrop(null);
   };
 
   return (
@@ -167,6 +195,14 @@ export default function ProfileSection() {
           </div>
         </div>
       </div>
+
+      {selectedImageToCrop && (
+        <ImageCropperModal
+          imageSrc={selectedImageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </section>
   );
 }

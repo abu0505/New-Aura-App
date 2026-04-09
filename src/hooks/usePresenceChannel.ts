@@ -10,18 +10,34 @@ export interface PartnerPresence {
   hasSynced: boolean;
 }
 
+/** Max age (ms) for a presence entry to be considered "alive". */
+const PRESENCE_STALE_MS = 60_000; // 60 seconds
+/** Heartbeat interval (ms) — refreshes online_at to stay "fresh". */
+const HEARTBEAT_MS = 25_000;
+/** Delay before attempting reconnect after CLOSED/ERROR. */
+const RECONNECT_DELAY_MS = 3_000;
+/** Max consecutive reconnect attempts before giving up. */
+const MAX_RECONNECTS = 5;
+
 /**
- * Presence Channel — WhatsApp Architecture
- * ═════════════════════════════════════════
- * Manages ONE Supabase Realtime Presence channel for the whole app.
+ * Presence Channel — WhatsApp Architecture (v4 — Production-hardened)
+ * ═══════════════════════════════════════════════════════════════════
  *
- * DESIGN PRINCIPLES:
- *   1. Reports RAW presence state — no debounce here
- *   2. `desiredTrackRef` solves the connection race condition:
- *      if trackMyStatus() is called before WebSocket is JOINED,
- *      the intention is saved and auto-applied on SUBSCRIBED
- *   3. Callbacks use useCallback([]) for stable references —
- *      prevents parent effects from re-firing
+ * BUGS FIXED:
+ *   1. Stale CLOSED callbacks — gen counter incremented in cleanup BEFORE
+ *      removeChannel(), so synchronous CLOSED from old channels is ignored.
+ *
+ *   2. Phantom/stuck entries — presence entries with online_at older than
+ *      60s are filtered out. Combined with 25s heartbeat, only genuinely
+ *      active sessions count as "online".
+ *
+ *   3. Auto-reconnect — when the ACTIVE channel gets CLOSED/CHANNEL_ERROR
+ *      (WebSocket drop, server restart), we auto-reconnect after 3s.
+ *      Max 5 retries, counter resets on successful SUBSCRIBED.
+ *      Without this, a single WebSocket drop caused permanent "Last seen".
+ *
+ *   4. Heartbeat (25s) — re-tracks to survive silent drops + keeps
+ *      online_at fresh for the partner's stale-entry filter.
  *
  * EGRESS: 0 bytes — presence runs over WebSocket, not REST
  */
@@ -36,13 +52,22 @@ export function usePresenceChannel(partnerId: string | null) {
   const joinStatusRef = useRef<'DISCONNECTED' | 'JOINING' | 'JOINED'>('DISCONNECTED');
   /** Stores the INTENTION to be tracked, survives connection phases */
   const desiredTrackRef = useRef<{ userId: string; page?: string } | null>(null);
+  /** Generation counter — prevents stale callbacks from old channels */
+  const channelGenRef = useRef(0);
+  /** Triggers useEffect re-run to reconnect after CLOSED/ERROR */
+  const [reconnectTrigger, setReconnectTrigger] = useState(0);
+  /** Tracks consecutive reconnect attempts */
+  const reconnectCountRef = useRef(0);
+  /** Timer for delayed reconnect */
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user) return;
 
     const channelName = 'aura-presence';
+    const gen = ++channelGenRef.current;
 
-    // Clean up any stale channel with the same topic
+    // Clean up any stale channel with the same topic (e.g. from HMR)
     const stale = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
     if (stale) supabase.removeChannel(stale);
 
@@ -53,38 +78,95 @@ export function usePresenceChannel(partnerId: string | null) {
     channelRef.current = channel;
     joinStatusRef.current = 'JOINING';
 
+    /**
+     * Filters out phantom/stale presence entries.
+     * An entry is "alive" if its `online_at` is within the last 60 seconds.
+     */
+    const getFreshEntryCount = (entries: any[] | undefined): number => {
+      if (!entries || entries.length === 0) return 0;
+      const now = Date.now();
+      return entries.filter(e => {
+        const onlineAt = e.online_at ? new Date(e.online_at).getTime() : 0;
+        return (now - onlineAt) < PRESENCE_STALE_MS;
+      }).length;
+    };
+
     channel
       .on('presence', { event: 'sync' }, () => {
+        if (gen !== channelGenRef.current) return;
         if (!partnerId) return;
         const state = channel.presenceState();
-        const entries = state[partnerId];
-        const isOnline = !!(entries && entries.length > 0);
+        const entries = state[partnerId] as any[] | undefined;
+        const freshCount = getFreshEntryCount(entries);
+        const isOnline = freshCount > 0;
+
+        // ── DIAGNOSTIC LOG ──
+        console.log(`%c[PRESENCE:SYNC] ${new Date().toLocaleTimeString()}`, 'color: #00bcd4; font-weight: bold', {
+          gen,
+          partnerOnline: isOnline,
+          totalEntries: entries?.length ?? 0,
+          freshEntries: freshCount,
+          allUsersInChannel: Object.keys(state),
+        });
 
         setPartnerPresence(prev => {
           if (prev.hasSynced && prev.isOnline === isOnline) return prev;
           return { isOnline, hasSynced: true };
         });
       })
-      .on('presence', { event: 'join' }, ({ key }) => {
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        if (gen !== channelGenRef.current) return;
+
+        console.log(`%c[PRESENCE:JOIN] ${new Date().toLocaleTimeString()}`, 'color: #4caf50; font-weight: bold', {
+          gen, joinedKey: key, isPartner: key === partnerId, newPresences,
+        });
+
         if (key !== partnerId) return;
         setPartnerPresence(prev => {
           if (prev.isOnline && prev.hasSynced) return prev;
           return { isOnline: true, hasSynced: true };
         });
       })
-      .on('presence', { event: 'leave' }, ({ key }) => {
-        if (key !== partnerId) return;
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        if (gen !== channelGenRef.current) return;
+
+        if (key !== partnerId) {
+          console.log(`%c[PRESENCE:LEAVE] ${new Date().toLocaleTimeString()}`, 'color: #f44336; font-weight: bold', {
+            gen, leftKey: key, isPartner: false, leftPresences,
+          });
+          return;
+        }
+
+        // Partner left — check remaining entries for freshness
+        const state = channel.presenceState();
+        const remaining = state[partnerId] as any[] | undefined;
+        const freshCount = getFreshEntryCount(remaining);
+        const isOnline = freshCount > 0;
+
+        console.log(`%c[PRESENCE:LEAVE] ${new Date().toLocaleTimeString()}`, 'color: #f44336; font-weight: bold', {
+          gen, leftKey: key, isPartner: true, leftPresences,
+          remainingTotal: remaining?.length ?? 0,
+          remainingFresh: freshCount,
+          resultIsOnline: isOnline,
+        });
+
         setPartnerPresence(prev => {
-          if (!prev.isOnline && prev.hasSynced) return prev;
-          return { isOnline: false, hasSynced: true };
+          if (prev.isOnline === isOnline && prev.hasSynced) return prev;
+          return { isOnline, hasSynced: true };
         });
       })
       .subscribe((status) => {
+        if (gen !== channelGenRef.current) return;
+
+        console.log(`%c[PRESENCE:CHANNEL_STATUS] ${new Date().toLocaleTimeString()}`, 'color: #ff9800; font-weight: bold', { gen, status });
+
         if (status === 'SUBSCRIBED') {
           joinStatusRef.current = 'JOINED';
-          // Apply saved intention — eliminates the race condition
+          reconnectCountRef.current = 0; // Reset reconnect counter on success
+
           const desired = desiredTrackRef.current;
           if (desired) {
+            console.log(`[PRESENCE] Gen ${gen}: Re-tracking after SUBSCRIBED`);
             channel.track({
               user_id: desired.userId,
               page: desired.page,
@@ -94,19 +176,51 @@ export function usePresenceChannel(partnerId: string | null) {
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           joinStatusRef.current = 'DISCONNECTED';
           setPartnerPresence({ isOnline: false, hasSynced: false });
+
+          // ── Auto-reconnect ──
+          if (reconnectCountRef.current < MAX_RECONNECTS) {
+            reconnectCountRef.current++;
+            console.log(`%c[PRESENCE] Gen ${gen}: ${status} — reconnecting in ${RECONNECT_DELAY_MS / 1000}s (attempt ${reconnectCountRef.current}/${MAX_RECONNECTS})`, 'color: #ff9800; font-weight: bold');
+            reconnectTimerRef.current = setTimeout(() => {
+              reconnectTimerRef.current = null;
+              setReconnectTrigger(prev => prev + 1);
+            }, RECONNECT_DELAY_MS);
+          } else {
+            console.log(`%c[PRESENCE] Gen ${gen}: ${status} — max reconnects (${MAX_RECONNECTS}) reached, giving up`, 'color: #f44336; font-weight: bold');
+          }
         }
       });
 
+    // ── Heartbeat: re-track every 25s ──
+    const heartbeat = setInterval(() => {
+      if (gen !== channelGenRef.current) return;
+      const desired = desiredTrackRef.current;
+      if (!desired || !channelRef.current || joinStatusRef.current !== 'JOINED') return;
+      channelRef.current.track({
+        user_id: desired.userId,
+        page: desired.page,
+        online_at: new Date().toISOString(),
+      }).catch(() => {});
+    }, HEARTBEAT_MS);
+
     return () => {
+      // Increment gen BEFORE removeChannel — prevents synchronous CLOSED
+      // callback from passing the stale guard
+      channelGenRef.current++;
+      clearInterval(heartbeat);
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
       if (channelRef.current) supabase.removeChannel(channelRef.current);
       channelRef.current = null;
       joinStatusRef.current = 'DISCONNECTED';
     };
-  }, [user?.id, partnerId]);
+  }, [user?.id, partnerId, reconnectTrigger]);
 
   /** Track self in presence channel. Stable ref — never recreated. */
   const trackMyStatus = useCallback(async (userId: string, page?: string) => {
-    desiredTrackRef.current = { userId, page }; // Save intention
+    desiredTrackRef.current = { userId, page };
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.track({
@@ -119,7 +233,7 @@ export function usePresenceChannel(partnerId: string | null) {
 
   /** Untrack self from presence channel. Stable ref — never recreated. */
   const untrackMyStatus = useCallback(async () => {
-    desiredTrackRef.current = null; // Clear intention
+    desiredTrackRef.current = null;
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.untrack();
