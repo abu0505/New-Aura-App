@@ -28,11 +28,13 @@ export interface PartnerState {
  * CRITICAL: trackMyStatus / untrackMyStatus use useCallback([])
  * for stable references — prevents useOnlineStatus effect re-fires.
  */
-export function usePresenceChannel(partnerId: string | null, currentPage?: string) {
-  const { user, encryptionStatus } = useAuth();
+export function usePresenceChannel(partnerId: string | null) {
+  const { user } = useAuth();
   const [partnerState, setPartnerState] = useState<PartnerState>({ isOnline: false, hasSynced: false });
   const channelRef = useRef<RealtimeChannel | null>(null);
   const joinStatusRef = useRef<'DISCONNECTED' | 'JOINING' | 'JOINED'>('DISCONNECTED');
+  // Store the user's intended tracking state to handle connection race conditions
+  const desiredTrackStateRef = useRef<{ userId: string; page?: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -85,10 +87,12 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           joinStatusRef.current = 'JOINED';
-          if (encryptionStatus === 'ready' && document.visibilityState === 'visible') {
+          // Immediately apply the desired tracking state! No stale closures!
+          const desired = desiredTrackStateRef.current;
+          if (desired) {
             channelRef.current?.track({
-              user_id: user.id,
-              page: currentPage,
+              user_id: desired.userId,
+              page: desired.page,
               online_at: new Date().toISOString(),
             }).catch(() => {});
           }
@@ -109,6 +113,7 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
 
   /** STABLE reference — only uses refs */
   const trackMyStatus = useCallback(async (userId: string, page?: string) => {
+    desiredTrackStateRef.current = { userId, page }; // Save intention
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.track({
@@ -121,6 +126,7 @@ export function usePresenceChannel(partnerId: string | null, currentPage?: strin
 
   /** STABLE reference — only uses refs */
   const untrackMyStatus = useCallback(async () => {
+    desiredTrackStateRef.current = null; // Clear intention
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.untrack();

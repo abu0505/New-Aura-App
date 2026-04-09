@@ -30,7 +30,7 @@ function InnerApp({
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   
   // Setup Realtime Presence — SINGLE instance for the entire app
-  const { trackMyStatus, untrackMyStatus, partnerState } = usePresenceChannel(partner?.id || null, activeTab);
+  const { trackMyStatus, untrackMyStatus, partnerState } = usePresenceChannel(partner?.id || null);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
 
   // ═══ Online Status — Stability Filter ═══
