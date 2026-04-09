@@ -69,6 +69,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   const previousScrollHeightRef = useRef<number>(0);
   const previousMessageCountRef = useRef<number>(0);
   const isInitialMount = useRef(true);
+  const isBottomLocked = useRef(true);
 
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
 
@@ -112,7 +113,21 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
 
     if (isInitialMount.current) {
       if (!loading && messages.length > 0) {
+        // Immediate scroll
         container.scrollTop = container.scrollHeight;
+        
+        // Secondary scroll via requestAnimationFrame
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
+
+        // Tertiary scroll via timeout
+        setTimeout(() => {
+          if (isBottomLocked.current) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }, 300);
+
         isInitialMount.current = false;
         previousMessageCountRef.current = messages.length;
       }
@@ -172,6 +187,44 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
+  // Initial landing "Bottom Lock": Keep anchored to bottom during first 3 seconds
+  // while media and messages are settling/decrypting.
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const detectManualScroll = () => {
+      if (!isBottomLocked.current) return;
+      const { scrollHeight, scrollTop, clientHeight } = container;
+      if (scrollHeight - scrollTop - clientHeight > 100) {
+        isBottomLocked.current = false;
+      }
+    };
+
+    container.addEventListener('scroll', detectManualScroll, { passive: true });
+    
+    // ResizeObserver monitors height changes inside the container (e.g. images loading)
+    const observer = new ResizeObserver(() => {
+      if (isBottomLocked.current) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+
+    if (container.firstElementChild) {
+      observer.observe(container.firstElementChild);
+    }
+
+    const timer = setTimeout(() => {
+      isBottomLocked.current = false;
+    }, 3000);
+
+    return () => {
+      container.removeEventListener('scroll', detectManualScroll);
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
 
   const handleSend = (text: string, media?: any, replyToId?: string) => {
     sendMessage(text, media, replyToId);
@@ -610,6 +663,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
               replyingTo={replyingTo}
               onCancelReply={() => setReplyingTo(null)}
               isActive={isActive}
+              partnerPublicKey={partner.public_key}
             />
           </div>
         )}

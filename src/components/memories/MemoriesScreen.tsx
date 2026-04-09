@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,7 +34,6 @@ export default function MemoriesScreen() {
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string } | null>(null);
-  const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 12;
 
@@ -48,6 +47,9 @@ export default function MemoriesScreen() {
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generatedUrlsRef = useRef<Set<string>>(new Set());
+  // Pagination refs – must be declared before any useEffect that touches them.
+  const pageRef = useRef(1);          // tracks current page synchronously
+  const isFetchingMoreRef = useRef(false); // prevents concurrent fetches
 
   // ── Phase 4: Pinch-to-Zoom grid density ─────────────────────────────
   type GridDensity = 2 | 3 | 4;
@@ -71,6 +73,10 @@ export default function MemoriesScreen() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Reset pagination state on user/partner change.
+    pageRef.current = 1;
+    setHasMore(true);
+    isFetchingMoreRef.current = false;
     fetchMemories(1);
     fetchThrowbacks();
   }, [user?.id, partner?.id]);
@@ -169,7 +175,8 @@ export default function MemoriesScreen() {
     pinchState.current.active = false;
   };
 
-  const fetchMemories = async (pageNumber = 1) => {
+
+  const fetchMemories = useCallback(async (pageNumber = 1) => {
     if (!user || !partner) return;
     if (pageNumber === 1) setLoading(true);
     try {
@@ -194,13 +201,17 @@ export default function MemoriesScreen() {
         });
       }
 
+      // Stop paging if we got fewer rows than the limit.
       setHasMore(newMemories.length === LIMIT);
     } catch (err) {
       console.error('Error fetching memories:', err);
+      // Stop infinite-scroll retries when the server says the range is
+      // out of bounds (PGRST103 / 416 Range Not Satisfiable).
+      setHasMore(false);
     } finally {
       if (pageNumber === 1) setLoading(false);
     }
-  };
+  }, [user?.id, partner?.id]);
 
   const fetchThrowbacks = async () => {
     if (!user || !partner) return;
@@ -224,17 +235,24 @@ export default function MemoriesScreen() {
     }
   };
 
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchMemories(nextPage);
-  };
+
+  const loadMore = useCallback(() => {
+    // Guard: skip if a fetch is already in-flight or there are no more pages.
+    if (isFetchingMoreRef.current || !hasMore) return;
+    isFetchingMoreRef.current = true;
+    // Compute next page from ref (synchronous, no state-updater side-effects).
+    const nextPage = pageRef.current + 1;
+    pageRef.current = nextPage;
+    fetchMemories(nextPage).finally(() => {
+      isFetchingMoreRef.current = false;
+    });
+  }, [hasMore, fetchMemories]);
 
   // ── Infinite Scroll Observer ──────────────────────────────────────────
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) {
+        if (entries[0].isIntersecting) {
           loadMore();
         }
       },
@@ -245,7 +263,7 @@ export default function MemoriesScreen() {
     if (sentinel) observer.observe(sentinel);
 
     return () => observer.disconnect();
-  }, [hasMore, loading, loadMore]);
+  }, [loadMore]);
 
   const decryptMedia = async (memory: MemoryItem) => {
     if (memory.decryptedUrl || !partner?.public_key || !memory.media_url || !memory.media_key || !memory.media_nonce) return;
@@ -278,20 +296,30 @@ export default function MemoriesScreen() {
   });
 
   const groupedMemories = useMemo(() => {
-    const groups: { dateLabel: string; items: MemoryItem[] }[] = [];
-    let currentGroup: { dateLabel: string; items: MemoryItem[] } | null = null;
-    
+    // Use a Map to accumulate items per date so that same-date items from
+    // different pagination batches are always merged into one group.
+    const map = new Map<string, MemoryItem[]>();
+    const order: string[] = []; // preserves insertion order of unique dates
+
     filteredMemories.forEach(memory => {
       const d = new Date(memory.created_at);
-      const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
-      
-      if (!currentGroup || currentGroup.dateLabel !== dateLabel) {
-        currentGroup = { dateLabel, items: [] };
-        groups.push(currentGroup);
+      // Normalise to a plain date key (YYYY-MM-DD) for accurate grouping,
+      // but display a human-friendly label.
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+        order.push(dateKey);
       }
-      currentGroup.items.push(memory);
+      map.get(dateKey)!.push(memory);
     });
-    return groups;
+
+    return order.map(dateKey => {
+      const items = map.get(dateKey)!;
+      // Generate the human label from the first item's date
+      const d = new Date(items[0].created_at);
+      const dateLabel = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+      return { dateKey, dateLabel, items };
+    });
   }, [filteredMemories]);
 
   // Selection handlers
@@ -499,7 +527,7 @@ export default function MemoriesScreen() {
               style={{ touchAction: 'pan-y' }}
             >
               {groupedMemories.map(group => (
-                <div key={group.dateLabel} className="flex flex-col gap-2">
+                <div key={group.dateKey} className="flex flex-col gap-2">
                   <h2 className="sticky top-[-1rem] z-10 py-4 font-bold text-sm text-white/80 bg-aura-bg-elevated/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] -mx-4 px-4">
                     {group.dateLabel}
                   </h2>

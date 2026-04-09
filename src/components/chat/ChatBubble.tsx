@@ -40,6 +40,7 @@ function ChatBubble({
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(null);
+  const [repliedMediaUrl, setRepliedMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
   const [isEditing, setIsEditing] = useState(false);
@@ -49,6 +50,7 @@ function ChatBubble({
   const bubbleRef = useRef<HTMLDivElement>(null);
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const repliedBlobUrlRef = useRef<string | null>(null);
   const [bubbleRect, setBubbleRect] = useState<{ top: number; bottom: number } | null>(null);
 
   const swipeX = useMotionValue(0);
@@ -97,6 +99,42 @@ function ChatBubble({
     message.media_nonce, 
     message.type, 
     message.sender_public_key
+  ]);
+  
+  // Decrypt media for replied messages
+  useEffect(() => {
+    if (repliedMessage?.media_url && repliedMessage?.media_key && repliedMessage?.media_nonce && partnerPublicKey && !repliedMessage?.is_deleted_for_everyone) {
+      getDecryptedBlob(
+        repliedMessage.media_url, repliedMessage.media_key, repliedMessage.media_nonce, 
+        partnerPublicKey,
+        repliedMessage.sender_public_key,
+        undefined,
+        repliedMessage.type
+      )
+        .then(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            repliedBlobUrlRef.current = url;
+            setRepliedMediaUrl(url);
+          }
+        });
+    }
+    return () => {
+      if (repliedBlobUrlRef.current) {
+        URL.revokeObjectURL(repliedBlobUrlRef.current);
+        repliedBlobUrlRef.current = null;
+      }
+    };
+  }, [
+    repliedMessage?.id,
+    partnerPublicKey,
+    repliedMessage?.is_deleted_for_everyone,
+    repliedMessage?.media_url,
+    repliedMessage?.media_key,
+    repliedMessage?.media_nonce,
+    repliedMessage?.type,
+    repliedMessage?.sender_public_key,
+    getDecryptedBlob
   ]);
 
   useEffect(() => {
@@ -331,7 +369,7 @@ function ChatBubble({
   return (
     <div 
       ref={bubbleRef}
-      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group ${interactionType !== 'none' ? 'z-[100] overflow-visible' : 'md:overflow-visible z-10'}`}
+      className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group z-10 overflow-visible`}
     >
       {/* Reply Icon Indicator for Swipe (Mobile) */}
       <motion.div 
@@ -541,8 +579,17 @@ function ChatBubble({
               <span className="material-symbols-outlined text-[10px]">reply</span>
               {repliedMessage.is_mine ? 'You' : 'Partner'}
             </div>
-            <div className="text-xs truncate opacity-80 max-w-[200px]">
-              {repliedMessage.decrypted_content || (repliedMessage.type !== 'text' ? `[${repliedMessage.type}]` : 'Message')}
+            <div className="text-xs truncate max-w-[200px] flex items-center gap-2">
+              {(repliedMessage.type === 'image' || repliedMessage.type === 'video') ? (
+                repliedMediaUrl ? (
+                  <img src={repliedMediaUrl} alt="media preview" className="w-20 h-20 rounded shadow-sm object-cover flex-shrink-0" />
+                ) : (
+                  <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">image</span>
+                )
+              ) : null}
+              <span className="truncate">
+                {repliedMessage.decrypted_content || (repliedMessage.type !== 'text' ? (repliedMessage.type === 'audio' ? 'Voice Message' : '') : 'Message')}
+              </span>
             </div>
           </div>
         )}
@@ -556,7 +603,7 @@ function ChatBubble({
         {message.reaction && (
           <button 
             onClick={(e) => { e.stopPropagation(); onReact?.(message.id, null); }}
-            className={`absolute -bottom-3 ${isMine ? 'left-4' : 'right-4'} bg-aura-bg-elevated border border-primary/40 rounded-full px-2.5 py-1 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30 transition-all hover:scale-110 active:scale-90 hover:bg-aura-bg-elevated/80 flex items-center justify-center`}
+            className={`absolute -bottom-[15px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated border border-primary/40 rounded-full px-2.5 py-1 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30 transition-all hover:scale-110 active:scale-90 hover:bg-aura-bg-elevated/80 flex items-center justify-center`}
             title="Remove reaction"
           >
             {message.reaction}

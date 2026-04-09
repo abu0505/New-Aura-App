@@ -78,37 +78,32 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     if (row.is_deleted_for_everyone) {
       decryptedText = 'This message was deleted';
-    } else if (partnerKey && myKeyPair) {
-      if (row.type === 'text' || row.type === 'sticker' || !row.type) {
-        try {
-          // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
-          // For a message I SENT:    "theirPublicKey" slot = Partner's public key (partnerKey)
-          // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
-          const decryptionKey = isMine
-            ? partnerKey!
-            : (row.sender_public_key || partnerKey!);
+    } else if (partnerKey && myKeyPair && row.encrypted_content && row.nonce) {
+      try {
+        // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
+        const decryptionKey = isMine
+          ? partnerKey!
+          : (row.sender_public_key || partnerKey!);
 
-          // For ALL messages, we should try the current partnerKey and all historical partner keys as fallbacks.
-          const fallbackKeys = (keyHistory || [])
-            .filter(k => k !== decryptionKey)
-            .map(k => decodeBase64(k));
+        const fallbackKeys = (keyHistory || [])
+          .filter(k => k !== decryptionKey)
+          .map(k => decodeBase64(k));
 
-          const result = decryptMessageWithFallback(
-            row.encrypted_content,
-            row.nonce,
-            decodeBase64(decryptionKey),
-            myKeyPair.secretKey,
-            fallbackKeys
-          );
-          decryptedText = result;
-        } catch (e) {
-          console.error('Decryption failed for message', row.id, e);
-          decryptedText = '⚠️ Could not decrypt this message';
-          decryptionError = true;
-        }
-      } else {
-        decryptedText = ''; // Media messages might not have text content
+        const result = decryptMessageWithFallback(
+          row.encrypted_content,
+          row.nonce,
+          decodeBase64(decryptionKey),
+          myKeyPair.secretKey,
+          fallbackKeys
+        );
+        decryptedText = result;
+      } catch (e) {
+        console.error('Decryption failed for message', row.id, e);
+        decryptedText = '⚠️ Could not decrypt this message';
+        decryptionError = true;
       }
+    } else if (partnerKey && myKeyPair) {
+      decryptedText = ''; // No content to decrypt (e.g. media without caption)
     } else {
       decryptedText = '[Awaiting Keys]';
     }

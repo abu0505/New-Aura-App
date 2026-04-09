@@ -63,6 +63,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   const previousScrollHeightRef = useRef<number>(0);
   const previousMessageCountRef = useRef<number>(0);
   const isInitialMount = useRef(true);
+  const isBottomLocked = useRef(true);
   
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
 
@@ -72,7 +73,21 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
 
     if (isInitialMount.current) {
       if (!loading && messages.length > 0) {
+        // Immediate scroll
         container.scrollTop = container.scrollHeight;
+        
+        // Secondary scroll via requestAnimationFrame
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
+
+        // Tertiary scroll via timeout (catch images that decode quickly)
+        setTimeout(() => {
+          if (isBottomLocked.current) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }, 300);
+
         isInitialMount.current = false;
         previousMessageCountRef.current = messages.length;
       }
@@ -133,6 +148,48 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   // Only run once after initial load completes
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
+
+  // Initial landing "Bottom Lock": Keep anchored to bottom during first 3 seconds
+  // while media and messages are settling/decrypting.
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Detect if user scrolls up manually — if they do, unlock the bottom anchor
+    const detectManualScroll = () => {
+      if (!isBottomLocked.current) return;
+      const { scrollHeight, scrollTop, clientHeight } = container;
+      // Allow some slack (100px)
+      if (scrollHeight - scrollTop - clientHeight > 100) {
+        isBottomLocked.current = false;
+      }
+    };
+
+    container.addEventListener('scroll', detectManualScroll, { passive: true });
+    
+    // ResizeObserver monitors height changes inside the container (e.g. images loading)
+    const observer = new ResizeObserver(() => {
+      if (isBottomLocked.current) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+
+    // Observe the content wrapper (first child of scroll container)
+    if (container.firstElementChild) {
+      observer.observe(container.firstElementChild);
+    }
+
+    // Auto-release lock after 3 seconds anyway to be safe
+    const timer = setTimeout(() => {
+      isBottomLocked.current = false;
+    }, 3000);
+
+    return () => {
+      container.removeEventListener('scroll', detectManualScroll);
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
 
   const handleSend = (text: string, media?: any, replyToId?: string) => {
     sendMessage(text, media, replyToId);
@@ -576,6 +633,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                 replyingTo={replyingTo}
                 onCancelReply={() => setReplyingTo(null)}
                 isActive={isActive}
+                partnerPublicKey={partner.public_key}
               />
             </div>
           )}

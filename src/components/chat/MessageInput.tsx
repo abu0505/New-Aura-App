@@ -21,9 +21,10 @@ interface MessageInputProps {
   replyingTo?: ChatMessage | null;
   onCancelReply?: () => void;
   isActive?: boolean;
+  partnerPublicKey?: string | null;
 }
 
-const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive }, ref) => {
+const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey }, ref) => {
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -33,10 +34,12 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, setPendingCaption] = useState('');
+  const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { processAndUpload } = useMedia();
+  const replyBlobUrlRef = useRef<string | null>(null);
+  const { processAndUpload, getDecryptedBlob } = useMedia();
 
   useImperativeHandle(ref, () => ({
     handleDroppedFiles: (files: File[]) => {
@@ -81,6 +84,43 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
       return () => clearTimeout(timer);
     }
   }, [replyingTo]);
+  
+  // Decrypt media for reply preview
+  useEffect(() => {
+    if (replyingTo?.media_url && replyingTo?.media_key && replyingTo?.media_nonce && partnerPublicKey && !replyingTo?.is_deleted_for_everyone) {
+      getDecryptedBlob(
+        replyingTo.media_url, replyingTo.media_key, replyingTo.media_nonce, 
+        partnerPublicKey,
+        replyingTo.sender_public_key,
+        undefined,
+        replyingTo.type
+      )
+        .then(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            replyBlobUrlRef.current = url;
+            setReplyMediaUrl(url);
+          }
+        });
+    }
+    return () => {
+      if (replyBlobUrlRef.current) {
+        URL.revokeObjectURL(replyBlobUrlRef.current);
+        replyBlobUrlRef.current = null;
+      }
+      setReplyMediaUrl(null);
+    };
+  }, [
+    replyingTo?.id,
+    partnerPublicKey,
+    replyingTo?.is_deleted_for_everyone,
+    replyingTo?.media_url,
+    replyingTo?.media_key,
+    replyingTo?.media_nonce,
+    replyingTo?.type,
+    replyingTo?.sender_public_key,
+    getDecryptedBlob
+  ]);
 
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -299,8 +339,17 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
                   <span className="material-symbols-outlined text-[14px]">reply</span>
                   Replying to {replyingTo.is_mine ? 'Yourself' : 'Partner'}
                 </span>
-                <span className="text-aura-text-primary/80 text-sm truncate font-medium">
-                  {replyingTo.decrypted_content || (replyingTo.type !== 'text' ? `[${replyingTo.type}]` : 'Message...')}
+                <span className="text-aura-text-primary/80 text-sm truncate font-medium flex items-center gap-2">
+                  {(replyingTo.type === 'image' || replyingTo.type === 'video') ? (
+                    replyMediaUrl ? (
+                      <img src={replyMediaUrl} alt="media preview" className="w-20 h-20 rounded shadow-md object-cover flex-shrink-0" />
+                    ) : (
+                      <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">image</span>
+                    )
+                  ) : null}
+                  <span className="truncate">
+                    {replyingTo.decrypted_content || (replyingTo.type !== 'text' ? (replyingTo.type === 'audio' ? 'Voice Message' : '') : 'Message...')}
+                  </span>
                 </span>
               </div>
               <button 

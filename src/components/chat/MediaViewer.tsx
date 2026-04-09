@@ -170,7 +170,14 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                 <img
                   src={currentMedia.url}
                   alt="Secure Media"
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', userSelect: 'none' }}
+                  style={{ 
+                    maxWidth: '99%', 
+                    maxHeight: '99%', 
+                    objectFit: 'contain', 
+                    userSelect: 'none',
+                    borderRadius: '.5rem',
+                    boxShadow: '0 25px 60px rgba(0,0,0,0.8)'
+                  }}
                   draggable={false}
                 />
               </TransformComponent>
@@ -180,7 +187,14 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               src={currentMedia.url}
               controls
               autoPlay
-              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '0.75rem', background: 'black', boxShadow: '0 25px 60px rgba(0,0,0,0.8)' }}
+              style={{ 
+                maxWidth: '99%', 
+                maxHeight: '99%', 
+                objectFit: 'contain', 
+                borderRadius: '.5rem', 
+                background: 'black', 
+                boxShadow: '0 25px 60px rgba(0,0,0,0.8)' 
+              }}
             />
           )}
         </motion.div>
