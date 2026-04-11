@@ -10,34 +10,44 @@ export interface PartnerPresence {
   hasSynced: boolean;
 }
 
-/** Max age (ms) for a presence entry to be considered "alive". */
-const PRESENCE_STALE_MS = 60_000; // 60 seconds
-/** Heartbeat interval (ms) — refreshes online_at to stay "fresh". */
+/**
+ * Max age (ms) for a presence entry to be considered "alive".
+ * Heartbeat fires every 25s → entry refreshed every 25s when partner is active.
+ * 45s = heartbeat (25s) + buffer (20s for network/throttling).
+ */
+const PRESENCE_STALE_MS = 45_000;
+/** Heartbeat interval — refreshes our own `online_at` so partner's stale filter sees us as alive. */
 const HEARTBEAT_MS = 25_000;
-/** Delay before attempting reconnect after CLOSED/ERROR. */
+/**
+ * Periodic scanner — re-evaluates partner's entries for staleness.
+ * Without this, stale entries sit forever if no new SYNC/JOIN/LEAVE fires.
+ * This is THE critical safety net for detecting offline when LEAVE doesn't fire.
+ */
+const STALE_CHECK_MS = 15_000;
+/** Delay before auto-reconnect after CLOSED/ERROR. */
 const RECONNECT_DELAY_MS = 3_000;
-/** Max consecutive reconnect attempts before giving up. */
+/** Max consecutive reconnect attempts. */
 const MAX_RECONNECTS = 5;
 
 /**
- * Presence Channel — WhatsApp Architecture (v4 — Production-hardened)
- * ═══════════════════════════════════════════════════════════════════
+ * Presence Channel — WhatsApp Architecture (v5 — Bulletproof)
+ * ════════════════════════════════════════════════════════════
  *
- * BUGS FIXED:
- *   1. Stale CLOSED callbacks — gen counter incremented in cleanup BEFORE
- *      removeChannel(), so synchronous CLOSED from old channels is ignored.
+ * ARCHITECTURE:
+ *   Primary detection:  SYNC/JOIN/LEAVE events from Supabase Presence
+ *   Stale entry filter: Entries with `online_at` older than 45s are ignored
+ *   Periodic scanner:   Every 15s, re-evaluate entries even if no events fire
+ *   Heartbeat:          Every 25s, re-track ourselves to keep our `online_at` fresh
+ *   Auto-reconnect:     On CLOSED/ERROR, reconnect after 3s (max 5 retries)
+ *   Generation guard:   All callbacks ignore events from old/stale channels
  *
- *   2. Phantom/stuck entries — presence entries with online_at older than
- *      60s are filtered out. Combined with 25s heartbeat, only genuinely
- *      active sessions count as "online".
- *
- *   3. Auto-reconnect — when the ACTIVE channel gets CLOSED/CHANNEL_ERROR
- *      (WebSocket drop, server restart), we auto-reconnect after 3s.
- *      Max 5 retries, counter resets on successful SUBSCRIBED.
- *      Without this, a single WebSocket drop caused permanent "Last seen".
- *
- *   4. Heartbeat (25s) — re-tracks to survive silent drops + keeps
- *      online_at fresh for the partner's stale-entry filter.
+ * WHY PERIODIC SCANNER:
+ *   When partner closes their app, the LEAVE event SHOULD fire.
+ *   But sometimes it doesn't (network drop, browser killed, phantom entries
+ *   from old connections). The stale filter marks old entries as dead, but
+ *   it only runs inside SYNC/JOIN/LEAVE handlers. If no events fire,
+ *   stale entries persist forever. The periodic scanner fixes this by
+ *   re-checking presenceState() every 15s independently of events.
  *
  * EGRESS: 0 bytes — presence runs over WebSocket, not REST
  */
@@ -50,15 +60,10 @@ export function usePresenceChannel(partnerId: string | null) {
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const joinStatusRef = useRef<'DISCONNECTED' | 'JOINING' | 'JOINED'>('DISCONNECTED');
-  /** Stores the INTENTION to be tracked, survives connection phases */
   const desiredTrackRef = useRef<{ userId: string; page?: string } | null>(null);
-  /** Generation counter — prevents stale callbacks from old channels */
   const channelGenRef = useRef(0);
-  /** Triggers useEffect re-run to reconnect after CLOSED/ERROR */
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
-  /** Tracks consecutive reconnect attempts */
   const reconnectCountRef = useRef(0);
-  /** Timer for delayed reconnect */
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -67,9 +72,14 @@ export function usePresenceChannel(partnerId: string | null) {
     const channelName = 'aura-presence';
     const gen = ++channelGenRef.current;
 
-    // Clean up any stale channel with the same topic (e.g. from HMR)
-    const stale = supabase.getChannels().find(ch => ch.topic === `realtime:${channelName}`);
-    if (stale) supabase.removeChannel(stale);
+    // ── Remove ALL stale channels (not just first) ──
+    // Previous bug: `find()` only removed one. If multiple channels existed
+    // from HMR/strict mode/effect re-runs, the rest leaked and created
+    // phantom presence entries (entries growing: 1→2→3).
+    const staleChannels = supabase.getChannels().filter(
+      ch => ch.topic === `realtime:${channelName}`
+    );
+    staleChannels.forEach(ch => supabase.removeChannel(ch));
 
     const channel = supabase.channel(channelName, {
       config: { presence: { key: user.id } },
@@ -80,7 +90,7 @@ export function usePresenceChannel(partnerId: string | null) {
 
     /**
      * Filters out phantom/stale presence entries.
-     * An entry is "alive" if its `online_at` is within the last 60 seconds.
+     * Returns count of entries whose `online_at` is within PRESENCE_STALE_MS.
      */
     const getFreshEntryCount = (entries: any[] | undefined): number => {
       if (!entries || entries.length === 0) return 0;
@@ -100,7 +110,6 @@ export function usePresenceChannel(partnerId: string | null) {
         const freshCount = getFreshEntryCount(entries);
         const isOnline = freshCount > 0;
 
-        // ── DIAGNOSTIC LOG ──
         console.log(`%c[PRESENCE:SYNC] ${new Date().toLocaleTimeString()}`, 'color: #00bcd4; font-weight: bold', {
           gen,
           partnerOnline: isOnline,
@@ -137,7 +146,6 @@ export function usePresenceChannel(partnerId: string | null) {
           return;
         }
 
-        // Partner left — check remaining entries for freshness
         const state = channel.presenceState();
         const remaining = state[partnerId] as any[] | undefined;
         const freshCount = getFreshEntryCount(remaining);
@@ -162,11 +170,10 @@ export function usePresenceChannel(partnerId: string | null) {
 
         if (status === 'SUBSCRIBED') {
           joinStatusRef.current = 'JOINED';
-          reconnectCountRef.current = 0; // Reset reconnect counter on success
+          reconnectCountRef.current = 0;
 
           const desired = desiredTrackRef.current;
           if (desired) {
-            console.log(`[PRESENCE] Gen ${gen}: Re-tracking after SUBSCRIBED`);
             channel.track({
               user_id: desired.userId,
               page: desired.page,
@@ -177,7 +184,6 @@ export function usePresenceChannel(partnerId: string | null) {
           joinStatusRef.current = 'DISCONNECTED';
           setPartnerPresence({ isOnline: false, hasSynced: false });
 
-          // ── Auto-reconnect ──
           if (reconnectCountRef.current < MAX_RECONNECTS) {
             reconnectCountRef.current++;
             console.log(`%c[PRESENCE] Gen ${gen}: ${status} — reconnecting in ${RECONNECT_DELAY_MS / 1000}s (attempt ${reconnectCountRef.current}/${MAX_RECONNECTS})`, 'color: #ff9800; font-weight: bold');
@@ -186,12 +192,12 @@ export function usePresenceChannel(partnerId: string | null) {
               setReconnectTrigger(prev => prev + 1);
             }, RECONNECT_DELAY_MS);
           } else {
-            console.log(`%c[PRESENCE] Gen ${gen}: ${status} — max reconnects (${MAX_RECONNECTS}) reached, giving up`, 'color: #f44336; font-weight: bold');
+            console.log(`%c[PRESENCE] Gen ${gen}: ${status} — max reconnects reached`, 'color: #f44336; font-weight: bold');
           }
         }
       });
 
-    // ── Heartbeat: re-track every 25s ──
+    // ── Heartbeat: refresh our own online_at every 25s ──
     const heartbeat = setInterval(() => {
       if (gen !== channelGenRef.current) return;
       const desired = desiredTrackRef.current;
@@ -203,11 +209,41 @@ export function usePresenceChannel(partnerId: string | null) {
       }).catch(() => {});
     }, HEARTBEAT_MS);
 
+    // ── Periodic stale scanner: re-evaluate partner's entries every 15s ──
+    // This is the CRITICAL safety net. Without it, stale entries persist
+    // forever if no SYNC/JOIN/LEAVE events fire (e.g., partner's phone
+    // killed, WiFi died, phantom entries from old connections).
+    const staleCheck = setInterval(() => {
+      if (gen !== channelGenRef.current) return;
+      if (!partnerId || joinStatusRef.current !== 'JOINED') return;
+
+      const state = channel.presenceState();
+      const entries = state[partnerId] as any[] | undefined;
+      const freshCount = getFreshEntryCount(entries);
+      const isOnline = freshCount > 0;
+
+      console.log(`%c[PRESENCE:STALE_CHECK] ${new Date().toLocaleTimeString()}`, 'color: #607d8b; font-weight: bold', {
+        gen,
+        totalEntries: entries?.length ?? 0,
+        freshEntries: freshCount,
+        isOnline,
+        ages: entries?.map(e => {
+          const age = e.online_at ? Math.round((Date.now() - new Date(e.online_at).getTime()) / 1000) : '?';
+          return `${age}s`;
+        }),
+      });
+
+      setPartnerPresence(prev => {
+        if (prev.isOnline === isOnline && prev.hasSynced) return prev;
+        if (!prev.hasSynced) return prev; // Don't override initial sync
+        return { isOnline, hasSynced: true };
+      });
+    }, STALE_CHECK_MS);
+
     return () => {
-      // Increment gen BEFORE removeChannel — prevents synchronous CLOSED
-      // callback from passing the stale guard
-      channelGenRef.current++;
+      channelGenRef.current++; // Invalidate BEFORE removeChannel
       clearInterval(heartbeat);
+      clearInterval(staleCheck);
       if (reconnectTimerRef.current) {
         clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
@@ -218,7 +254,6 @@ export function usePresenceChannel(partnerId: string | null) {
     };
   }, [user?.id, partnerId, reconnectTrigger]);
 
-  /** Track self in presence channel. Stable ref — never recreated. */
   const trackMyStatus = useCallback(async (userId: string, page?: string) => {
     desiredTrackRef.current = { userId, page };
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
@@ -231,7 +266,6 @@ export function usePresenceChannel(partnerId: string | null) {
     }
   }, []);
 
-  /** Untrack self from presence channel. Stable ref — never recreated. */
   const untrackMyStatus = useCallback(async () => {
     desiredTrackRef.current = null;
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
