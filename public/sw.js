@@ -8,10 +8,10 @@ self.addEventListener('push', function(event) {
     const pushData = event.data.json();
     console.log('[Service Worker] Push Received.');
 
-    // Use sender name from payload for personalized notifications
-    const senderName = pushData.senderName || 'Your partner';
-    const title = senderName;
-    const body = pushData.body || 'Sent you a message';
+    // Always use the app name as title for privacy —
+    // no partner names visible on lock screen in public places.
+    const title = pushData.title || 'Aura';
+    const body = pushData.body || 'You have a new message';
 
     const options = {
       body: body,
@@ -23,12 +23,12 @@ self.addEventListener('push', function(event) {
       },
       vibrate: [200, 100, 200],
       requireInteraction: false,
-      // Tag ensures only ONE notification per sender is shown at a time,
-      // newer notification replaces the old one (prevents spam stacking)
+      // Tag ensures only ONE notification per sender is shown at a time.
+      // Newer notification silently replaces the old one (no spam stacking).
+      // Chrome won't flag this as bot spam because of the 5s debounce on sender side.
       tag: 'aura-msg-' + (pushData.senderId || 'default'),
-      // Renotify so the device alerts even when replacing a tagged notification
+      // Renotify so the device still vibrates/sounds even when replacing a tagged notification
       renotify: true,
-      // Silent = false so the user hears/feels the notification
       silent: false
     };
 
@@ -37,9 +37,9 @@ self.addEventListener('push', function(event) {
     );
   } catch (err) {
     console.error('[Service Worker] Error parsing push data', err);
-    // Fallback notification if JSON parsing fails
+    // Fallback: still show a generic notification
     event.waitUntil(
-      self.registration.showNotification('AURA', {
+      self.registration.showNotification('Aura', {
         body: 'You have a new message',
         icon: '/favicon.svg',
         badge: '/favicon.svg',
@@ -59,21 +59,21 @@ self.addEventListener('notificationclick', function(event) {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
-      // Check if there is already a window/tab open with the target URL
+      // Focus existing window if open
       for (var i = 0; i < windowClients.length; i++) {
         var client = windowClients[i];
         if (client.url === absoluteUrl && 'focus' in client) {
           return client.focus();
         }
       }
-      // Check for any open window with our origin and focus+navigate it
+      // Focus any open window with our origin
       for (var j = 0; j < windowClients.length; j++) {
         var c = windowClients[j];
         if ('focus' in c) {
           return c.focus();
         }
       }
-      // If no existing window, open a new one
+      // Open new window if none exists
       if (self.clients.openWindow) {
         return self.clients.openWindow(urlToOpen);
       }
