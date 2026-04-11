@@ -56,6 +56,9 @@ function InnerApp({
   const [stableOnline, setStableOnline] = useState(false);
   const stableOnlineRef = useRef(false);
   const offlineTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Captures the exact moment we detect partner going offline via presence.
+  // Used instead of stale DB `last_seen` for "Last seen just now".
+  const localLastSeenRef = useRef<string | null>(null);
 
   useEffect(() => {
     // ── DIAGNOSTIC LOG ──
@@ -74,6 +77,7 @@ function InnerApp({
       }
       if (!stableOnlineRef.current) {
         stableOnlineRef.current = true;
+        localLastSeenRef.current = null; // Reset — partner is online now
         setStableOnline(true);
         console.log('%c[STABILITY] → SET ONLINE ✅', 'color: #4caf50; font-weight: bold'); // DIAGNOSTIC
       }
@@ -84,6 +88,7 @@ function InnerApp({
         offlineTimerRef.current = setTimeout(() => {
           offlineTimerRef.current = null;
           stableOnlineRef.current = false;
+          localLastSeenRef.current = new Date().toISOString(); // Capture exact offline moment
           setStableOnline(false);
           console.log('%c[STABILITY] → SET OFFLINE ❌ (10s timer fired)', 'color: #f44336; font-weight: bold'); // DIAGNOSTIC
         }, 10_000);
@@ -100,11 +105,23 @@ function InnerApp({
 
   // ── Merge into partner object for downstream components ──
   // `is_online` comes from stability filter (presence-only)
-  // `last_seen` comes from DB (updated by partner's offline beacon via realtimeHub)
+  // `last_seen` uses the more recent of: local capture vs DB value
+  // This ensures "Last seen just now" when presence detects offline,
+  // even if the DB beacon was from 17 minutes ago.
+  const effectiveLastSeen = (() => {
+    if (stableOnline) return partner?.last_seen ?? null;
+    if (!localLastSeenRef.current) return partner?.last_seen ?? null;
+    // Use whichever is more recent
+    if (partner?.last_seen && new Date(partner.last_seen) > new Date(localLastSeenRef.current)) {
+      return partner.last_seen;
+    }
+    return localLastSeenRef.current;
+  })();
+
   const partnerWithPresence = partner ? { 
     ...partner, 
     is_online: stableOnline,
-    last_seen: partner.last_seen, // DB value — always the real offline timestamp
+    last_seen: effectiveLastSeen,
   } : partner;
 
   const { isLocked, hasAppPin } = useAppLock();

@@ -632,16 +632,24 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const existingTimer = pushDebounceTimers.get(partnerId);
       if (existingTimer) clearTimeout(existingTimer);
       
-      const newTimer = setTimeout(() => {
-        supabase.functions.invoke('send-push', {
-          body: { 
-            record: { 
-              id: optimisticMsg.id,
-              sender_id: user.id,
-              receiver_id: partnerId,
-            } 
+      const newTimer = setTimeout(async () => {
+        try {
+          // Ensure session is fresh — prevents 401 on expired JWT
+          const { data: { session: freshSession } } = await supabase.auth.getSession();
+          if (freshSession) {
+            await supabase.functions.invoke('send-push', {
+              body: { 
+                record: { 
+                  id: optimisticMsg.id,
+                  sender_id: user.id,
+                  receiver_id: partnerId,
+                } 
+              }
+            });
           }
-        }).catch(err => console.error("Failed to trigger push notification", err));
+        } catch {
+          // Push notifications are best-effort — silently ignore failures
+        }
         pushDebounceTimers.delete(partnerId);
       }, 5000);
       

@@ -6,6 +6,7 @@ export function useTypingIndicator(partnerId: string | undefined) {
   const { user } = useAuth();
   const [partnerIsTyping, setPartnerIsTyping] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const subscribedRef = useRef(false);
   const safetyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSentRef = useRef<number>(0);
 
@@ -45,20 +46,26 @@ export function useTypingIndicator(partnerId: string | undefined) {
           }, 3000);
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        subscribedRef.current = status === 'SUBSCRIBED';
+      });
 
     channelRef.current = typingChannel;
 
     return () => {
       if (safetyTimeoutRef.current) clearTimeout(safetyTimeoutRef.current);
-      typingChannel.unsubscribe();
+      subscribedRef.current = false;
+      supabase.removeChannel(typingChannel);
       channelRef.current = null;
     };
   }, [user, partnerId]);
 
   // Stable reference — only depends on refs, no closures over changing values.
   const sendTypingEvent = useCallback(async (isTyping: boolean) => {
-    if (!channelRef.current) return;
+    // Only send when channel is fully subscribed via WebSocket.
+    // This prevents the "Realtime send() automatically falling back to REST API"
+    // warning that fires when send() is called before the WS is connected.
+    if (!channelRef.current || !subscribedRef.current) return;
 
     const now = Date.now();
     // Throttle 'true' to once per second; allow 'false' anytime
