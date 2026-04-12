@@ -61,9 +61,10 @@ export function useOnlineStatus(
   // ── DB update (async, for when React is running) ──────────────────────
   const setDbStatus = async (userId: string, online: boolean) => {
     try {
-      const update: Record<string, unknown> = { is_online: online };
-      // Only stamp last_seen when going OFFLINE
-      if (!online) update.last_seen = new Date().toISOString();
+      const update: Record<string, unknown> = {
+        is_online: online,
+        last_seen: new Date().toISOString()
+      };
       await supabase.from('profiles').update(update).eq('id', userId);
     } catch (err) {
       console.error('[Status] DB update failed:', err);
@@ -146,7 +147,6 @@ export function useOnlineStatus(
     };
   }, [trackMyStatus, untrackMyStatus]);
 
-  // ── React to PIN unlock / lock state ──────────────────────────────────
   useEffect(() => {
     if (!user) return;
     const isUnlocked = encryptionStatus === 'ready';
@@ -166,4 +166,19 @@ export function useOnlineStatus(
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [user?.id, encryptionStatus, currentPage, trackMyStatus, untrackMyStatus]);
+
+  // ── Heartbeat (Periodic last_seen updates for Edge Function) ────────────
+  useEffect(() => {
+    if (!user || encryptionStatus !== 'ready') return;
+    
+    // Ping every 60 seconds while the app is active to update last_seen.
+    // This allows the push notification Edge Function to correctly detect "zombie" online states.
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', user.id).then();
+      }
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user?.id, encryptionStatus]);
 }

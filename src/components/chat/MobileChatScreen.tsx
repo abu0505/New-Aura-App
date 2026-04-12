@@ -197,14 +197,18 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   };
 
   const handleJumpToMessage = (id: string) => {
-    const el = document.getElementById(`msg-${id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const el = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
+    const container = scrollContainerRef.current;
+
+    if (el && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const offset = elRect.top - containerRect.top + container.scrollTop - 100;
+      container.scrollTo({ top: offset, behavior: 'smooth' });
       setIsJumpingToPinned(null);
     } else {
       if (hasMore && !loadingMore) {
         setIsJumpingToPinned(id);
-        const container = scrollContainerRef.current;
         if (container) {
           previousScrollHeightRef.current = container.scrollHeight;
         }
@@ -215,12 +219,18 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
 
   useEffect(() => {
     if (isJumpingToPinned && !loadingMore) {
-      const el = document.getElementById(`msg-${isJumpingToPinned}`);
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+      const el = document.querySelector(`[data-message-id="${isJumpingToPinned}"]`) || document.getElementById(`msg-${isJumpingToPinned}`);
+      const container = scrollContainerRef.current;
+      
+      if (el && container) {
+        setTimeout(() => {
+          const containerRect = container.getBoundingClientRect();
+          const elRect = el.getBoundingClientRect();
+          const offset = elRect.top - containerRect.top + container.scrollTop - 100;
+          container.scrollTo({ top: offset, behavior: 'smooth' });
+        }, 100);
         setIsJumpingToPinned(null);
       } else if (hasMore) {
-        const container = scrollContainerRef.current;
         if (container) {
           previousScrollHeightRef.current = container.scrollHeight;
         }

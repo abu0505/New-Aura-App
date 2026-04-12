@@ -249,8 +249,12 @@ Deno.serve(async (req) => {
       const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
       const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
       
-      if (secondsSinceLastSeen < 60) {
-        return new Response(JSON.stringify({ success: true, message: "Skipped" }), { headers });
+      // If user is marked is_online=true AND pinged within the last 90 seconds, they are actively online.
+      if (secondsSinceLastSeen < 90) {
+        console.log(`[send-push] Receiver is actively online (last seen ${Math.floor(secondsSinceLastSeen)}s ago). Skipping push notification.`);
+        return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
+      } else {
+        console.log(`[send-push] Receiver is marked online but last seen was ${Math.floor(secondsSinceLastSeen)}s ago (zombie state). Sending push anyway.`);
       }
     }
 

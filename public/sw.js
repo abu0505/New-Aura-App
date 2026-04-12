@@ -33,7 +33,26 @@ self.addEventListener('push', function(event) {
     };
 
     event.waitUntil(
-      self.registration.showNotification(title, options)
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
+        var isFocused = false;
+        for (var i = 0; i < windowClients.length; i++) {
+          if (windowClients[i].focused) {
+            isFocused = true;
+            break;
+          }
+        }
+        
+        // If app is currently visible and focused, prevent popping up a duplicate notification
+        if (isFocused) {
+          console.log('[Service Worker] App is focused. Suppressing system notification.');
+          return Promise.resolve();
+        }
+
+        return self.registration.showNotification(title, options);
+      }).catch(function(err) {
+        console.error('[Service Worker] Error checking clients:', err);
+        return self.registration.showNotification(title, options);
+      })
     );
   } catch (err) {
     console.error('[Service Worker] Error parsing push data', err);
