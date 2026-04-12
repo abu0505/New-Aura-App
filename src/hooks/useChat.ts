@@ -137,7 +137,6 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     let mounted = true;
     const flush = async () => {
       const toSend = [...pendingMessages];
-      console.log(`Attempting to flush ${toSend.length} pending messages...`);
       // Don't clear pending state immediately; do it on successful insert.
       
       for (const msg of toSend) {

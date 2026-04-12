@@ -5,6 +5,7 @@ import { useChatSettings } from '../hooks/useChatSettings';
 interface AppLockContextType {
   isLocked: boolean;
   hasAppPin: boolean;
+  isLoading: boolean;
   unlockApp: (pin: string) => Promise<boolean>;
   setAppPin: (pin: string | null) => Promise<boolean>;
   lockApp: () => void;
@@ -72,7 +73,7 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   }, [hasAppPin, isUnlockedLocally, settingsLoading]);
 
   return (
-    <AppLockContext.Provider value={{ isLocked, hasAppPin, unlockApp, setAppPin, lockApp }}>
+    <AppLockContext.Provider value={{ isLocked, hasAppPin, isLoading: settingsLoading, unlockApp, setAppPin, lockApp }}>
       {children}
     </AppLockContext.Provider>
   );

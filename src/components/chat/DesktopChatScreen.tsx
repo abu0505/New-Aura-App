@@ -638,7 +638,10 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
                               setViewMode('chat');
                               handleJumpToMessage(id);
                             } : undefined}
-                            onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
+                            onReply={viewMode === 'chat' ? (id: string) => {
+                              setReplyingTo(messages.find(m => m.id === id) || null);
+                              messageInputRef.current?.focusInput();
+                            } : undefined}
                             repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
                             onJumpToMessage={handleJumpToMessage}
                           />

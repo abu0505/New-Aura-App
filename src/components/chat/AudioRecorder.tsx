@@ -36,20 +36,26 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
     const analyser = analyserRef.current;
     if (!analyser) return;
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    analyser.getByteFrequencyData(dataArray);
+    // Use time-domain data — captures actual mic amplitude, not frequency bins.
+    // This ensures ALL bars react to the real voice signal simultaneously.
+    const dataArray = new Uint8Array(analyser.fftSize);
+    analyser.getByteTimeDomainData(dataArray);
 
     const bars: number[] = [];
     const step = Math.floor(dataArray.length / BAR_COUNT);
     for (let i = 0; i < BAR_COUNT; i++) {
       const start = i * step;
       const end = Math.min(start + step, dataArray.length);
-      let sum = 0;
+      // Compute RMS (root mean square) amplitude for this chunk.
+      // Values range 0–255, with 128 as silence (DC offset).
+      let sumSq = 0;
       for (let j = start; j < end; j++) {
-        sum += dataArray[j];
+        const normalized = (dataArray[j] - 128) / 128; // -1 to +1
+        sumSq += normalized * normalized;
       }
-      const avg = sum / (end - start);
-      bars.push(Math.max(4, (avg / 255) * 28));
+      const rms = Math.sqrt(sumSq / (end - start));
+      // Scale: min 4px (silence), max 28px (loud)
+      bars.push(Math.max(4, Math.min(28, 4 + rms * 160)));
     }
 
     setWaveformBars(bars);
@@ -69,8 +75,8 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.7;
+      analyser.fftSize = 1024;
+      analyser.smoothingTimeConstant = 0.4;
       source.connect(analyser);
       // Don't connect to destination — we don't want to hear our own mic
 

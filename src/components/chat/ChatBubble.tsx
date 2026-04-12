@@ -54,7 +54,7 @@ function ChatBubble({
   const [bubbleRect, setBubbleRect] = useState<{ top: number; bottom: number } | null>(null);
 
   const swipeX = useMotionValue(0);
-  const springX = useSpring(swipeX, { stiffness: 600, damping: 40 });
+  const springX = useSpring(swipeX, { stiffness: 800, damping: 35 });
   const touchStartX = useRef<number | null>(null);
   const hapticTriggered = useRef(false);
   
@@ -526,7 +526,7 @@ function ChatBubble({
       </AnimatePresence>
 
       <motion.div 
-        style={{ x: springX }} 
+        style={{ x: springX, willChange: 'transform' }} 
         className={`flex items-center gap-2 w-full ${isMine ? 'justify-end' : 'justify-start'} relative z-10`}
       >
         {isMine && !isPinnedView && (

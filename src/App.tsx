@@ -61,36 +61,25 @@ function InnerApp({
   const localLastSeenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // ── DIAGNOSTIC LOG ──
-    console.log(`%c[STABILITY] ${new Date().toLocaleTimeString()}`, 'color: #9c27b0; font-weight: bold', {
-      rawIsOnline,
-      hasSynced: partnerPresence.hasSynced,
-      currentStableOnline: stableOnlineRef.current,
-    });
-
     if (rawIsOnline) {
       // ── GOING ONLINE: Instant ──
       if (offlineTimerRef.current) {
         clearTimeout(offlineTimerRef.current);
         offlineTimerRef.current = null;
-        console.log('%c[STABILITY] Offline timer CANCELLED — partner came back', 'color: #4caf50; font-weight: bold'); // DIAGNOSTIC
       }
       if (!stableOnlineRef.current) {
         stableOnlineRef.current = true;
         localLastSeenRef.current = null; // Reset — partner is online now
         setStableOnline(true);
-        console.log('%c[STABILITY] → SET ONLINE ✅', 'color: #4caf50; font-weight: bold'); // DIAGNOSTIC
       }
     } else {
       // ── GOING OFFLINE: Debounced 10 seconds ──
       if (stableOnlineRef.current && !offlineTimerRef.current) {
-        console.log('%c[STABILITY] Starting 10s offline timer...', 'color: #ff9800; font-weight: bold'); // DIAGNOSTIC
         offlineTimerRef.current = setTimeout(() => {
           offlineTimerRef.current = null;
           stableOnlineRef.current = false;
           localLastSeenRef.current = new Date().toISOString(); // Capture exact offline moment
           setStableOnline(false);
-          console.log('%c[STABILITY] → SET OFFLINE ❌ (10s timer fired)', 'color: #f44336; font-weight: bold'); // DIAGNOSTIC
         }, 10_000);
       }
     }
@@ -124,7 +113,7 @@ function InnerApp({
     last_seen: effectiveLastSeen,
   } : partner;
 
-  const { isLocked, hasAppPin } = useAppLock();
+  const { isLocked, hasAppPin, isLoading } = useAppLock();
   const { encryptionStatus } = useAuth();
 
   // Handle push notification setup silently
@@ -139,7 +128,6 @@ function InnerApp({
       
       // Listen for rotation events from main.tsx
       const handleResubscribe = () => {
-        console.log('[InnerApp] Resubscribing due to key rotation event');
         setupPush();
       };
       window.addEventListener('push-resubscribe', handleResubscribe);
@@ -180,6 +168,31 @@ function InnerApp({
     }
   }, [isLocked, hasAppPin]);
 
+  // If we are still checking if the app should be locked, show a loading splash
+  // instead of the main UI. This prevents the chat screen from flashing
+  // (showing partner name/avatar) and auto-focusing its input before the lock screen appears.
+  // IMPORTANT: This must be AFTER all hooks to avoid violating Rules of Hooks.
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-background flex items-center justify-center z-[100]">
+        <div className="text-center">
+          <h1
+            className="font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse"
+            style={{
+              background: 'linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            AURA
+          </h1>
+          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40 animate-pulse">Securing sanctuary...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ThemeProvider>
       <div className="relative h-[100dvh] w-full overflow-hidden bg-[var(--bg-primary)] transition-colors duration-500">
@@ -193,7 +206,7 @@ function InnerApp({
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
           <div className={activeTab === 'chat' ? 'h-full w-full' : 'hidden'}>
-            <ChatScreen partner={partnerWithPresence} isActive={activeTab === 'chat'} />
+            <ChatScreen partner={partnerWithPresence} isActive={activeTab === 'chat' && !isLocked} />
           </div>
           <div className={activeTab === 'stories' ? 'h-full w-full' : 'hidden'}>
             <StoriesScreen partner={partner} />

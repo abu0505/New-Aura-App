@@ -12,6 +12,7 @@ import type { ChatMessage } from '../../hooks/useChat';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
+  focusInput: () => void;
 }
 
 interface MessageInputProps {
@@ -51,6 +52,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
       } else {
         performUpload(files, false, '');
       }
+    },
+    focusInput: () => {
+      textareaRef.current?.focus();
     }
   }));
 
@@ -374,10 +378,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
             onChange={(e) => setText(e.target.value)}
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
-            placeholder={isUploading ? "Securing media..." : "Write something beautiful..."}
+            placeholder={isUploading ? "Securing media..." : "I love you..."}
             disabled={disabled || isUploading}
-            autoFocus
-            className="w-full pl-3 bg-transparent border-none text-sm text-aura-text-primary placeholder:text-aura-text-secondary/50 placeholder:italic resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
+            className="w-full pl-3 bg-transparent border-none text-sm text-aura-text-primary placeholder:text-aura-text-secondary/50 resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
             rows={1}
           />
         </div>
@@ -394,19 +397,19 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
                 className="flex items-center gap-1"
               >
                 <button
-                  onClick={() => setIsMediaGalleryOpen(true)}
+                  onClick={() => handleAttachmentSelect('audio')}
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
-                  title="Photos"
+                  title="Audio"
                 >
-                  <span className="material-symbols-outlined text-[22px]">image</span>
+                  <span className="material-symbols-outlined text-[22px]">mic</span>
                 </button>
                 
                 <button
-                  onClick={() => handleAttachmentSelect('video')}
+                  onClick={() => setIsMediaGalleryOpen(true)}
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
-                  title="Videos"
+                  title="Media"
                 >
-                  <span className="material-symbols-outlined text-[22px]">videocam</span>
+                  <span className="material-symbols-outlined text-[22px]">perm_media</span>
                 </button>
 
                 <button

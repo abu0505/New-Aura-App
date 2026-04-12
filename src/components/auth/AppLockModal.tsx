@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAppLock } from '../../contexts/AppLockContext';
 
 export default function AppLockModal() {
@@ -6,6 +6,22 @@ export default function AppLockModal() {
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Robust focus management
+  useEffect(() => {
+    if (isLocked) {
+      // Immediate focus
+      inputRef.current?.focus();
+      
+      // Secondary focus after a small delay to catch any layout shifts or race conditions
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLocked]);
 
   if (!isLocked) return null;
 
@@ -59,6 +75,7 @@ export default function AppLockModal() {
           <form onSubmit={handleSubmit} className="w-full space-y-6">
             <div className="relative">
               <input
+                ref={inputRef}
                 type="password"
                 value={pin}
                 onChange={(e) => {

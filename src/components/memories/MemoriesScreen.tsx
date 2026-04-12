@@ -47,9 +47,9 @@ export default function MemoriesScreen() {
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generatedUrlsRef = useRef<Set<string>>(new Set());
-  // Pagination refs – must be declared before any useEffect that touches them.
   const pageRef = useRef(1);          // tracks current page synchronously
   const isFetchingMoreRef = useRef(false); // prevents concurrent fetches
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
 
   // ── Phase 4: Pinch-to-Zoom grid density ─────────────────────────────
   type GridDensity = 2 | 3 | 4;
@@ -237,16 +237,18 @@ export default function MemoriesScreen() {
 
 
   const loadMore = useCallback(() => {
-    // Guard: skip if a fetch is already in-flight or there are no more pages.
-    if (isFetchingMoreRef.current || !hasMore) return;
+    // Guard: skip if a fetch is already in-flight, no more pages, or initial load is still running.
+    if (isFetchingMoreRef.current || !hasMore || loading) return;
     isFetchingMoreRef.current = true;
+    setIsFetchingMore(true);
     // Compute next page from ref (synchronous, no state-updater side-effects).
     const nextPage = pageRef.current + 1;
     pageRef.current = nextPage;
     fetchMemories(nextPage).finally(() => {
       isFetchingMoreRef.current = false;
+      setIsFetchingMore(false);
     });
-  }, [hasMore, fetchMemories]);
+  }, [hasMore, loading, fetchMemories]);
 
   // ── Infinite Scroll Observer ──────────────────────────────────────────
   useEffect(() => {
@@ -276,12 +278,16 @@ export default function MemoriesScreen() {
         memory.media_key,
         memory.media_nonce,
         partner.public_key,
-        memory.sender_public_key
+        memory.sender_public_key,
+        undefined,       // partnerKeyHistory — not tracked per-memory
+        memory.type      // ← critical: pass type so MIME is set correctly
       );
       if (blob) {
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
         setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, decryptedUrl: url, loading: false } : m));
+      } else {
+        setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
       }
     } catch (err) {
       console.error('Decryption failed for memory:', memory.id, err);
@@ -563,7 +569,7 @@ export default function MemoriesScreen() {
             </div>
 
             <div id="infinite-scroll-sentinel" className="h-20 flex items-center justify-center">
-              {hasMore && (
+              {isFetchingMore && (
                 <div className="flex flex-col items-center gap-3">
                   <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
                   <span className="font-label text-[8px] uppercase tracking-[0.2em] text-[rgba(var(--primary-rgb),_0.4)]">Fetching fragments...</span>

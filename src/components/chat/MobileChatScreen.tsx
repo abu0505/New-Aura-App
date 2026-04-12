@@ -30,6 +30,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   const [showPinDropdown, setShowPinDropdown] = useState(false);
   const pinDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const messageInputRef = useRef<any>(null); // Type imported from MessageInput if needed, using any for now to avoid circular deps if missing
 
   // Click outside listener for the pin dropdown
   useEffect(() => {
@@ -605,7 +606,10 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                               setViewMode('chat');
                               handleJumpToMessage(id);
                             } : undefined}
-                            onReply={viewMode === 'chat' ? (id: string) => setReplyingTo(messages.find(m => m.id === id) || null) : undefined}
+                            onReply={viewMode === 'chat' ? (id: string) => {
+                              setReplyingTo(messages.find(m => m.id === id) || null);
+                              messageInputRef.current?.focusInput();
+                            } : undefined}
                             repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
                             onJumpToMessage={handleJumpToMessage}
                           />
@@ -627,6 +631,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
           {viewMode === 'chat' && (
             <div className="shrink-0 w-full relative z-20">
               <MessageInput 
+                ref={messageInputRef}
                 onSend={handleSend} 
                 onTyping={sendTypingEvent} 
                 disabled={!partner.public_key} 

@@ -110,25 +110,13 @@ export function usePresenceChannel(partnerId: string | null) {
         const freshCount = getFreshEntryCount(entries);
         const isOnline = freshCount > 0;
 
-        console.log(`%c[PRESENCE:SYNC] ${new Date().toLocaleTimeString()}`, 'color: #00bcd4; font-weight: bold', {
-          gen,
-          partnerOnline: isOnline,
-          totalEntries: entries?.length ?? 0,
-          freshEntries: freshCount,
-          allUsersInChannel: Object.keys(state),
-        });
-
         setPartnerPresence(prev => {
           if (prev.hasSynced && prev.isOnline === isOnline) return prev;
           return { isOnline, hasSynced: true };
         });
       })
-      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+      .on('presence', { event: 'join' }, ({ key }) => {
         if (gen !== channelGenRef.current) return;
-
-        console.log(`%c[PRESENCE:JOIN] ${new Date().toLocaleTimeString()}`, 'color: #4caf50; font-weight: bold', {
-          gen, joinedKey: key, isPartner: key === partnerId, newPresences,
-        });
 
         if (key !== partnerId) return;
         setPartnerPresence(prev => {
@@ -136,13 +124,10 @@ export function usePresenceChannel(partnerId: string | null) {
           return { isOnline: true, hasSynced: true };
         });
       })
-      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+      .on('presence', { event: 'leave' }, ({ key }) => {
         if (gen !== channelGenRef.current) return;
 
         if (key !== partnerId) {
-          console.log(`%c[PRESENCE:LEAVE] ${new Date().toLocaleTimeString()}`, 'color: #f44336; font-weight: bold', {
-            gen, leftKey: key, isPartner: false, leftPresences,
-          });
           return;
         }
 
@@ -151,13 +136,6 @@ export function usePresenceChannel(partnerId: string | null) {
         const freshCount = getFreshEntryCount(remaining);
         const isOnline = freshCount > 0;
 
-        console.log(`%c[PRESENCE:LEAVE] ${new Date().toLocaleTimeString()}`, 'color: #f44336; font-weight: bold', {
-          gen, leftKey: key, isPartner: true, leftPresences,
-          remainingTotal: remaining?.length ?? 0,
-          remainingFresh: freshCount,
-          resultIsOnline: isOnline,
-        });
-
         setPartnerPresence(prev => {
           if (prev.isOnline === isOnline && prev.hasSynced) return prev;
           return { isOnline, hasSynced: true };
@@ -165,9 +143,6 @@ export function usePresenceChannel(partnerId: string | null) {
       })
       .subscribe((status) => {
         if (gen !== channelGenRef.current) return;
-
-        console.log(`%c[PRESENCE:CHANNEL_STATUS] ${new Date().toLocaleTimeString()}`, 'color: #ff9800; font-weight: bold', { gen, status });
-
         if (status === 'SUBSCRIBED') {
           joinStatusRef.current = 'JOINED';
           reconnectCountRef.current = 0;
@@ -186,13 +161,10 @@ export function usePresenceChannel(partnerId: string | null) {
 
           if (reconnectCountRef.current < MAX_RECONNECTS) {
             reconnectCountRef.current++;
-            console.log(`%c[PRESENCE] Gen ${gen}: ${status} — reconnecting in ${RECONNECT_DELAY_MS / 1000}s (attempt ${reconnectCountRef.current}/${MAX_RECONNECTS})`, 'color: #ff9800; font-weight: bold');
             reconnectTimerRef.current = setTimeout(() => {
               reconnectTimerRef.current = null;
               setReconnectTrigger(prev => prev + 1);
             }, RECONNECT_DELAY_MS);
-          } else {
-            console.log(`%c[PRESENCE] Gen ${gen}: ${status} — max reconnects reached`, 'color: #f44336; font-weight: bold');
           }
         }
       });
@@ -221,17 +193,6 @@ export function usePresenceChannel(partnerId: string | null) {
       const entries = state[partnerId] as any[] | undefined;
       const freshCount = getFreshEntryCount(entries);
       const isOnline = freshCount > 0;
-
-      console.log(`%c[PRESENCE:STALE_CHECK] ${new Date().toLocaleTimeString()}`, 'color: #607d8b; font-weight: bold', {
-        gen,
-        totalEntries: entries?.length ?? 0,
-        freshEntries: freshCount,
-        isOnline,
-        ages: entries?.map(e => {
-          const age = e.online_at ? Math.round((Date.now() - new Date(e.online_at).getTime()) / 1000) : '?';
-          return `${age}s`;
-        }),
-      });
 
       setPartnerPresence(prev => {
         if (prev.isOnline === isOnline && prev.hasSynced) return prev;
