@@ -221,6 +221,14 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
     }
   };
 
+  const handleCameraClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.accept = 'image/*,video/*';
+      fileInputRef.current.capture = 'environment';
+      fileInputRef.current.click();
+    }
+  };
+
   const handleAttachmentSelect = (type: string) => {
     // Always close the sheet first to remove z-index blocking
     setIsAttachmentOpen(false);
@@ -250,6 +258,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
       setTimeout(() => {
         if (fileInputRef.current) {
           fileInputRef.current.accept = '*/*';
+          fileInputRef.current.removeAttribute('capture');
           fileInputRef.current.click();
         }
       }, 350);
@@ -327,7 +336,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
   }
 
   return (
-    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-4 md:px-8 flex flex-col items-center justify-end">
+    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-2 md:px-8 flex flex-col items-center justify-end">
       
       <AnimatePresence>
         {replyingTo && (
@@ -369,7 +378,17 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-[720px] mx-auto flex items-center gap-3 bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-4 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
+      <div className="w-full max-w-[720px] mx-auto flex items-center bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-2 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
+        {/* Camera Button on the Left */}
+        <button
+          onClick={handleCameraClick}
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
+          title="Camera"
+          disabled={disabled || isUploading}
+        >
+          <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+        </button>
+
         {/* Input Area */}
         <div className="flex-1 flex items-center min-h-[40px] py-1">
           <textarea

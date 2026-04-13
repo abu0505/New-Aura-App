@@ -7,7 +7,6 @@ interface AttachmentSheetProps {
 }
 
 const attachmentOptions = [
-  { id: 'camera', icon: 'photo_camera', label: 'Camera', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
   { id: 'document', icon: 'description', label: 'Document', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
   { id: 'location', icon: 'location_on', label: 'Location', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
   { id: 'sticker', icon: 'auto_awesome', label: 'Stickers', colorClass: 'text-primary', bgClass: 'bg-primary/10' },

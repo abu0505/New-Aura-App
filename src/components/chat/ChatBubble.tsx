@@ -544,8 +544,8 @@ function ChatBubble({
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${interactionType !== 'none' ? 'scale-95 z-40' : ''} ${
-          isOnlyMedia || isSticker
-             ? 'bg-transparent shadow-none' 
+          (message.type === 'image' || message.type === 'video' || message.type === 'audio') || isSticker
+             ? 'bg-transparent shadow-none px-0 py-0' 
              : isMine 
                ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
                : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
@@ -594,8 +594,42 @@ function ChatBubble({
           </div>
         )}
         {message.decrypted_content && !isSticker && (
-          <div className={`text-[15px] ${message.media_url ? 'mt-2' : ''} leading-relaxed font-body whitespace-pre-wrap break-words`}>
-            {message.decrypted_content}
+          <div className={`${message.media_url ? 
+            (isMine 
+              ? `mt-1 px-3 py-2 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''} w-fit ml-auto min-w-[80px]` 
+              : `mt-1 px-3 py-2 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5 shadow-lg w-fit mr-auto min-w-[80px]`) 
+            : 'text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words'}`}>
+            
+            {message.media_url ? (
+              <div className="flex flex-col">
+                <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words">
+                  {message.decrypted_content}
+                </div>
+                <div className="flex items-center justify-end gap-1 mt-0.5">
+                  <span className={`text-[9px] uppercase tracking-tighter w-max ${isMine ? 'text-background/80 font-bold' : 'text-aura-text-primary/60 font-bold'}`}>
+                    {message.is_edited && !message.is_deleted_for_everyone && (
+                      <span className="mr-1 opacity-70">(edited) </span>
+                    )}
+                    {time}
+                  </span>
+                  {isMine && !message.is_deleted_for_everyone && (
+                    <span 
+                      className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
+                        message.is_read ? 'text-blue-400' : (message.is_delivered ? 'text-background/50' : 'text-background/25')
+                      }`} 
+                      style={{ fontVariationSettings: "'wght' 700" }}
+                    >
+                      {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+                    </span>
+                  )}
+                  {isMine && message.is_pending && (
+                    <span className="material-symbols-outlined text-[12px] animate-pulse text-background/40">schedule</span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              message.decrypted_content
+            )}
           </div>
         )}
         
@@ -611,35 +645,37 @@ function ChatBubble({
         )}
 
         {/* Embedded Timestamp and Status Info */}
-        <div className={`flex items-center justify-end gap-1 mt-1.5 ${isOnlyMedia || isSticker ? 'absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md' : ''}`}>
-          <span className={`text-[9px] uppercase tracking-tighter ${
-            isOnlyMedia || isSticker
-              ? 'text-white/90'
-              : isMine 
-                ? 'text-background/80 font-bold' 
-                : 'text-aura-text-primary/60 font-bold'
-          }`}>
-            {message.is_edited && !message.is_deleted_for_everyone && (
-              <span className="mr-1 opacity-70">(edited) </span>
-            )}
-            {time}
-          </span>
-          {isMine && !message.is_deleted_for_everyone && (
-            <span 
-              className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
-                isOnlyMedia || isSticker
-                  ? (message.is_read ? 'text-blue-400' : 'text-white/60')
-                  : (message.is_read ? 'text-blue-400' : (message.is_delivered ? 'text-background/50' : 'text-background/25'))
-              }`} 
-              style={{ fontVariationSettings: "'wght' 700" }}
-            >
-              {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+        {(!message.media_url || isSticker || !message.decrypted_content) && (
+          <div className={`flex items-center justify-end gap-1 mt-1.5 ${isOnlyMedia || isSticker ? 'absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md' : ''}`}>
+            <span className={`text-[9px] uppercase tracking-tighter ${
+              isOnlyMedia || isSticker
+                ? 'text-white/90'
+                : isMine 
+                  ? 'text-background/80 font-bold' 
+                  : 'text-aura-text-primary/60 font-bold'
+            }`}>
+              {message.is_edited && !message.is_deleted_for_everyone && (
+                <span className="mr-1 opacity-70">(edited) </span>
+              )}
+              {time}
             </span>
-          )}
-          {isMine && message.is_pending && (
-            <span className={`material-symbols-outlined text-[12px] animate-pulse ${isOnlyMedia || isSticker ? 'text-primary' : 'text-background/40'}`}>schedule</span>
-          )}
-        </div>
+            {isMine && !message.is_deleted_for_everyone && (
+              <span 
+                className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
+                  isOnlyMedia || isSticker
+                    ? (message.is_read ? 'text-blue-400' : 'text-white/60')
+                    : (message.is_read ? 'text-blue-400' : (message.is_delivered ? 'text-background/50' : 'text-background/25'))
+                }`} 
+                style={{ fontVariationSettings: "'wght' 700" }}
+              >
+                {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+              </span>
+            )}
+            {isMine && message.is_pending && (
+              <span className={`material-symbols-outlined text-[12px] animate-pulse ${isOnlyMedia || isSticker ? 'text-primary' : 'text-background/40'}`}>schedule</span>
+            )}
+          </div>
+        )}
       </div>
       )}
 

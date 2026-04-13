@@ -515,7 +515,7 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
           <div 
             ref={scrollContainerRef} 
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6 flex flex-col gap-1 custom-scrollbar pb-12 anchor-none"
+            className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-6 flex flex-col gap-1 custom-scrollbar pb-12 anchor-none"
             style={{
               maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
               WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',

@@ -123,7 +123,7 @@ function MediaGridBubble({
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`relative overflow-hidden shadow-2xl ${isMine ? 'bg-primary' : 'bg-aura-bg-elevated border border-white/5'} rounded-2xl ${!isFirst ? (isMine ? 'rounded-tr-sm' : 'rounded-tl-sm') : ''} ${!isLast ? (isMine ? 'rounded-br-sm' : 'rounded-bl-sm') : ''} w-full max-w-[85%] sm:max-w-[75%] lg:max-w-[50%] aspect-square p-1`}
+        className={`relative overflow-hidden shadow-2xl bg-transparent rounded-2xl ${!isFirst ? (isMine ? 'rounded-tr-sm' : 'rounded-tl-sm') : ''} ${!isLast ? (isMine ? 'rounded-br-sm' : 'rounded-bl-sm') : ''} w-full max-w-[85%] sm:max-w-[75%] lg:max-w-[50%] aspect-square`}
       >
         <div className={`grid h-full w-full gap-1 rounded-xl overflow-hidden ${getGridClass()}`}>
           {displayItems.map((msg, idx) => {
