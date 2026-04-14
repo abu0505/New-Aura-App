@@ -16,6 +16,7 @@ import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 import { AnimatePresence, motion } from 'framer-motion';
+import DesktopCameraStudio from './DesktopCameraStudio';
 import { LastSeenStatus } from './LastSeenStatus';
 import { useTabNotification } from '../../hooks/useTabNotification';
 
@@ -33,6 +34,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   const [showPinDropdown, setShowPinDropdown] = useState(false);
   const pinDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [isDesktopCameraOpen, setIsDesktopCameraOpen] = useState(false);
   
   const messageInputRef = useRef<MessageInputHandle>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -376,13 +378,40 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--primary-rgb, 230, 196, 135), 0.1); border-radius: 10px; }
       `}</style>
+      
+      <div className="flex w-full h-full overflow-hidden absolute inset-0 text-aura-text-primary font-sans bg-background relative z-0">
+        
+        <AnimatePresence>
+          {isDesktopCameraOpen && (
+            <DesktopCameraStudio 
+              onClose={() => setIsDesktopCameraOpen(false)}
+              onSend={(file, _caption) => {
+                // Manually trigger the high-quality upload workflow via MessageInput's handleDroppedFiles
+                // since they share the same media process. Alternatively, just call the media handler.
+                // handleDroppedFiles natively handles video/image by opening the Quality choice modal,
+                // but since DesktopStudio ALREADY showed a preview and caption, we might want to bypass QualityChoice
+                // or just trigger handleDroppedFiles and let it show Quality choice. 
+                // We'll let handleDroppedFiles trigger the Quality choice for consistency.
+                if (messageInputRef.current) {
+                  // Hack: attach caption to file if possible or just rely on the modal
+                  // The QualityChoiceModal handles captions. So we just pass the file.
+                  messageInputRef.current.handleDroppedFiles([file]);
+                }
+              }}
+              onGallerySelect={(files, _caption) => {
+                if (messageInputRef.current) {
+                  messageInputRef.current.handleDroppedFiles(files);
+                }
+              }}
+            />
+          )}
+        </AnimatePresence>
 
-      <div 
-        className="absolute inset-0 grid grid-rows-[auto_auto_1fr_auto] text-aura-text-primary font-sans overflow-hidden transition-all duration-700 bg-background"
-        onDragEnter={handleDragEnter}
+        <div 
+          className="flex-1 grid grid-rows-[auto_auto_1fr_auto] overflow-hidden transition-all duration-700 relative z-10"
+          onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -673,12 +702,14 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
               onCancelReply={() => setReplyingTo(null)}
               isActive={isActive}
               partnerPublicKey={partner.public_key}
+              onDesktopCameraClick={() => setIsDesktopCameraOpen(true)}
             />
           </div>
         )}
 
         {/* Background Layer */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden z-0 bg-background" />
+        <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-background" />
+      </div>
       </div>
     </>
   );

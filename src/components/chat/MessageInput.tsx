@@ -7,6 +7,7 @@ import MediaGalleryDrawer from './MediaGalleryDrawer';
 import AudioRecorder from './AudioRecorder';
 import QualityChoiceModal from './QualityChoiceModal';
 import { StickerPicker } from './StickerPicker';
+import MobileCameraModal from './MobileCameraModal';
 
 import type { ChatMessage } from '../../hooks/useChat';
 
@@ -23,15 +24,17 @@ interface MessageInputProps {
   onCancelReply?: () => void;
   isActive?: boolean;
   partnerPublicKey?: string | null;
+  onDesktopCameraClick?: () => void;
 }
 
-const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey }, ref) => {
+const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick }, ref) => {
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showQualityModal, setShowQualityModal] = useState(false);
   const [isMediaGalleryOpen, setIsMediaGalleryOpen] = useState(false);
+  const [isMobileCameraOpen, setIsMobileCameraOpen] = useState(false);
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, setPendingCaption] = useState('');
@@ -222,11 +225,27 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
   };
 
   const handleCameraClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.accept = 'image/*,video/*';
-      fileInputRef.current.capture = 'environment';
-      fileInputRef.current.click();
+    if (window.innerWidth < 768) {
+      setIsMobileCameraOpen(true);
+    } else {
+      if (onDesktopCameraClick) {
+        onDesktopCameraClick();
+      } else if (fileInputRef.current) {
+        fileInputRef.current.accept = 'image/*,video/*';
+        fileInputRef.current.capture = 'environment';
+        fileInputRef.current.click();
+      }
     }
+  };
+
+  const handleMobileCameraSend = (file: File, caption: string) => {
+    setPendingFiles([file]);
+    setPendingCaption(caption);
+    setShowQualityModal(true);
+  };
+
+  const handleMobileGallerySelect = (files: File[], caption: string) => {
+    handleGallerySend(files, caption);
   };
 
   const handleAttachmentSelect = (type: string) => {
@@ -487,6 +506,13 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
             isOpen={isMediaGalleryOpen}
             onClose={() => setIsMediaGalleryOpen(false)}
             onSend={handleGallerySend}
+          />
+
+          <MobileCameraModal
+            isOpen={isMobileCameraOpen}
+            onClose={() => setIsMobileCameraOpen(false)}
+            onSend={handleMobileCameraSend}
+            onGallerySelect={handleMobileGallerySelect}
           />
 
           <QualityChoiceModal 
