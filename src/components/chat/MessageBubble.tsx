@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import type { Message } from '../../types';
+import LinkPreview from './LinkPreview';
 
 interface MessageBubbleProps {
   message: Message;
@@ -12,6 +13,47 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
   // TODO: Decrypt message content in the future. For now assume plaintext for UI testing.
   const content = message.ciphertext;
   const time = format(new Date(message.created_at || new Date()), 'HH : mm');
+
+  // Extract URLs
+  const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|in|me|app|dev|to)(?:\/[^\s]*)?)/gi;
+  const rawUrls = content.match(urlRegex) || [];
+  const urls = rawUrls.map(u => u.trim());
+
+  // Format valid URL (prepend https if needed, strip trailing punctuation)
+  const formatUrl = (url: string) => {
+    const clean = url.replace(/[.,;!?]$/, '');
+    if (!/^https?:\/\//i.test(clean)) {
+      return `https://${clean}`;
+    }
+    return clean;
+  };
+
+  const firstUrl = urls.length > 0 ? formatUrl(urls[0]) : null;
+
+  // Render text with links
+  const renderContent = (text: string) => {
+    if (urls.length === 0) return text;
+    
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, i) => {
+      if (part && urls.includes(part)) {
+        return (
+          <a
+            key={i}
+            href={formatUrl(part)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity break-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
   
   // Status logic
   let statusIcon = null;
@@ -50,9 +92,11 @@ export default function MessageBubble({ message, isOwn, showTail = true }: Messa
               }
         }
       >
-        <p className="font-body text-sm whitespace-pre-wrap break-words leading-relaxed">
-          {content}
-        </p>
+        <div className="font-body text-sm whitespace-pre-wrap break-words leading-relaxed relative z-10">
+          {renderContent(content)}
+        </div>
+        
+        {firstUrl && <LinkPreview url={firstUrl} />}
         
         <div 
           className={`flex items-center justify-end gap-1 text-[10px] select-none ${

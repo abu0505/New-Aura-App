@@ -6,6 +6,7 @@ import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
 import AudioWaveformPlayer from './AudioWaveformPlayer';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
+import LinkPreview from './LinkPreview';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -60,6 +61,46 @@ function ChatBubble({
   
   const isMine = isPinnedView ? true : message.is_mine;
   const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(':', ' : ');
+
+  // Extract URLs
+  const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|in|me|app|dev|to)(?:\/[^\s]*)?)/gi;
+  const rawUrls = message.decrypted_content?.match(urlRegex) || [];
+  const urls = rawUrls.map(u => u.trim());
+
+  const formatUrl = (url: string) => {
+    const clean = url.replace(/[.,;!?]$/, '');
+    if (!/^https?:\/\//i.test(clean)) {
+      return `https://${clean}`;
+    }
+    return clean;
+  };
+
+  const firstUrl = urls.length > 0 ? formatUrl(urls[0]) : null;
+
+  const renderContent = (text: string) => {
+    if (!text) return null;
+    if (urls.length === 0) return text;
+    
+    const parts = text.split(urlRegex);
+
+    return parts.map((part, i) => {
+      if (part && urls.includes(part)) {
+        return (
+          <a
+            key={i}
+            href={formatUrl(part)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`underline underline-offset-2 font-semibold hover:opacity-80 transition-opacity break-all ${isMine ? 'text-background/90' : 'text-blue-300'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   const replyOpacity = useTransform(springX, (v) => Math.min(Math.abs(v) / 45, 1));
   const replyScale = useTransform(springX, (v) => 0.8 + Math.min(Math.abs(v) / 45, 1) * 0.3);
@@ -603,7 +644,7 @@ function ChatBubble({
             {message.media_url ? (
               <div className="flex flex-col">
                 <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words">
-                  {message.decrypted_content}
+                  {renderContent(message.decrypted_content)}
                 </div>
                 <div className="flex items-center justify-end gap-1 mt-0.5">
                   <span className={`text-[9px] uppercase tracking-tighter w-max ${isMine ? 'text-background/80 font-bold' : 'text-aura-text-primary/60 font-bold'}`}>
@@ -628,7 +669,12 @@ function ChatBubble({
                 </div>
               </div>
             ) : (
-              message.decrypted_content
+              <div className="flex flex-col relative z-20">
+                <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words">
+                  {renderContent(message.decrypted_content)}
+                </div>
+                {firstUrl && <LinkPreview url={firstUrl} />}
+              </div>
             )}
           </div>
         )}

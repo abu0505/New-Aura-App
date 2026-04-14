@@ -50,11 +50,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Visualizer Refs
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>(0);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  
   const shutterControls = useAnimation();
   const lockIconControls = useAnimation();
 
@@ -76,54 +71,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     } catch (e) {
       console.warn('Audio Context not supported for shutter sound');
     }
-  }, []);
-
-  // Visualizer Logic
-  const startVisualizer = useCallback(() => {
-    if (!streamRef.current || !canvasRef.current || audioContextRef.current) return;
-    try {
-       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-       audioContextRef.current = audioCtx;
-       const analyser = audioCtx.createAnalyser();
-       // Grab the audio track from the media stream
-       const source = audioCtx.createMediaStreamSource(streamRef.current);
-       source.connect(analyser);
-       analyser.fftSize = 64;
-       
-       const bufferLength = analyser.frequencyBinCount;
-       const dataArray = new Uint8Array(bufferLength);
-       const canvas = canvasRef.current;
-       const ctx = canvas.getContext('2d');
-       
-       const draw = () => {
-         if (!ctx || !canvas) return;
-         animationFrameRef.current = requestAnimationFrame(draw);
-         analyser.getByteFrequencyData(dataArray);
-         
-         ctx.clearRect(0, 0, canvas.width, canvas.height);
-         const barWidth = (canvas.width / bufferLength) * 2;
-         let barHeight;
-         let x = 0;
-         
-         for(let i = 0; i < bufferLength; i++) {
-           barHeight = dataArray[i] / 2;
-           ctx.fillStyle = `rgb(239, 68, 68)`; // Tailwind Red 500
-           ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-           x += barWidth + 1;
-         }
-       };
-       draw();
-    } catch(e) {
-      console.warn("Visualizer failed to start", e);
-    }
-  }, []);
-
-  const stopVisualizer = useCallback(() => {
-     if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-     if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-        audioContextRef.current = null;
-     }
   }, []);
 
   // Stop camera feed
@@ -180,9 +127,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
     return () => {
       stopCamera();
-      stopVisualizer();
     };
-  }, [isOpen, viewMode, facingMode, startCamera, stopCamera, stopVisualizer]);
+  }, [isOpen, viewMode, facingMode, startCamera, stopCamera]);
 
   // Cleanup on unmount or close
   useEffect(() => {
@@ -197,9 +143,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setCaption('');
       chunksRef.current = [];
       setIsFlashOn(false);
-      stopVisualizer();
     }
-  }, [isOpen, previewUrl, stopVisualizer]);
+  }, [isOpen, previewUrl]);
 
   // Flip Camera
   const toggleCamera = () => {
@@ -294,11 +239,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     if (maxDurationTimerRef.current) clearTimeout(maxDurationTimerRef.current);
     
     setRecordingTime(0);
-    stopVisualizer();
     
     shutterControls.start({ scale: 1, borderColor: "rgba(255,255,255,1)" });
     lockIconControls.start({ y: 0, opacity: 0 });
-  }, [shutterControls, lockIconControls, stopVisualizer]);
+  }, [shutterControls, lockIconControls]);
 
   const startRecording = () => {
     if (!streamRef.current) return;
@@ -355,15 +299,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       stopRecording();
     }, 60000);
   };
-
-  // Triggered when lock action happens
-  useEffect(() => {
-    if (isLocked) {
-      startVisualizer();
-    } else {
-      stopVisualizer();
-    }
-  }, [isLocked, startVisualizer, stopVisualizer]);
 
   // --- Gesture Handlers ---
   const handlePointerDown = () => {
@@ -575,14 +510,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
               )}
             </div>
 
-            {/* Lock Indicator & Visualizer */}
+            {/* Lock Indicator */}
             <div className="absolute bottom-40 inset-x-0 flex flex-col items-center pointer-events-none z-20">
-              <canvas 
-                ref={canvasRef} 
-                width={120} 
-                height={40} 
-                className={`mb-4 transition-opacity duration-300 ${isLocked ? 'opacity-100' : 'opacity-0'}`} 
-              />
               <motion.div animate={lockIconControls} initial={{ y: 0, opacity: 0 }} className="flex flex-col items-center gap-2">
                 <span className="material-symbols-outlined text-[32px]">{isLocked ? "lock" : "lock_open"}</span>
                 {!isLocked && <span className="text-xs uppercase tracking-widest bg-black/40 px-2 py-1 rounded-full backdrop-blur-md">Swipe up to lock</span>}
