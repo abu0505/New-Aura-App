@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const message = body.record || body;
-    console.log("[send-push] Received:", JSON.stringify({ id: message?.id, sender_id: message?.sender_id, receiver_id: message?.receiver_id }));
+
 
     if (!message || !message.receiver_id) {
       return new Response(JSON.stringify({ error: "No receiver_id in payload" }), { status: 400, headers });
@@ -240,7 +240,7 @@ Deno.serve(async (req) => {
     // ── CHECK NOTIFICATION PREFERENCES ──
     // If receiver has explicitly disabled message notifications, skip
     if (receiverSettings && receiverSettings.notify_messages === false) {
-      console.log("[send-push] Receiver has disabled message notifications. Skipping.");
+
       return new Response(JSON.stringify({ success: true, message: "Notifications disabled by receiver" }), { headers });
     }
 
@@ -251,10 +251,10 @@ Deno.serve(async (req) => {
       
       // If user is marked is_online=true AND pinged within the last 90 seconds, they are actively online.
       if (secondsSinceLastSeen < 90) {
-        console.log(`[send-push] Receiver is actively online (last seen ${Math.floor(secondsSinceLastSeen)}s ago). Skipping push notification.`);
+
         return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
       } else {
-        console.log(`[send-push] Receiver is marked online but last seen was ${Math.floor(secondsSinceLastSeen)}s ago (zombie state). Sending push anyway.`);
+
       }
     }
 
@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
-    console.log(`[send-push] Found ${subscriptions.length} subscription(s). Sending to ${senderName}…`);
+
 
     // Send personalized payload so the service worker can display meaningful content
     const pushPayload = JSON.stringify({
@@ -285,12 +285,12 @@ Deno.serve(async (req) => {
           vapidSubject
         );
 
-        console.log(`[send-push] FCM response: ${response.status} ${response.statusText}`);
+
 
         if (response.status === 201 || response.status === 200) {
           successCount++;
         } else if (response.status === 410 || response.status === 404 || response.status === 400) {
-          console.log("[send-push] Subscription expired or invalid, deleting from DB.");
+
           await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
         } else {
           const respBody = await response.text();
@@ -303,7 +303,7 @@ Deno.serve(async (req) => {
 
     await Promise.all(sendPromises);
 
-    console.log(`[send-push] Done. Sent to ${successCount}/${subscriptions.length} subscriptions.`);
+
     return new Response(JSON.stringify({ success: true, sentTo: successCount }), { headers });
 
   } catch (err: any) {

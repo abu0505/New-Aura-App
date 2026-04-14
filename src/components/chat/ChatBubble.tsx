@@ -315,7 +315,7 @@ function ChatBubble({
     switch (message.type) {
       case 'image':
         return (
-          <div className="relative group max-w-[240px]">
+          <div className={`relative group max-w-[240px] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
             <motion.img 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -334,7 +334,7 @@ function ChatBubble({
         );
       case 'video':
         return (
-          <div className="relative max-w-[240px] group">
+          <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
             <div className={`relative cursor-pointer group ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5`} onClick={() => setIsPreviewOpen(true)}>
               <video 
                 src={decryptedMediaUrl} 

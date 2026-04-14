@@ -17,19 +17,19 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 }) => {
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  
+
   // States: 'camera' | 'preview'
   const [viewMode, setViewMode] = useState<'camera' | 'preview'>('camera');
-  
+
   // Recording states
   const [isRecording, setIsRecording] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
-  
+
   // Premium Features States
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [showShutterFlash, setShowShutterFlash] = useState(false);
-  
+
   // Captured Media
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -37,8 +37,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   // Settings
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
-  const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:3' | '16:9' | 'Full'>('Full');
+  const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:3' | '9:16' | '16:9'>('9:16');
   const [showSettings, setShowSettings] = useState(false);
+  const [digitalZoom, setDigitalZoom] = useState(1);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -46,10 +47,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isCanvasRecordingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
+  const startPosRef = useRef<{ x: number, y: number } | null>(null);
+  const zoomRef = useRef<{ current: number, min: number, max: number }>({ current: 1, min: 1, max: 1 });
+  const hasHardwareZoomRef = useRef(false);
+
   const shutterControls = useAnimation();
   const lockIconControls = useAnimation();
 
@@ -86,7 +90,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const startCamera = useCallback(async () => {
     stopCamera();
     try {
-      let idealWidth = 1920; 
+      let idealWidth = 1920;
       let idealHeight = 1080;
       if (resolution === '4k') { idealWidth = 3840; idealHeight = 2160; }
       else if (resolution === '1080p') { idealWidth = 1920; idealHeight = 1080; }
@@ -94,16 +98,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
       let ratioValue: number | undefined = undefined;
       if (aspectRatio === '1:1') ratioValue = 1;
-      else if (aspectRatio === '4:3') ratioValue = 3/4; // Mobile is portrait, so 3:4 physically
-      else if (aspectRatio === '16:9') ratioValue = 9/16; // 9:16 physically
+      else if (aspectRatio === '4:3') ratioValue = 3 / 4; // Mobile is portrait, so 3:4 physically
+      else if (aspectRatio === '16:9') ratioValue = 9 / 16; // 9:16 physically
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode, 
+        video: {
+          facingMode,
           width: { ideal: idealHeight }, // mobile: height is usually the larger number, so idealWidth specifies the physical height mapping
           height: { ideal: idealWidth },
           ...(ratioValue ? { aspectRatio: { ideal: ratioValue } } : {}),
-          frameRate: { ideal: 60, min: 30 } 
+          frameRate: { ideal: 60, min: 30 }
         },
         audio: true
       });
@@ -112,6 +116,22 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         videoRef.current.srcObject = stream;
       }
       setHasPermission(true);
+
+      const track = stream.getVideoTracks()[0];
+      const capabilities: any = track.getCapabilities();
+      if (capabilities.zoom) {
+        hasHardwareZoomRef.current = true;
+        zoomRef.current = {
+          current: track.getSettings().zoom || capabilities.zoom.min || 1,
+          min: capabilities.zoom.min || 1,
+          max: capabilities.zoom.max || 5
+        };
+        setDigitalZoom(1);
+      } else {
+        hasHardwareZoomRef.current = false;
+        zoomRef.current = { current: 1, min: 1, max: 5 }; // Digital bounds
+        setDigitalZoom(1);
+      }
     } catch (error) {
       console.error('Camera access denied or error:', error);
       setHasPermission(false);
@@ -153,6 +173,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   // Toggle Torch/Flash
   const toggleTorch = async () => {
+    if (facingMode === 'user') {
+      setIsFlashOn(!isFlashOn);
+      return;
+    }
+
     if (!streamRef.current) return;
     const track = streamRef.current.getVideoTracks()[0];
     if (track) {
@@ -177,54 +202,73 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   // --- Photo Capture ---
   const takePhoto = async () => {
     if (!videoRef.current) return;
-    
+
     // SFX & Flash UX
     playShutterSound();
     setShowShutterFlash(true);
     setTimeout(() => setShowShutterFlash(false), 100);
-    
+
     if (navigator.vibrate) navigator.vibrate(50);
 
     const video = videoRef.current;
-    
-    let targetRatio = 16/9; // Full defaults to taking the physical stream size
+    const vw = video.videoWidth;   // e.g. 1080
+    const vh = video.videoHeight;  // e.g. 1920 (portrait stream)
+
+    // Compute canvas dimensions matching the chosen ratio
+    let targetRatio = 1;
     if (aspectRatio === '1:1') targetRatio = 1;
-    else if (aspectRatio === '4:3') targetRatio = 3/4; // Portrait
-    else if (aspectRatio === '16:9') targetRatio = 9/16; // Portrait width restriction
-    else if (aspectRatio === 'Full') targetRatio = video.videoWidth / video.videoHeight;
-    
-    let drawWidth = video.videoWidth;
-    let drawHeight = drawWidth / targetRatio;
-    if (drawHeight > video.videoHeight) {
-      drawHeight = video.videoHeight;
-      drawWidth = drawHeight * targetRatio;
+    else if (aspectRatio === '4:3') targetRatio = 3 / 4; // Mobile is portrait, so physically 3:4
+    else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+    else if (aspectRatio === '9:16') targetRatio = 9 / 16;
+
+    let cw: number, ch: number;
+    let testH = vw / targetRatio;
+    if (testH <= vh) {
+      cw = vw;
+      ch = testH;
+    } else {
+      ch = vh;
+      cw = vh * targetRatio;
     }
-    const offsetX = (video.videoWidth - drawWidth) / 2;
-    const offsetY = (video.videoHeight - drawHeight) / 2;
+    cw = Math.round(cw);
+    ch = Math.round(ch);
+
+    const offsetX = (vw - cw) / 2;
+    const offsetY = (vh - ch) / 2;
 
     const canvas = document.createElement('canvas');
-    canvas.width = drawWidth;
-    canvas.height = drawHeight;
+    canvas.width = cw;
+    canvas.height = ch;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
+    const zoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
+    ctx.save();
+
     // Check if we need to mirror the image for front camera
     if (facingMode === 'user') {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
-    ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight, 0, 0, drawWidth, drawHeight);
-    
+
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
+
+    ctx.drawImage(video, offsetX, offsetY, cw, ch, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+
     canvas.toBlob((blob) => {
       if (blob) {
-        const file = new File([blob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        // WebP gives ~70% size reduction vs JPEG at near-identical quality
+        const file = new File([blob], `photo_${Date.now()}.webp`, { type: 'image/webp' });
         const url = URL.createObjectURL(blob);
         setCapturedFile(file);
         setPreviewUrl(url);
         // Switch to preview mode
         setViewMode('preview');
       }
-    }, 'image/jpeg', 0.9);
+    }, 'image/webp', 0.82);
   };
 
   // --- Video Recording ---
@@ -234,82 +278,165 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
     setIsRecording(false);
     setIsLocked(false);
-    
-    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
-    if (maxDurationTimerRef.current) clearTimeout(maxDurationTimerRef.current);
-    
+    setDigitalZoom(1);
+    startPosRef.current = null;
     setRecordingTime(0);
-    
-    shutterControls.start({ scale: 1, borderColor: "rgba(255,255,255,1)" });
-    lockIconControls.start({ y: 0, opacity: 0 });
-  }, [shutterControls, lockIconControls]);
+
+    shutterControls.start({ 
+      scale: 1, 
+      borderColor: isFlashOn && facingMode === 'user' ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.5)" 
+    });
+    lockIconControls.start({ opacity: 0 });
+  }, [shutterControls, lockIconControls, isFlashOn, facingMode]);
+
+  // Recording timer and max duration effect
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    if (isRecording) {
+      setRecordingTime(0);
+      interval = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+      // Max duration limit (60s)
+      timer = setTimeout(() => {
+        stopRecording();
+      }, 60000);
+    } else {
+      setRecordingTime(0);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (timer) clearTimeout(timer);
+    };
+  }, [isRecording, stopRecording]);
 
   const startRecording = () => {
-    if (!streamRef.current) return;
-    
+    if (!streamRef.current || !videoRef.current) return;
+
     chunksRef.current = [];
-    const options = { mimeType: 'video/mp4' };
+    isCanvasRecordingRef.current = true;
+
+    const video = videoRef.current;
+    const canvas = document.createElement('canvas');
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    // Compute canvas dimensions matching ratio — same logic as takePhoto
+    let targetRatio = 1;
+    if (aspectRatio === '1:1') targetRatio = 1;
+    else if (aspectRatio === '4:3') targetRatio = 3 / 4;
+    else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+    else if (aspectRatio === '9:16') targetRatio = 9 / 16;
+
+    let cw: number, ch: number;
+    let testH = vw / targetRatio;
+    if (testH <= vh) {
+      cw = vw;
+      ch = testH;
+    } else {
+      ch = vh;
+      cw = vh * targetRatio;
+    }
+    cw = Math.round(cw);
+    ch = Math.round(ch);
+    canvas.width = cw;
+    canvas.height = ch;
+
+    let recordStream = streamRef.current;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      const canvasStream = canvas.captureStream(60);
+      streamRef.current.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+      recordStream = canvasStream;
+
+      const drawLoop = () => {
+        if (!isCanvasRecordingRef.current || !ctx || !videoRef.current) return;
+
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const zoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
+        const srcX = (vw - cw) / 2;
+        const srcY = (vh - ch) / 2;
+        ctx.save();
+        if (facingMode === 'user') {
+          ctx.translate(cw, 0);
+          ctx.scale(-1, 1);
+        }
+        ctx.translate(cw / 2, ch / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-cw / 2, -ch / 2);
+        ctx.drawImage(videoRef.current, srcX, srcY, cw, ch, 0, 0, cw, ch);
+        ctx.restore();
+
+        requestAnimationFrame(drawLoop);
+      };
+      requestAnimationFrame(drawLoop);
+    }
+    const options: any = {
+      mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/mp4',
+      videoBitsPerSecond: 8000000 // High bitrate for 60fps smoothness
+    };
     let recorder;
-    
+
     try {
-      recorder = new MediaRecorder(streamRef.current, options);
+      recorder = new MediaRecorder(recordStream, options);
     } catch (e) {
       // Fallback
-      recorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+      recorder = new MediaRecorder(recordStream, { mimeType: 'video/webm', videoBitsPerSecond: 5000000 });
     }
-    
+
     mediaRecorderRef.current = recorder;
-    
+
     recorder.ondataavailable = (event) => {
       if (event.data && event.data.size > 0) {
         chunksRef.current.push(event.data);
       }
     };
-    
+
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: recorder?.mimeType || 'video/mp4' });
       const file = new File([blob], `video_${Date.now()}.${recorder?.mimeType.includes('webm') ? 'webm' : 'mp4'}`, { type: blob.type });
       const url = URL.createObjectURL(blob);
       setCapturedFile(file);
       setPreviewUrl(url);
-      
+
       if (navigator.vibrate) navigator.vibrate([50, 50]);
-      
+
       setViewMode('preview');
     };
-    
+
     recorder.start(200); // chunk every 200ms
     setIsRecording(true);
-    
+
     // Haptic feedback start
     if (navigator.vibrate) navigator.vibrate(50);
-    
+
     // Visuals
-    shutterControls.start({ scale: 1.5, borderColor: "rgba(239,68,68,1)" }); // red
-    
-    // Timer updates
-    let sec = 0;
-    recordingIntervalRef.current = setInterval(() => {
-      sec++;
-      setRecordingTime(sec);
-    }, 1000);
-    
-    // Max duration limit (60s)
-    maxDurationTimerRef.current = setTimeout(() => {
-      stopRecording();
-    }, 60000);
+    shutterControls.start({ 
+      scale: 1.5, 
+      borderColor: "rgba(255,255,255,0)" // Hide the white border while recording
+    });
   };
 
   // --- Gesture Handlers ---
-  const handlePointerDown = () => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     if (isRecording) return;
+    startPosRef.current = { x: e.clientX, y: e.clientY };
     // Delay to differentiate tap vs long-press
     holdTimerRef.current = setTimeout(() => {
+      holdTimerRef.current = null;
       startRecording();
     }, 300);
   };
 
   const handlePointerUp = () => {
+    startPosRef.current = null;
     if (holdTimerRef.current) {
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
@@ -318,24 +445,38 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         takePhoto();
       }
     }
-    
+
     if (isRecording && !isLocked) {
       stopRecording();
     }
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (isRecording && !isLocked) {
-      // Swipe up to lock
-      const screenHeight = window.innerHeight;
-      const dragY = screenHeight - e.clientY;
-      
-      if (dragY > 150) {
+    if (isRecording && !isLocked && startPosRef.current) {
+      const deltaX = e.clientX - startPosRef.current.x; // Swipe right
+      const deltaY = startPosRef.current.y - e.clientY; // Swipe up
+
+      // Swipe right to lock
+      if (deltaX > 80) {
         setIsLocked(true);
-        lockIconControls.start({ scale: 1.2, color: "#10B981" }); // Turn green
+        lockIconControls.start({ x: 0, scale: 1.2, color: "#10B981" }); // Turn green
         if (navigator.vibrate) navigator.vibrate(100); // Lock feedback
-      } else if (dragY > 60) {
-        lockIconControls.start({ y: -(dragY - 60), opacity: 1 });
+      } else if (deltaX > 20) {
+        lockIconControls.start({ x: deltaX - 20, opacity: 1 });
+      }
+
+      // Swipe up to zoom
+      const zoomProgress = Math.max(0, Math.min(1, deltaY / 300)); // up to 300px
+      const { min, max } = zoomRef.current;
+      const targetZoom = min + (max - min) * zoomProgress;
+
+      if (hasHardwareZoomRef.current && streamRef.current) {
+        const track = streamRef.current.getVideoTracks()[0];
+        track.applyConstraints({ advanced: [{ zoom: targetZoom }] } as any).catch(() => { });
+        zoomRef.current.current = targetZoom;
+      } else {
+        setDigitalZoom(targetZoom);
+        zoomRef.current.current = targetZoom;
       }
     }
   };
@@ -377,101 +518,136 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         className="fixed inset-0 z-[100] bg-black text-white flex flex-col overflow-hidden touch-none select-none"
       >
         {viewMode === 'camera' && (
-          <div className="relative w-full h-full flex flex-col bg-black">
+          <div className="relative w-full h-full flex flex-col bg-black" onClick={() => { if (showSettings) setShowSettings(false); }}>
             {/* Shutter UI Flash */}
             <AnimatePresence>
               {showShutterFlash && (
-                <motion.div 
-                  initial={{ opacity: 1 }} 
-                  animate={{ opacity: 0 }} 
+                <motion.div
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 0 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute inset-0 bg-white z-[60] pointer-events-none" 
+                  className="absolute inset-0 bg-white z-[60] pointer-events-none"
+                />
+              )}
+            </AnimatePresence>
+
+            {/* Front Camera "Soft Flash" (Smooth Transition) */}
+            <AnimatePresence>
+              {isFlashOn && facingMode === 'user' && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.5, ease: "easeInOut" }}
+                  className="absolute inset-0 bg-white z-[60] pointer-events-none"
+                  style={{
+                    maskImage: 'radial-gradient(circle at center, transparent 240px, black 241px)',
+                    WebkitMaskImage: 'radial-gradient(circle at center, transparent 240px, black 241px)'
+                  }}
                 />
               )}
             </AnimatePresence>
 
             {(() => {
-              let layoutClass = 'absolute inset-0';
-              if (aspectRatio === '1:1') layoutClass = 'absolute top-1/2 left-0 -translate-y-1/2 w-full aspect-square';
-              else if (aspectRatio === '4:3') layoutClass = 'absolute top-1/2 left-0 -translate-y-1/2 w-full aspect-[3/4]';
-              else if (aspectRatio === '16:9') layoutClass = 'absolute top-[10%] left-0 w-full aspect-[9/16]';
-              
+              // Mobile is portrait. Camera stream is portrait (tall).
+              // 9:16 = full portrait (fill the screen, normal mobile view)
+              // 16:9 = landscape crop (wide letterbox strip in center)
+              // 4:3 = standard portrait crop
+              // 1:1 = square crop
+              let layoutClass = 'absolute inset-0'; // 9:16 default - full screen
+              if (aspectRatio === '1:1') layoutClass = 'absolute inset-x-0 top-1/2 -translate-y-1/2 w-full aspect-square';
+              else if (aspectRatio === '4:3') layoutClass = 'absolute inset-x-0 top-1/2 -translate-y-1/2 w-full aspect-[3/4]';
+              else if (aspectRatio === '16:9') layoutClass = 'absolute inset-x-0 top-1/2 -translate-y-1/2 w-full aspect-[16/9]';
+              else if (aspectRatio === '9:16') layoutClass = 'absolute inset-0';
+              // NOTE: 16:9 on mobile = landscape orientation. The camera stream is portrait,
+              // so 16:9 crops a SHORT WIDE strip from the center of the portrait stream.
+
               return (
                 <div className={`${layoutClass} overflow-hidden bg-black flex items-center justify-center transition-all duration-300 pointer-events-none`}>
-                   {hasPermission === false ? (
+                  {hasPermission === false ? (
                     <div className="text-white/50 text-center p-6 mt-1/2 pointer-events-auto">
                       <span className="material-symbols-outlined text-[48px] mb-2 opacity-50">videocam_off</span>
-                      <p>Camera access denied.<br/>Please enable in browser settings.</p>
+                      <p>Camera access denied.<br />Please enable in browser settings.</p>
                     </div>
                   ) : (
-                    <video 
+                    <video
                       ref={videoRef}
-                      autoPlay 
-                      playsInline 
-                      muted 
+                      autoPlay
+                      playsInline
+                      muted
                       className="w-full h-full object-cover pointer-events-auto"
-                      style={facingMode === 'user' ? { transform: 'scaleX(-1)' } : undefined}
+                      style={{
+                        transform: facingMode === 'user' ? `scaleX(-1) scale(${digitalZoom})` : `scale(${digitalZoom})`,
+                        transformOrigin: 'center'
+                      }}
                       onDoubleClick={toggleCamera}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); if (showSettings) setShowSettings(false); }}
                     />
                   )}
                 </div>
               );
             })()}
 
-            {/* Settings Dropdown Overlay */}
+            {/* Settings Dropdown Overlay - centered below top bar */}
             <AnimatePresence>
               {showSettings && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="absolute top-20 right-4 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-2xl p-4 flex flex-col gap-4 z-50 pointer-events-auto min-w-[200px]"
-                >
-                  <div>
-                    <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2 block">Resolution</span>
-                    <div className="flex bg-black/40 rounded-xl p-1">
-                      {['720p', '1080p', '4k'].map(res => (
-                        <button 
-                          key={res} 
-                          onClick={() => setResolution(res as any)}
-                          className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-colors ${resolution === res ? 'bg-primary text-background' : 'text-white/70 hover:text-white'}`}
-                        >
-                          {res}
-                        </button>
-                      ))}
+                <div className="absolute top-[3.75rem] inset-x-0 flex justify-center z-[80] pointer-events-none">
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    transition={{ duration: 0.15 }}
+                    className="bg-black/40 backdrop-blur-3xl border border-white/10 rounded-2xl p-4 flex flex-col gap-4 pointer-events-auto w-[220px] shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div>
+                      <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2 block">Resolution</span>
+                      <div className="flex bg-black/30 rounded-xl p-1">
+                        {['720p', '1080p', '4k'].map(res => (
+                          <button
+                            key={res}
+                            onClick={() => setResolution(res as any)}
+                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-colors ${resolution === res ? 'bg-primary text-background' : 'text-white/70 hover:text-white'}`}
+                          >
+                            {res}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2 block">Aspect Ratio</span>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['1:1', '4:3', '16:9', 'Full'].map(ratio => (
-                        <button 
-                          key={ratio} 
-                          onClick={() => setAspectRatio(ratio as any)}
-                          className={`py-2 text-[10px] font-bold rounded-xl uppercase tracking-wider transition-colors ${aspectRatio === ratio ? 'bg-primary/20 text-primary border border-primary/30' : 'bg-white/5 text-white/70 border border-transparent hover:bg-white/10'}`}
-                        >
-                          {ratio}
-                        </button>
-                      ))}
+                    <div>
+                      <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2 block">Aspect Ratio</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {['1:1', '4:3', '16:9', '9:16'].map(ratio => (
+                          <button
+                            key={ratio}
+                            onClick={() => setAspectRatio(ratio as any)}
+                            className={`py-2 text-[10px] font-bold rounded-xl uppercase tracking-wider transition-all ${aspectRatio === ratio ? 'bg-white/20 text-white border border-white/50 shadow-inner' : 'bg-black/20 text-white/60 border border-white/10 hover:bg-white/10'}`}
+                          >
+                            {ratio}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
+                  </motion.div>
+                </div>
               )}
             </AnimatePresence>
 
             {/* Top Bar Overlay */}
-            <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex items-start justify-between bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none">
-              <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md pointer-events-auto">
+            <div className={`absolute top-0 inset-x-0 p-4 pt-safe-top flex items-start justify-between bg-gradient-to-b ${isFlashOn && facingMode === 'user' ? 'from-white/40' : 'from-black/60'} to-transparent z-[70] pointer-events-none transition-all duration-500`}>
+              <button
+                onClick={onClose}
+                className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md pointer-events-auto transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 text-black shadow-lg' : 'bg-black/30 text-white hover:bg-white/20'}`}
+              >
                 <span className="material-symbols-outlined text-[24px]">close</span>
               </button>
-              
+
               <div className="flex flex-col items-center pointer-events-auto">
-                <div className="flex items-center bg-black/30 backdrop-blur-md rounded-full border border-white/10 p-1">
-                  <button 
+                <div className={`flex items-center backdrop-blur-md rounded-full border p-1 transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 border-black/10 shadow-lg' : 'bg-black/30 border-white/10'}`}>
+                  <button
                     onClick={() => setShowSettings(!showSettings)}
-                    className={`px-3 py-1.5 rounded-full flex gap-1.5 items-center transition-colors ${showSettings ? 'bg-primary text-background' : 'text-white hover:bg-white/10'}`}
+                    className={`px-3 py-1.5 rounded-full flex gap-1.5 items-center transition-all duration-500 ${showSettings ? 'bg-primary text-background' : (isFlashOn && facingMode === 'user' ? 'text-black hover:bg-black/10' : 'text-white hover:bg-white/10')}`}
                   >
                     <span className="material-symbols-outlined text-[16px]">settings</span>
                     <span className="text-xs font-bold font-mono tracking-widest">{resolution.toUpperCase()}</span>
@@ -487,10 +663,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
               </div>
 
               <div className="w-10 flex flex-col gap-2 pointer-events-auto transition-opacity" style={{ opacity: showSettings ? 0.3 : 1, pointerEvents: showSettings ? 'none' : 'auto' }}>
-                <button onClick={toggleCamera} className="w-10 h-10 flex flex-col items-center justify-center rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-white/20">
+                <button
+                  onClick={toggleCamera}
+                  className={`w-10 h-10 flex flex-col items-center justify-center rounded-full backdrop-blur-md transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 text-black shadow-lg' : 'bg-black/30 text-white hover:bg-white/20'}`}
+                >
                   <span className="material-symbols-outlined text-[20px]">flip_camera_ios</span>
                 </button>
-                <button onClick={toggleTorch} className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-colors ${isFlashOn ? 'bg-white text-black shadow-glow-gold' : 'bg-black/30 text-white hover:bg-white/20'}`}>
+                <button
+                  onClick={toggleTorch}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-black text-white shadow-glow-gold' : (isFlashOn ? 'bg-white text-black shadow-glow-gold' : 'bg-black/30 text-white hover:bg-white/20')}`}
+                >
                   <span className="material-symbols-outlined text-[20px]">
                     {isFlashOn ? 'flashlight_on' : 'flashlight_off'}
                   </span>
@@ -498,55 +680,61 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
               </div>
             </div>
 
-            <div className="absolute top-20 right-4 z-40 pointer-events-none">
-              {isRecording && (
-                <div className="bg-red-500/20 px-3 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-md border border-red-500/50 pointer-events-auto">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <span className="font-mono text-sm font-medium">
-                    {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:
-                    {(recordingTime % 60).toString().padStart(2, '0')}
-                  </span>
-                </div>
-              )}
-            </div>
+            <div className="absolute top-20 right-4 z-40 pointer-events-none" />
 
             {/* Lock Indicator */}
-            <div className="absolute bottom-40 inset-x-0 flex flex-col items-center pointer-events-none z-20">
-              <motion.div animate={lockIconControls} initial={{ y: 0, opacity: 0 }} className="flex flex-col items-center gap-2">
+            <div className="absolute bottom-52 inset-x-0 flex flex-col items-center pointer-events-none z-20">
+              <motion.div animate={lockIconControls} initial={{ opacity: 0 }} className="flex flex-col items-center gap-2">
                 <span className="material-symbols-outlined text-[32px]">{isLocked ? "lock" : "lock_open"}</span>
-                {!isLocked && <span className="text-xs uppercase tracking-widest bg-black/40 px-2 py-1 rounded-full backdrop-blur-md">Swipe up to lock</span>}
+                {!isLocked && <span className="text-xs uppercase tracking-widest bg-black/40 px-2 py-1 rounded-full backdrop-blur-md">Swipe right to lock</span>}
               </motion.div>
             </div>
 
             {/* Bottom Controls */}
-            <div className="absolute bottom-0 inset-x-0 pb-safe-bottom bg-gradient-to-t from-black/80 via-black/40 to-transparent z-20">
+            <div className={`absolute bottom-0 inset-x-0 pb-safe-bottom bg-gradient-to-t ${isFlashOn && facingMode === 'user' ? 'from-white/40' : 'from-black/80'} via-transparent to-transparent z-[70] transition-all duration-500`}>
               <div className="flex items-center justify-between px-8 pb-10 pt-4">
                 {/* Gallery Button */}
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/20 hover:border-white/50 transition-colors bg-white/10 backdrop-blur-sm flex items-center justify-center active:scale-95 pointer-events-auto"
+                  className={`w-12 h-12 rounded-xl overflow-hidden border-2 backdrop-blur-sm flex items-center justify-center active:scale-95 pointer-events-auto transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 border-black/20 text-black shadow-lg' : 'bg-white/10 border-white/20 text-white hover:border-white/50'}`}
                 >
-                  <span className="material-symbols-outlined text-white">photo_library</span>
+                  <span className="material-symbols-outlined">photo_library</span>
                 </button>
                 <input type="file" ref={fileInputRef} onChange={handleGalleryChange} className="hidden" accept="image/*,video/*" multiple />
 
                 {/* Shutter Button */}
                 <div className="relative flex items-center justify-center pointer-events-auto" style={{ touchAction: 'none' }}>
-                  {/* Outer Ring */}
+
+                  {/* Centered Timer Text */}
                   {isRecording && (
-                    <motion.div 
-                      className="absolute inset-0 rounded-full border-[3px] border-red-500 box-content"
-                      style={{ scale: 1.5, marginLeft: '-3px', marginTop: '-3px', padding: '3px' }}
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                    />
+                    <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-red-500/20 px-3 py-1 rounded-full flex items-center gap-2 backdrop-blur-md border border-red-500/50 pointer-events-none">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="font-mono text-sm font-medium pt-0.5">
+                        {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:
+                        {(recordingTime % 60).toString().padStart(2, '0')}
+                      </span>
+                    </div>
                   )}
-                  
+
+                  {/* Outer Ring Animation - Always visible while recording, larger than scaled shutter */}
+                  {isRecording && (
+                    <svg className="absolute w-[130px] h-[130px] pointer-events-none transform -rotate-90 z-20">
+                      <circle cx="65" cy="65" r="60" stroke="rgba(239, 68, 68, 0.2)" strokeWidth="4" fill="transparent" />
+                      <circle
+                        cx="65" cy="65" r="60"
+                        stroke="#EF4444" strokeWidth="5" fill="transparent"
+                        strokeDasharray={2 * Math.PI * 60}
+                        strokeDashoffset={(2 * Math.PI * 60) * (1 - Math.min(recordingTime / 60, 1))}
+                        className="transition-all duration-1000 ease-linear" strokeLinecap="round"
+                      />
+                    </svg>
+                  )}
+
                   {isLocked ? (
                     // Stop button when locked
-                    <button 
-                      onClick={stopRecording}
-                      className="w-20 h-20 bg-transparent flex items-center justify-center"
+                    <button
+                      onPointerDown={stopRecording}
+                      className="w-20 h-20 bg-transparent flex items-center justify-center relative z-30"
                     >
                       <div className="w-8 h-8 rounded-sm bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)]" />
                     </button>
@@ -554,14 +742,14 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                     // Default Shutter
                     <motion.button
                       animate={shutterControls}
-                      initial={{ scale: 1, borderColor: "rgba(255,255,255,1)" }}
-                      className="w-20 h-20 rounded-full border-[4px] bg-white/20 backdrop-blur-sm flex items-center justify-center"
+                      initial={{ scale: 1, borderColor: isFlashOn && facingMode === 'user' ? "rgba(0,0,0,0.2)" : "rgba(255,255,255,0.5)" }}
+                      className={`w-20 h-20 rounded-full border-[4px] backdrop-blur-md flex items-center justify-center shadow-lg transition-all duration-500 relative z-10 ${isRecording ? 'border-transparent' : (isFlashOn && facingMode === 'user' ? 'bg-white/60 border-black/40' : 'bg-white/10 border-white/40')}`}
                       onPointerDown={handlePointerDown}
                       onPointerUp={handlePointerUp}
                       onPointerMove={handlePointerMove}
                       onPointerLeave={handlePointerUp}
                     >
-                      <div className="w-[85%] h-[85%] rounded-full bg-white shadow-lg" />
+                      <div className={`w-[85%] h-[85%] rounded-full shadow-lg transition-all duration-500 ${isFlashOn && facingMode === 'user' ? (isRecording ? 'bg-red-500/60' : 'bg-black/80') : (isRecording ? 'bg-red-500' : 'bg-white')}`} />
                     </motion.button>
                   )}
                 </div>
@@ -576,28 +764,40 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         {/* --- Post-Capture Preview Mode --- */}
         {viewMode === 'preview' && capturedFile && previewUrl && (
           <div className="relative w-full h-full bg-black flex flex-col z-50">
-            <div className="flex-1 relative bg-black">
-              {capturedFile.type.startsWith('video') ? (
-                <video 
-                  src={previewUrl} 
-                  controls 
-                  autoPlay 
-                  playsInline 
-                  loop 
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <img 
-                  src={previewUrl} 
-                  alt="Preview" 
-                  className="w-full h-full object-contain"
-                />
-              )}
+            <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+              {(() => {
+                let layoutClass = 'w-full h-full';
+                if (aspectRatio === '1:1') layoutClass = 'w-full aspect-square';
+                else if (aspectRatio === '4:3') layoutClass = 'w-full aspect-[3/4]';
+                else if (aspectRatio === '16:9') layoutClass = 'w-full aspect-[16/9]';
+                else if (aspectRatio === '9:16') layoutClass = 'w-full h-full';
+
+                return (
+                  <div className={`relative ${layoutClass} overflow-hidden flex items-center justify-center`}>
+                    {capturedFile.type.startsWith('video') ? (
+                      <video
+                        src={previewUrl}
+                        controls={false}
+                        autoPlay
+                        playsInline
+                        loop
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Preview Top Bar */}
             <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between bg-gradient-to-b from-black/60 to-transparent">
-              <button 
+              <button
                 onClick={handleDiscard}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
               >

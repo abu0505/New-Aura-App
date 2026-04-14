@@ -201,7 +201,7 @@ export async function restoreKeys(userId: string, pin: string): Promise<boolean>
 
     // If restored from legacy, silently re-encrypt backup with PBKDF2
     if (usedLegacy) {
-      console.log('[Encryption] Migrating backup from SHA-512 to PBKDF2...');
+
       await backupKeys(userId, pin);
     }
 

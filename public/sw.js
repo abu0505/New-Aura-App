@@ -6,7 +6,7 @@ self.addEventListener('push', function(event) {
 
   try {
     const pushData = event.data.json();
-    console.log('[Service Worker] Push Received.');
+
 
     // Always use the app name as title for privacy —
     // no partner names visible on lock screen in public places.
@@ -44,7 +44,7 @@ self.addEventListener('push', function(event) {
         
         // If app is currently visible and focused, prevent popping up a duplicate notification
         if (isFocused) {
-          console.log('[Service Worker] App is focused. Suppressing system notification.');
+
           return Promise.resolve();
         }
 
@@ -70,7 +70,7 @@ self.addEventListener('push', function(event) {
 });
 
 self.addEventListener('notificationclick', function(event) {
-  console.log('[Service Worker] Notification click Received.');
+
   event.notification.close();
 
   var urlToOpen = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/';
@@ -101,7 +101,7 @@ self.addEventListener('notificationclick', function(event) {
 });
 
 self.addEventListener('pushsubscriptionchange', function(event) {
-  console.log('[Service Worker] pushsubscriptionchange event triggered');
+
   // Notify all open clients to re-subscribe
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then(function(clients) {

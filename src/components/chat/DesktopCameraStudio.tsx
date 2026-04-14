@@ -35,7 +35,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
   // Premium Features
   const [isRingLightOn, setIsRingLightOn] = useState(false);
   const [showShutterFlash, setShowShutterFlash] = useState(false);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isHardwareMenuOpen, setIsHardwareMenuOpen] = useState(false);
   
   // Captured Media
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
@@ -43,13 +43,14 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
   const [caption, setCaption] = useState('');
 
   // Refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const isCanvasRecordingRef = useRef(false);
   const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const maxDurationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // --- Hardware Fetching ---
@@ -200,14 +201,15 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
     
     canvas.toBlob((blob) => {
       if (blob) {
-        const file = new File([blob], `desktop_photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        // WebP gives ~70% size reduction vs JPEG at near-identical quality
+        const file = new File([blob], `desktop_photo_${Date.now()}.webp`, { type: 'image/webp' });
         const url = URL.createObjectURL(blob);
         setCapturedFile(file);
         setPreviewUrl(url);
         setViewMode('preview');
         setTimeout(() => setIsRingLightOn(false), 100);
       }
-    }, 'image/jpeg', 0.95);
+    }, 'image/webp', 0.82);
   };
 
   const stopRecording = useCallback(() => {
@@ -215,6 +217,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
       mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
+    isCanvasRecordingRef.current = false;
     
     if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
     if (maxDurationTimerRef.current) clearTimeout(maxDurationTimerRef.current);
@@ -224,16 +227,74 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
   }, []);
 
   const startRecording = () => {
-    if (!streamRef.current) return;
+    if (!streamRef.current || !videoRef.current) return;
     
     chunksRef.current = [];
-    const options = { mimeType: 'video/webm;codecs=vp8,opus' };
+    isCanvasRecordingRef.current = true;
+    
+    const video = videoRef.current;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    let targetRatio = 16/9;
+    if (aspectRatio === '1:1') targetRatio = 1;
+    else if (aspectRatio === '4:3') targetRatio = 4/3;
+    else if (aspectRatio === '9:16') targetRatio = 9/16;
+    else if (aspectRatio === '16:9') targetRatio = 16/9;
+
+    let cw = vw;
+    let ch = cw / targetRatio;
+
+    if (ch > vh) {
+      ch = vh;
+      cw = ch * targetRatio;
+    }
+
+    cw = Math.round(cw);
+    ch = Math.round(ch);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = cw;
+    canvas.height = ch;
+    
+    let recordStream = streamRef.current;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      const canvasStream = canvas.captureStream(60);
+      streamRef.current.getAudioTracks().forEach(t => canvasStream.addTrack(t));
+      recordStream = canvasStream;
+      
+      const drawLoop = () => {
+        if (!isCanvasRecordingRef.current || !ctx || !videoRef.current) return;
+        
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const srcX = (vw - cw) / 2;
+        const srcY = (vh - ch) / 2;
+        
+        ctx.save();
+        ctx.translate(canvas.width, 0); // Mirror horizontally like the standard desktop view
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, srcX, srcY, cw, ch, 0, 0, cw, ch);
+        ctx.restore();
+
+        requestAnimationFrame(drawLoop);
+      };
+      requestAnimationFrame(drawLoop);
+    }
+
+    const options: any = { 
+      mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9,opus' : 'video/webm;codecs=vp8,opus',
+      videoBitsPerSecond: 8000000 // High bitrate for 60fps smoothness
+    };
     let recorder;
     
     try {
-      recorder = new MediaRecorder(streamRef.current, options);
+      recorder = new MediaRecorder(recordStream, options);
     } catch (e) {
-      recorder = new MediaRecorder(streamRef.current, { mimeType: 'video/webm' });
+      recorder = new MediaRecorder(recordStream, { mimeType: 'video/webm', videoBitsPerSecond: 5000000 });
     }
     
     mediaRecorderRef.current = recorder;
@@ -330,20 +391,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
     }
   };
 
-  // Drag and drop for the whole container if in camera mode
-  const handleDragEnter = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDraggingOver(true); };
-  const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDraggingOver(false); };
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
-      onGallerySelect(files, '');
-      onClose();
-    }
-  };
+
 
   return (
     <motion.div
@@ -352,252 +400,301 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
       exit={{ x: '-100%', opacity: 0 }}
       transition={{ type: "spring", damping: 25, stiffness: 250 }}
       className="w-[380px] shrink-0 h-full bg-aura-bg-elevated/95 backdrop-blur-3xl border-r border-white/10 flex flex-col relative overflow-hidden z-50 shadow-[20px_0_40px_rgba(0,0,0,0.5)]"
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
       ref={containerRef}
     >
-      {/* Absolute Drag Indicator Overlay */}
-      <AnimatePresence>
-         {isDraggingOver && (
-            <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               className="absolute inset-0 bg-primary/20 backdrop-blur-md z-[200] border-4 border-dashed border-primary m-4 rounded-3xl flex flex-col items-center justify-center text-primary"
-            >
-               <span className="material-symbols-outlined text-[64px] mb-4">upload_file</span>
-               <h3 className="font-serif text-2xl">Drop Media Here</h3>
-            </motion.div>
-         )}
-      </AnimatePresence>
 
-      <div className="flex items-center justify-between px-6 py-5 shrink-0 border-b border-white/5">
-        <h2 className="text-lg font-serif text-primary tracking-wide">Studio</h2>
-        <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-aura-text-secondary hover:text-white">
-          <span className="material-symbols-outlined text-[20px]">close</span>
-        </button>
-      </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col relative pb-6">
+      <input type="file" ref={fileInputRef} onChange={handleGalleryChange} className="hidden" accept="image/*,video/*" multiple />
+
+      <div className="flex-1 relative bg-black overflow-hidden flex flex-col">
         
         {viewMode === 'camera' && (
-          <>
-            {(() => {
-               let aspectClass = 'aspect-video';
-               if (aspectRatio === '1:1') aspectClass = 'aspect-square';
-               else if (aspectRatio === '4:3') aspectClass = 'aspect-[4/3]';
-               else if (aspectRatio === '9:16') aspectClass = 'aspect-[9/16] max-w-[180px] mx-auto'; // Limit width so it doesn't push UI out of view
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+             {/* The Video Layer */}
+             <div className="absolute inset-0 z-0 pointer-events-auto">
+               {hasPermission === false ? (
+                 <div className="absolute inset-0 flex flex-col gap-2 items-center justify-center text-center p-4">
+                    <span className="material-symbols-outlined text-[48px] text-white/50">videocam_off</span>
+                    <span className="text-white/50 text-sm">Please allow camera access in browser.</span>
+                 </div>
+               ) : (
+                 <video 
+                   ref={videoRef}
+                   autoPlay 
+                   playsInline 
+                   muted 
+                   className="w-full h-full object-cover"
+                   style={{ transform: 'scaleX(-1)' }}
+                 />
+               )}
+               {/* Smart Ring Light Glow wrapper */}
+               <div className={`absolute inset-0 z-20 pointer-events-none transition-all duration-300 ${isRingLightOn ? 'shadow-[inset_0_0_0_12px_rgba(255,255,255,1),0_0_50px_rgba(255,255,255,0.4)]' : ''}`} />
+               <AnimatePresence>
+                 {showShutterFlash && (
+                    <motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="absolute inset-0 bg-white z-[60] pointer-events-none" />
+                 )}
+               </AnimatePresence>
+             </div>
 
-               return (
-                 <div className="px-6 pt-6 pb-2 shrink-0 flex items-center justify-center">
-                    <div className={`relative w-full ${aspectClass} rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10 transition-all duration-300`}>
-                       {/* Smart Ring Light Glow wrapper */}
-                  <div className={`absolute inset-0 z-20 pointer-events-none transition-all duration-300 ${isRingLightOn ? 'shadow-[inset_0_0_0_12px_rgba(255,255,255,1),0_0_50px_rgba(255,255,255,0.4)]' : ''}`} />
-                  
-                  <AnimatePresence>
-                    {showShutterFlash && (
-                      <motion.div initial={{ opacity: 1 }} animate={{ opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }} className="absolute inset-0 bg-white z-[60] pointer-events-none" />
-                    )}
-                  </AnimatePresence>
+             {/* Top Overlay / Settings Pill */}
+             <div className="absolute top-0 inset-x-0 p-4 pt-6 flex flex-col gap-4 bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none">
+               <div className="flex items-start justify-between pointer-events-auto">
+                 <button onClick={onClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-white/20 transition-colors shadow-lg border border-white/5">
+                   <span className="material-symbols-outlined text-[24px]">close</span>
+                 </button>
 
-                  {hasPermission === false ? (
-                      <div className="absolute inset-0 flex items-center justify-center text-center p-4">
-                        <span className="text-aura-text-secondary text-sm">Please allow camera access in browser.</span>
-                      </div>
-                  ) : (
-                      <video 
-                        ref={videoRef}
-                        autoPlay 
-                        playsInline 
-                        muted 
-                        className="absolute inset-0 w-full h-full object-cover"
-                        style={{ transform: 'scaleX(-1)' }}
-                      />
-                  )}
+                 <div className="flex flex-col items-center relative">
+                   <div className="flex items-center bg-black/30 backdrop-blur-md rounded-full border border-white/10 p-1 shadow-lg">
+                      <button 
+                         onClick={() => setIsHardwareMenuOpen(!isHardwareMenuOpen)}
+                         className={`px-3 py-1.5 rounded-full flex gap-1.5 items-center transition-colors ${isHardwareMenuOpen ? 'bg-primary text-background' : 'text-white hover:bg-white/10'}`}
+                      >
+                         <span className="material-symbols-outlined text-[16px]">tune</span>
+                         <span className="text-xs font-bold font-mono tracking-widest">{resolution.toUpperCase()}</span>
+                         <span className="w-1 h-1 rounded-full bg-current opacity-40 mx-0.5" />
+                         <span className="text-xs font-bold uppercase">{aspectRatio}</span>
+                      </button>
+                      {(resolution === '4k' || resolution === '1080p') && (
+                         <div className="bg-primary px-2 py-0.5 rounded-full ml-1 h-full flex items-center shadow-glow-gold rounded-r-full">
+                            <span className="text-[9px] font-black uppercase text-background tracking-widest leading-none pt-[1px]">HD</span>
+                         </div>
+                      )}
+                   </div>
 
-                  {/* Timer overlay */}
-                  {isRecording && (
-                      <div className="absolute top-3 right-3 bg-red-500/20 backdrop-blur-md border border-red-500/50 px-2.5 py-1 rounded-md flex items-center gap-2 z-30">
-                         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                         <span className="text-xs font-mono text-white font-medium">
-                            {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
-                         </span>
-                      </div>
-                  )}
+                   {/* Settings Dropdown Panel */}
+                   <AnimatePresence>
+                     {isHardwareMenuOpen && (
+                        <motion.div
+                           initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                           animate={{ opacity: 1, y: 0, scale: 1 }}
+                           exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                           className="absolute top-[52px] w-[260px] bg-black/70 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 flex flex-col gap-4 shadow-2xl z-50 origin-top"
+                        >
+                          <div className="flex flex-col gap-2">
+                             <label className="text-[9px] font-bold uppercase tracking-widest text-white/50 pl-1">Resolution</label>
+                             <div className="flex bg-black/40 rounded-xl p-1 border border-white/5">
+                                {['720p', '1080p', '4k'].map(res => (
+                                   <button 
+                                      key={res} 
+                                      onClick={() => setResolution(res as any)}
+                                      className={`flex-1 py-1.5 text-[9px] font-bold rounded-lg uppercase tracking-wider transition-colors ${resolution === res ? 'bg-primary text-background shadow-md' : 'text-white/60 hover:text-white'}`}
+                                   >
+                                      {res}
+                                   </button>
+                                ))}
+                             </div>
+                          </div>
+                          
+                          <div className="flex flex-col gap-2">
+                             <label className="text-[9px] font-bold uppercase tracking-widest text-white/50 pl-1">Aspect Ratio</label>
+                             <div className="grid grid-cols-2 gap-1.5">
+                               {['1:1', '4:3', '16:9', '9:16'].map(ratio => (
+                                  <button 
+                                     key={ratio} 
+                                     onClick={() => setAspectRatio(ratio as any)}
+                                     className={`py-2 text-[10px] font-bold rounded-xl uppercase tracking-wider transition-colors border ${aspectRatio === ratio ? 'bg-primary/20 text-primary border-primary/40 shadow-[inset_0_0_10px_rgba(212,175,55,0.1)]' : 'bg-black/20 text-white/60 border-white/5 hover:bg-white/10 hover:text-white'}`}
+                                  >
+                                    {ratio}
+                                  </button>
+                               ))}
+                             </div>
+                          </div>
 
-                  {/* Smart Light Toggle Button inside camera */}
-                  <div className="absolute top-3 left-3 z-30">
-                     <button
+                          {/* Hardware Pickers inside the settings panel */}
+                          {(cameras.length > 0 || mics.length > 0) && (
+                            <div className="pt-2 border-t border-white/10 flex flex-col gap-3">
+                               {cameras.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] font-bold uppercase tracking-widest text-white/50 pl-1">Camera</label>
+                                    <div className="flex flex-col gap-0.5">
+                                      {cameras.map(cam => (
+                                        <button 
+                                          key={cam.deviceId} 
+                                          onClick={() => setSelectedCameraId(cam.deviceId)}
+                                          className={`px-3 py-1.5 rounded-lg text-xs text-left transition-all flex items-center justify-between group ${selectedCameraId === cam.deviceId ? 'bg-white/10 text-white' : 'bg-transparent text-white/50 hover:bg-white/5'}`}
+                                        >
+                                          <span className="truncate pr-2 text-[11px] leading-relaxed">{cam.label || `Cam ${cam.deviceId.slice(0,5)}`}</span>
+                                          {selectedCameraId === cam.deviceId && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                               )}
+                               {captureMode === 'video' && mics.length > 0 && (
+                                  <div className="flex flex-col gap-1">
+                                    <label className="text-[9px] font-bold uppercase tracking-widest text-white/50 pl-1">Mic</label>
+                                    <div className="flex flex-col gap-0.5">
+                                      {mics.map(mic => (
+                                        <button 
+                                          key={mic.deviceId} 
+                                          onClick={() => setSelectedMicId(mic.deviceId)}
+                                          className={`px-3 py-1.5 rounded-lg text-xs text-left transition-all flex items-center justify-between group ${selectedMicId === mic.deviceId ? 'bg-white/10 text-white' : 'bg-transparent text-white/50 hover:bg-white/5'}`}
+                                        >
+                                          <span className="truncate pr-2 text-[11px] leading-relaxed">{mic.label || `Mic ${mic.deviceId.slice(0,5)}`}</span>
+                                          {selectedMicId === mic.deviceId && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                               )}
+                            </div>
+                          )}
+
+                        </motion.div>
+                     )}
+                   </AnimatePresence>
+                 </div>
+
+                 <div className="w-10 flex flex-col gap-2">
+                    {/* Ringlight / Right-side toolbar */}
+                    <button
                         onClick={() => setIsRingLightOn(!isRingLightOn)}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-colors ${isRingLightOn ? 'bg-white text-black border-white' : 'bg-black/40 text-white border-white/20 hover:bg-black/60'}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md border transition-colors shadow-lg pointer-events-auto ${isRingLightOn ? 'bg-white text-black border-white' : 'bg-black/30 text-white border-white/5 hover:bg-white/20'}`}
                         title="Smart Ring Light"
                      >
-                        <span className="material-symbols-outlined text-[16px]">{isRingLightOn ? 'lightbulb' : 'lightbulb'}</span>
+                        <span className="material-symbols-outlined text-[20px]">{isRingLightOn ? 'lightbulb' : 'lightbulb'}</span>
                      </button>
-                  </div>
+                 </div>
                </div>
-            </div>
-            );
-          })()}
 
-            {/* Hardware & Settings Selection */}
-            <div className="px-6 py-4 flex gap-3 shrink-0 flex-col">
-               <div className="flex gap-2">
-                  <select 
-                     value={resolution}
-                     onChange={(e) => setResolution(e.target.value as any)}
-                     className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-aura-text-primary focus:outline-none focus:border-primary/50 w-full appearance-none custom-select"
-                  >
-                     <option value="720p" className="bg-background text-white">720p HD</option>
-                     <option value="1080p" className="bg-background text-white">1080p FHD</option>
-                     <option value="4k" className="bg-background text-white">4K UHD</option>
-                  </select>
-
-                  <select 
-                     value={aspectRatio}
-                     onChange={(e) => setAspectRatio(e.target.value as any)}
-                     className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-aura-text-primary focus:outline-none focus:border-primary/50 w-full appearance-none custom-select"
-                  >
-                     <option value="16:9" className="bg-background text-white">16:9 (Landscape)</option>
-                     <option value="9:16" className="bg-background text-white">9:16 (Portrait)</option>
-                     <option value="1:1" className="bg-background text-white">1:1 (Square)</option>
-                     <option value="4:3" className="bg-background text-white">4:3 (Standard)</option>
-                  </select>
+               {/* Timer floating exactly below settings */}
+               <div className="flex justify-end pointer-events-none mt-1 pr-2">
+                  <AnimatePresence>
+                    {isRecording && (
+                        <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="bg-red-500/20 backdrop-blur-md border border-red-500/50 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-lg pointer-events-auto">
+                           <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
+                           <span className="text-[10px] font-mono tracking-widest text-white font-bold drop-shadow-md">
+                              {Math.floor(recordingTime / 60).toString().padStart(2, '0')}:{(recordingTime % 60).toString().padStart(2, '0')}
+                           </span>
+                        </motion.div>
+                    )}
+                  </AnimatePresence>
                </div>
-               {cameras.length > 0 && (
-                  <select 
-                     value={selectedCameraId}
-                     onChange={(e) => setSelectedCameraId(e.target.value)}
-                     className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-aura-text-primary focus:outline-none focus:border-primary/50 w-full appearance-none custom-select"
-                  >
-                     {cameras.map(cam => (
-                        <option key={cam.deviceId} value={cam.deviceId} className="bg-background text-white">{cam.label || `Camera ${cam.deviceId.slice(0,5)}`}</option>
-                     ))}
-                  </select>
-               )}
-               {mics.length > 0 && captureMode === 'video' && (
-                  <motion.select 
-                     initial={{ opacity: 0, height: 0 }}
-                     animate={{ opacity: 1, height: 'auto' }}
-                     value={selectedMicId}
-                     onChange={(e) => setSelectedMicId(e.target.value)}
-                     className="bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-xs text-aura-text-primary focus:outline-none focus:border-primary/50 w-full appearance-none custom-select"
-                  >
-                     {mics.map(mic => (
-                        <option key={mic.deviceId} value={mic.deviceId} className="bg-background text-white">{mic.label || `Microphone ${mic.deviceId.slice(0,5)}`}</option>
-                     ))}
-                  </motion.select>
-               )}
-               <style>{`.custom-select { background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right .7em top 50%; background-size: .65em auto; }`}</style>
-            </div>
+             </div>
 
-            {/* Main Controls */}
-            <div className="mt-2 px-6 flex flex-col items-center gap-6">
+
+             {/* Bottom Overlay Layer */}
+             <div className="absolute bottom-0 inset-x-0 pt-32 pb-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-40 pointer-events-none flex justify-center items-end">
                 
-                {/* Photo/Video Toggle */}
-                <div className="bg-black/30 p-1 rounded-full flex items-center border border-white/5 relative">
-                   <motion.div 
-                     className="absolute w-1/2 h-[calc(100%-8px)] left-1 bg-white/10 rounded-full shadow-sm z-0"
-                     animate={{ x: captureMode === 'video' ? '100%' : '0%' }}
-                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                   />
-                   <button 
-                     onClick={() => { setCaptureMode('photo'); if (isRecording) stopRecording(); }}
-                     className={`relative z-10 w-24 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${captureMode === 'photo' ? 'text-primary' : 'text-aura-text-secondary hover:text-white'}`}
-                   >
-                     Photo
-                   </button>
-                   <button 
-                     onClick={() => setCaptureMode('video')}
-                     className={`relative z-10 w-24 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${captureMode === 'video' ? 'text-primary' : 'text-aura-text-secondary hover:text-white'}`}
-                   >
-                     Video
-                   </button>
-                </div>
-
-                {/* Shutter Button */}
-                <div className="relative">
-                   <p className="absolute -top-6 w-full text-center text-[10px] uppercase tracking-widest text-white/30 whitespace-nowrap left-1/2 -translate-x-1/2">
-                      {isRecording ? "Press space to stop" : "Press space to capture"}
-                   </p>
-                   {captureMode === 'photo' ? (
+                {/* Options wrapper */}
+                <div className="flex flex-col items-center gap-6 w-full px-8 pointer-events-auto">
+                   
+                   {/* Photo/Video Swap */}
+                   <div className="bg-black/30 p-1 rounded-full flex items-center border border-white/10 relative shadow-[0_10px_20px_rgba(0,0,0,0.4)] backdrop-blur-md">
+                       <motion.div 
+                         className="absolute w-1/2 h-[calc(100%-8px)] left-1 bg-white/10 rounded-full shadow-sm z-0"
+                         animate={{ x: captureMode === 'video' ? '100%' : '0%' }}
+                         transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                       />
                        <button 
-                         onClick={takePhoto}
-                         className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center bg-transparent group hover:scale-105 active:scale-95 transition-all"
+                         onClick={() => { setCaptureMode('photo'); if (isRecording) stopRecording(); }}
+                         className={`relative z-10 w-24 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors ${captureMode === 'photo' ? 'text-primary drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]' : 'text-aura-text-secondary hover:text-white'}`}
                        >
-                          <div className="w-12 h-12 bg-white rounded-full group-hover:scale-95 transition-transform" />
+                         Photo
                        </button>
-                   ) : (
-                       isRecording ? (
-                           <button 
-                             onClick={stopRecording}
-                             className="w-16 h-16 rounded-full border-4 border-red-500/50 flex items-center justify-center bg-transparent group hover:scale-105 active:scale-95 transition-all"
-                           >
-                              <motion.div 
-                                className="w-6 h-6 bg-red-500 rounded-sm"
-                                initial={{ borderRadius: "50%" }}
-                                animate={{ borderRadius: "8%" }}
-                                transition={{ duration: 0.2 }}
-                              />
-                           </button>
-                       ) : (
-                           <button 
-                             onClick={startRecording}
-                             className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center bg-transparent group hover:scale-105 active:scale-95 transition-all"
-                           >
-                              <div className="w-12 h-12 bg-red-500 rounded-full group-hover:scale-95 transition-transform shadow-[0_0_15px_rgba(239,68,68,0.4)]" />
-                           </button>
-                       )
-                   )}
-                </div>
-            </div>
+                       <button 
+                         onClick={() => setCaptureMode('video')}
+                         className={`relative z-10 w-24 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors ${captureMode === 'video' ? 'text-primary drop-shadow-[0_0_5px_rgba(212,175,55,0.8)]' : 'text-aura-text-secondary hover:text-white'}`}
+                       >
+                         Video
+                       </button>
+                   </div>
 
-            {/* Desktop Drag and drop local gallery */}
-            <div className="mt-8 px-6 pb-4">
-               <input type="file" ref={fileInputRef} onChange={handleGalleryChange} className="hidden" accept="image/*,video/*" multiple />
-               <div 
-                 onClick={() => fileInputRef.current?.click()}
-                 className="w-full h-24 rounded-2xl border-2 border-dashed border-white/10 hover:border-primary/50 bg-white/5 hover:bg-primary/5 transition-colors flex flex-col items-center justify-center cursor-pointer group"
-               >
-                  <span className="material-symbols-outlined text-[24px] text-white/40 group-hover:text-primary transition-colors mb-1">upload_file</span>
-                  <span className="text-[11px] uppercase tracking-wider text-white/50 group-hover:text-primary/80 font-semibold">Browse or Drop Files</span>
-               </div>
-            </div>
-          </>
+                   {/* Controls Bottom Row */}
+                   <div className="flex items-center justify-between w-full">
+                       
+                       {/* Gallery Drop / Select */}
+                       <button 
+                          onClick={() => {
+                            if (fileInputRef.current) fileInputRef.current.click();
+                          }}
+                          className="w-12 h-12 rounded-xl border-2 border-white/20 bg-white/10 backdrop-blur-sm flex items-center justify-center hover:border-white/50 transition-colors pointer-events-auto"
+                       >
+                          <span className="material-symbols-outlined text-[24px] text-white">photo_library</span>
+                       </button>
+
+                       {/* Shutter Button */}
+                       <div className="relative">
+                          {captureMode === 'photo' ? (
+                              <button 
+                                onClick={takePhoto}
+                                className="w-20 h-20 rounded-full border-[4px] border-white flex items-center justify-center bg-white/10 backdrop-blur-sm group hover:scale-105 active:scale-95 transition-all outline-none"
+                              >
+                                 <div className="w-[85%] h-[85%] bg-white rounded-full group-hover:scale-95 transition-transform shadow-lg" />
+                              </button>
+                          ) : (
+                              isRecording ? (
+                                  <button 
+                                    onClick={stopRecording}
+                                    className="w-20 h-20 rounded-full border-[4px] border-red-500/50 flex items-center justify-center bg-transparent group hover:scale-105 active:scale-95 transition-all outline-none"
+                                  >
+                                     <motion.div 
+                                        className="absolute inset-[0px] rounded-full border-[3px] border-red-500 box-border"
+                                        style={{ top: '-4px', left: '-4px', right: '-4px', bottom: '-4px' }}
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                     />
+                                     <motion.div 
+                                       className="w-8 h-8 bg-red-500 rounded-sm shadow-[0_0_15px_rgba(239,68,68,0.6)]"
+                                       initial={{ borderRadius: "50%" }}
+                                       animate={{ borderRadius: "8%" }}
+                                       transition={{ duration: 0.2 }}
+                                     />
+                                  </button>
+                              ) : (
+                                  <button 
+                                    onClick={startRecording}
+                                    className="w-20 h-20 rounded-full border-[4px] border-white flex items-center justify-center bg-white/10 backdrop-blur-sm group hover:scale-105 active:scale-95 transition-all outline-none"
+                                  >
+                                     <div className="w-[85%] h-[85%] bg-red-500 rounded-full group-hover:scale-95 transition-transform shadow-[0_0_15px_rgba(239,68,68,0.6)]" />
+                                  </button>
+                              )
+                          )}
+                       </div>
+
+                       {/* Placeholder for layout balance */}
+                       <div className="w-12 pointer-events-none" />
+
+                   </div>
+                </div>
+
+             </div>
+
+          </div>
         )}
 
         {/* --- PREVIEW MODE --- */}
         {viewMode === 'preview' && capturedFile && previewUrl && (
-          <div className="flex-1 flex flex-col h-full relative bg-black/40">
+          <div className="flex-1 flex flex-col relative bg-black/40 z-50 h-full">
              
-             {/* Media Preview Box */}
-             <div className="p-6 shrink-0 relative z-10">
-                <div className="w-full aspect-[4/3] sm:aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10 relative group">
-                   {capturedFile.type.startsWith('video') ? (
-                     <video src={previewUrl} controls autoPlay playsInline loop className="w-full h-full object-contain" />
-                   ) : (
-                     <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
-                   )}
-                </div>
+             {/* Preview Top Bar */}
+             <div className="absolute top-0 inset-x-0 p-4 pt-6 flex justify-between bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none">
+                <button 
+                   onClick={handleDiscard}
+                   className="w-10 h-10 flex items-center justify-center rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-white/20 transition-colors pointer-events-auto border border-white/5 shadow-lg"
+                >
+                   <span className="material-symbols-outlined text-[24px]">close</span>
+                </button>
              </div>
 
-             <div className="flex-1 px-6 flex flex-col relative z-20">
+             <div className="flex-1 w-full bg-black flex items-center justify-center relative overflow-hidden">
+                {capturedFile.type.startsWith('video') ? (
+                  <video src={previewUrl} controls autoPlay playsInline loop className="w-full h-full object-contain" />
+                ) : (
+                  <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                )}
+             </div>
+
+             <div className="p-6 bg-black flex flex-col relative z-20 shrink-0 border-t border-white/5 shadow-[0_-20px_40px_rgba(0,0,0,0.6)]">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2">Message Caption</label>
                 <textarea
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="Type a nice message..."
-                  className="w-full bg-white/5 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 resize-none h-24 focus:outline-none transition-colors custom-scrollbar"
+                  className="w-full bg-white/5 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 resize-none h-20 focus:outline-none transition-colors custom-scrollbar"
                 />
                 
-                <div className="mt-6 flex items-center gap-3">
-                   <button
-                     onClick={handleDiscard}
-                     className="w-12 h-12 shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-red-500/20 hover:border-red-500/30 hover:text-red-400 transition-all flex items-center justify-center outline-none text-aura-text-secondary"
-                     title="Discard"
-                   >
-                      <span className="material-symbols-outlined text-[20px]">delete</span>
-                   </button>
+                <div className="mt-4 flex items-center gap-3">
                    <button
                      onClick={handleSendFile}
                      className="flex-1 h-12 rounded-xl bg-primary text-background font-bold text-sm tracking-wide shadow-glow-gold hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-2 outline-none"
@@ -607,7 +704,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                    </button>
                 </div>
                 
-                <p className="text-center text-[10px] text-white/30 mt-4 uppercase tracking-widest">
+                <p className="text-center text-[10px] text-white/30 mt-3 uppercase tracking-widest">
                    Press Enter to send, Esc to discard
                 </p>
              </div>
