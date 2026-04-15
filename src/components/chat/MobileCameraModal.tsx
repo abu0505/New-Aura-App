@@ -635,7 +635,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </AnimatePresence>
 
             {/* Top Bar Overlay */}
-            <div className={`absolute top-0 inset-x-0 p-4 pt-safe-top flex items-start justify-between bg-gradient-to-b ${isFlashOn && facingMode === 'user' ? 'from-white/40' : 'from-black/60'} to-transparent z-[70] pointer-events-none transition-all duration-500`}>
+            <div className={`absolute top-0 inset-x-0 p-4 pt-safe-top flex items-start justify-between z-[70] pointer-events-none transition-all duration-500`}>
               <button
                 onClick={onClose}
                 className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md pointer-events-auto transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 text-black shadow-lg' : 'bg-black/30 text-white hover:bg-white/20'}`}
@@ -649,16 +649,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                     onClick={() => setShowSettings(!showSettings)}
                     className={`px-3 py-1.5 rounded-full flex gap-1.5 items-center transition-all duration-500 ${showSettings ? 'bg-primary text-background' : (isFlashOn && facingMode === 'user' ? 'text-black hover:bg-black/10' : 'text-white hover:bg-white/10')}`}
                   >
-                    <span className="material-symbols-outlined text-[16px]">settings</span>
+                    <span className="material-symbols-outlined text-[16px]">tune</span>
                     <span className="text-xs font-bold font-mono tracking-widest">{resolution.toUpperCase()}</span>
                     <span className="w-1 h-1 rounded-full bg-current opacity-30" />
                     <span className="text-xs font-bold uppercase">{aspectRatio}</span>
                   </button>
-                  {(resolution === '4k' || resolution === '1080p') && (
-                    <div className="bg-primary px-2 py-0.5 rounded-full ml-1 h-full flex items-center shadow-glow-gold">
-                      <span className="text-[9px] font-black uppercase text-background tracking-widest">HD</span>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -691,7 +686,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </div>
 
             {/* Bottom Controls */}
-            <div className={`absolute bottom-0 inset-x-0 pb-safe-bottom bg-gradient-to-t ${isFlashOn && facingMode === 'user' ? 'from-white/40' : 'from-black/80'} via-transparent to-transparent z-[70] transition-all duration-500`}>
+            <div className={`absolute bottom-0 inset-x-0 pb-safe-bottom z-[70] transition-all duration-500`}>
               <div className="flex items-center justify-between px-8 pb-10 pt-4">
                 {/* Gallery Button */}
                 <button
@@ -796,7 +791,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </div>
 
             {/* Preview Top Bar */}
-            <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between bg-gradient-to-b from-black/60 to-transparent">
+            <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between">
               <button
                 onClick={handleDiscard}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
@@ -809,7 +804,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </div>
 
             {/* Preview Bottom Bar (Caption & Send) */}
-            <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom bg-gradient-to-t from-black/80 via-black/50 to-transparent">
+            <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom">
               <div className="flex flex-col gap-4 max-w-lg mx-auto w-full">
                 <input
                   type="text"
