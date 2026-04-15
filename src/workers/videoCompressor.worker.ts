@@ -19,164 +19,102 @@
  */
 
 /// <reference lib="webworker" />
-
-// Correctly type self as a DedicatedWorkerGlobalScope so postMessage transfer works
 declare const self: DedicatedWorkerGlobalScope;
-
 import { Muxer, ArrayBufferTarget } from 'mp4-muxer';
 
-// Target quality settings
-const TARGET_BITRATE = 2_000_000; // 2 Mbps — good quality, ~70% reduction vs raw
+const TARGET_BITRATE = 2_000_000;
+
+let muxer: any = null;
+let encoder: VideoEncoder | null = null;
+let target: ArrayBufferTarget | null = null;
+let encodedCount = 0;
+let expectedTotalFrames = 0;
+let frameDurationUs = 0;
+let framerate = 30;
 
 self.onmessage = async (e: MessageEvent) => {
   const { type } = e.data;
 
-  if (type !== 'encode_frames') return;
-
-  // ── Feature detection ──────────────────────────────────────────────────────
+  // Feature detection
   if (typeof VideoEncoder === 'undefined') {
     self.postMessage({ type: 'fallback' });
     return;
   }
 
-  const {
-    bitmaps,
-    width,
-    height,
-    framerate,
-    totalFrames,
-  } = e.data as {
-    bitmaps: ImageBitmap[];
-    width: number;
-    height: number;
-    framerate: number;
-    totalFrames: number;
-  };
-
   try {
-    const compressedBuffer = await encodeFrames(bitmaps, width, height, framerate, totalFrames);
-    // Only post if we got a real result (non-empty ArrayBuffer means success)
-    if (compressedBuffer.byteLength > 0) {
-      self.postMessage({ type: 'complete', buffer: compressedBuffer }, [compressedBuffer]);
-    } else {
-      self.postMessage({ type: 'fallback' });
+    if (type === 'init') {
+      const { outWidth, outHeight, fps, totalFrames } = e.data;
+      expectedTotalFrames = totalFrames;
+      framerate = fps;
+      encodedCount = 0;
+      frameDurationUs = Math.round(1_000_000 / framerate);
+
+      target = new ArrayBufferTarget();
+      muxer = new Muxer({
+        target,
+        video: { codec: 'avc', width: outWidth, height: outHeight },
+        fastStart: 'in-memory',
+      });
+
+      const highProfileConfig: VideoEncoderConfig = {
+        codec: 'avc1.4d0034',
+        width: outWidth, height: outHeight,
+        bitrate: TARGET_BITRATE, framerate, latencyMode: 'quality', hardwareAcceleration: 'prefer-hardware',
+      };
+      const baselineConfig: VideoEncoderConfig = {
+        codec: 'avc1.42003e',
+        width: outWidth, height: outHeight,
+        bitrate: TARGET_BITRATE, framerate, latencyMode: 'quality', hardwareAcceleration: 'prefer-software',
+      };
+
+      let finalConfig: VideoEncoderConfig | null = null;
+      try {
+        if ((await VideoEncoder.isConfigSupported(highProfileConfig)).supported) finalConfig = highProfileConfig;
+        else if ((await VideoEncoder.isConfigSupported(baselineConfig)).supported) finalConfig = baselineConfig;
+      } catch {}
+
+      if (!finalConfig) {
+        self.postMessage({ type: 'fallback' });
+        return;
+      }
+
+      encoder = new VideoEncoder({
+        output: (chunk, meta) => {
+          muxer.addVideoChunk(chunk, meta ?? undefined);
+          encodedCount++;
+          // Report hardware progress on mux
+          self.postMessage({ type: 'progress', progress: Math.round((encodedCount / expectedTotalFrames) * 95) });
+        },
+        error: (err) => {
+          console.error('[VideoWorker] Encoder Error', err);
+          self.postMessage({ type: 'error', message: err.message });
+        },
+      });
+
+      encoder.configure(finalConfig);
+      self.postMessage({ type: 'init_done' });
+    } 
+    else if (type === 'frame') {
+      if (!encoder) return;
+      const { bitmap, frameIndex } = e.data;
+      const timestamp = frameIndex * frameDurationUs;
+
+      const frame = new VideoFrame(bitmap, { timestamp, duration: frameDurationUs });
+      encoder.encode(frame, { keyFrame: frameIndex % (framerate * 2) === 0 });
+      
+      frame.close();
+      bitmap.close();
+    }
+    else if (type === 'flush') {
+      if (!encoder) return;
+      await encoder.flush();
+      encoder.close();
+      muxer.finalize();
+      
+      self.postMessage({ type: 'progress', progress: 100 });
+      self.postMessage({ type: 'complete', buffer: target!.buffer }, [target!.buffer]);
     }
   } catch (err: any) {
-    console.error('[VideoWorker] Compression failed:', err);
-    self.postMessage({ type: 'error', message: err?.message || 'Unknown error' });
+    self.postMessage({ type: 'error', message: err?.message || 'Worker Error' });
   }
 };
-
-// ─── Core Encoder ─────────────────────────────────────────────────────────────
-
-async function encodeFrames(
-  bitmaps: ImageBitmap[],
-  outWidth: number,
-  outHeight: number,
-  framerate: number,
-  totalFrames: number,
-): Promise<ArrayBuffer> {
-  // ── 1. Set up mp4-muxer ──────────────────────────────────────────────────
-  const target = new ArrayBufferTarget();
-  const muxer = new Muxer({
-    target,
-    video: {
-      codec: 'avc',
-      width: outWidth,
-      height: outHeight,
-    },
-    fastStart: 'in-memory',
-  });
-
-  // ── 2. Choose codec config with hardware preference ───────────────────────
-  // Try High Profile H.264 first (better quality), fallback to Baseline
-  const highProfileConfig: VideoEncoderConfig = {
-    codec: 'avc1.4d0034',           // H.264 High Profile Level 5.2
-    width: outWidth,
-    height: outHeight,
-    bitrate: TARGET_BITRATE,
-    framerate,
-    latencyMode: 'quality',
-    hardwareAcceleration: 'prefer-hardware',
-  };
-
-  const baselineConfig: VideoEncoderConfig = {
-    codec: 'avc1.42003e',           // H.264 Baseline Level 6.2
-    width: outWidth,
-    height: outHeight,
-    bitrate: TARGET_BITRATE,
-    framerate,
-    latencyMode: 'quality',
-    hardwareAcceleration: 'prefer-software',
-  };
-
-  let finalConfig: VideoEncoderConfig | null = null;
-
-  try {
-    const { supported: highSupported } = await VideoEncoder.isConfigSupported(highProfileConfig);
-    if (highSupported) {
-      finalConfig = highProfileConfig;
-    } else {
-      const { supported: baseSupported } = await VideoEncoder.isConfigSupported(baselineConfig);
-      if (baseSupported) {
-        finalConfig = baselineConfig;
-      }
-    }
-  } catch {
-    // isConfigSupported threw — likely unsupported environment
-  }
-
-  if (!finalConfig) {
-    // Neither config is supported — signal fallback to main thread
-    bitmaps.forEach(b => b.close());
-    self.postMessage({ type: 'fallback' });
-    return new ArrayBuffer(0);
-  }
-
-  // ── 3. Set up VideoEncoder ────────────────────────────────────────────────
-  let encodedCount = 0;
-
-  const encoder = new VideoEncoder({
-    output: (chunk, meta) => {
-      muxer.addVideoChunk(chunk, meta ?? undefined);
-      encodedCount++;
-      const progress = Math.round((encodedCount / totalFrames) * 95);
-      self.postMessage({ type: 'progress', progress });
-    },
-    error: (err) => {
-      throw new Error(`VideoEncoder error: ${err.message}`);
-    },
-  });
-
-  encoder.configure(finalConfig);
-
-  // ── 4. Encode all frames ───────────────────────────────────────────────────
-  const frameDurationUs = Math.round(1_000_000 / framerate); // microseconds per frame
-
-  for (let i = 0; i < bitmaps.length; i++) {
-    const bitmap = bitmaps[i];
-    const timestamp = i * frameDurationUs;
-
-    // VideoFrame accepts ImageBitmap directly — no canvas resize needed
-    // (resize was already applied in the main thread before transfer)
-    const frame = new VideoFrame(bitmap, {
-      timestamp,
-      duration: frameDurationUs,
-    });
-
-    // Insert a keyframe every 2 seconds so seeking works in the output
-    encoder.encode(frame, { keyFrame: i % (framerate * 2) === 0 });
-
-    frame.close();
-    bitmap.close(); // Free memory immediately
-  }
-
-  // ── 5. Flush + Finalize ────────────────────────────────────────────────────
-  await encoder.flush();
-  encoder.close();
-  muxer.finalize();
-
-  self.postMessage({ type: 'progress', progress: 100 });
-
-  return target.buffer;
-}

@@ -50,6 +50,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const isCanvasRecordingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fix 3.3: Debounce ref to prevent rapid camera restarts on settings toggle
+  const cameraRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const startPosRef = useRef<{ x: number, y: number } | null>(null);
   const zoomRef = useRef<{ current: number, min: number, max: number }>({ current: 1, min: 1, max: 1 });
   const hasHardwareZoomRef = useRef(false);
@@ -138,14 +141,20 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
   }, [facingMode, stopCamera, resolution, aspectRatio]);
 
-  // Lifecycle
+  // Fix 3.3: Debounce camera start (wait 200ms) to prevent overlapping streams
+  // on rapid facingMode/resolution/aspectRatio setting changes
   useEffect(() => {
     if (isOpen && viewMode === 'camera') {
-      startCamera();
+      if (cameraRestartTimerRef.current) clearTimeout(cameraRestartTimerRef.current);
+      cameraRestartTimerRef.current = setTimeout(() => {
+        startCamera();
+      }, 200);
     } else {
+      if (cameraRestartTimerRef.current) clearTimeout(cameraRestartTimerRef.current);
       stopCamera();
     }
     return () => {
+      if (cameraRestartTimerRef.current) clearTimeout(cameraRestartTimerRef.current);
       stopCamera();
     };
   }, [isOpen, viewMode, facingMode, startCamera, stopCamera]);
@@ -380,7 +389,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
     const options: any = {
       mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9') ? 'video/webm;codecs=vp9' : 'video/mp4',
-      videoBitsPerSecond: 8000000 // High bitrate for 60fps smoothness
+      // Fix 3.2: Reduced from 8Mbps to 2.5Mbps — 68% file size reduction.
+      // 2.5Mbps is more than sufficient for 1080p 30fps chat-quality video.
+      // 8Mbps was designed for 4K broadcast, overkill for a chat app.
+      videoBitsPerSecond: 2_500_000
     };
     let recorder;
 
@@ -710,6 +722,22 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                       </span>
                     </div>
                   )}
+
+                  {/* Fix 3.4: Warning strip when approaching 60s limit (>45s) */}
+                  <AnimatePresence>
+                    {isRecording && recordingTime >= 45 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        className="absolute -top-28 left-1/2 -translate-x-1/2 bg-orange-500/30 px-3 py-1 rounded-full border border-orange-500/60 backdrop-blur-md whitespace-nowrap pointer-events-none"
+                      >
+                        <span className="text-[10px] text-orange-300 uppercase tracking-widest font-bold animate-pulse">
+                          ⚠ {60 - recordingTime}s remaining
+                        </span>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Outer Ring Animation - Always visible while recording, larger than scaled shutter */}
                   {isRecording && (

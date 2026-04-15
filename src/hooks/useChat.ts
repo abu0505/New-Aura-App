@@ -13,11 +13,17 @@ export interface ChatMessage extends MessageRow {
   is_mine: boolean;
   decryption_error?: boolean;
   is_pending?: boolean;
+  is_send_failed?: boolean;  // Fix 1.1: permanent send failure flag
+  retry_count?: number;      // Fix 1.1: tracks retry attempts
 }
 
 // ═══ Module-level push debounce — MUST be outside the hook so it persists ═══
 // Previously was inside sendMessage body — recreated every call, breaking debounce entirely.
-const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+// Fix 1.4: Exported so it can be cleared on logout.
+export const pushDebounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+// Fix 1.1: Max retries before marking message as permanently failed
+const MAX_SEND_RETRIES = 5;
 
 export function useChat(partnerId: string | undefined, partnerPublicKey: string | null | undefined, partnerKeyHistory?: string[]) {
   const { user, encryptionStatus } = useAuth();
@@ -70,7 +76,71 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   useEffect(() => { pinnedMessageDetailsRef.current = pinnedMessageDetails; }, [pinnedMessageDetails]);
   useEffect(() => { replyMessageCacheRef.current = replyMessageCache; }, [replyMessageCache]);
 
-  // Decrypts a single message row — uses per-message sender_public_key when available
+  // Fix 1.2: Web Worker for Crypto Operations
+  const cryptoWorkerRef = useRef<Worker | null>(null);
+
+  useEffect(() => {
+    // Initialize Web Worker exactly once
+    cryptoWorkerRef.current = new Worker(new URL('../workers/cryptography.worker.ts', import.meta.url), { type: 'module' });
+    return () => {
+      cryptoWorkerRef.current?.terminate();
+    };
+  }, []);
+
+  const decryptRowsAsync = useCallback(async (rows: ReadonlyArray<MessageRow>, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): Promise<ChatMessage[]> => {
+    return new Promise((resolve) => {
+      if (!cryptoWorkerRef.current || !myKeyPair || rows.length === 0) {
+        // Fallback or empty
+        resolve(rows.map(row => ({
+          ...row,
+          decrypted_content: '⚠️ Could not decrypt this message',
+          is_mine: row.sender_id === user?.id,
+          decryption_error: true
+        })));
+        return;
+      }
+
+      // Generate a batch ID
+      const reqIds = rows.map(() => Math.random().toString(36).substring(7));
+      const payload = rows.map((row, i) => ({
+        id: reqIds[i],
+        row,
+        mySecretKey: myKeyPair.secretKey,
+        partnerKey,
+        keyHistory,
+        userId: user?.id
+      }));
+
+      const onMessage = (e: MessageEvent) => {
+        if (e.data.type === 'batch_complete') {
+          // Check if this batch belongs to our request
+          if (e.data.results.some((r: any) => r.id === reqIds[0])) {
+            cryptoWorkerRef.current?.removeEventListener('message', onMessage);
+            const resultDict = e.data.results.reduce((acc: any, r: any) => {
+              acc[r.id] = r;
+              return acc;
+            }, {});
+
+            const finalMessages = rows.map((row, i) => {
+              const res = resultDict[reqIds[i]];
+              return {
+                ...row,
+                decrypted_content: res.decrypted_content,
+                is_mine: res.is_mine,
+                decryption_error: res.decryption_error
+              };
+            });
+            resolve(finalMessages);
+          }
+        }
+      };
+
+      cryptoWorkerRef.current.addEventListener('message', onMessage);
+      cryptoWorkerRef.current.postMessage({ type: 'decrypt_batch', payload });
+    });
+  }, [user?.id]);
+
+  // Decrypts a single message row — correctly uses per-message sender_public_key when available
   const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
     const isMine = row.sender_id === user?.id;
     let decryptedText = '';
@@ -130,15 +200,14 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     };
   }, []);
 
-  // Flush pending messages loop (retries every 3 seconds if there are pending messages)
+  // Fix 1.1: Flush pending messages with exponential backoff + max retry limit
   useEffect(() => {
     if (!isOnline || pendingMessages.length === 0) return;
 
     let mounted = true;
     const flush = async () => {
       const toSend = [...pendingMessages];
-      // Don't clear pending state immediately; do it on successful insert.
-      
+
       for (const msg of toSend) {
         if (!mounted) break;
         try {
@@ -157,8 +226,21 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           });
 
           if (!error) {
-             setPendingMessages(prev => prev.filter(p => !toSend.some(ts => ts.id === p.id && ts.id === msg.id)));
-             setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pending: false } : m));
+            setPendingMessages(prev => prev.filter(p => p.id !== msg.id));
+            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, is_pending: false, retry_count: 0 } : m));
+          } else {
+            // Fix 1.1: Increment retry count, mark as failed after MAX_SEND_RETRIES
+            const retries = (msg.retry_count || 0) + 1;
+            if (retries >= MAX_SEND_RETRIES) {
+              setPendingMessages(prev => prev.filter(p => p.id !== msg.id));
+              setMessages(prev => prev.map(m =>
+                m.id === msg.id ? { ...m, is_pending: false, is_send_failed: true } : m
+              ));
+            } else {
+              setPendingMessages(prev => prev.map(p =>
+                p.id === msg.id ? { ...p, retry_count: retries } : p
+              ));
+            }
           }
         } catch (err) {
           console.error('Failed to flush pending message', msg.id, err);
@@ -166,10 +248,13 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       }
     };
 
-    const interval = setInterval(flush, 3000);
+    // Fix 1.1: Exponential backoff — 3s, 6s, 12s, 24s, 48s max
+    const maxRetry = Math.max(...pendingMessages.map(m => m.retry_count || 0));
+    const delay = Math.min(3000 * Math.pow(2, maxRetry), 60_000);
+    const timer = setTimeout(flush, delay);
     return () => {
-       mounted = false;
-       clearInterval(interval);
+      mounted = false;
+      clearTimeout(timer);
     };
   }, [isOnline, pendingMessages]);
 
@@ -241,7 +326,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         if (data && data.length > 0) {
           let newMessages: ChatMessage[] = [];
           if (myKeyPair) {
-            newMessages = data.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
+            newMessages = await decryptRowsAsync(data, myKeyPair, currentPartnerKey, currentKeyHistory);
           } else {
             newMessages = data.map(row => ({ ...row, is_mine: row.sender_id === user.id }));
           }
@@ -283,7 +368,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         if (myKeyPair && data) {
           // Reverse data because we fetched most recent but want to display ascending
           const sortedData = [...data].reverse();
-          const decrypted = sortedData.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
+          const decrypted = await decryptRowsAsync(sortedData, myKeyPair, currentPartnerKey, currentKeyHistory);
           setMessages(decrypted);
           setHasMore(data.length === PAGE_SIZE);
 
@@ -318,6 +403,23 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     fetchMessages();
 
     // ═══ Use RealtimeHub instead of creating a separate channel ═══
+
+    // Fix 2.3: Realtime subscription for pinned_messages changes
+    const unsubPins = realtimeHub.on('pinned_messages', (payload) => {
+      if (payload.eventType === 'INSERT') {
+        const newPin = payload.new as Database['public']['Tables']['pinned_messages']['Row'];
+        setPinnedMessages(prev => {
+          if (prev.some(p => p.id === newPin.id)) return prev; // Dedup guard
+          return [...prev, newPin];
+        });
+      } else if (payload.eventType === 'DELETE') {
+        const oldPin = payload.old as any;
+        if (oldPin?.id) {
+          setPinnedMessages(prev => prev.filter(p => p.id !== oldPin.id));
+        }
+      }
+    });
+
     const unsubMessages = realtimeHub.on('messages', (payload) => {
       const myKeyPair = getStoredKeyPair();
       const currentPartnerKey = partnerKeyRef.current;
@@ -386,6 +488,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       unsubMessages();
+      unsubPins(); // Fix 2.3: cleanup pinned_messages subscription
     };
   // ══ CRITICAL: encryptionStatus was REMOVED from deps ══
   // Having it here caused the entire effect (fetchMessages + channel subscribe)
@@ -619,19 +722,29 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     if (error) {
       console.error('Failed to send message', error);
       if (error.message?.includes('fetch') || error.code === 'PGRST301') {
-         setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...m, is_pending: true } : m));
-         setPendingMessages(prev => [...prev, optimisticMsg]);
+        setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...m, is_pending: true } : m));
+        setPendingMessages(prev => [...prev, { ...optimisticMsg, retry_count: 0 }]);
       } else {
-         setMessages((prev) => prev.filter(m => m.id !== optimisticMsg.id));
+        // Fix 1.1: Non-network errors = permanent failure, show failed state
+        setMessages(prev => prev.map(m =>
+          m.id === optimisticMsg.id ? { ...m, is_pending: false, is_send_failed: true } : m
+        ));
       }
     } else {
       // Trigger Web Push Notification asynchronously with a 5s debounce
       // This prevents rapid message bursts from triggering Chrome's spam detection.
-      // Chrome flags sites that send many identical notifications in quick succession.
       const existingTimer = pushDebounceTimers.get(partnerId);
       if (existingTimer) clearTimeout(existingTimer);
       
       const newTimer = setTimeout(async () => {
+        // Fix 1.3: Guard — verify message is still in sent state (not failed) before pushing
+        const stillValid = messagesRef.current.find(
+          m => m.id === optimisticMsg.id && !m.is_send_failed && !m.is_pending
+        );
+        if (!stillValid) {
+          pushDebounceTimers.delete(partnerId);
+          return;
+        }
         try {
           // Ensure session is fresh — prevents 401 on expired JWT
           const { data: { session: freshSession } } = await supabase.auth.getSession();
@@ -733,13 +846,20 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
   }, []);
 
-  const pinMessage = async (messageId: string) => {
-    if (!user) return;
-    const existing = pinnedMessages.find(p => p.message_id === messageId && p.pinned_by === user.id);
+  const pinMessage = async (messageId: string): Promise<{ success: boolean; reason?: 'max_pins' }> => {
+    if (!user) return { success: false };
+    // Check if this message is already pinned by anyone (not just user)
+    const existing = pinnedMessages.find(p => p.message_id === messageId);
     if (existing) {
+      // Unpin: only the person who pinned it can unpin (or allow both for 2-person app)
       setPinnedMessages(prev => prev.filter(p => p.id !== existing.id));
       await supabase.from('pinned_messages').delete().eq('id', existing.id);
+      return { success: true };
     } else {
+      // Fix 2.4: Enforce maximum of 3 pins
+      if (pinnedMessages.length >= 3) {
+        return { success: false, reason: 'max_pins' };
+      }
       const newPin: Database['public']['Tables']['pinned_messages']['Row'] = { 
         id: crypto.randomUUID(), 
         message_id: messageId, 
@@ -752,6 +872,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         message_id: newPin.message_id,
         pinned_by: newPin.pinned_by
       });
+      return { success: true };
     }
   };
 

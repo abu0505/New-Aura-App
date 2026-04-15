@@ -50,6 +50,10 @@ export default function PinnedMessagesBanner({
         <div className="flex flex-col min-w-0 flex-1">
           <span className="text-primary text-[10px] font-label uppercase tracking-widest font-semibold flex items-center gap-2 truncate">
             Pinned Message {pinnedMessages.length > 1 && `(${safeIndex + 1}/${pinnedMessages.length})`}
+            {/* Fix 2.6: Show pin usage out of max 3 */}
+            <span className="ml-auto text-[9px] text-white/25 font-bold tracking-wider shrink-0">
+              {pinnedMessages.length}/3
+            </span>
           </span>
           <span className="text-[#e4e1ed] text-sm truncate font-body w-full">
             {renderMessageContent()}

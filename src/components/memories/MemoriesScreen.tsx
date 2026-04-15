@@ -50,6 +50,9 @@ export default function MemoriesScreen() {
   const pageRef = useRef(1);          // tracks current page synchronously
   const isFetchingMoreRef = useRef(false); // prevents concurrent fetches
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  // Fix 5.4: Throttle concurrent decryptions — max 3 at a time to avoid main-thread jank
+  const activeDecryptionsRef = useRef(0);
+  const MAX_CONCURRENT_DECRYPTIONS = 3;
 
   // ── Phase 4: Pinch-to-Zoom grid density ─────────────────────────────
   type GridDensity = 2 | 3 | 4;
@@ -87,29 +90,55 @@ export default function MemoriesScreen() {
     };
   }, []);
 
-  // ── Phase 6: Load favorites from localStorage ──────────────────────
+  // Fix 5.2: Load favorites from Supabase DB (cross-device), fall back to localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('aura_favorites');
-    if (saved) {
+    if (!user) return;
+    const loadFavorites = async () => {
       try {
-        setFavorites(new Set(JSON.parse(saved)));
-      } catch (e) {
-        console.error('Failed to parse favorites', e);
+        const { data } = await supabase
+          .from('profiles')
+          .select('favorited_message_ids')
+          .eq('id', user.id)
+          .single();
+        if (data?.favorited_message_ids && data.favorited_message_ids.length > 0) {
+          setFavorites(new Set(data.favorited_message_ids));
+          return;
+        }
+      } catch {
+        // Silently fall back to localStorage if column not available
       }
-    }
-  }, []);
+      // Fallback: migrate from localStorage
+      const saved = localStorage.getItem('aura_favorites');
+      if (saved) {
+        try {
+          setFavorites(new Set(JSON.parse(saved)));
+        } catch (e) {
+          console.error('Failed to parse favorites', e);
+        }
+      }
+    };
+    loadFavorites();
+  }, [user?.id]);
 
-  const toggleFavorite = (id: string) => {
+  const toggleFavorite = async (id: string) => {
     setFavorites(prev => {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
       } else {
         next.add(id);
-        // Haptic feedback only on favoriting
         navigator.vibrate?.(10);
       }
-      localStorage.setItem('aura_favorites', JSON.stringify(Array.from(next)));
+      // Fix 5.2: Persist to DB (fire-and-forget) + localStorage backup
+      const arr = Array.from(next);
+      localStorage.setItem('aura_favorites', JSON.stringify(arr));
+      if (user) {
+        supabase
+          .from('profiles')
+          .update({ favorited_message_ids: arr })
+          .eq('id', user.id)
+          .then(); // fire-and-forget
+      }
       return next;
     });
   };
@@ -182,9 +211,12 @@ export default function MemoriesScreen() {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .select('id,sender_id,media_url,media_key,media_nonce,type,created_at,sender_public_key', { count: 'exact' })
+        .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,type,created_at,sender_public_key', { count: 'exact' })
         .not('media_url', 'is', null)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        // Fix 5.1: Use correct AND filter — must have matching sender+receiver pairs
+        // Old: .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`) — TOO LOOSE, returns any msg the user was in
+        // New: explicit pair filter so we only get this conversation's media
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
         .range((pageNumber - 1) * LIMIT, pageNumber * LIMIT - 1)
         .order('created_at', { ascending: false });
 
@@ -205,8 +237,6 @@ export default function MemoriesScreen() {
       setHasMore(newMemories.length === LIMIT);
     } catch (err) {
       console.error('Error fetching memories:', err);
-      // Stop infinite-scroll retries when the server says the range is
-      // out of bounds (PGRST103 / 416 Range Not Satisfiable).
       setHasMore(false);
     } finally {
       if (pageNumber === 1) setLoading(false);
@@ -269,7 +299,10 @@ export default function MemoriesScreen() {
 
   const decryptMedia = async (memory: MemoryItem) => {
     if (memory.decryptedUrl || !partner?.public_key || !memory.media_url || !memory.media_key || !memory.media_nonce) return;
+    // Fix 5.4: Throttle concurrent decryptions to prevent main-thread overload on scroll
+    if (activeDecryptionsRef.current >= MAX_CONCURRENT_DECRYPTIONS) return;
 
+    activeDecryptionsRef.current++;
     setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: true } : m));
 
     try {
@@ -292,6 +325,8 @@ export default function MemoriesScreen() {
     } catch (err) {
       console.error('Decryption failed for memory:', memory.id, err);
       setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
+    } finally {
+      activeDecryptionsRef.current--; // Fix 5.4: Release slot when done
     }
   };
 

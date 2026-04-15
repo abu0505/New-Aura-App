@@ -42,9 +42,10 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
 
       const { data, error } = await supabase
         .from('messages')
-        .select('id,sender_id,media_url,media_key,media_nonce,type,created_at,sender_public_key,encrypted_content,nonce')
+        .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,type,created_at,sender_public_key,encrypted_content,nonce')
         .not('media_url', 'is', null)
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        // Fix 5.1: Correct conversation-scoped filter (same fix as MemoriesScreen)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
         .gte('created_at', startOfDay.toISOString())
         .lte('created_at', endOfDay.toISOString())
         .order('created_at', { ascending: false });

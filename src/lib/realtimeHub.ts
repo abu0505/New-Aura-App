@@ -83,13 +83,13 @@ function start(userId?: string, partnerId?: string) {
   ensureChannel();
   if (!channel) return;
 
-  // Register listeners for published tables ONLY
-  // NOTE: pinned_messages and streaks are NOT in supabase_realtime publication,
-  // so subscribing to them would be dead code. Those tables change rarely
-  // (streaks: once/day, pins: occasional) — handled by initial fetch only.
+  // Register listeners for published tables.
+  // Fix 2.2: pinned_messages NOW added to supabase_realtime publication (via migration),
+  // so subscribing to it here will propagate partner pin/unpin in real-time.
   const tables: { table: string; filter?: string }[] = [
     { table: 'messages' },
     { table: 'stories' },
+    { table: 'pinned_messages' }, // Fix 2.2: Now in realtime publication
     { table: 'profiles', filter: partnerId ? `id=eq.${partnerId}` : undefined },
     { table: 'chat_settings', filter: userId ? `user_id=eq.${userId}` : undefined },
   ];

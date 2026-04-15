@@ -21,6 +21,7 @@ export interface ProcessedMedia {
   media_key_nonce: string; // Nonce for the wrapped key
   media_nonce: string; // Nonce for the symmetric-encrypted data
   type: 'image' | 'video' | 'audio' | 'document';
+  mime_type: string;  // Fix 4.3: Explicit MIME type for deterministic playback
   name?: string;
   size?: number;
 }
@@ -31,6 +32,19 @@ let ffmpegLoaded = false;
 // Global cache for decrypted blobs to save egress and decryption CPU
 const decryptedBlobCache = new Map<string, Blob>();
 const MAX_CACHE_SIZE = 200;
+
+// Fix 4.1: In-flight deduplication — if the same URL is being decrypted by two callers
+// (e.g. a ChatBubble and a MemoriesCard both mount simultaneously), the second call
+// waits for the SAME promise instead of spawning a duplicate fetch+decrypt.
+const inflightDecryptions = new Map<string, Promise<Blob | null>>();
+
+// Fix 4.4: File size limits to prevent runaway uploads
+export const FILE_SIZE_LIMITS = {
+  image: 50 * 1024 * 1024,   // 50 MB
+  video: 200 * 1024 * 1024,  // 200 MB (video before compression)
+  audio: 25 * 1024 * 1024,   // 25 MB
+  document: 100 * 1024 * 1024, // 100 MB
+} as const;
 
 // ─── Image Compression: Canvas → WebP ────────────────────────────────────────
 // Bypasses browser-image-compression for better format support.
@@ -125,48 +139,6 @@ async function compressVideoWithWebCodecs(
 
       onProgress(2); // Started
 
-      // Extract frames by seeking the video
-      const bitmaps: ImageBitmap[] = [];
-      const canvas = document.createElement('canvas');
-      canvas.width = outW;
-      canvas.height = outH;
-      const ctx = canvas.getContext('2d')!;
-
-      video.currentTime = 0;
-
-      const seekAndCapture = (frameIndex: number): Promise<void> => {
-        return new Promise((resolveSeek) => {
-          if (frameIndex >= frameCount) { resolveSeek(); return; }
-
-          const targetTime = frameIndex / SAMPLE_FPS;
-          video.currentTime = Math.min(targetTime, duration - 0.001);
-
-          const onSeeked = async () => {
-            video.removeEventListener('seeked', onSeeked);
-            ctx.drawImage(video, 0, 0, outW, outH);
-            try {
-              const bitmap = await createImageBitmap(canvas);
-              bitmaps.push(bitmap);
-            } catch { /* skip bad frame */ }
-            onProgress(5 + Math.round((frameIndex / frameCount) * 25)); // 5-30%
-            await seekAndCapture(frameIndex + 1);
-            resolveSeek();
-          };
-
-          video.addEventListener('seeked', onSeeked, { once: true });
-        });
-      };
-
-      await seekAndCapture(0);
-      URL.revokeObjectURL(videoUrl);
-      video.remove();
-
-      if (bitmaps.length === 0) {
-        resolve(null);
-        return;
-      }
-
-      // Spawn worker
       const worker = new Worker(
         new URL('../workers/videoCompressor.worker.ts', import.meta.url),
         { type: 'module' }
@@ -174,51 +146,79 @@ async function compressVideoWithWebCodecs(
 
       worker.onmessage = (e: MessageEvent) => {
         const { type } = e.data;
-
-        if (type === 'progress') {
-          // Map worker progress (0-100) to overall 30-95%
+        if (type === 'init_done') {
+          // Worker ready, begin frame extraction
+          startExtraction();
+        } else if (type === 'progress') {
           onProgress(30 + Math.round(e.data.progress * 0.65));
-
         } else if (type === 'complete') {
           worker.terminate();
           onProgress(100);
-          const compressedBuffer: ArrayBuffer = e.data.buffer;
-          const compressedFile = new File([compressedBuffer], file.name.replace(/\.[^/.]+$/, '.mp4'), {
-            type: 'video/mp4',
-          });
-
-          resolve(compressedFile);
-
+          resolve(new File([e.data.buffer as ArrayBuffer], file.name.replace(/\.[^/.]+$/, '.mp4'), { type: 'video/mp4' }));
         } else if (type === 'fallback') {
           worker.terminate();
-          bitmaps.forEach(b => b.close());
-          resolve(null); // Signal fallback needed
-
+          resolve(null);
         } else if (type === 'error') {
           worker.terminate();
-          console.error('[WebCodecs Worker] Error:', e.data.message);
-          resolve(null); // Fallback on error
+          console.error('[WebCodecs]', e.data.message);
+          resolve(null);
         }
       };
 
       worker.onerror = (err) => {
-        console.error('[WebCodecs Worker] Uncaught error:', err);
+        console.error('[WebCodecs]', err);
         worker.terminate();
         resolve(null);
       };
 
-      // Transfer bitmaps (zero-copy) to worker
-      worker.postMessage(
-        {
-          type: 'encode_frames',
-          bitmaps,
-          width: outW,
-          height: outH,
-          framerate: SAMPLE_FPS,
-          totalFrames: bitmaps.length,
-        },
-        bitmaps // transferable list
-      );
+      // 1. Initialize worker
+      worker.postMessage({ type: 'init', outWidth: outW, outHeight: outH, fps: SAMPLE_FPS, totalFrames: frameCount });
+
+      // 2. Stream frames
+      const startExtraction = async () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d')!;
+        
+        let framesExtracted = 0;
+
+        const captureNextFrame = (): Promise<void> => {
+          return new Promise((resolveFrame) => {
+            if (framesExtracted >= frameCount) { resolveFrame(); return; }
+            video.currentTime = Math.min(framesExtracted / SAMPLE_FPS, duration - 0.001);
+
+            const onSeeked = async () => {
+              video.removeEventListener('seeked', onSeeked);
+              ctx.drawImage(video, 0, 0, outW, outH);
+              try {
+                const bitmap = await createImageBitmap(canvas);
+                worker.postMessage({ type: 'frame', bitmap, frameIndex: framesExtracted }, [bitmap]);
+              } catch { /* skip bad frame */ }
+              
+              framesExtracted++;
+              onProgress(5 + Math.round((framesExtracted / frameCount) * 25)); // 5-30%
+              
+              await captureNextFrame();
+              resolveFrame();
+            };
+            video.addEventListener('seeked', onSeeked, { once: true });
+          });
+        };
+
+        await captureNextFrame();
+        URL.revokeObjectURL(videoUrl);
+        video.remove();
+
+        if (framesExtracted === 0) {
+          worker.terminate();
+          resolve(null);
+          return;
+        }
+
+        // 3. Flush encoder
+        worker.postMessage({ type: 'flush' });
+      };
     };
 
     video.onerror = () => {
@@ -273,11 +273,10 @@ export function useMedia() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Thumbnail uses WebP too — much faster and smaller
+  // Thumbnail uses WebP — much faster and smaller
   const generateThumbnail = async (file: File): Promise<Blob | null> => {
     if (!file.type.startsWith('image/')) return null;
     try {
-      // Use browser-image-compression for thumbnail (tiny, fast enough)
       const options = {
         maxSizeMB: 0.05,
         maxWidthOrHeight: 200,
@@ -297,6 +296,16 @@ export function useMedia() {
     options: { optimize?: boolean } = { optimize: true }
   ): Promise<ProcessedMedia | null> => {
     if (!user || !partner?.public_key) return null;
+
+    // Fix 4.4: Enforce file size limits before any processing
+    const fileType: keyof typeof FILE_SIZE_LIMITS =
+      file.type.startsWith('image/') ? 'image' :
+      file.type.startsWith('video/') ? 'video' :
+      file.type.startsWith('audio/') ? 'audio' : 'document';
+    if (file.size > FILE_SIZE_LIMITS[fileType]) {
+      const limitMB = FILE_SIZE_LIMITS[fileType] / (1024 * 1024);
+      throw new Error(`File exceeds ${limitMB}MB limit for ${fileType} files.`);
+    }
 
     setIsProcessing(true);
     setUploadProgress(0);
@@ -370,7 +379,7 @@ export function useMedia() {
 
       const uploadResult = await uploadFile(encryptedData, 'raw', fileToProcess.name);
 
-      // ── Thumbnail ──────────────────────────────────────────────────────────
+      // ── Thumbnail ──────────────────────────────────────────────────────
       let thumbnailUrl = '';
       const thumbBlob = await generateThumbnail(file);
       if (thumbBlob) {
@@ -379,6 +388,12 @@ export function useMedia() {
         const thumbResult = await uploadFile(thumbCipher, 'raw');
         thumbnailUrl = thumbResult.secure_url;
       }
+
+      // Fix 4.3: Determine and return explicit MIME type
+      const mimeType = file.type.startsWith('image/') ? 'image/webp' :
+                       file.type.startsWith('video/') ? (fileToProcess.type || 'video/mp4') :
+                       file.type.startsWith('audio/') ? (file.type || 'audio/webm') :
+                       file.type || 'application/octet-stream';
 
       return {
         url: uploadResult.secure_url,
@@ -389,6 +404,7 @@ export function useMedia() {
         type: file.type.startsWith('image/') ? 'image' :
               file.type.startsWith('video/') ? 'video' :
               file.type.startsWith('audio/') ? 'audio' : 'document',
+        mime_type: mimeType, // Fix 4.3: explicit MIME to persist to DB
         name: file.name,
         size: file.size,
       };
@@ -414,78 +430,93 @@ export function useMedia() {
     const myKeyPair = getStoredKeyPair();
     if (!myKeyPair) return null;
 
-    try {
-      if (decryptedBlobCache.has(url)) {
-        return decryptedBlobCache.get(url)!;
-      }
-
-      const [keyNonce, encryptedKey] = packedKey.split(':');
-      if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
-
-      // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
-      // For a message I SENT:     "theirPublicKey" slot = Partner's public key
-      // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
-      const isMine = senderPublicKey === encodeBase64(myKeyPair.publicKey);
-      const primaryKey = isMine ? partnerPublicKey : (senderPublicKey || partnerPublicKey);
-
-      // Try current partner key and all historical partner keys as fallbacks
-      const fallbackKeys = (partnerKeyHistory || [])
-        .filter(k => k !== primaryKey)
-        .map(k => decodeBase64(k));
-
-      const symmetricKey = decryptFileKeyWithFallback(
-        encryptedKey, keyNonce,
-        decodeBase64(primaryKey), myKeyPair.secretKey,
-        fallbackKeys
-      );
-      if (!symmetricKey) throw new Error('Failed to unwrap key');
-
-      const response = await fetch(url);
-      const arrayBuffer = await response.arrayBuffer();
-      const ciphertext = new Uint8Array(arrayBuffer);
-
-      const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
-      if (!decrypted) return null;
-
-      // Determine MIME type: prefer the explicit mediaType param (from message.type)
-      // Cloudinary raw upload URLs don't have file extensions, so URL-sniffing is unreliable
-      let mimeType = 'application/octet-stream';
-      if (mediaType === 'audio') {
-        mimeType = 'audio/webm';
-      } else if (mediaType === 'video') {
-        mimeType = 'video/mp4';
-      } else if (mediaType === 'image') {
-        // WebP images won't have extension in Cloudinary raw URLs — default to webp
-        if (url.includes('.png')) mimeType = 'image/png';
-        else if (url.includes('.gif')) mimeType = 'image/gif';
-        else if (url.includes('.webp')) mimeType = 'image/webp';
-        else mimeType = 'image/webp'; // Default to WebP since we now compress to WebP
-      } else {
-        // Fallback: sniff from URL when no type provided
-        if (url.includes('.webm')) mimeType = 'audio/webm';
-        else if (url.includes('.mp4')) mimeType = 'video/mp4';
-        else if (url.includes('.jpg') || url.includes('.jpeg')) mimeType = 'image/jpeg';
-        else if (url.includes('.png')) mimeType = 'image/png';
-        else if (url.includes('.gif')) mimeType = 'image/gif';
-        else if (url.includes('.mp3')) mimeType = 'audio/mpeg';
-        else if (url.includes('.ogg')) mimeType = 'audio/ogg';
-        else mimeType = 'image/webp'; // Default for unknown image types
-      }
-
-      const blob = new Blob([decrypted as any], { type: mimeType });
-
-      // Cache management (simple LRU by Map insertion order)
-      if (decryptedBlobCache.size >= MAX_CACHE_SIZE) {
-        const firstKey = decryptedBlobCache.keys().next().value;
-        if (firstKey) decryptedBlobCache.delete(firstKey);
-      }
-      decryptedBlobCache.set(url, blob);
-
-      return blob;
-    } catch (error) {
-      console.error('Decryption failed', error);
-      return null;
+    // Fix 4.1: Return cached blob immediately
+    if (decryptedBlobCache.has(url)) {
+      return decryptedBlobCache.get(url)!;
     }
+
+    // Fix 4.1: If same URL is already being decrypted, wait for that promise
+    if (inflightDecryptions.has(url)) {
+      return inflightDecryptions.get(url)!;
+    }
+
+    const decryptionPromise = (async (): Promise<Blob | null> => {
+      try {
+        const [keyNonce, encryptedKey] = packedKey.split(':');
+        if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
+
+        // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
+        // For a message I SENT:     "theirPublicKey" slot = Partner's public key
+        // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
+        const isMine = senderPublicKey === encodeBase64(myKeyPair.publicKey);
+        const primaryKey = isMine ? partnerPublicKey : (senderPublicKey || partnerPublicKey);
+
+        // Try current partner key and all historical partner keys as fallbacks
+        const fallbackKeys = (partnerKeyHistory || [])
+          .filter(k => k !== primaryKey)
+          .map(k => decodeBase64(k));
+
+        const symmetricKey = decryptFileKeyWithFallback(
+          encryptedKey, keyNonce,
+          decodeBase64(primaryKey), myKeyPair.secretKey,
+          fallbackKeys
+        );
+        if (!symmetricKey) throw new Error('Failed to unwrap key');
+
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const ciphertext = new Uint8Array(arrayBuffer);
+
+        const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
+        if (!decrypted) return null;
+
+        // Determine MIME type: prefer the explicit mediaType param (from message.type)
+        // Cloudinary raw upload URLs don't have file extensions, so URL-sniffing is unreliable
+        let mimeType = 'application/octet-stream';
+        if (mediaType === 'audio') {
+          mimeType = 'audio/webm';
+        } else if (mediaType === 'video') {
+          mimeType = 'video/mp4';
+        } else if (mediaType === 'image') {
+          // WebP images won't have extension in Cloudinary raw URLs — default to webp
+          if (url.includes('.png')) mimeType = 'image/png';
+          else if (url.includes('.gif')) mimeType = 'image/gif';
+          else if (url.includes('.webp')) mimeType = 'image/webp';
+          else mimeType = 'image/webp'; // Default to WebP since we now compress to WebP
+        } else {
+          // Fallback: sniff from URL when no type provided
+          if (url.includes('.webm')) mimeType = 'audio/webm';
+          else if (url.includes('.mp4')) mimeType = 'video/mp4';
+          else if (url.includes('.jpg') || url.includes('.jpeg')) mimeType = 'image/jpeg';
+          else if (url.includes('.png')) mimeType = 'image/png';
+          else if (url.includes('.gif')) mimeType = 'image/gif';
+          else if (url.includes('.mp3')) mimeType = 'audio/mpeg';
+          else if (url.includes('.ogg')) mimeType = 'audio/ogg';
+          else mimeType = 'image/webp'; // Default for unknown image types
+        }
+
+        const blob = new Blob([decrypted as any], { type: mimeType });
+
+        // Cache management (simple LRU by Map insertion order)
+        if (decryptedBlobCache.size >= MAX_CACHE_SIZE) {
+          const firstKey = decryptedBlobCache.keys().next().value;
+          if (firstKey) decryptedBlobCache.delete(firstKey);
+        }
+        decryptedBlobCache.set(url, blob);
+
+        return blob;
+      } catch (error) {
+        console.error('Decryption failed', error);
+        return null;
+      } finally {
+        // Fix 4.1: Remove from in-flight map once resolved (success or fail)
+        inflightDecryptions.delete(url);
+      }
+    })();
+
+    // Fix 4.1: Register the promise so concurrent callers can wait on it
+    inflightDecryptions.set(url, decryptionPromise);
+    return decryptionPromise;
   }, [user]);
 
   const getRecentCachedMedia = useCallback((): { url: string; blob: Blob }[] => {

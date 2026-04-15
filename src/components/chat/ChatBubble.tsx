@@ -705,7 +705,7 @@ function ChatBubble({
               )}
               {time}
             </span>
-            {isMine && !message.is_deleted_for_everyone && (
+            {isMine && !message.is_deleted_for_everyone && !message.is_send_failed && (
               <span 
                 className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
                   isOnlyMedia || isSticker
@@ -720,6 +720,13 @@ function ChatBubble({
             {isMine && message.is_pending && (
               <span className={`material-symbols-outlined text-[12px] animate-pulse ${isOnlyMedia || isSticker ? 'text-primary' : 'text-background/40'}`}>schedule</span>
             )}
+          </div>
+        )}
+        {/* Fix 1.5: Permanent send failure indicator */}
+        {isMine && message.is_send_failed && (
+          <div className="flex items-center gap-1 mt-1 justify-end">
+            <span className="material-symbols-outlined text-[13px] text-red-400">error_outline</span>
+            <span className="text-[9px] text-red-400 uppercase tracking-wider font-bold">Not delivered</span>
           </div>
         )}
       </div>

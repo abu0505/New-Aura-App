@@ -11,6 +11,8 @@ import {
   clearStoredKeys,
   type EncryptionState 
 } from '../lib/encryption';
+// Fix 1.4: Import push debounce timers to clear them on logout
+import { pushDebounceTimers } from '../hooks/useChat';
 
 interface AuthContextType {
   session: Session | null;
@@ -123,6 +125,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }).eq('id', user.id);
       } catch (_) { /* best-effort */ }
     }
+    // Fix 1.4: Clear all pending push timers — prevents ghost notifications
+    // after logout (e.g. if user logs out while a 5s debounce is still running)
+    pushDebounceTimers.forEach(timer => clearTimeout(timer));
+    pushDebounceTimers.clear();
     clearStoredKeys();
     await supabase.auth.signOut();
   };
