@@ -427,11 +427,22 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   Replying to {replyingTo.is_mine ? 'Yourself' : 'Partner'}
                 </span>
                 <span className="text-aura-text-primary/80 text-sm truncate font-medium flex items-center gap-2">
-                  {(replyingTo.type === 'image' || replyingTo.type === 'video') ? (
+                  {replyingTo.type === 'image' ? (
                     replyMediaUrl ? (
                       <img src={replyMediaUrl} alt="media preview" className="w-20 h-20 rounded shadow-md object-cover flex-shrink-0" />
                     ) : (
                       <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">image</span>
+                    )
+                  ) : replyingTo.type === 'video' ? (
+                    replyMediaUrl ? (
+                      <div className="relative w-20 h-20 flex-shrink-0">
+                        <video src={replyMediaUrl} className="w-full h-full rounded shadow-md object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
+                           <span className="material-symbols-outlined text-white text-[16px]">play_circle</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">videocam</span>
                     )
                   ) : null}
                   <span className="truncate">

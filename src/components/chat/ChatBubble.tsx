@@ -647,11 +647,22 @@ function ChatBubble({
               {repliedMessage.is_mine ? 'You' : 'Partner'}
             </div>
             <div className="text-xs truncate max-w-[200px] flex items-center gap-2">
-              {(repliedMessage.type === 'image' || repliedMessage.type === 'video') ? (
+              {repliedMessage.type === 'image' ? (
                 repliedMediaUrl ? (
                   <img src={repliedMediaUrl} alt="media preview" className="w-20 h-20 rounded shadow-sm object-cover flex-shrink-0" />
                 ) : (
                   <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">image</span>
+                )
+              ) : repliedMessage.type === 'video' ? (
+                repliedMediaUrl ? (
+                  <div className="relative w-20 h-20 flex-shrink-0">
+                    <video src={repliedMediaUrl} className="w-full h-full rounded shadow-sm object-cover" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
+                      <span className="material-symbols-outlined text-white text-[16px]">play_circle</span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">videocam</span>
                 )
               ) : null}
               <span className="truncate">

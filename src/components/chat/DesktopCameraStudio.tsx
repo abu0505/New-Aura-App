@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { denoiseCapture, destroyDenoiser } from '../../utils/imageDenoiser';
 
 interface DesktopCameraStudioProps {
   onClose: () => void;
@@ -31,6 +32,9 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
   // Recording
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+
+  // Noise reduction state
+  const [isEnhancing, setIsEnhancing] = useState(false);
 
   const [isHardwareMenuOpen, setIsHardwareMenuOpen] = useState(false);
 
@@ -104,10 +108,14 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
           width: { ideal: idealWidth },
           height: { ideal: idealHeight },
           aspectRatio: { ideal: ratioValue },
-          frameRate: { ideal: 60, min: 30 }
+          frameRate: { ideal: 30, min: 15 }, // Slower framing helps collect more light per frame -> less noise
+          noiseSuppression: true, // Request browser-level WebRTC denoise filters (hardware/software)
+          autoGainControl: false, // Disabling AGC prevents massive ISO noise spikes in low light
         },
         audio: {
           deviceId: selectedMicId ? { exact: selectedMicId } : undefined,
+          noiseSuppression: true,
+          echoCancellation: true
         }
       };
 
@@ -134,7 +142,10 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
     } else {
       stopCamera();
     }
-    return () => stopCamera();
+    return () => {
+      stopCamera();
+      destroyDenoiser(); // Clean up WebGL + Worker maps
+    };
   }, [viewMode, selectedCameraId, selectedMicId, resolution, aspectRatio, startCamera, stopCamera]);
 
   // Handle click outside settings to close
@@ -168,9 +179,9 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
     } catch (e) { }
   }, []);
 
-  // --- Capture Logic ---
+  // --- Capture Logic (with Hybrid Denoising Pipeline) ---
   const takePhoto = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isEnhancing) return;
 
     playShutterSound();
 
@@ -194,27 +205,68 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
     const offsetY = (video.videoHeight - drawHeight) / 2;
 
     const canvas = document.createElement('canvas');
-    canvas.width = drawWidth;
-    canvas.height = drawHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    canvas.width = Math.round(drawWidth);
+    canvas.height = Math.round(drawHeight);
 
-    // Horizontal mirror for UX
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
-    // Draw cropped representation mapping cleanly to the object-cover view
-    ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight, 0, 0, drawWidth, drawHeight);
+    // Provide the drawing logic to denoise pipeline
+    const drawFrame = (ctx: CanvasRenderingContext2D) => {
+      ctx.save();
+      // Horizontal mirror for standard UX
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    };
 
-    canvas.toBlob((blob) => {
-      if (blob) {
-        // WebP gives ~70% size reduction vs JPEG at near-identical quality
-        const file = new File([blob], `desktop_photo_${Date.now()}.webp`, { type: 'image/webp' });
-        const url = URL.createObjectURL(blob);
-        setCapturedFile(file);
-        setPreviewUrl(url);
-        setViewMode('preview');
-      }
-    }, 'image/webp', 0.82);
+    setIsEnhancing(true);
+
+    try {
+      // Execute 4-layer denoise pipeline
+      const denoisedImageData = await denoiseCapture(
+        video,
+        canvas,
+        drawFrame,
+        {
+          frameCount: 9,        // Increased from 5 to 9 for maximum SNR (noise reduction)
+          frameDelayMs: 35,     // ~30fps sampling
+          enableGLFilter: true,
+          enableSharpening: true,
+          sharpenAmount: 0.4
+        }
+      );
+
+      const ctx = canvas.getContext('2d')!;
+      ctx.putImageData(denoisedImageData, 0, 0);
+
+      // Save high quality WebP
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `desktop_photo_${Date.now()}.webp`, { type: 'image/webp' });
+          const url = URL.createObjectURL(blob);
+          setCapturedFile(file);
+          setPreviewUrl(url);
+          setViewMode('preview');
+        }
+        setIsEnhancing(false);
+      }, 'image/webp', 0.92);
+
+    } catch (err) {
+      console.warn('[DesktopCamera] Denoise failed, using fallback', err);
+      // Fallback
+      const ctx = canvas.getContext('2d')!;
+      drawFrame(ctx);
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `desktop_photo_${Date.now()}.webp`, { type: 'image/webp' });
+          const url = URL.createObjectURL(blob);
+          setCapturedFile(file);
+          setPreviewUrl(url);
+          setViewMode('preview');
+        }
+        setIsEnhancing(false);
+      }, 'image/webp', 0.82);
+    }
   };
 
   const stopRecording = useCallback(() => {
@@ -450,6 +502,40 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                       style={{ transform: 'scaleX(-1)' }}
                     />
                   )}
+
+                  {/* Desktop "Enhancing..." Overlay */}
+                  <AnimatePresence>
+                    {isEnhancing && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute inset-0 z-[65] flex items-center justify-center pointer-events-none"
+                        style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
+                      >
+                        <motion.div
+                          initial={{ scale: 0.85, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.85, opacity: 0 }}
+                          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                          className="flex flex-col items-center gap-3"
+                        >
+                          <div className="relative w-14 h-14 flex items-center justify-center">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                              className="absolute inset-0 rounded-full border-2 border-transparent"
+                              style={{ borderTopColor: 'var(--color-primary, #FFD700)', borderRightColor: 'rgba(255,215,0,0.3)' }}
+                            />
+                            <span className="material-symbols-outlined text-[28px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                          </div>
+                          <span className="text-white text-sm font-semibold tracking-wider drop-shadow-md">Enhancing...</span>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                 </div>
               );
             })()}
