@@ -64,7 +64,8 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   const { 
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
     hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
-    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead 
+    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead,
+    addOptimisticMediaMessage, commitOptimisticMediaMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
 
@@ -703,6 +704,8 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
               isActive={isActive}
               partnerPublicKey={partner.public_key}
               onDesktopCameraClick={() => setIsDesktopCameraOpen(true)}
+              onOptimisticMediaStart={addOptimisticMediaMessage}
+              onOptimisticMediaComplete={commitOptimisticMediaMessage}
             />
           </div>
         )}

@@ -15,6 +15,7 @@ export interface ChatMessage extends MessageRow {
   is_pending?: boolean;
   is_send_failed?: boolean;  // Fix 1.1: permanent send failure flag
   retry_count?: number;      // Fix 1.1: tracks retry attempts
+  is_uploading?: boolean;    // NEW: flag for background media upload
 }
 
 // ═══ Module-level push debounce — MUST be outside the hook so it persists ═══
@@ -769,6 +770,137 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
   };
 
+  const addOptimisticMediaMessage = (text: string, localMediaUrl: string, type: string, replyToId?: string): string => {
+    if (!user || !partnerId) return '';
+    const tempId = crypto.randomUUID();
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: partnerId,
+      encrypted_content: '', // Will be filled later
+      nonce: '',
+      type: type as any,
+      media_url: localMediaUrl, // temporary local url proxy
+      decrypted_media_url: localMediaUrl,
+      media_key: null,
+      media_nonce: null,
+      thumbnail_url: null,
+      file_name: null,
+      file_size: null,
+      duration: null,
+      reaction: null,
+      reply_to: replyToId || null,
+      is_read: false,
+      is_delivered: false,
+      is_edited: false,
+      is_deleted_for_sender: false,
+      is_deleted_for_receiver: false,
+      is_deleted_for_everyone: false,
+      read_at: null,
+      delivered_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sender_public_key: '', 
+      decrypted_content: text,
+      is_mine: true,
+      is_pending: true,
+      is_uploading: true, // Show loading UI
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    return tempId;
+  };
+
+  const commitOptimisticMediaMessage = async (
+    tempId: string, 
+    text: string, 
+    media: { url: string, media_key: string, media_nonce: string, type: string }, 
+    replyToId?: string
+  ) => {
+    if (!user || !partnerId) return;
+
+    const myKeyPair = getStoredKeyPair();
+    if (!myKeyPair || !partnerPublicKey) {
+      console.error('Missing encryption keys!');
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, is_uploading: false, is_send_failed: true } : m));
+      return;
+    }
+
+    let ciphertext = '';
+    let nonce = '';
+
+    if (text || media?.type === 'sticker') {
+      const encrypted = encryptMessage(text || '[[STICKER]]', decodeBase64(partnerPublicKey), myKeyPair.secretKey);
+      ciphertext = encrypted.ciphertext;
+      nonce = encrypted.nonce;
+    }
+
+    const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
+
+    setMessages(prev => prev.map(m => 
+      m.id === tempId ? { 
+        ...m, 
+        encrypted_content: ciphertext,
+        nonce,
+        media_url: media.url,
+        media_key: media.media_key,
+        media_nonce: media.media_nonce,
+        sender_public_key: myPublicKeyStr,
+        is_uploading: false,
+        is_pending: !isOnline
+      } : m
+    ));
+
+    if (!isOnline) {
+      const msg = messagesRef.current.find(m => m.id === tempId);
+      if (msg) setPendingMessages(prev => [...prev, msg]);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('messages')
+      .insert({
+        id: tempId,
+        sender_id: user.id,
+        receiver_id: partnerId,
+        encrypted_content: ciphertext,
+        nonce: nonce,
+        type: media.type,
+        media_url: media.url,
+        media_key: media.media_key,
+        media_nonce: media.media_nonce,
+        reply_to: replyToId || null,
+        sender_public_key: myPublicKeyStr,
+      });
+
+    if (error) {
+      console.error('Failed to commit media message', error);
+      if (error.message?.includes('fetch') || error.code === 'PGRST301') {
+        const msg = messagesRef.current.find(m => m.id === tempId);
+        if (msg) {
+          setMessages(prev => prev.map(m => m.id === tempId ? { ...m, is_pending: true } : m));
+          setPendingMessages(prev => [...prev, { ...msg, retry_count: 0 }]);
+        }
+      } else {
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, is_pending: false, is_send_failed: true } : m));
+      }
+    } else {
+      const existingTimer = pushDebounceTimers.get(partnerId);
+      if (existingTimer) clearTimeout(existingTimer);
+      
+      const newTimer = setTimeout(async () => {
+        const stillValid = messagesRef.current.find(m => m.id === tempId && !m.is_send_failed && !m.is_pending);
+        if (!stillValid) return;
+        try {
+          const { data: { session: freshSession } } = await supabase.auth.getSession();
+          if (freshSession) {
+             await supabase.functions.invoke('send-push', { body: { record: { id: tempId, sender_id: user.id, receiver_id: partnerId } } });
+          }
+        } catch {}
+      }, 5000);
+      pushDebounceTimers.set(partnerId, newTimer);
+    }
+  };
+
   const reactToMessage = async (messageId: string, emoji: string | null) => {
     setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reaction: emoji } : m));
     await supabase.from('messages').update({ reaction: emoji }).eq('id', messageId);
@@ -946,6 +1078,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     markAsRead, 
     pinMessage, 
     firstUnreadId, 
-    isOnline 
+    isOnline,
+    addOptimisticMediaMessage,
+    commitOptimisticMediaMessage
   };
 }

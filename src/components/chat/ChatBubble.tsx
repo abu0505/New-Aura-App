@@ -40,7 +40,7 @@ function ChatBubble({
   onJumpToMessage
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
-  const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(null);
+  const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
   const [repliedMediaUrl, setRepliedMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
@@ -124,6 +124,8 @@ function ChatBubble({
           }
           setLoading(false);
         });
+    } else if (message.decrypted_media_url && !message.media_key) {
+      setDecryptedMediaUrl(message.decrypted_media_url);
     }
     return () => {
       if (blobUrlRef.current) {
@@ -139,7 +141,8 @@ function ChatBubble({
     message.media_key, 
     message.media_nonce, 
     message.type, 
-    message.sender_public_key
+    message.sender_public_key,
+    message.decrypted_media_url
   ]);
   
   // Decrypt media for replied messages
@@ -318,11 +321,18 @@ function ChatBubble({
           <div className={`relative group max-w-[240px] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
             <motion.img 
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              animate={{ opacity: message.is_uploading ? 0.6 : 1 }}
               src={decryptedMediaUrl} 
-              className={`w-full h-auto ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 cursor-pointer hover:opacity-90 transition-opacity`}
-              onClick={() => setIsPreviewOpen(true)}
+              className={`w-full h-auto ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer hover:opacity-90' : ''} transition-opacity ${message.is_uploading ? 'blur-[2px] grayscale-[20%]' : ''}`}
+              onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true); }}
             />
+            {message.is_uploading && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="w-10 h-10 flex items-center justify-center bg-black/50 rounded-full backdrop-blur-md border border-white/20 shadow-2xl shadow-black/50">
+                  <span className="material-symbols-outlined text-primary text-2xl animate-spin">data_usage</span>
+                </div>
+              </div>
+            )}
             {isPreviewOpen && (
               <MediaViewer 
                 url={decryptedMediaUrl} 
@@ -335,15 +345,24 @@ function ChatBubble({
       case 'video':
         return (
           <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
-            <div className={`relative cursor-pointer group ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5`} onClick={() => setIsPreviewOpen(true)}>
+            <div className={`relative group ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true) }}>
               <video 
                 src={decryptedMediaUrl} 
                 className="w-full pointer-events-none" 
               />
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-                <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>
-              </div>
+              {!message.is_uploading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                  <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>
+                </div>
+              )}
             </div>
+            {message.is_uploading && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                <div className="w-10 h-10 flex items-center justify-center bg-black/50 rounded-full backdrop-blur-md border border-white/20 shadow-2xl shadow-black/50">
+                  <span className="material-symbols-outlined text-primary text-2xl animate-spin">data_usage</span>
+                </div>
+              </div>
+            )}
             {isPreviewOpen && (
               <MediaViewer 
                 url={decryptedMediaUrl} 
@@ -355,11 +374,18 @@ function ChatBubble({
         );
       case 'audio':
         return (
-          <AudioWaveformPlayer 
-            src={decryptedMediaUrl} 
-            isMine={isMine}
-            duration={message.duration || undefined}
-          />
+          <div className="relative">
+            <AudioWaveformPlayer 
+              src={decryptedMediaUrl} 
+              isMine={isMine}
+              duration={message.duration || undefined}
+            />
+            {message.is_uploading && (
+               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-black/20 rounded-full">
+                 <span className="material-symbols-outlined text-primary text-xl animate-spin drop-shadow-md">data_usage</span>
+               </div>
+            )}
+          </div>
         );
       default:
         return (

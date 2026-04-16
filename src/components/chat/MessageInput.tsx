@@ -25,9 +25,13 @@ interface MessageInputProps {
   isActive?: boolean;
   partnerPublicKey?: string | null;
   onDesktopCameraClick?: () => void;
+  onOptimisticMediaStart?: (text: string, localMediaUrl: string, type: string, replyToId?: string) => string;
+  onOptimisticMediaComplete?: (tempId: string, text: string, media: { url: string, media_key: string, media_nonce: string, type: string }, replyToId?: string) => void;
 }
 
-const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick }, ref) => {
+const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ 
+  onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick, onOptimisticMediaStart, onOptimisticMediaComplete 
+}, ref) => {
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -311,27 +315,78 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ onSend
   };
 
   const performUpload = async (files: File[], optimize: boolean, caption: string) => {
-    setIsUploading(true);
+    const hasOptimistic = !!onOptimisticMediaStart && !!onOptimisticMediaComplete;
+    
+    if (!hasOptimistic) {
+      setIsUploading(true);
+    }
     setShowQualityModal(false);
+    
+    // Quick UI reset so user can continue texting
+    setPendingFiles([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    const currentReplyId = replyingTo?.id;
+    if (onCancelReply) onCancelReply();
+
+    // If pessimistic
+    if (!hasOptimistic) {
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const uploaded = await processAndUpload(file, { optimize });
+          if (uploaded) {
+            onSend('', {
+              url: uploaded.url,
+              media_key: uploaded.media_key,
+              media_nonce: uploaded.media_nonce,
+              type: uploaded.type
+            }, i === 0 ? currentReplyId : undefined);
+          }
+        }
+        if (caption.trim()) {
+          onSend(caption.trim(), undefined, currentReplyId);
+        }
+      } finally {
+        setIsUploading(false);
+      }
+      return;
+    }
+
+    // Optimistic fast-path
+    const uploads = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      let tempId = '';
+      const type = file.type.startsWith('video/') ? 'video' : (file.type.startsWith('audio/') ? 'audio' : 'image');
+      
+      const localUrl = URL.createObjectURL(file);
+      // Removed caption from optimistic media - it will be sent separately
+      tempId = onOptimisticMediaStart!('', localUrl, type, i === 0 ? currentReplyId : undefined);
+      uploads.push({ file, tempId });
+    }
+
+    // Send caption as an independent message right after media placeholders
+    if (caption.trim()) {
+      // Use setTimeout to ensure the React state for media is queued first
+      setTimeout(() => {
+        onSend(caption.trim(), undefined, currentReplyId);
+      }, 10);
+    }
+
     try {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+      for (const { file, tempId } of uploads) {
         const uploaded = await processAndUpload(file, { optimize });
-        if (uploaded) {
-          // Send caption only with the very first file
-          onSend(i === 0 ? caption.trim() : '', {
-            url: uploaded.url,
-            media_key: uploaded.media_key,
-            media_nonce: uploaded.media_nonce,
-            type: uploaded.type
-          }, i === 0 ? replyingTo?.id : undefined);
+        if (uploaded && tempId) {
+           onOptimisticMediaComplete!(tempId, '', {
+              url: uploaded.url,
+              media_key: uploaded.media_key,
+              media_nonce: uploaded.media_nonce,
+              type: uploaded.type
+           }, currentReplyId);
         }
       }
-    } finally {
-      setIsUploading(false);
-      setPendingFiles([]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      if (onCancelReply) onCancelReply();
+    } catch(e) {
+      console.error("Upload failed", e);
     }
   };
 

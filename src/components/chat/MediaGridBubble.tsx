@@ -33,6 +33,12 @@ function MediaGridBubble({
       
       // Fire all decryptions concurrently
       const promises = messages.map(async (msg) => {
+        if (msg.decrypted_media_url && !msg.media_key) {
+           blobUrlsRef.current[msg.id] = msg.decrypted_media_url;
+           setDecryptedUrls(prev => ({ ...prev, [msg.id]: msg.decrypted_media_url as string }));
+           return;
+        }
+
         if (!msg.media_url || !msg.media_key || !msg.media_nonce) return;
         try {
           const blob = await getDecryptedBlob(
@@ -60,7 +66,13 @@ function MediaGridBubble({
 
     return () => {
       mounted = false;
-      Object.values(blobUrlsRef.current).forEach(url => URL.revokeObjectURL(url));
+      Object.values(blobUrlsRef.current).forEach((url) => {
+        // Only revoke if it was a createObjectURL and not a data URI maybe. Oh wait, URL.revokeObjectURL ignores failure.
+        // It's safe to run on blob URLs.
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
     };
   }, [messages, partnerPublicKey]);
 
@@ -83,26 +95,37 @@ function MediaGridBubble({
 
     const isLastDisplayItem = index === 3;
     const showOverlay = isLastDisplayItem && remainingCount > 0;
+    const isUploading = msg.is_uploading;
 
     return (
       <div 
         key={msg.id} 
-        className="relative cursor-pointer group h-full w-full overflow-hidden"
-        onClick={() => setSelectedMediaIndex(index)}
+        className={`relative ${!isUploading ? 'cursor-pointer' : ''} group h-full w-full overflow-hidden`}
+        onClick={() => { if (!isUploading) setSelectedMediaIndex(index) }}
       >
         {msg.type === 'video' ? (
           <div className="w-full h-full relative">
-            <video src={url} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-              <span className="material-symbols-outlined text-white text-3xl opacity-80">play_circle</span>
-            </div>
+            <video src={url} className={`w-full h-full object-cover ${isUploading ? 'opacity-60 blur-[2px] grayscale-[20%]' : ''}`} />
+            {!isUploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                <span className="material-symbols-outlined text-white text-3xl opacity-80">play_circle</span>
+              </div>
+            )}
           </div>
         ) : (
-          <img src={url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={url} alt="" className={`w-full h-full object-cover ${!isUploading ? 'group-hover:scale-105 transition-transform duration-500' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} />
+        )}
+
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+            <div className="w-8 h-8 flex items-center justify-center bg-black/50 rounded-full backdrop-blur-md border border-white/20 shadow-2xl shadow-black/50">
+               <span className="material-symbols-outlined text-primary text-xl animate-spin">data_usage</span>
+            </div>
+          </div>
         )}
 
         {showOverlay && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
             <span className="text-2xl font-bold text-primary">+{remainingCount}</span>
           </div>
         )}

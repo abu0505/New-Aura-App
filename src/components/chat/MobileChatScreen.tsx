@@ -56,7 +56,8 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
   const { 
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
     hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
-    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead 
+    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead,
+    addOptimisticMediaMessage, commitOptimisticMediaMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -649,6 +650,8 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
                 onCancelReply={() => setReplyingTo(null)}
                 isActive={isActive}
                 partnerPublicKey={partner.public_key}
+                onOptimisticMediaStart={addOptimisticMediaMessage}
+                onOptimisticMediaComplete={commitOptimisticMediaMessage}
               />
             </div>
           )}
