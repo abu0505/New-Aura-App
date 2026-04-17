@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
+import { useVideoChunks } from '../../hooks/useVideoChunks';
 import type { ChatMessage } from '../../hooks/useChat';
 import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
 import AudioWaveformPlayer from './AudioWaveformPlayer';
+import ChunkedVideoOverlay from './ChunkedVideoOverlay';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import LinkPreview from './LinkPreview';
+import { supabase } from '../../lib/supabase';
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -40,7 +43,11 @@ function ChatBubble({
   onJumpToMessage
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
+  const { getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
+  // For chunked video: force re-render when new chunks arrive
+  const [, setChunkTick] = useState(0);
+  const chunkTickRef = useRef(0);
   const [repliedMediaUrl, setRepliedMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
@@ -106,15 +113,40 @@ function ChatBubble({
   const replyScale = useTransform(springX, (v) => 0.8 + Math.min(Math.abs(v) / 45, 1) * 0.3);
   const iconTranslate = useTransform(springX, (v) => -v / 2);
 
+  // Decrypt media and thumbnails
   useEffect(() => {
-    if (message.media_url && message.media_key && message.media_nonce && partnerPublicKey && !message.is_deleted_for_everyone) {
+    // Sender's own chunked video: use local blob thumbnail if available
+    if (isChunkedVideo(message) && message.is_mine) {
+      if (message.thumbnail_local_url) {
+        setDecryptedMediaUrl(message.thumbnail_local_url);
+        return; // Local thumb exists (first send), no decryption needed
+      }
+      // After page reload: thumbnail_local_url is lost (ephemeral blob URL).
+      // Fall through to decrypt thumbnail_url from DB — same path as receiver.
+      console.log('[ChatBubble] Sender chunked video — no local thumb, will decrypt from DB');
+    }
+
+    let targetUrl = message.media_url;
+    let targetKey = message.media_key;
+    let targetNonce = message.media_nonce;
+    
+    // Receiver's chunked video: decrypt the thumbnail instead of main media
+    if (isChunkedVideo(message)) {
+      if (message.thumbnail_url && message.media_key && message.media_nonce) {
+        targetUrl = message.thumbnail_url;
+      } else {
+        return; // thumbnail keys not arrived yet
+      }
+    }
+
+    if (targetUrl && targetKey && targetNonce && partnerPublicKey && !message.is_deleted_for_everyone) {
       setLoading(true);
       getDecryptedBlob(
-        message.media_url, message.media_key, message.media_nonce, 
+        targetUrl, targetKey, targetNonce, 
         partnerPublicKey,
         message.sender_public_key,
-        undefined,         // partnerKeyHistory — not available here
-        message.type       // Pass media type for correct MIME tagging (fixes alien audio sound)
+        undefined,
+        'image'       // thumbnail is always image
       )
         .then(blob => {
           if (blob) {
@@ -135,6 +167,9 @@ function ChatBubble({
     };
   }, [
     message.id, 
+    message.is_mine,
+    message.thumbnail_local_url,
+    message.thumbnail_url,
     partnerPublicKey, 
     message.is_deleted_for_everyone, 
     message.media_url, 
@@ -144,6 +179,49 @@ function ChatBubble({
     message.sender_public_key,
     message.decrypted_media_url
   ]);
+
+  // Chunked video: load existing chunks from DB.
+  // Runs for BOTH sender (after upload completes or page reload)
+  // and receiver (to recover chunks that arrived before this component mounted).
+  // Key fix: depends on is_uploading so it re-runs when upload finishes.
+  useEffect(() => {
+    if (!isChunkedVideo(message)) return;
+    if (!partnerPublicKey) return;
+    if (message.is_uploading) return; // Don't fetch while sender is still uploading
+
+    const existingChunks = getChunksForMessage(message.id);
+    // Only skip if we already have usable (decrypted) chunks
+    if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) return;
+
+    console.log(`[ChatBubble] Fetching chunks from DB for msg ${message.id.slice(0, 8)}...`);
+    supabase
+      .from('video_chunks')
+      .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+      .eq('message_id', message.id)
+      .order('chunk_index', { ascending: true })
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          console.log(`[ChatBubble] Found ${data.length} chunks, loading for msg ${message.id.slice(0, 8)}`);
+          loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
+        } else {
+          console.log(`[ChatBubble] No chunks in DB yet for msg ${message.id.slice(0, 8)}`);
+        }
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message.id, partnerPublicKey, message.is_uploading]);
+
+  // Poll chunk store every 400ms so UI re-renders as chunks decrypt
+  useEffect(() => {
+    if (!isChunkedVideo(message)) return;
+    const interval = setInterval(() => {
+      const chunks = getChunksForMessage(message.id);
+      if (chunks) {
+        chunkTickRef.current++;
+        setChunkTick(chunkTickRef.current);
+      }
+    }, 400);
+    return () => clearInterval(interval);
+  }, [message.id, isChunkedVideo, getChunksForMessage]);
   
   // Decrypt media for replied messages
   useEffect(() => {
@@ -304,6 +382,110 @@ function ChatBubble({
 
   const renderMedia = () => {
     if (message.is_deleted_for_everyone) return null;
+
+    // ── Chunked Video: Sender side (uploading) ────────────────────────────────
+    if (isChunkedVideo(message) && message.is_mine && message.is_uploading) {
+      const thumbSrc = decryptedMediaUrl || message.thumbnail_local_url || undefined;
+      return (
+        <div className={`relative max-w-[240px] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
+          <div className="relative overflow-hidden shadow-lg border border-white/5" style={{ borderRadius: '1rem', borderBottomLeftRadius: isFirst ? '1rem' : '4px', borderTopLeftRadius: isLast ? '1rem' : '4px', borderTopRightRadius: isFirst ? '1rem' : '4px', borderBottomRightRadius: isLast ? '4px' : '1rem' }}>
+            {thumbSrc ? (
+              <img src={thumbSrc} alt="Video" className="w-full max-h-[360px] h-auto object-cover opacity-80 blur-[1px]" />
+            ) : (
+              <div className="w-[240px] h-[135px] bg-black/60 rounded-2xl" />
+            )}
+            <AnimatePresence>
+              <ChunkedVideoOverlay
+                status={message.chunk_upload_status || 'Preparing...'}
+                isDone={false}
+              />
+            </AnimatePresence>
+          </div>
+        </div>
+      );
+    }
+
+    // ── Chunked Video: Sender side (upload complete — rendered after reload too) ───
+    if (isChunkedVideo(message) && message.is_mine && !message.is_uploading) {
+      const chunks = getChunksForMessage(message.id);
+      const thumbSrc = decryptedMediaUrl || message.thumbnail_local_url || undefined;
+      const isReady = chunks && chunks.some(c => c.isDecrypted && c.blobUrl);
+      return (
+        <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
+          <div
+            className="relative overflow-hidden shadow-lg border border-white/5 cursor-pointer"
+            style={{ borderRadius: '1rem', borderBottomLeftRadius: isFirst ? '1rem' : '4px', borderTopLeftRadius: isLast ? '1rem' : '4px', borderTopRightRadius: isFirst ? '1rem' : '4px', borderBottomRightRadius: isLast ? '4px' : '1rem' }}
+            onClick={() => isReady && setIsPreviewOpen(true)}
+          >
+            {thumbSrc ? (
+              <img src={thumbSrc} alt="Video" className={`w-full max-h-[360px] h-auto object-cover ${!isReady ? 'opacity-70 blur-[1px]' : ''}`} />
+            ) : (
+              <div className="w-[240px] h-[135px] bg-black/60 rounded-2xl" />
+            )}
+            {!isReady ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 gap-2">
+                <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }} />
+                <span className="text-[10px] font-semibold" style={{ color: 'var(--gold-light)' }}>Loading…</span>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>
+              </div>
+            )}
+          </div>
+          {isPreviewOpen && isReady && chunks && (
+            <MediaViewer
+              url={message.id}
+              type="chunked_video"
+              chunks={chunks}
+              thumbnailUrl={thumbSrc}
+              onClose={() => setIsPreviewOpen(false)}
+            />
+          )}
+        </div>
+      );
+    }
+
+    // ── Chunked Video: Receiver side (playing progressively) ─────────────────
+    if (isChunkedVideo(message) && !message.is_mine) {
+      const chunks = getChunksForMessage(message.id);
+      const thumbSrc = decryptedMediaUrl || undefined;
+      
+      const isReady = chunks && chunks.some(c => c.isDecrypted && c.blobUrl);
+
+      return (
+        <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
+          <div className="relative overflow-hidden shadow-lg border border-white/5 cursor-pointer" style={{ borderRadius: '1rem', borderBottomLeftRadius: isFirst ? '1rem' : '4px', borderTopLeftRadius: isLast ? '1rem' : '4px', borderTopRightRadius: isFirst ? '1rem' : '4px', borderBottomRightRadius: isLast ? '4px' : '1rem' }} onClick={() => setIsPreviewOpen(true)}>
+            {thumbSrc ? (
+              <img src={thumbSrc} alt="Video" className={`w-full max-h-[360px] h-auto object-cover ${!isReady ? 'opacity-70 blur-[1px]' : ''}`} />
+            ) : (
+              <div className="w-[240px] h-[135px] bg-black/60 rounded-2xl" />
+            )}
+            
+            {!isReady ? (
+              <AnimatePresence>
+                <ChunkedVideoOverlay status="Receiving video..." />
+              </AnimatePresence>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>
+              </div>
+            )}
+          </div>
+          
+          {isPreviewOpen && isReady && (
+            <MediaViewer 
+              url={message.id} 
+              type="chunked_video" 
+              chunks={chunks}
+              thumbnailUrl={thumbSrc}
+              onClose={() => setIsPreviewOpen(false)} 
+            />
+          )}
+        </div>
+      );
+    }
+
     if (loading) {
       return (
         <div className="w-48 h-32 flex flex-col items-center justify-center bg-black/20 rounded-xl gap-2">
@@ -350,7 +532,7 @@ function ChatBubble({
                 src={decryptedMediaUrl} 
                 className="w-full pointer-events-none" 
               />
-              {!message.is_uploading && (
+              {!message.is_uploading && !message.is_chunked_video && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
                   <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>
                 </div>

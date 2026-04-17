@@ -13,6 +13,8 @@ import {
   encodeBase64
 } from '../lib/encryption';
 import { usePartner } from './usePartner';
+import { splitVideoIntoChunksStreaming, generateVideoThumbnail as splitAndGetThumb } from '../utils/videoChunker';
+import { supabase } from '../lib/supabase';
 
 export interface ProcessedMedia {
   url: string;
@@ -258,6 +260,8 @@ async function compressVideoWithFFmpeg(
     '-crf', '28',
     '-vf', 'scale=-2:720',
     '-preset', 'veryfast',
+    '-c:a', 'aac',
+    '-b:a', '128k',
     outputName,
   ]);
 
@@ -539,5 +543,149 @@ export function useMedia() {
     decryptedBlobCache.clear();
   }, []);
 
-  return { processAndUpload, getDecryptedBlob, getRecentCachedMedia, getCacheSize, clearCache, isProcessing, uploadProgress };
+  /**
+   * Generates a video thumbnail from the first frame without FFmpeg.
+   * Exposed so MessageInput can quickly create a thumbnail before chunking begins.
+   */
+  const generateVideoThumbnailFromFile = useCallback(async (file: File): Promise<Blob | null> => {
+    return splitAndGetThumb(file);
+  }, []);
+
+  /**
+   * processAndUploadChunked — Progressive chunked video pipeline.
+   *
+   * 1. Splits the (optionally compressed) video into 15-second chunks via FFmpeg WASM.
+   * 2. For each chunk: encrypt → upload to Cloudinary → insert row into video_chunks.
+   * 3. Calls onStatusChange(text) before each phase so the UI can animate the text.
+   *
+   * The caller is responsible for:
+   *   - Already having created the optimistic message in Supabase (with thumbnail_url, media_url=null).
+   *   - Removing the shimmer overlay once all chunks are uploaded.
+   */
+  const processAndUploadChunked = useCallback(async (
+    file: File,
+    messageId: string,
+    senderId: string,
+    receiverId: string,
+    onStatusChange: (status: string) => void,
+    _options: { optimize?: boolean } = { optimize: true }
+  ): Promise<boolean> => {
+    if (!user || !partner?.public_key) return false;
+    const myKeyPair = getStoredKeyPair();
+    if (!myKeyPair) return false;
+
+    try {
+      onStatusChange('Preparing video...');
+
+      // ── Chunked pipeline skips video compression ──────────────────────────
+      // WebCodecs strips audio tracks entirely; FFmpeg WASM is slow (~1x realtime).
+      // The segment muxer uses stream-copy (no re-encoding) so splitting is
+      // near-instant and preserves both audio and video quality perfectly.
+      let fileToChunk = file;
+      console.log(`[ChunkedVideo] Using raw file for splitting — ${(file.size / 1024 / 1024).toFixed(1)} MB, audio preserved ✓`);
+
+      // Helper: upload raw encrypted bytes to Cloudinary
+      const uploadEncryptedBytes = async (data: Uint8Array): Promise<string> => {
+        const formData = new FormData();
+        formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.raw');
+        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
+          { method: 'POST', body: formData }
+        );
+        if (!res.ok) throw new Error('Chunk upload failed');
+        const json = await res.json();
+        return json.secure_url as string;
+      };
+
+      type EncryptedChunk = {
+        encryptedData: Uint8Array;
+        chunkKey: string;
+        chunkNonce: string;
+        index: number;
+        durationSec: number;
+        totalChunks: number;
+      };
+
+      // Encrypt a single chunk
+      const encryptChunk = async (chunk: { file: File; index: number; durationSec: number }, total: number): Promise<EncryptedChunk> => {
+        const arrayBuffer = await chunk.file.arrayBuffer();
+        const uint8 = new Uint8Array(arrayBuffer);
+        const { encryptedData, fileKey, nonce } = encryptFile(uint8);
+        const { encryptedKey, nonce: keyNonce } = encryptFileKey(
+          fileKey,
+          decodeBase64(partner.public_key!),
+          myKeyPair.secretKey
+        );
+        return {
+          encryptedData,
+          chunkKey: `${keyNonce}:${encryptedKey}`,
+          chunkNonce: encodeBase64(nonce),
+          index: chunk.index,
+          durationSec: chunk.durationSec,
+          totalChunks: total,
+        };
+      };
+
+      // Upload + DB insert for one encrypted chunk → notifies receiver immediately
+      const uploadAndInsert = async (enc: EncryptedChunk): Promise<void> => {
+        console.log(`[ChunkedVideo] Uploading chunk ${enc.index + 1}/${enc.totalChunks}`);
+        const chunkUrl = await uploadEncryptedBytes(enc.encryptedData);
+        const { error } = await supabase.from('video_chunks').insert({
+          message_id: messageId,
+          chunk_index: enc.index,
+          total_chunks: enc.totalChunks,
+          chunk_url: chunkUrl,
+          chunk_key: enc.chunkKey,
+          chunk_nonce: enc.chunkNonce,
+          duration: enc.durationSec,
+          sender_id: senderId,
+          receiver_id: receiverId,
+        });
+        if (error) throw new Error(`Failed to insert chunk ${enc.index}: ${error.message}`);
+        console.log(`[ChunkedVideo] Chunk ${enc.index + 1}/${enc.totalChunks} delivered ✓`);
+      };
+
+      // ── TRUE STREAMING PIPELINE ───────────────────────────────────────────
+      // splitVideoIntoChunksStreaming is an async generator that yields ONE chunk at a time.
+      // As soon as chunk[i] is yielded, we immediately kick off encrypt(i) → upload(i) → DB(i)
+      // WITHOUT awaiting — then loop back to extract chunk[i+1] in parallel.
+      //
+      // Timeline:
+      //   FFmpeg extracts chunk 0 (100ms) → yield → encrypt[0] kicks off in background
+      //   FFmpeg extracts chunk 1 (100ms) → yield → encrypt[1] kicks off in background
+      //   encrypt[0] finishes → upload[0] → DB insert → RECEIVER GETS CHUNK 0
+      //   encrypt[1] finishes → upload[1] → DB insert → RECEIVER GETS CHUNK 1
+      //   ...all while FFmpeg is extracting later chunks
+      const pipelinePromises: Promise<void>[] = [];
+
+      // We need total chunk count upfront for the DB rows — get video duration first
+      const { getVideoDuration } = await import('../utils/videoChunker');
+      const videoDuration = await getVideoDuration(fileToChunk);
+      const totalChunks = Math.ceil(videoDuration / 15);
+
+      console.log(`[ChunkedVideo] Starting streaming pipeline — ~${totalChunks} chunks expected`);
+      onStatusChange('Processing chunk 1...');
+
+      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, 15)) {
+        console.log(`[ChunkedVideo] Chunk ${chunk.index + 1} extracted — kicking off encrypt+upload`);
+        onStatusChange(`Processing chunk ${chunk.index + 1} of ${totalChunks}...`);
+
+        // Fire-and-forget: encrypt → upload → deliver, all non-blocking relative to split loop
+        const p = encryptChunk(chunk, totalChunks).then(enc => uploadAndInsert(enc));
+        pipelinePromises.push(p);
+      }
+
+      // Wait for all deliveries to complete
+      await Promise.all(pipelinePromises);
+
+      onStatusChange('Done');
+      return true;
+    } catch (err) {
+      console.error('[ChunkedVideo] processAndUploadChunked failed:', err);
+      return false;
+    }
+  }, [user, partner]);
+
+  return { processAndUpload, processAndUploadChunked, generateVideoThumbnailFromFile, getDecryptedBlob, getRecentCachedMedia, getCacheSize, clearCache, isProcessing, uploadProgress };
 }

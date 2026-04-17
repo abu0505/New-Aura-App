@@ -16,6 +16,10 @@ export interface ChatMessage extends MessageRow {
   is_send_failed?: boolean;  // Fix 1.1: permanent send failure flag
   retry_count?: number;      // Fix 1.1: tracks retry attempts
   is_uploading?: boolean;    // NEW: flag for background media upload
+  // Chunked video fields
+  is_chunked_video?: boolean;     // true = video is being progressively uploaded
+  chunk_upload_status?: string;   // e.g. 'Splitting video...' | 'Uploading chunk 2 of 8...'
+  thumbnail_local_url?: string;   // local blob URL for thumbnail before upload completes
 }
 
 // ═══ Module-level push debounce — MUST be outside the hook so it persists ═══
@@ -901,6 +905,135 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
   };
 
+  /**
+   * addChunkedVideoMessage
+   * Creates an optimistic video message bubble immediately.
+   * The bubble shows a thumbnail with a shimmer overlay and animated status text.
+   * Returns the tempId so the caller can update status or commit later.
+   */
+  const addChunkedVideoMessage = (
+    thumbnailLocalUrl: string,
+    replyToId?: string
+  ): string => {
+    const tempId = crypto.randomUUID();
+    const optimisticMsg: ChatMessage = {
+      id: tempId,
+      sender_id: user?.id || '',
+      receiver_id: partnerId || '',
+      encrypted_content: '',
+      nonce: '',
+      type: 'video' as any,
+      media_url: null,
+      decrypted_media_url: thumbnailLocalUrl,
+      media_key: null,
+      media_nonce: null,
+      thumbnail_url: null,
+      file_name: null,
+      file_size: null,
+      duration: null,
+      reaction: null,
+      reply_to: replyToId || null,
+      is_read: false,
+      is_delivered: false,
+      is_edited: false,
+      is_deleted_for_sender: false,
+      is_deleted_for_receiver: false,
+      is_deleted_for_everyone: false,
+      read_at: null,
+      delivered_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      sender_public_key: '',
+      decrypted_content: '',
+      is_mine: true,
+      is_uploading: true,
+      is_chunked_video: true,
+      chunk_upload_status: 'Preparing...',
+      thumbnail_local_url: thumbnailLocalUrl,
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    return tempId;
+  };
+
+  /**
+   * updateChunkStatus
+   * Updates the animated status text shown on the video thumbnail shimmer overlay.
+   */
+  const updateChunkStatus = (tempId: string, status: string) => {
+    setMessages(prev =>
+      prev.map(m => m.id === tempId ? { ...m, chunk_upload_status: status } : m)
+    );
+  };
+
+  /**
+   * commitChunkedVideoMessage
+   * Inserts the message into Supabase once the thumbnail is uploaded.
+   * media_url stays NULL — chunks live in video_chunks table.
+   * Once done, clears is_uploading so the shimmer fades (receiver gets chunk notifications separately).
+   */
+  const commitChunkedVideoMessage = async (
+    tempId: string,
+    thumbResult: { url: string; key: string; nonce: string } | null,
+    replyToId?: string
+  ) => {
+    if (!user || !partnerId || !partnerPublicKey) return;
+    const myKeyPair = getStoredKeyPair();
+    if (!myKeyPair) return;
+
+    const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
+
+    // Update local state: replace thumbnail placeholder
+    setMessages(prev =>
+      prev.map(m =>
+        m.id === tempId
+          ? { 
+              ...m, 
+              thumbnail_url: thumbResult?.url || null, 
+              media_key: thumbResult?.key || null,
+              media_nonce: thumbResult?.nonce || null,
+              sender_public_key: myPublicKeyStr 
+            }
+          : m
+      )
+    );
+
+    const { error } = await supabase.from('messages').insert({
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: partnerId,
+      encrypted_content: '',
+      nonce: '',
+      type: 'video',
+      media_url: null,          // intentionally null — chunks in video_chunks
+      media_key: thumbResult?.key || null,
+      media_nonce: thumbResult?.nonce || null,
+      thumbnail_url: thumbResult?.url || null,
+      reply_to: replyToId || null,
+      sender_public_key: myPublicKeyStr,
+    });
+
+    if (error) {
+      console.error('[ChunkedVideo] Failed to commit message:', error);
+      setMessages(prev =>
+        prev.map(m => m.id === tempId ? { ...m, is_send_failed: true, is_uploading: false } : m)
+      );
+    }
+  };
+
+  /**
+   * finalizeChunkedVideoMessage
+   * Called when all chunks are uploaded. Clears the shimmer overlay for the sender.
+   */
+  const finalizeChunkedVideoMessage = (tempId: string) => {
+    setMessages(prev =>
+      prev.map(m =>
+        m.id === tempId
+          ? { ...m, is_uploading: false, is_chunked_video: false, chunk_upload_status: undefined }
+          : m
+      )
+    );
+  };
+
   const reactToMessage = async (messageId: string, emoji: string | null) => {
     setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reaction: emoji } : m));
     await supabase.from('messages').update({ reaction: emoji }).eq('id', messageId);
@@ -1080,6 +1213,10 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     firstUnreadId, 
     isOnline,
     addOptimisticMediaMessage,
-    commitOptimisticMediaMessage
+    commitOptimisticMediaMessage,
+    addChunkedVideoMessage,
+    updateChunkStatus,
+    commitChunkedVideoMessage,
+    finalizeChunkedVideoMessage,
   };
 }

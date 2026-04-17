@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import ChunkedVideoPlayer from './ChunkedVideoPlayer';
 
 interface MediaItem {
   id: string;
@@ -11,13 +12,15 @@ interface MediaItem {
 
 interface MediaViewerProps {
   url: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'chunked_video';
   onClose: () => void;
   allMedia?: MediaItem[];
   initialIndex?: number;
+  chunks?: any[];
+  thumbnailUrl?: string;
 }
 
-export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0 }: MediaViewerProps) {
+export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl }: MediaViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -182,11 +185,21 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                 />
               </TransformComponent>
             </TransformWrapper>
+          ) : currentMedia.type === 'chunked_video' ? (
+            <div className="w-full h-full flex items-center justify-center p-1">
+              <ChunkedVideoPlayer 
+                chunks={chunks!} 
+                thumbnailUrl={thumbnailUrl} 
+                autoPlay
+                className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
+              />
+            </div>
           ) : (
             <video
               src={currentMedia.url}
               controls
               autoPlay
+              playsInline
               style={{ 
                 maxWidth: '99%', 
                 maxHeight: '99%', 

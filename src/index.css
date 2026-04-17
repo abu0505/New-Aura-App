@@ -475,3 +475,32 @@ a {
 .custom-emoji-picker-container .epr-category-nav {
   padding: 0 8px 0 8px !important;
 }
+
+/* ===== Chunked Video Upload Shimmer ===== */
+@keyframes shimmerSweep {
+  0% {
+    transform: translateX(-150%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+.chunk-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.chunk-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    var(--gold-glow) 50%,
+    transparent 80%
+  );
+  animation: shimmerSweep 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}

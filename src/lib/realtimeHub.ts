@@ -90,6 +90,7 @@ function start(userId?: string, partnerId?: string) {
     { table: 'messages' },
     { table: 'stories' },
     { table: 'pinned_messages' }, // Fix 2.2: Now in realtime publication
+    { table: 'video_chunks' },    // Progressive chunked video streaming
     { table: 'profiles', filter: partnerId ? `id=eq.${partnerId}` : undefined },
     { table: 'chat_settings', filter: userId ? `user_id=eq.${userId}` : undefined },
   ];

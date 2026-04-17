@@ -10,6 +10,7 @@ import { StickerPicker } from './StickerPicker';
 import MobileCameraModal from './MobileCameraModal';
 
 import type { ChatMessage } from '../../hooks/useChat';
+import { useAuth } from '../../contexts/AuthContext';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
@@ -27,11 +28,17 @@ interface MessageInputProps {
   onDesktopCameraClick?: () => void;
   onOptimisticMediaStart?: (text: string, localMediaUrl: string, type: string, replyToId?: string) => string;
   onOptimisticMediaComplete?: (tempId: string, text: string, media: { url: string, media_key: string, media_nonce: string, type: string }, replyToId?: string) => void;
+  partnerId?: string;
+  onChunkedVideoStart?: (thumbnailLocalUrl: string, replyToId?: string) => string;
+  onChunkedVideoStatusUpdate?: (tempId: string, status: string) => void;
+  onChunkedVideoCommit?: (tempId: string, thumbResult: { url: string; key: string; nonce: string } | null, replyToId?: string) => Promise<void>;
+  onChunkedVideoFinalize?: (tempId: string) => void;
 }
 
 const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ 
-  onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick, onOptimisticMediaStart, onOptimisticMediaComplete 
+  onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick, onOptimisticMediaStart, onOptimisticMediaComplete, partnerId, onChunkedVideoStart, onChunkedVideoStatusUpdate, onChunkedVideoCommit, onChunkedVideoFinalize
 }, ref) => {
+  const { user } = useAuth();
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -47,7 +54,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyBlobUrlRef = useRef<string | null>(null);
-  const { processAndUpload, getDecryptedBlob } = useMedia();
+  const { processAndUpload, getDecryptedBlob, processAndUploadChunked, generateVideoThumbnailFromFile } = useMedia();
 
   useImperativeHandle(ref, () => ({
     handleDroppedFiles: (files: File[]) => {
@@ -353,16 +360,24 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
 
     // Optimistic fast-path
-    const uploads = [];
+    const standardUploads = [];
+    const chunkedVideoUploads = [];
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      let tempId = '';
       const type = file.type.startsWith('video/') ? 'video' : (file.type.startsWith('audio/') ? 'audio' : 'image');
       
-      const localUrl = URL.createObjectURL(file);
-      // Removed caption from optimistic media - it will be sent separately
-      tempId = onOptimisticMediaStart!('', localUrl, type, i === 0 ? currentReplyId : undefined);
-      uploads.push({ file, tempId });
+      if (type === 'video' && onChunkedVideoStart) {
+        // Generate a quick local thumbnail for the optimistic UI
+        const thumbBlob = await generateVideoThumbnailFromFile(file);
+        const thumbUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : '';
+        const tempId = onChunkedVideoStart(thumbUrl, i === 0 ? currentReplyId : undefined);
+        chunkedVideoUploads.push({ file, tempId, thumbBlob });
+      } else {
+        const localUrl = URL.createObjectURL(file);
+        const tempId = onOptimisticMediaStart!('', localUrl, type, i === 0 ? currentReplyId : undefined);
+        standardUploads.push({ file, tempId });
+      }
     }
 
     // Send caption as an independent message right after media placeholders
@@ -374,7 +389,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
 
     try {
-      for (const { file, tempId } of uploads) {
+      for (const { file, tempId } of standardUploads) {
         const uploaded = await processAndUpload(file, { optimize });
         if (uploaded && tempId) {
            onOptimisticMediaComplete!(tempId, '', {
@@ -386,7 +401,50 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         }
       }
     } catch(e) {
-      console.error("Upload failed", e);
+      console.error("Standard upload failed", e);
+    }
+
+    try {
+      for (const { file, tempId, thumbBlob } of chunkedVideoUploads) {
+         try {
+           // First, upload the thumbnail so we have a valid thumbnail_url and keys
+           let thumbDetails = null;
+           if (thumbBlob) {
+             const uploadedThumb = await processAndUpload(new File([thumbBlob], 'thumb.jpg', { type: 'image/jpeg' }), { optimize: false });
+             if (uploadedThumb) {
+               thumbDetails = { url: uploadedThumb.url, key: uploadedThumb.media_key, nonce: uploadedThumb.media_nonce };
+             }
+           }
+
+           // Pre-create the message row with the thumbnail so fragments can attach to it
+           if (onChunkedVideoCommit) {
+             await onChunkedVideoCommit(tempId, thumbDetails, currentReplyId);
+             console.log("[MessageInput] Chunked video message committed to Supabase");
+           }
+
+           // Now process and upload chunks
+           if (user?.id && partnerId) {
+             const success = await processAndUploadChunked(
+               file,
+               tempId,
+               user.id,
+               partnerId,
+               (status) => onChunkedVideoStatusUpdate?.(tempId, status)
+             );
+             if (success) {
+               console.log(`[MessageInput] Video ${tempId} chunking fully completed.`);
+             } else {
+               console.error(`[MessageInput] Video ${tempId} chunking failed or aborted.`);
+             }
+           }
+         } catch(e) {
+            console.error("Chunked video upload failed", e);
+         } finally {
+            if (onChunkedVideoFinalize) onChunkedVideoFinalize(tempId);
+         }
+      }
+    } catch(e) {
+      console.error("Chunked uploads master loop failed", e);
     }
   };
 

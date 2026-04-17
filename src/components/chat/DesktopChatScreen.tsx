@@ -65,7 +65,8 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
     hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
     deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead,
-    addOptimisticMediaMessage, commitOptimisticMediaMessage
+    addOptimisticMediaMessage, commitOptimisticMediaMessage,
+    addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
 
@@ -706,6 +707,11 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
               onDesktopCameraClick={() => setIsDesktopCameraOpen(true)}
               onOptimisticMediaStart={addOptimisticMediaMessage}
               onOptimisticMediaComplete={commitOptimisticMediaMessage}
+              partnerId={partner.id}
+              onChunkedVideoStart={addChunkedVideoMessage}
+              onChunkedVideoStatusUpdate={updateChunkStatus}
+              onChunkedVideoCommit={commitChunkedVideoMessage}
+              onChunkedVideoFinalize={finalizeChunkedVideoMessage}
             />
           </div>
         )}
