@@ -55,7 +55,7 @@ const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, m
  * @param frameDelayMs - Delay between frames (default: 33ms ≈ 30fps cadence)
  */
 async function temporalAverage(
-  videoEl: HTMLVideoElement,
+  _videoEl: HTMLVideoElement,
   targetCanvas: HTMLCanvasElement,
   drawFrame: (ctx: CanvasRenderingContext2D) => void,
   frameCount: number = 5,
@@ -152,7 +152,7 @@ function averageFramesSync(
  */
 function applyUnsharpMask(
   imageData: ImageData,
-  canvas: HTMLCanvasElement,
+  _canvas: HTMLCanvasElement,
   amount: number = 0.4,
 ): ImageData {
   const { width, height, data } = imageData;
