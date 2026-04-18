@@ -9,7 +9,7 @@
  */
 
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile } from '@ffmpeg/util';
+
 
 export interface VideoChunk {
   file: File;
@@ -48,10 +48,13 @@ export async function splitVideoIntoChunks(
   const estimatedChunks = Math.ceil(videoDuration / chunkDurationSec);
 
   const ext = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
-  const inputName = `input_chunk.${ext}`;
+  const cleanFileName = `input_chunk.${ext}`;
+  const cleanFile = new File([file], cleanFileName, { type: file.type });
+  const inputName = `/workerfs/${cleanFileName}`;
 
-  // Write input file to FFmpeg FS
-  await ffmpeg.writeFile(inputName, await fetchFile(file));
+  // MOUNT file instead of writing it to RAM (solves OOM crashes on large files)
+  try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
+  await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
 
   // Use segment muxer with stream-copy
   // -reset_timestamps 1: each chunk starts at 0 (makes standalone playback work)
@@ -102,8 +105,8 @@ export async function splitVideoIntoChunks(
     }
   }
 
-  // Clean input
-  try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
+  // Unmount instead of delete
+  try { await ffmpeg.unmount('/workerfs'); } catch { /* ignore */ }
 
   return chunks;
 }
@@ -128,10 +131,13 @@ export async function* splitVideoIntoChunksStreaming(
   const estimatedChunks = Math.ceil(videoDuration / chunkDurationSec);
 
   const ext = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
-  const inputName = `input_stream.${ext}`;
+  const cleanFileName = `input_stream.${ext}`;
+  const cleanFile = new File([file], cleanFileName, { type: file.type });
+  const inputName = `/workerfs/${cleanFileName}`;
 
-  // Write the input file once
-  await ffmpeg.writeFile(inputName, await fetchFile(file));
+  // MOUNT file natively to worker bypassing RAM completely
+  try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
+  await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
 
   console.log(`[VideoChunker] Splitting ${videoDuration.toFixed(1)}s video into ~${estimatedChunks} chunks (segment muxer, stream-copy)`);
 
@@ -179,7 +185,7 @@ export async function* splitVideoIntoChunksStreaming(
     }
   }
 
-  try { await ffmpeg.deleteFile(inputName); } catch { /* ignore */ }
+  try { await ffmpeg.unmount('/workerfs'); } catch { /* ignore */ }
   console.log(`[VideoChunker] Split complete — ${index} chunks yielded`);
 }
 

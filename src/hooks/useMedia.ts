@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import imageCompression from 'browser-image-compression';
 import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile } from '@ffmpeg/util';
+
 import { useAuth } from '../contexts/AuthContext';
 import {
   getStoredKeyPair,
@@ -250,10 +250,16 @@ async function compressVideoWithFFmpeg(
     onProgress(Math.round(progress * 100));
   });
 
-  const inputName = 'input' + (file.name.substring(file.name.lastIndexOf('.')) || '.mp4');
+  const ext = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
+  const cleanFileName = `input_compress.${ext}`;
+  const cleanFile = new File([file], cleanFileName, { type: file.type });
+  const inputName = `/workerfs/${cleanFileName}`;
   const outputName = 'output.mp4';
 
-  await ffmpegInstance.writeFile(inputName, await fetchFile(file));
+  // Mount file natively to avoid RAM crash on huge videos
+  try { await ffmpegInstance.createDir('/workerfs'); } catch { /* ignore if exists */ }
+  await ffmpegInstance.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
+
   await ffmpegInstance.exec([
     '-i', inputName,
     '-c:v', 'libx264',
@@ -266,6 +272,7 @@ async function compressVideoWithFFmpeg(
   ]);
 
   const data = await ffmpegInstance.readFile(outputName);
+  try { await ffmpegInstance.unmount('/workerfs'); } catch { /* ignore */ }
   return new File([data as any], file.name, { type: 'video/mp4' });
 }
 
@@ -657,27 +664,29 @@ export function useMedia() {
       //   encrypt[0] finishes → upload[0] → DB insert → RECEIVER GETS CHUNK 0
       //   encrypt[1] finishes → upload[1] → DB insert → RECEIVER GETS CHUNK 1
       //   ...all while FFmpeg is extracting later chunks
-      const pipelinePromises: Promise<void>[] = [];
-
       // We need total chunk count upfront for the DB rows — get video duration first
+      const CHUNK_DURATION_SEC = 8; // Reduced from 15s to 8s to guarantee chunks < 10MB for Cloudinary
       const { getVideoDuration } = await import('../utils/videoChunker');
       const videoDuration = await getVideoDuration(fileToChunk);
-      const totalChunks = Math.ceil(videoDuration / 15);
+      const totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
 
-      console.log(`[ChunkedVideo] Starting streaming pipeline — ~${totalChunks} chunks expected`);
+      console.log(`[ChunkedVideo] Starting sequential pipeline to prioritize early chunks & save RAM — ~${totalChunks} chunks expected`);
       onStatusChange('Processing chunk 1...');
 
-      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, 15)) {
-        console.log(`[ChunkedVideo] Chunk ${chunk.index + 1} extracted — kicking off encrypt+upload`);
+      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
+        console.log(`[ChunkedVideo] ⏱️ Chunk ${chunk.index + 1}/${totalChunks} extracted from local FS. Encrypting...`);
         onStatusChange(`Processing chunk ${chunk.index + 1} of ${totalChunks}...`);
 
-        // Fire-and-forget: encrypt → upload → deliver, all non-blocking relative to split loop
-        const p = encryptChunk(chunk, totalChunks).then(enc => uploadAndInsert(enc));
-        pipelinePromises.push(p);
+        // We explicitly AWAIT each chunk's upload BEFORE reading the next chunk.
+        // Why?
+        // 1. RAM: Keeps only 1 chunk in browser memory at a time.
+        // 2. Network Priority: Chunk 1 gets 100% bandwidth and is delivered immediately, letting the receiver watch instantly.
+        const encrypted = await encryptChunk(chunk, totalChunks);
+        console.log(`[ChunkedVideo] 🚀 Chunk ${chunk.index + 1}/${totalChunks} encrypted. Uploading...`);
+        
+        await uploadAndInsert(encrypted);
+        console.log(`[ChunkedVideo] ✨ Chunk ${chunk.index + 1}/${totalChunks} FULLY DELIVERED to DB!`);
       }
-
-      // Wait for all deliveries to complete
-      await Promise.all(pipelinePromises);
 
       onStatusChange('Done');
       return true;
