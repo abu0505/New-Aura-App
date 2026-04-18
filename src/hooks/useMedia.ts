@@ -593,7 +593,11 @@ export function useMedia() {
           `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
           { method: 'POST', body: formData }
         );
-        if (!res.ok) throw new Error('Chunk upload failed');
+        if (!res.ok) {
+          let errText = '';
+          try { errText = await res.text(); } catch {}
+          throw new Error(`Cloudinary upload failed (HTTP ${res.status}): ${errText}`);
+        }
         const json = await res.json();
         return json.secure_url as string;
       };
@@ -627,9 +631,12 @@ export function useMedia() {
         };
       };
 
-      // Upload + DB insert for one encrypted chunk → notifies receiver immediately
-      const uploadAndInsert = async (enc: EncryptedChunk): Promise<void> => {
+      const uploadEncryptedChunk = async (enc: EncryptedChunk): Promise<{ enc: EncryptedChunk, chunkUrl: string }> => {
         const chunkUrl = await uploadEncryptedBytes(enc.encryptedData);
+        return { enc, chunkUrl };
+      };
+
+      const insertChunkToDB = async (enc: EncryptedChunk, chunkUrl: string): Promise<void> => {
         const { error } = await supabase.from('video_chunks').insert({
           message_id: messageId,
           chunk_index: enc.index,
@@ -644,40 +651,69 @@ export function useMedia() {
         if (error) throw new Error(`Failed to insert chunk ${enc.index}: ${error.message}`);
       };
 
-      // ── TRUE STREAMING PIPELINE ───────────────────────────────────────────
-      // splitVideoIntoChunksStreaming is an async generator that yields ONE chunk at a time.
-      // As soon as chunk[i] is yielded, we immediately kick off encrypt(i) → upload(i) → DB(i)
-      // WITHOUT awaiting — then loop back to extract chunk[i+1] in parallel.
-      //
-      // Timeline:
-      //   FFmpeg extracts chunk 0 (100ms) → yield → encrypt[0] kicks off in background
-      //   FFmpeg extracts chunk 1 (100ms) → yield → encrypt[1] kicks off in background
-      //   encrypt[0] finishes → upload[0] → DB insert → RECEIVER GETS CHUNK 0
-      //   encrypt[1] finishes → upload[1] → DB insert → RECEIVER GETS CHUNK 1
-      //   ...all while FFmpeg is extracting later chunks
       // We need total chunk count upfront for the DB rows — get video duration first
-      const CHUNK_DURATION_SEC = 8; // Reduced from 15s to 8s to guarantee chunks < 10MB for Cloudinary
+      const CHUNK_DURATION_SEC = 5; // Reduced to 5s to guarantee chunks < 10MB for Cloudinary (even with VBR spikes on Desktop 8Mbps)
       const { getVideoDuration } = await import('../utils/videoChunker');
       const videoDuration = await getVideoDuration(fileToChunk);
       const totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
 
       onStatusChange('Processing chunk 1...');
 
-      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
-        onStatusChange(`Processing chunk ${chunk.index + 1} of ${totalChunks}...`);
+      const PARALLEL_LIMIT = 5;
+      let batch: any[] = [];
 
-        // We explicitly AWAIT each chunk's upload BEFORE reading the next chunk.
-        // Why?
-        // 1. RAM: Keeps only 1 chunk in browser memory at a time.
-        // 2. Network Priority: Chunk 1 gets 100% bandwidth and is delivered immediately, letting the receiver watch instantly.
-        const encrypted = await encryptChunk(chunk, totalChunks);
-        
-        await uploadAndInsert(encrypted);
+      const processBatch = async (currentBatch: any[]) => {
+        const indices = currentBatch.map(c => c.index).join(', ');
+        console.warn(`[Batch] 🚀 Starting parallel encryption & upload for chunks: [${indices}]`);
+        onStatusChange(`Uploading chunks ${indices}...`);
+
+        // 1. Parallel Encrypt & Upload
+        const uploadPromises = currentBatch.map(async (chunk) => {
+          console.warn(`[Batch] 🔒 Encrypting chunk ${chunk.index}...`);
+          const encrypted = await encryptChunk(chunk, totalChunks);
+          console.warn(`[Batch] ☁️ Uploading chunk ${chunk.index}...`);
+          const result = await uploadEncryptedChunk(encrypted);
+          console.warn(`[Batch] ✅ Upload finished for chunk ${chunk.index}`);
+          return result;
+        });
+
+        // Wait for all uploads in this batch to finish
+        const uploadedChunks = await Promise.all(uploadPromises);
+
+        // 2. Strict Sequential DB Insertion
+        // Promise.all preserves order, so uploadedChunks is correctly ordered (e.g., 0, 1, 2, 3)
+        for (const item of uploadedChunks) {
+          console.warn(`[Batch] 🗄️ Delivering chunk ${item.enc.index} to Supabase...`);
+          await insertChunkToDB(item.enc, item.chunkUrl);
+          console.warn(`[Batch] 🟢 Sequence STRICT: Chunk ${item.enc.index} delivered successfully.`);
+        }
+      };
+
+      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
+        batch.push(chunk);
+
+        // Pre-fill the chunkStore instantly so the sender doesn't have to re-download 
+        // the chunks they literally just uploaded! 
+        // (Dynamic import to prevent circular dependency with useMedia)
+        import('./useVideoChunks').then(m => {
+          m.addLocalChunkForSender(messageId, chunk.index, totalChunks, chunk.file, CHUNK_DURATION_SEC);
+        }).catch(err => console.warn('Failed to inject local chunk:', err));
+
+        if (batch.length === PARALLEL_LIMIT) {
+          await processBatch(batch);
+          batch = []; // clear batch
+        }
+      }
+
+      // Process any remaining chunks
+      if (batch.length > 0) {
+        await processBatch(batch);
       }
 
       onStatusChange('Done');
       return true;
     } catch (err) {
+      console.error('[useMedia] Chunked upload failed:', err);
       return false;
     }
   }, [user, partner]);

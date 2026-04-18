@@ -36,6 +36,27 @@ function notifyAll() {
   for (const cb of updateCallbacks) cb();
 }
 
+export function addLocalChunkForSender(messageId: string, chunkIndex: number, totalChunks: number, blob: Blob, duration?: number) {
+  let chunks = chunkStore.get(messageId);
+  if (!chunks) {
+    chunks = Array.from({ length: totalChunks }, (_, i) => ({
+      chunkIndex: i,
+      totalChunks,
+      blobUrl: null,
+      isDecrypted: false,
+    }));
+  }
+  chunks[chunkIndex] = {
+    chunkIndex: chunkIndex,
+    totalChunks: totalChunks,
+    blobUrl: URL.createObjectURL(blob),
+    isDecrypted: true,
+    duration: duration,
+  };
+  chunkStore.set(messageId, [...chunks]);
+  notifyAll();
+}
+
 export function useVideoChunks() {
   const { user } = useAuth();
   const { partner } = usePartner();
@@ -148,31 +169,38 @@ export function useVideoChunks() {
       chunkStore.set(messageId, placeholders);
       notifyAll();
 
-      // Decrypt all chunks (chunk 0 first for fast first-play since rows should be sorted)
-      for (const row of rows) {
-        const blob = await getDecryptedBlob(
-          row.chunk_url,
-          row.chunk_key,
-          row.chunk_nonce,
-          partnerPublicKey,
-          undefined,
-          undefined,
-          'video'
-        );
+      // Decrypt chunks in parallel batches for much faster loading on slow networks
+      const PARALLEL_DOWNLOADS = 5;
+      for (let i = 0; i < rows.length; i += PARALLEL_DOWNLOADS) {
+        const batch = rows.slice(i, i + PARALLEL_DOWNLOADS);
+        
+        // We use Promise.all to wait for the batch, but notice that we update the UI
+        // INDIVIDUALLY the exact millisecond a chunk finishes, allowing instant play.
+        await Promise.all(batch.map(async (row) => {
+          const blob = await getDecryptedBlob(
+            row.chunk_url,
+            row.chunk_key,
+            row.chunk_nonce,
+            partnerPublicKey,
+            undefined,
+            undefined,
+            'video'
+          );
 
-        const chunks = chunkStore.get(messageId);
-        if (!chunks) break;
+          const chunks = chunkStore.get(messageId);
+          if (!chunks) return;
 
-        const blobUrl = blob ? URL.createObjectURL(blob) : null;
-        chunks[row.chunk_index] = {
-          chunkIndex: row.chunk_index,
-          totalChunks: row.total_chunks,
-          blobUrl,
-          isDecrypted: true,
-          duration: row.duration,
-        };
-        chunkStore.set(messageId, [...chunks]);
-        notifyAll();
+          const blobUrl = blob ? URL.createObjectURL(blob) : null;
+          chunks[row.chunk_index] = {
+            chunkIndex: row.chunk_index,
+            totalChunks: row.total_chunks,
+            blobUrl,
+            isDecrypted: true,
+            duration: row.duration,
+          };
+          chunkStore.set(messageId, [...chunks]);
+          notifyAll();
+        }));
       }
     } finally {
       loadingSet.delete(messageId);
