@@ -7,6 +7,7 @@ import MediaGalleryDrawer from './MediaGalleryDrawer';
 import AudioRecorder from './AudioRecorder';
 import QualityChoiceModal from './QualityChoiceModal';
 import { StickerPicker } from './StickerPicker';
+import { GifPicker } from './GifPicker';
 import MobileCameraModal from './MobileCameraModal';
 
 import type { ChatMessage } from '../../hooks/useChat';
@@ -47,6 +48,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [isMediaGalleryOpen, setIsMediaGalleryOpen] = useState(false);
   const [isMobileCameraOpen, setIsMobileCameraOpen] = useState(false);
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
+  const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
@@ -281,6 +283,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       }
     } else if (type === 'sticker') {
       setIsStickerPickerOpen(true);
+    } else if (type === 'gif') {
+      setIsGifPickerOpen(true);
     } else if (type === 'photo' || type === 'video') {
       setIsMediaGalleryOpen(true);
     } else {
@@ -575,6 +579,14 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 </button>
 
                 <button
+                  onClick={() => setIsGifPickerOpen(true)}
+                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
+                  title="GIF"
+                >
+                  <span className="material-symbols-outlined text-[22px]">gif_box</span>
+                </button>
+
+                <button
                   onClick={() => setIsAttachmentOpen(true)}
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="More"
@@ -661,6 +673,26 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                     setIsStickerPickerOpen(false);
                   }}
                   onClose={() => setIsStickerPickerOpen(false)}
+                />
+              </motion.div>
+            )}
+
+            {isGifPickerOpen && (
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
+              >
+                <GifPicker 
+                  onSelect={(gif) => {
+                    // Send as a dedicated 'gif' type message. 
+                    // No encryption needed for public Tenor URLs, but we keep the structure consistent.
+                    onSend('', { url: gif.url, media_key: '', media_nonce: '', type: 'gif' }, replyingTo?.id);
+                    if (onCancelReply) onCancelReply();
+                    setIsGifPickerOpen(false);
+                  }}
+                  onClose={() => setIsGifPickerOpen(false)}
                 />
               </motion.div>
             )}

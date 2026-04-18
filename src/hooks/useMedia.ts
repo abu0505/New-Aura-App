@@ -22,7 +22,7 @@ export interface ProcessedMedia {
   media_key: string; // The wrapped symmetric key
   media_key_nonce: string; // Nonce for the wrapped key
   media_nonce: string; // Nonce for the symmetric-encrypted data
-  type: 'image' | 'video' | 'audio' | 'document';
+  type: 'image' | 'video' | 'audio' | 'document' | 'gif';
   mime_type: string;  // Fix 4.3: Explicit MIME type for deterministic playback
   name?: string;
   size?: number;
@@ -322,7 +322,7 @@ export function useMedia() {
 
       // ── Optimization ──────────────────────────────────────────────────────
       if (options.optimize) {
-        if (file.type.startsWith('image/')) {
+        if (file.type.startsWith('image/') && file.type !== 'image/gif') {
           // NEW: Canvas → WebP (75% reduction, much faster than library)
           try {
             fileToProcess = await compressImageToWebP(file);
@@ -335,7 +335,6 @@ export function useMedia() {
               useWebWorker: true,
             });
           }
-
         } else if (file.type.startsWith('video/')) {
           // NEW: Try WebCodecs first (GPU, 2-5s), fall back to FFmpeg WASM (CPU, 30s)
           setUploadProgress(2);
@@ -405,7 +404,8 @@ export function useMedia() {
         media_key: `${keyNonce}:${encryptedKey}`, // Packed for storage
         media_key_nonce: keyNonce,
         media_nonce: encodeBase64(nonce),
-        type: file.type.startsWith('image/') ? 'image' :
+        type: file.type === 'image/gif' ? 'gif' :
+              file.type.startsWith('image/') ? 'image' :
               file.type.startsWith('video/') ? 'video' :
               file.type.startsWith('audio/') ? 'audio' : 'document',
         mime_type: mimeType, // Fix 4.3: explicit MIME to persist to DB

@@ -372,7 +372,7 @@ function ChatBubble({
     setIsEditing(false);
   };
 
-  const isOnlyMedia = (message.type === 'image' || message.type === 'video') && !message.decrypted_content;
+  const isOnlyMedia = (message.type === 'image' || message.type === 'video' || message.type === 'gif') && !message.decrypted_content;
 
   // Check if message is a location share
   const isLocation = message.type === 'location';
@@ -495,7 +495,7 @@ function ChatBubble({
       );
     }
 
-    if (!decryptedMediaUrl) return null;
+    if (!decryptedMediaUrl && message.type !== 'gif') return null;
 
     switch (message.type) {
       case 'image':
@@ -504,7 +504,7 @@ function ChatBubble({
             <motion.img 
               initial={{ opacity: 0 }}
               animate={{ opacity: message.is_uploading ? 0.6 : 1 }}
-              src={decryptedMediaUrl} 
+              src={decryptedMediaUrl ?? undefined} 
               className={`w-full h-auto ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer hover:opacity-90' : ''} transition-opacity ${message.is_uploading ? 'blur-[2px] grayscale-[20%]' : ''}`}
               onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true); }}
             />
@@ -517,7 +517,7 @@ function ChatBubble({
             )}
             {isPreviewOpen && (
               <MediaViewer 
-                url={decryptedMediaUrl} 
+                url={decryptedMediaUrl ?? ''} 
                 type="image" 
                 onClose={() => setIsPreviewOpen(false)} 
               />
@@ -529,7 +529,7 @@ function ChatBubble({
           <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
             <div className={`relative group ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true) }}>
               <video 
-                src={decryptedMediaUrl} 
+                src={decryptedMediaUrl ?? undefined} 
                 className="w-full pointer-events-none" 
               />
               {!message.is_uploading && !message.is_chunked_video && (
@@ -547,7 +547,7 @@ function ChatBubble({
             )}
             {isPreviewOpen && (
               <MediaViewer 
-                url={decryptedMediaUrl} 
+                url={decryptedMediaUrl ?? ''} 
                 type="video" 
                 onClose={() => setIsPreviewOpen(false)} 
               />
@@ -558,7 +558,7 @@ function ChatBubble({
         return (
           <div className="relative">
             <AudioWaveformPlayer 
-              src={decryptedMediaUrl} 
+              src={decryptedMediaUrl ?? ''} 
               isMine={isMine}
               duration={message.duration || undefined}
             />
@@ -569,10 +569,43 @@ function ChatBubble({
             )}
           </div>
         );
+      case 'gif':
+        return (
+          <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
+            <div 
+              className={`relative ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 cursor-pointer`} 
+              onClick={() => setIsPreviewOpen(true)}
+            >
+              {(decryptedMediaUrl || message.media_url)?.includes('.mp4') ? (
+                <video 
+                  src={(decryptedMediaUrl || message.media_url) ?? undefined} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline
+                  className="w-full h-auto object-cover"
+                />
+              ) : (
+                <img 
+                  src={(decryptedMediaUrl || message.media_url) ?? undefined} 
+                  className="w-full h-auto object-cover"
+                  alt="GIF"
+                />
+              )}
+            </div>
+            {isPreviewOpen && (
+              <MediaViewer 
+                url={decryptedMediaUrl || message.media_url || ''} 
+                type={(decryptedMediaUrl || message.media_url)?.includes('.mp4') ? 'video' : 'image'} 
+                onClose={() => setIsPreviewOpen(false)} 
+              />
+            )}
+          </div>
+        );
       default:
         return (
           <a 
-            href={decryptedMediaUrl} 
+            href={decryptedMediaUrl ?? undefined} 
             target="_blank" 
             className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl text-xs text-primary underline"
           >
@@ -793,7 +826,7 @@ function ChatBubble({
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${interactionType !== 'none' ? 'scale-95 z-40' : ''} ${
-          (message.type === 'image' || message.type === 'video' || message.type === 'audio') || isSticker
+          (message.type === 'image' || message.type === 'video' || message.type === 'audio' || message.type === 'gif') || isSticker
              ? 'bg-transparent shadow-none px-0 py-0' 
              : isMine 
                ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 

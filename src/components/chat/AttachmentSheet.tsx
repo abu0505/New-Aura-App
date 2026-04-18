@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface AttachmentSheetProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (type: 'camera' | 'photo' | 'video' | 'audio' | 'document' | 'location' | 'sticker') => void;
+  onSelect: (type: 'camera' | 'photo' | 'video' | 'audio' | 'document' | 'location' | 'sticker' | 'gif') => void;
 }
 
 const attachmentOptions = [
   { id: 'document', icon: 'description', label: 'Document', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
   { id: 'location', icon: 'location_on', label: 'Location', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
+  { id: 'gif', icon: 'gif_box', label: 'GIFs', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
   { id: 'sticker', icon: 'auto_awesome', label: 'Stickers', colorClass: 'text-primary', bgClass: 'bg-primary/10' },
 ] as const;
 

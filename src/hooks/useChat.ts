@@ -7,7 +7,8 @@ import type { Database } from '../integrations/supabase/types';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
-export interface ChatMessage extends MessageRow {
+export interface ChatMessage extends Omit<MessageRow, 'type'> {
+  type: MessageRow['type'] | 'gif';
   decrypted_content?: string;
   decrypted_media_url?: string;
   is_mine: boolean;
@@ -92,7 +93,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     };
   }, []);
 
-  const decryptRowsAsync = useCallback(async (rows: ReadonlyArray<MessageRow>, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): Promise<ChatMessage[]> => {
+  const decryptRowsAsync = useCallback(async (rows: ReadonlyArray<any>, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): Promise<ChatMessage[]> => {
     return new Promise((resolve) => {
       if (!cryptoWorkerRef.current || !myKeyPair || rows.length === 0) {
         // Fallback or empty
@@ -146,7 +147,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   }, [user?.id]);
 
   // Decrypts a single message row — correctly uses per-message sender_public_key when available
-  const decryptRow = useCallback((row: MessageRow, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
+  const decryptRow = useCallback((row: any, myKeyPair: { secretKey: Uint8Array, publicKey: Uint8Array } | null | undefined, partnerKey: string | null | undefined, keyHistory?: string[]): ChatMessage => {
     const isMine = row.sender_id === user?.id;
     let decryptedText = '';
     let decryptionError = false;
@@ -222,7 +223,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
             receiver_id: msg.receiver_id,
             encrypted_content: msg.encrypted_content,
             nonce: msg.nonce,
-            type: msg.type,
+            type: msg.type as any,
             media_url: msg.media_url,
             media_key: msg.media_key,
             media_nonce: msg.media_nonce,
@@ -272,7 +273,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     setMessages(prev => prev.map(row => 
        row.decrypted_content && row.decrypted_content !== '[Awaiting Keys]' && !row.decryption_error 
        ? row 
-       : decryptRow(row, myKeyPair, partnerPublicKey || partnerKeyRef.current, partnerKeyHistoryRef.current)
+       : decryptRow(row as any, myKeyPair, partnerPublicKey || partnerKeyRef.current, partnerKeyHistoryRef.current)
     ));
   }, [partnerPublicKey, encryptionStatus]);
 
@@ -716,7 +717,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         receiver_id: partnerId,
         encrypted_content: ciphertext,
         nonce: nonce,
-        type: optimisticMsg.type,
+        type: optimisticMsg.type as any,
         media_url: media?.url || null,
         media_key: media?.media_key || null,
         media_nonce: media?.media_nonce || null,
