@@ -1,25 +1,31 @@
 /**
- * ChunkedVideoPlayer.tsx
+ * ChunkedVideoPlayer.tsx  —  MSE (MediaSource Extensions) Architecture
  *
- * Seamless playback of chunked videos using a dual-video-element architecture.
+ * Achieves YouTube/Netflix-level seamless playback of chunked, encrypted videos.
  *
  * How it works:
- *  1. Two <video> elements (A & B) are stacked on top of each other.
- *  2. While video A plays chunk N, video B silently preloads chunk N+1.
- *  3. ~150 ms before chunk N ends, video B starts playing and z-index swaps
- *     so there is ZERO gap/stutter/black-screen at the boundary.
- *  4. A custom controls bar shows the TOTAL duration across all chunks,
- *     a YouTube-style buffer indicator, and standard play/pause/volume/fullscreen.
+ *  1. A single <video> element is backed by a MediaSource object.
+ *  2. Two SourceBuffers (video + audio) operate in "sequence" mode.
+ *  3. As each encrypted chunk is decrypted (blob URL becomes available),
+ *     it is transmuxed from standard MP4 → fragmented MP4 (fMP4) via mp4box.js.
+ *  4. The fMP4 init segment (first chunk only) + media segments are appended
+ *     to the SourceBuffers sequentially.
+ *  5. The browser treats this as ONE continuous stream:
+ *       – Single unified timeline (no visible splits in the progress bar)
+ *       – Gapless audio across chunk boundaries
+ *       – Native seeking across the full duration
+ *  6. When all chunks are appended, `mediaSource.endOfStream()` finalises
+ *     the duration and lets the browser optimise its internal buffers.
  *
- * Key result:
- *  - The user sees one continuous video with its full duration (e.g. 36s).
- *  - No black screen, no micro-stutter, no glitch at chunk boundaries.
- *  - Nobody can tell the video is chunked.
+ * Architecture name: MSE Transmux Pipeline
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { transmuxToFMP4 } from '../../utils/mp4Transmuxer';
 import type { ReceivedChunk } from '../../hooks/useVideoChunks';
+
+/* ── Types ───────────────────────────────────────────────────────────────── */
 
 interface ChunkedVideoPlayerProps {
   chunks: ReceivedChunk[];
@@ -29,7 +35,7 @@ interface ChunkedVideoPlayerProps {
   autoPlay?: boolean;
 }
 
-/* ── Helpers ──────────────────────────────────────────────────────────────── */
+/* ── Helpers ─────────────────────────────────────────────────────────────── */
 
 function fmt(seconds: number): string {
   if (!isFinite(seconds) || seconds < 0) seconds = 0;
@@ -38,10 +44,57 @@ function fmt(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-/** Threshold (seconds) before a chunk's end at which we pre-start the next chunk. */
-const PRE_START_THRESHOLD = 0.15;
+/**
+ * Append data to a SourceBuffer and wait for the updateend event.
+ * Automatically retries if the SB is currently updating.
+ */
+function appendToSB(sb: SourceBuffer, data: ArrayBuffer): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (sb.updating) {
+      // SB is busy — wait for current op to finish, then retry
+      const onRetry = () => {
+        sb.removeEventListener('updateend', onRetry);
+        appendToSB(sb, data).then(resolve).catch(reject);
+      };
+      sb.addEventListener('updateend', onRetry);
+      return;
+    }
+
+    const cleanup = () => {
+      sb.removeEventListener('updateend', onEnd);
+      sb.removeEventListener('error', onErr);
+    };
+    const onEnd = () => { cleanup(); resolve(); };
+    const onErr = () => { cleanup(); reject(new Error('SourceBuffer append error')); };
+
+    sb.addEventListener('updateend', onEnd);
+    sb.addEventListener('error', onErr);
+
+    try {
+      sb.appendBuffer(data);
+    } catch (e) {
+      cleanup();
+      reject(e);
+    }
+  });
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
+
+function hasMoof(buffer: ArrayBuffer): boolean {
+  const view = new DataView(buffer);
+  let offset = 0;
+  while (offset < view.byteLength) {
+    if (offset + 8 > view.byteLength) break;
+    const size = view.getUint32(offset);
+    if (size === 0) break; // until EOF
+    if (size < 8) break; // invalid box
+    const type = view.getUint32(offset + 4);
+    if (type === 0x6D6F6F66) return true; // 'moof'
+    offset += size;
+  }
+  return false;
+}
 
 export default function ChunkedVideoPlayer({
   chunks,
@@ -49,266 +102,364 @@ export default function ChunkedVideoPlayer({
   className = '',
   autoPlay = false,
 }: ChunkedVideoPlayerProps) {
-  /* ── Refs ──────────────────────────────────────────────────────────────── */
+  /* ── Refs ────────────────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
-  const videoARef = useRef<HTMLVideoElement>(null);
-  const videoBRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
-  /* ── State ─────────────────────────────────────────────────────────────── */
-  const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
-  const [chunkIdx, setChunkIdx] = useState(0);
+  // MSE internals
+  const mediaSourceRef = useRef<MediaSource | null>(null);
+  const videoSBRef = useRef<SourceBuffer | null>(null);
+  const audioSBRef = useRef<SourceBuffer | null>(null);
+  const isWebmStreamRef = useRef(false);
+  const nextChunkRef = useRef(0);
+  const isProcessingRef = useRef(false);
+  const endOfStreamCalled = useRef(false);
+
+  // Stable value refs
+  const chunksRef = useRef(chunks);
+  const isPlayingRef = useRef(false);
+  const totalDurationRef = useRef(0);
+  const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /* ── State ───────────────────────────────────────────────────────────── */
+  const [mseOpen, setMseOpen] = useState(false);
   const [hasStarted, setHasStarted] = useState(autoPlay);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [globalTime, setGlobalTime] = useState(0);
-  const [volume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
-  const [showControls, setShowControls] = useState(true);
-  const [isBuffering, setIsBuffering] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [bufferedEnd, setBufferedEnd] = useState(0);
+  const [isBuffering, setIsBuffering] = useState(autoPlay); // show spinner immediately if autoPlay
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
-  /* ── Timers ────────────────────────────────────────────────────────────── */
-  const controlsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bufferPoll = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  /**
-   * Flag to prevent the pre-start swap from firing more than once per chunk.
-   * Gets reset each time chunkIdx changes.
-   */
-  const swapFiredRef = useRef(false);
-  useEffect(() => { swapFiredRef.current = false; }, [chunkIdx]);
-
-  /* ── Stable refs for latest values inside callbacks ────────────────────── */
-  const chunksRef = useRef(chunks);
-  const chunkIdxRef = useRef(chunkIdx);
-  const activeSlotRef = useRef(activeSlot);
-  const isPlayingRef = useRef(isPlaying);
-
+  /* ── Sync refs ───────────────────────────────────────────────────────── */
   useEffect(() => { chunksRef.current = chunks; }, [chunks]);
-  useEffect(() => { chunkIdxRef.current = chunkIdx; }, [chunkIdx]);
-  useEffect(() => { activeSlotRef.current = activeSlot; }, [activeSlot]);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
 
-  /* ── Durations ─────────────────────────────────────────────────────────── */
-  const [realDurations, setRealDurations] = useState<Record<number, number>>({});
-
-  const chunkDurations = useMemo(
-    () => chunks.map((c, i) => realDurations[i] ?? c.duration ?? 15),
-    [chunks, realDurations],
-  );
-
-  const chunkStarts = useMemo(() => {
-    const starts: number[] = [];
-    let t = 0;
-    for (const d of chunkDurations) { starts.push(t); t += d; }
-    return starts;
-  }, [chunkDurations]);
-
+  /* ── Total duration from chunk metadata ──────────────────────────────── */
   const totalDuration = useMemo(
-    () => chunkDurations.reduce((a, b) => a + b, 0),
-    [chunkDurations],
+    () => chunks.reduce((sum, c) => sum + (c.duration ?? 15), 0),
+    [chunks],
   );
+  useEffect(() => { totalDurationRef.current = totalDuration; }, [totalDuration]);
 
-  /* ── Buffer segments for the YouTube-style indicator ───────────────────── */
-  const bufferSegments = useMemo(() => {
-    if (totalDuration === 0) return [];
-    return chunks.map((c, i) => ({
-      start: chunkStarts[i] / totalDuration,
-      end: (chunkStarts[i] + chunkDurations[i]) / totalDuration,
-      loaded: c.isDecrypted && !!c.blobUrl,
-    }));
-  }, [chunks, chunkStarts, chunkDurations, totalDuration]);
-
-  /* ── Helpers ───────────────────────────────────────────────────────────── */
-  const vid = useCallback(
-    (slot: 0 | 1) => (slot === 0 ? videoARef.current : videoBRef.current),
-    [],
-  );
-
-  const activeVid = useCallback(() => vid(activeSlotRef.current), [vid]);
-  const preloadVid = useCallback(
-    () => vid(activeSlotRef.current === 0 ? 1 : 0),
-    [vid],
-  );
-
-  /** Load a chunk's blob into a video element (skips if already loaded). */
-  const loadChunk = useCallback(
-    (v: HTMLVideoElement, chunk: ReceivedChunk) => {
-      if (!chunk.blobUrl) return;
-      if (v.getAttribute('data-src') === chunk.blobUrl) return;
-      v.setAttribute('data-src', chunk.blobUrl);
-      v.src = chunk.blobUrl;
-      v.load();
-    },
-    [],
-  );
-
-  /* ── Init: load first chunk into slot A ────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /*  MSE SETUP — create MediaSource and attach to <video>                 */
+  /* ═══════════════════════════════════════════════════════════════════════ */
   useEffect(() => {
-    const c = chunks[0];
-    const v = vid(0);
-    if (v && c?.blobUrl) loadChunk(v, c);
-  }, [chunks, vid, loadChunk]);
-
-  /* ── Auto-play: start as soon as first chunk is loaded ─────────────────── */
-  useEffect(() => {
-    if (!autoPlay || hasStarted === false) return;
-    const c = chunks[0];
-    const v = vid(0);
-    if (v && c?.blobUrl) {
-      v.oncanplay = () => {
-        v.oncanplay = null;
-        v.play().then(() => setIsPlaying(true)).catch(() => {});
-      };
+    if (typeof MediaSource === 'undefined') {
+      console.error('[MSE] MediaSource API not available in this browser');
+      setError('MediaSource API not available in this browser');
+      return;
     }
-  }, [autoPlay, hasStarted, chunks, vid]);
 
-  /* ── Preload next chunk into the inactive slot ─────────────────────────── */
-  useEffect(() => {
-    const next = chunks[chunkIdx + 1];
-    const pv = preloadVid();
-    if (pv && next?.blobUrl) loadChunk(pv, next);
-  }, [chunkIdx, chunks, activeSlot, preloadVid, loadChunk]);
+    const ms = new MediaSource();
+    mediaSourceRef.current = ms;
+    const url = URL.createObjectURL(ms);
 
-  /* ── Sync volume to both elements ──────────────────────────────────────── */
-  useEffect(() => {
-    [videoARef.current, videoBRef.current].forEach((v) => {
-      if (v) { v.volume = volume; v.muted = isMuted; }
+    ms.addEventListener('sourceopen', () => {
+      console.log('[MSE] MediaSource opened');
+      setMseOpen(true);
     });
-  }, [volume, isMuted]);
 
-  /* ── Record real duration on loadedmetadata ─────────────────────────────── */
-  const onMeta = useCallback(
-    (slot: 0 | 1) => {
-      const v = vid(slot);
-      if (!v || !isFinite(v.duration)) return;
-      const idx =
-        slot === activeSlotRef.current
-          ? chunkIdxRef.current
-          : chunkIdxRef.current + 1;
-      if (idx < 0 || idx >= chunksRef.current.length) return;
-      setRealDurations((prev) => ({ ...prev, [idx]: v.duration }));
-    },
-    [vid],
-  );
-
-  /* ═══════════════════════════════════════════════════════════════════════ */
-  /*  CORE: Pre-start the next chunk BEFORE the current one ends.          */
-  /*                                                                       */
-  /*  Instead of waiting for `onEnded` (which causes a micro-gap while     */
-  /*  the browser initializes the new video), we detect in `timeupdate`    */
-  /*  that the active video is within ~150ms of its end. At that moment:   */
-  /*    1. Start playing the preloaded video (already decoded at time 0)   */
-  /*    2. Swap z-index so the new video is immediately visible            */
-  /*  Result: the new chunk's audio/video stream is ALREADY flowing when   */
-  /*  the visual swap happens → zero stutter.                              */
-  /* ═══════════════════════════════════════════════════════════════════════ */
-
-  /** Perform the seamless swap to the next chunk. */
-  const doSwap = useCallback((nextIdx: number) => {
-    const pv = preloadVid();
-    if (!pv) return;
-    pv.currentTime = 0;
-    pv.play().catch(() => {});
-    setActiveSlot((s) => (s === 0 ? 1 : 0));
-    setChunkIdx(nextIdx);
-    setIsBuffering(false);
-    if (bufferPoll.current) {
-      clearInterval(bufferPoll.current);
-      bufferPoll.current = null;
+    const video = videoRef.current;
+    if (video) {
+      video.src = url;
     }
-    console.log(`[ChunkedPlayer] Seamless swap → chunk ${nextIdx}`);
-  }, [preloadVid]);
 
-  /* ── Time update → global time + pre-start logic ───────────────────────── */
-  const onTimeUpdate = useCallback(
-    (slot: 0 | 1) => {
-      if (slot !== activeSlotRef.current) return;
-      const v = vid(slot);
-      if (!v) return;
+    return () => {
+      URL.revokeObjectURL(url);
+      try {
+        if (ms.readyState === 'open') ms.endOfStream();
+      } catch { /* cleanup best-effort */ }
+      mediaSourceRef.current = null;
+      videoSBRef.current = null;
+      audioSBRef.current = null;
+      isWebmStreamRef.current = false;
+      nextChunkRef.current = 0;
+      endOfStreamCalled.current = false;
+      setError(null);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-      // Update global time
-      setGlobalTime((chunkStarts[chunkIdxRef.current] ?? 0) + v.currentTime);
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /*  CHUNK PROCESSING — transmux & append as chunks become available       */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  useEffect(() => {
+    if (!mseOpen) return;
 
-      // ── Pre-start check ─────────────────────────────────────────────────
-      // When we're within PRE_START_THRESHOLD of the end of this chunk,
-      // start playing the preloaded next chunk so there's zero gap.
-      if (swapFiredRef.current) return; // already swapped for this chunk
-      if (!isFinite(v.duration) || v.duration === 0) return;
+    const processChunks = async () => {
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
 
-      const remaining = v.duration - v.currentTime;
-      if (remaining > PRE_START_THRESHOLD) return;
-
-      const nextIdx = chunkIdxRef.current + 1;
-      const allC = chunksRef.current;
-      if (nextIdx >= allC.length) return; // last chunk, let onEnded handle completion
-
-      const next = allC[nextIdx];
-      const pv = preloadVid();
-      if (next?.blobUrl && pv && pv.readyState >= 2) {
-        swapFiredRef.current = true;
-        doSwap(nextIdx);
-      }
-    },
-    [vid, chunkStarts, preloadVid, doSwap],
-  );
-
-  /* ── Chunk ended (fallback) ────────────────────────────────────────────── */
-  // If the pre-start didn't fire (e.g. preload video wasn't ready in time),
-  // this is the safety-net that handles the swap, possibly with a brief buffer.
-  const onEnded = useCallback(
-    (slot: 0 | 1) => {
-      if (slot !== activeSlotRef.current) return;
-      if (swapFiredRef.current) return; // pre-start already handled it
-
-      const nextIdx = chunkIdxRef.current + 1;
-      const allC = chunksRef.current;
-
-      if (nextIdx >= allC.length) {
-        // All chunks played — video complete
-        setIsPlaying(false);
+      const ms = mediaSourceRef.current;
+      if (!ms || ms.readyState !== 'open') {
+        isProcessingRef.current = false;
         return;
       }
 
-      const next = allC[nextIdx];
-      const pv = preloadVid();
+      try {
+        while (nextChunkRef.current < chunksRef.current.length) {
+          const idx = nextChunkRef.current;
+          const chunk = chunksRef.current[idx];
 
-      if (next?.blobUrl && pv && pv.readyState >= 2) {
-        doSwap(nextIdx);
-      } else {
-        // Next chunk not ready yet → show spinner, poll until ready
-        setIsBuffering(true);
-        console.log(`[ChunkedPlayer] Waiting for chunk ${nextIdx} to load…`);
-        if (bufferPoll.current) clearInterval(bufferPoll.current);
-        bufferPoll.current = setInterval(() => {
-          const latestNext = chunksRef.current[chunkIdxRef.current + 1];
-          const pv2 = preloadVid();
-          if (latestNext?.blobUrl && pv2) {
-            if (pv2.getAttribute('data-src') !== latestNext.blobUrl) {
-              loadChunk(pv2, latestNext);
-            }
-            if (pv2.readyState >= 2) {
-              doSwap(chunkIdxRef.current + 1);
-            } else {
-              pv2.oncanplay = () => {
-                pv2.oncanplay = null;
-                doSwap(chunkIdxRef.current + 1);
-              };
-              if (bufferPoll.current) {
-                clearInterval(bufferPoll.current);
-                bufferPoll.current = null;
+          // Wait until this chunk is decrypted
+          if (!chunk.isDecrypted || !chunk.blobUrl) break;
+
+          // 1. Fetch the decrypted blob → raw ArrayBuffer
+          const resp = await fetch(chunk.blobUrl);
+          const rawData = await resp.arrayBuffer();
+
+          if (idx === 0) {
+            if (rawData.byteLength >= 4) {
+              const view = new DataView(rawData);
+              if (view.getUint32(0) === 0x1A45DFA3) {
+                isWebmStreamRef.current = true;
               }
             }
           }
-        }, 300);
-      }
-    },
-    [preloadVid, loadChunk, doSwap],
-  );
 
-  /* ── Play / Pause ──────────────────────────────────────────────────────── */
+          if (isWebmStreamRef.current) {
+            console.log(`[MSE] Chunk ${idx} is WebM. Appending directly.`);
+            if (idx === 0) {
+              let mime = 'video/webm; codecs="vp9,opus"';
+              if (!MediaSource.isTypeSupported(mime)) {
+                mime = 'video/webm; codecs="vp8,opus"';
+                if (!MediaSource.isTypeSupported(mime)) {
+                   mime = 'video/webm';
+                }
+              }
+              const sb = ms.addSourceBuffer(mime);
+              sb.mode = 'sequence';
+              videoSBRef.current = sb;
+              console.log(`[MSE] WebM SourceBuffer: ${mime}`);
+
+              try {
+                if (ms.readyState === 'open') {
+                  ms.duration = totalDurationRef.current;
+                }
+              } catch (e) {
+                console.warn('[MSE] Could not set duration:', e);
+              }
+            }
+
+            if (ms.readyState !== 'open') break;
+
+            if (videoSBRef.current) {
+              await appendToSB(videoSBRef.current, rawData);
+            }
+          } else {
+            const isFMP4 = hasMoof(rawData);
+
+            if (isFMP4) {
+              // ── Append raw chunk directly (it is natively an fMP4) ───
+              console.log(`[MSE] Chunk ${idx} is native fMP4, appending directly.`);
+
+              if (idx === 0) {
+                let mimeLine = 'video/mp4';
+                try {
+                  const result = await transmuxToFMP4(rawData);
+                  const videoTrack = result.tracks.find(t => t.type === 'video');
+                  const audioTrack = result.tracks.find(t => t.type === 'audio');
+                  
+                  const codecs = [];
+                  if (videoTrack?.codec) codecs.push(videoTrack.codec);
+                  if (audioTrack?.codec) codecs.push(audioTrack.codec);
+                  
+                  if (codecs.length > 0) {
+                    mimeLine = `video/mp4; codecs="${codecs.join(', ')}"`;
+                  }
+                } catch (e) {
+                  console.warn('[MSE] Transmuxer codec extraction failed:', e);
+                }
+
+                if (ms.readyState !== 'open') break;
+
+                if (MediaSource.isTypeSupported(mimeLine)) {
+                  const sb = ms.addSourceBuffer(mimeLine);
+                  sb.mode = 'sequence';
+                  videoSBRef.current = sb;
+                } else {
+                  const sb = ms.addSourceBuffer('video/mp4');
+                  sb.mode = 'sequence';
+                  videoSBRef.current = sb;
+                }
+
+                try {
+                  if (ms.readyState === 'open') {
+                    ms.duration = totalDurationRef.current;
+                  }
+                } catch (e) { }
+              }
+
+              if (videoSBRef.current) {
+                try {
+                   await appendToSB(videoSBRef.current, rawData);
+                } catch (e) {
+                   console.warn(`[MSE] Failed to append native fMP4 chunk ${idx}:`, e);
+                }
+              }
+            } else {
+              // ── Legacy chunk logic: Transmux standard MP4 to fMP4 ───
+              console.log(`[MSE] Chunk ${idx} is legacy standard MP4, running transmuxer.`);
+              const result = await transmuxToFMP4(rawData);
+              const videoTrack = result.tracks.find(t => t.type === 'video');
+              const audioTrack = result.tracks.find(t => t.type === 'audio');
+
+              if (ms.readyState !== 'open') break;
+
+              if (idx === 0) {
+                if (videoTrack) {
+                  const mime = `video/mp4; codecs="${videoTrack.codec}"`;
+                  if (MediaSource.isTypeSupported(mime)) {
+                    const sb = ms.addSourceBuffer(mime);
+                    sb.mode = 'sequence';
+                    videoSBRef.current = sb;
+                    try {
+                      await appendToSB(sb, videoTrack.initSegment);
+                    } catch (e) {
+                      console.warn(`[MSE] Failed to append video init segment for chunk ${idx}:`, e);
+                    }
+                  }
+                }
+
+                if (audioTrack) {
+                  const mime = `audio/mp4; codecs="${audioTrack.codec}"`;
+                  if (MediaSource.isTypeSupported(mime)) {
+                    const sb = ms.addSourceBuffer(mime);
+                    sb.mode = 'sequence';
+                    audioSBRef.current = sb;
+                    try {
+                       await appendToSB(sb, audioTrack.initSegment);
+                    } catch (e) {
+                       console.warn(`[MSE] Failed to append audio init segment for chunk ${idx}:`, e);
+                    }
+                  }
+                }
+
+                try {
+                  if (ms.readyState === 'open') {
+                    ms.duration = totalDurationRef.current;
+                  }
+                } catch (e) { }
+              }
+
+              if (ms.readyState !== 'open') break;
+
+              if (videoTrack && videoSBRef.current) {
+                for (const seg of videoTrack.mediaSegments) {
+                  try {
+                    await appendToSB(videoSBRef.current, seg);
+                  } catch (e) {
+                    console.warn(`[MSE] Failed to append video segment for chunk ${idx}:`, e);
+                  }
+                }
+              }
+              if (audioTrack && audioSBRef.current) {
+                for (const seg of audioTrack.mediaSegments) {
+                  try {
+                    await appendToSB(audioSBRef.current, seg);
+                  } catch (e) {
+                    console.warn(`[MSE] Failed to append audio segment for chunk ${idx}:`, e);
+                  }
+                }
+              }
+            }
+          }
+
+          console.log(`[MSE] Chunk ${idx} appended ✓`);
+          nextChunkRef.current = idx + 1;
+
+          // Auto-play immediately after the first chunk is ready
+          if (idx === 0 && autoPlay && videoRef.current) {
+            videoRef.current
+              .play()
+              .then(() => {
+                setIsPlaying(true);
+                setIsBuffering(false);
+              })
+              .catch(() => {
+                // Autoplay blocked — let user click
+                setIsBuffering(false);
+                console.warn('[MSE] Autoplay blocked, user click required');
+              });
+          }
+        }
+
+        // ── All chunks appended → finalise stream ──────────────────────
+        if (
+          nextChunkRef.current >= chunksRef.current.length &&
+          !endOfStreamCalled.current
+        ) {
+          try {
+            // Wait for any pending SB updates
+            const waitSB = (sb: SourceBuffer) =>
+              new Promise<void>(resolve => {
+                if (!sb.updating) { resolve(); return; }
+                sb.addEventListener('updateend', () => resolve(), { once: true });
+              });
+
+            if (videoSBRef.current) await waitSB(videoSBRef.current);
+            if (audioSBRef.current) await waitSB(audioSBRef.current);
+
+            if (ms.readyState === 'open') {
+              ms.endOfStream();
+              endOfStreamCalled.current = true;
+              console.log('[MSE] endOfStream() — all chunks loaded');
+            }
+          } catch (e) {
+            console.warn('[MSE] endOfStream error:', e);
+          }
+        }
+      } catch (err: any) {
+        console.error('[MSE] Processing error:', err);
+        setError(err.message || String(err));
+      } finally {
+        isProcessingRef.current = false;
+      }
+    };
+
+    // Run immediately + poll as backup (catches races where chunks change mid-process)
+    processChunks();
+    const interval = setInterval(processChunks, 500);
+    return () => clearInterval(interval);
+  }, [mseOpen, chunks, autoPlay]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Volume sync ────────────────────────────────────────────────────── */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) { v.volume = volume; v.muted = isMuted; }
+  }, [volume, isMuted]);
+
+  /* ── Fullscreen listener ────────────────────────────────────────────── */
+  useEffect(() => {
+    const h = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', h);
+    return () => document.removeEventListener('fullscreenchange', h);
+  }, []);
+
+  /* ── Cleanup ────────────────────────────────────────────────────────── */
+  useEffect(() => () => {
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+  }, []);
+
+  /* ── Read buffered range from the <video> element ───────────────────── */
+  const updateBuffered = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !v.buffered.length) return;
+    setBufferedEnd(v.buffered.end(v.buffered.length - 1));
+  }, []);
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /*  PLAYER CONTROLS                                                       */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+
   const togglePlay = useCallback(() => {
-    const v = activeVid();
+    if (error) return;
+    const v = videoRef.current;
     if (!v) return;
 
     if (!hasStarted) setHasStarted(true);
@@ -317,67 +468,23 @@ export default function ChunkedVideoPlayer({
       v.pause();
       setIsPlaying(false);
     } else {
-      // If the entire video was completed, restart from chunk 0
-      if (
-        chunkIdxRef.current >= chunksRef.current.length - 1 &&
-        v.ended
-      ) {
-        const c0 = chunksRef.current[0];
-        if (c0?.blobUrl) {
-          loadChunk(v, c0);
-          v.oncanplay = () => {
-            v.oncanplay = null;
-            v.currentTime = 0;
-            v.play().catch(() => {});
-          };
-          setChunkIdx(0);
-          setGlobalTime(0);
-        }
-        setIsPlaying(true);
-        return;
+      // If video ended, restart from the beginning
+      if (v.ended) {
+        v.currentTime = 0;
       }
       v.play().catch(() => {});
       setIsPlaying(true);
     }
-  }, [activeVid, hasStarted, loadChunk]);
+  }, [hasStarted, error]);
 
-  /* ── Seek ───────────────────────────────────────────────────────────────── */
-  const seekTo = useCallback(
-    (fraction: number) => {
-      const target = fraction * totalDuration;
+  const seekTo = useCallback((fraction: number) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const target = fraction * totalDurationRef.current;
+    v.currentTime = Math.max(0, Math.min(target, totalDurationRef.current));
+    setCurrentTime(v.currentTime);
+  }, []);
 
-      // Find which chunk this time falls into
-      let targetIdx = 0;
-      for (let i = 0; i < chunkStarts.length; i++) {
-        if (target >= chunkStarts[i]) targetIdx = i;
-      }
-      const localT = target - chunkStarts[targetIdx];
-      const chunk = chunksRef.current[targetIdx];
-      if (!chunk?.blobUrl) return; // chunk not loaded
-
-      const v = activeVid();
-      if (!v) return;
-
-      if (targetIdx === chunkIdxRef.current) {
-        // Same chunk — just seek within it
-        v.currentTime = Math.min(localT, v.duration || localT);
-      } else {
-        // Different chunk — load it and seek
-        swapFiredRef.current = false; // allow pre-start for the new chunk
-        loadChunk(v, chunk);
-        v.oncanplay = () => {
-          v.oncanplay = null;
-          v.currentTime = Math.min(localT, v.duration || localT);
-          if (isPlayingRef.current) v.play().catch(() => {});
-        };
-        setChunkIdx(targetIdx);
-      }
-      setGlobalTime(target);
-    },
-    [totalDuration, chunkStarts, activeVid, loadChunk],
-  );
-
-  /* ── Progress bar interaction (click + drag) ────────────────────────────── */
   const getFraction = useCallback((clientX: number) => {
     const bar = progressRef.current;
     if (!bar) return 0;
@@ -410,7 +517,6 @@ export default function ChunkedVideoPlayer({
     [seekTo, getFraction],
   );
 
-  /* ── Fullscreen ────────────────────────────────────────────────────────── */
   const toggleFS = useCallback(() => {
     const c = containerRef.current;
     if (!c) return;
@@ -421,58 +527,23 @@ export default function ChunkedVideoPlayer({
     }
   }, []);
 
-  useEffect(() => {
-    const h = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', h);
-    return () => document.removeEventListener('fullscreenchange', h);
-  }, []);
-
-  /* ── Controls auto-hide ────────────────────────────────────────────────── */
   const flashControls = useCallback(() => {
     setShowControls(true);
-    if (controlsTimer.current) clearTimeout(controlsTimer.current);
-    controlsTimer.current = setTimeout(() => {
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    controlsTimerRef.current = setTimeout(() => {
       if (isPlayingRef.current) setShowControls(false);
     }, 3000);
   }, []);
 
-  /* ── Cleanup ────────────────────────────────────────────────────────────── */
-  useEffect(() => {
-    return () => {
-      if (controlsTimer.current) clearTimeout(controlsTimer.current);
-      if (bufferPoll.current) clearInterval(bufferPoll.current);
-    };
-  }, []);
-
   /* ═══════════════════════════════════════════════════════════════════════ */
-  /*                               RENDER                                  */
+  /*                               RENDER                                   */
   /* ═══════════════════════════════════════════════════════════════════════ */
 
-  // First chunk not ready yet — show loading placeholder
-  const firstReady = chunks.find((c) => c.isDecrypted && c.blobUrl);
-  if (!firstReady) {
-    return (
-      <div
-        className={`relative rounded-2xl overflow-hidden bg-black ${className}`}
-        style={{ aspectRatio: '16/9', minHeight: 135 }}
-      >
-        {thumbnailUrl && (
-          <img src={thumbnailUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-        )}
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50">
-          <div
-            className="w-7 h-7 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }}
-          />
-          <span className="text-[10px] font-semibold" style={{ color: 'var(--gold-light)' }}>
-            Buffering…
-          </span>
-        </div>
-      </div>
-    );
-  }
+  const progressFraction = totalDuration > 0 ? currentTime / totalDuration : 0;
+  const bufferFraction = totalDuration > 0 ? bufferedEnd / totalDuration : 0;
 
-  const progressFraction = totalDuration > 0 ? globalTime / totalDuration : 0;
+  // Check if at least one chunk is ready (for the loading overlay)
+  const firstReady = chunks.some(c => c.isDecrypted && !!c.blobUrl);
 
   return (
     <div
@@ -485,48 +556,82 @@ export default function ChunkedVideoPlayer({
       {/* Aspect ratio spacer */}
       <div style={{ paddingBottom: '56.25%' }} />
 
-      {/* ── Video A ────────────────────────────────────────────────────────── */}
+      {/* ── Single video element (always rendered for MSE attachment) ────── */}
       <video
-        ref={videoARef}
+        ref={videoRef}
         playsInline
         preload="auto"
-        onTimeUpdate={() => onTimeUpdate(0)}
-        onEnded={() => onEnded(0)}
-        onLoadedMetadata={() => onMeta(0)}
-        onWaiting={() => activeSlot === 0 && setIsBuffering(true)}
-        onPlaying={() => activeSlot === 0 && setIsBuffering(false)}
+        onTimeUpdate={() => {
+          setCurrentTime(videoRef.current?.currentTime ?? 0);
+          updateBuffered();
+        }}
+        onProgress={updateBuffered}
+        onWaiting={() => setIsBuffering(true)}
+        onPlaying={() => setIsBuffering(false)}
+        onEnded={() => setIsPlaying(false)}
         style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
           objectFit: 'contain',
-          zIndex: activeSlot === 0 ? 2 : 1,
+          zIndex: 2,
         }}
       />
 
-      {/* ── Video B ────────────────────────────────────────────────────────── */}
-      <video
-        ref={videoBRef}
-        playsInline
-        preload="auto"
-        onTimeUpdate={() => onTimeUpdate(1)}
-        onEnded={() => onEnded(1)}
-        onLoadedMetadata={() => onMeta(1)}
-        onWaiting={() => activeSlot === 1 && setIsBuffering(true)}
-        onPlaying={() => activeSlot === 1 && setIsBuffering(false)}
-        style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%',
-          objectFit: 'contain',
-          zIndex: activeSlot === 1 ? 2 : 1,
-        }}
-      />
+      {/* ── Error Overlay ────────────────────────────────────────────────── */}
+      {error && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-50 bg-black/90 backdrop-blur-md"
+        >
+          <span className="material-symbols-outlined text-red-500 text-5xl mb-3">error</span>
+          <p className="text-white font-medium text-sm leading-relaxed mb-2" style={{ wordBreak: 'break-word' }}>
+            Playback Error
+          </p>
+          <p className="text-white/70 text-xs font-mono bg-black/50 p-3 rounded-lg overflow-y-auto max-h-[100px] max-w-[90%] whitespace-pre-wrap">
+            {error}
+          </p>
+        </div>
+      )}
 
-      {/* ── Poster / initial play button (before first play) ──────────────── */}
-      {!hasStarted && (
+      {/* ── Loading overlay (no chunks decrypted yet) ──────────────────── */}
+      {!firstReady && (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+          style={{ zIndex: 20, background: 'rgba(0,0,0,0.8)' }}
+        >
+          {thumbnailUrl && (
+            <img
+              src={thumbnailUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+            />
+          )}
+          <div
+            className="relative w-7 h-7 rounded-full border-2 border-t-transparent animate-spin"
+            style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }}
+          />
+          <span
+            className="relative text-[10px] font-semibold"
+            style={{ color: 'var(--gold-light)' }}
+          >
+            Buffering…
+          </span>
+        </div>
+      )}
+
+      {/* ── Poster / play button (before first play, after chunks ready) ── */}
+      {firstReady && !hasStarted && (
         <div
           className="absolute inset-0 z-10 flex items-center justify-center"
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}
         >
           {thumbnailUrl && (
-            <img src={thumbnailUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+            <img
+              src={thumbnailUrl}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
           )}
           <div className="absolute inset-0 bg-black/30" />
           <motion.div
@@ -544,7 +649,7 @@ export default function ChunkedVideoPlayer({
         </div>
       )}
 
-      {/* ── Click-to-play/pause surface (after first play) ────────────────── */}
+      {/* ── Click-to-play/pause surface ────────────────────────────────── */}
       {hasStarted && (
         <div
           className="absolute inset-0"
@@ -553,7 +658,7 @@ export default function ChunkedVideoPlayer({
         />
       )}
 
-      {/* ── Buffering spinner ──────────────────────────────────────────────── */}
+      {/* ── Buffering spinner ──────────────────────────────────────────── */}
       <AnimatePresence>
         {isBuffering && hasStarted && (
           <motion.div
@@ -565,13 +670,16 @@ export default function ChunkedVideoPlayer({
           >
             <div
               className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin"
-              style={{ borderColor: 'rgba(255,255,255,0.7)', borderTopColor: 'transparent' }}
+              style={{
+                borderColor: 'rgba(255,255,255,0.7)',
+                borderTopColor: 'transparent',
+              }}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Center play icon when paused ──────────────────────────────────── */}
+      {/* ── Paused icon (center) ───────────────────────────────────────── */}
       <AnimatePresence>
         {hasStarted && !isPlaying && !isBuffering && (
           <motion.div
@@ -583,13 +691,18 @@ export default function ChunkedVideoPlayer({
             style={{ zIndex: 7 }}
           >
             <div className="w-14 h-14 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-3xl" style={{ marginLeft: 3 }}>play_arrow</span>
+              <span
+                className="material-symbols-outlined text-white text-3xl"
+                style={{ marginLeft: 3 }}
+              >
+                play_arrow
+              </span>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Controls overlay ───────────────────────────────────────────────── */}
+      {/* ── Controls overlay ───────────────────────────────────────────── */}
       {hasStarted && (
         <motion.div
           animate={{ opacity: showControls || !isPlaying ? 1 : 0 }}
@@ -603,7 +716,7 @@ export default function ChunkedVideoPlayer({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* ── Progress bar ────────────────────────────────────────────── */}
+          {/* ── Progress bar ──────────────────────────────────────────── */}
           <div
             ref={progressRef}
             className="relative w-full h-[3px] rounded-full mb-2 cursor-pointer group hover:h-[5px] transition-all"
@@ -611,22 +724,16 @@ export default function ChunkedVideoPlayer({
             onMouseDown={handleProgressDown}
             onTouchMove={handleProgressTouch}
           >
-            {/* Buffer segments (YouTube-style light white/gray line) */}
-            {bufferSegments.map((seg, i) =>
-              seg.loaded ? (
-                <div
-                  key={i}
-                  className="absolute top-0 h-full rounded-full"
-                  style={{
-                    left: `${seg.start * 100}%`,
-                    width: `${(seg.end - seg.start) * 100}%`,
-                    background: 'rgba(255,255,255,0.3)',
-                  }}
-                />
-              ) : null,
-            )}
+            {/* Continuous buffer bar (single unbroken range) */}
+            <div
+              className="absolute top-0 h-full rounded-full"
+              style={{
+                width: `${bufferFraction * 100}%`,
+                background: 'rgba(255,255,255,0.3)',
+              }}
+            />
 
-            {/* Played progress (accent / gold) */}
+            {/* Played progress (gold accent) */}
             <div
               className="absolute top-0 h-full rounded-full"
               style={{
@@ -648,7 +755,7 @@ export default function ChunkedVideoPlayer({
             />
           </div>
 
-          {/* ── Bottom controls row ─────────────────────────────────────── */}
+          {/* ── Bottom controls row ───────────────────────────────────── */}
           <div className="flex items-center gap-2">
             {/* Play / Pause */}
             <button
@@ -662,14 +769,14 @@ export default function ChunkedVideoPlayer({
 
             {/* Time display */}
             <span className="text-white/75 text-[11px] font-medium tabular-nums whitespace-nowrap select-none">
-              {fmt(globalTime)} / {fmt(totalDuration)}
+              {fmt(currentTime)} / {fmt(totalDuration)}
             </span>
 
             <div className="flex-1" />
 
             {/* Volume */}
             <button
-              onClick={(e) => { e.stopPropagation(); setIsMuted((m) => !m); }}
+              onClick={(e) => { e.stopPropagation(); setIsMuted(m => !m); }}
               className="text-white/75 hover:text-white transition-colors p-1"
             >
               <span className="material-symbols-outlined text-lg">

@@ -59,6 +59,7 @@ export async function splitVideoIntoChunks(
   // -f segment: use segment muxer
   // -c copy: stream copy (no re-encoding = instant)
   await ffmpeg.exec([
+    '-fflags', '+genpts',
     '-i', inputName,
     '-c:v', 'copy',
     '-c:a', 'copy',
@@ -66,8 +67,8 @@ export async function splitVideoIntoChunks(
     '-segment_time', String(chunkDurationSec),
     '-reset_timestamps', '1',
     '-avoid_negative_ts', 'make_zero',
-    '-movflags', '+faststart',
     '-segment_format', 'mp4',
+    '-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0',
     'chunk_%03d.mp4',
   ]);
 
@@ -138,6 +139,7 @@ export async function* splitVideoIntoChunksStreaming(
   // -reset_timestamps 1: each chunk starts at 0 (standalone playback works).
   // -c copy: no re-encoding = near-instant + preserves audio.
   await ffmpeg.exec([
+    '-fflags', '+genpts',
     '-i', inputName,
     '-c:v', 'copy',
     '-c:a', 'copy',
@@ -145,8 +147,8 @@ export async function* splitVideoIntoChunksStreaming(
     '-segment_time', String(chunkDurationSec),
     '-reset_timestamps', '1',
     '-avoid_negative_ts', 'make_zero',
-    '-movflags', '+faststart',
     '-segment_format', 'mp4',
+    '-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0',
     'stream_chunk_%03d.mp4',
   ]);
 

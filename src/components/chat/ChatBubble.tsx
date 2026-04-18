@@ -277,7 +277,7 @@ function ChatBubble({
     const parentRow = bubbleRef.current?.closest('.message-row') as HTMLElement;
     if (parentRow) {
       if (interactionType !== 'none') {
-        parentRow.style.zIndex = '100';
+        parentRow.style.zIndex = '200';
         parentRow.style.position = 'relative';
       } else {
         parentRow.style.zIndex = '';
@@ -680,7 +680,7 @@ function ChatBubble({
             initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`absolute z-30 ${isMine ? 'right-0' : 'left-0'} flex flex-col items-center gap-1 ${
+            className={`absolute z-[100] ${isMine ? 'right-0' : 'left-0'} flex flex-col items-center gap-1 ${
               bubbleRect && bubbleRect.top < window.innerHeight / 2 
                 ? 'top-full mt-3' 
                 : 'bottom-full mb-3'

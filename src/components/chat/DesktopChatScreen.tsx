@@ -629,7 +629,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
                 const isLastInGroup = index === groupedList.length - 1 || nextMsg?.sender_id !== lastMsg.sender_id || nextDateStr !== currentDateStr;
 
                 return (
-                  <div key={isGroup ? `group-${firstMsg.id}` : firstMsg.id} id={viewMode === 'chat' ? `msg-${firstMsg.id}` : `pinned-${firstMsg.id}`} className="flex flex-col gap-1 w-full">
+                  <div key={isGroup ? `group-${firstMsg.id}` : firstMsg.id} id={viewMode === 'chat' ? `msg-${firstMsg.id}` : `pinned-${firstMsg.id}`} className="flex flex-col gap-1 w-full message-row">
                     {showDateSeparator && (
                       <div className="flex justify-center my-8">
                         <span className="bg-aura-bg-elevated/80 backdrop-blur-md px-4 py-1.5 rounded-full text-[11px] text-aura-text-secondary uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
