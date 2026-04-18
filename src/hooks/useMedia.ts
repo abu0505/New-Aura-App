@@ -162,13 +162,11 @@ async function compressVideoWithWebCodecs(
           resolve(null);
         } else if (type === 'error') {
           worker.terminate();
-          console.error('[WebCodecs]', e.data.message);
           resolve(null);
         }
       };
 
-      worker.onerror = (err) => {
-        console.error('[WebCodecs]', err);
+      worker.onerror = () => {
         worker.terminate();
         resolve(null);
       };
@@ -297,7 +295,6 @@ export function useMedia() {
       };
       return await imageCompression(file, options);
     } catch (e) {
-      console.error('Thumbnail generation failed', e);
       return null;
     }
   };
@@ -334,7 +331,6 @@ export function useMedia() {
           try {
             fileToProcess = await compressImageToWebP(file);
           } catch (err) {
-            console.warn('[WebP] Conversion failed, falling back to library:', err);
             // Fallback to original library
             fileToProcess = await imageCompression(file, {
               maxSizeMB: 2,
@@ -421,7 +417,6 @@ export function useMedia() {
       };
 
     } catch (error) {
-      console.error('Media upload failed:', error);
       return null;
     } finally {
       setIsProcessing(false);
@@ -517,7 +512,6 @@ export function useMedia() {
 
         return blob;
       } catch (error) {
-        console.error('Decryption failed', error);
         return null;
       } finally {
         // Fix 4.1: Remove from in-flight map once resolved (success or fail)
@@ -589,7 +583,6 @@ export function useMedia() {
       // The segment muxer uses stream-copy (no re-encoding) so splitting is
       // near-instant and preserves both audio and video quality perfectly.
       let fileToChunk = file;
-      console.log(`[ChunkedVideo] Using raw file for splitting — ${(file.size / 1024 / 1024).toFixed(1)} MB, audio preserved ✓`);
 
       // Helper: upload raw encrypted bytes to Cloudinary
       const uploadEncryptedBytes = async (data: Uint8Array): Promise<string> => {
@@ -636,7 +629,6 @@ export function useMedia() {
 
       // Upload + DB insert for one encrypted chunk → notifies receiver immediately
       const uploadAndInsert = async (enc: EncryptedChunk): Promise<void> => {
-        console.log(`[ChunkedVideo] Uploading chunk ${enc.index + 1}/${enc.totalChunks}`);
         const chunkUrl = await uploadEncryptedBytes(enc.encryptedData);
         const { error } = await supabase.from('video_chunks').insert({
           message_id: messageId,
@@ -650,7 +642,6 @@ export function useMedia() {
           receiver_id: receiverId,
         });
         if (error) throw new Error(`Failed to insert chunk ${enc.index}: ${error.message}`);
-        console.log(`[ChunkedVideo] Chunk ${enc.index + 1}/${enc.totalChunks} delivered ✓`);
       };
 
       // ── TRUE STREAMING PIPELINE ───────────────────────────────────────────
@@ -670,11 +661,9 @@ export function useMedia() {
       const videoDuration = await getVideoDuration(fileToChunk);
       const totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
 
-      console.log(`[ChunkedVideo] Starting sequential pipeline to prioritize early chunks & save RAM — ~${totalChunks} chunks expected`);
       onStatusChange('Processing chunk 1...');
 
       for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
-        console.log(`[ChunkedVideo] ⏱️ Chunk ${chunk.index + 1}/${totalChunks} extracted from local FS. Encrypting...`);
         onStatusChange(`Processing chunk ${chunk.index + 1} of ${totalChunks}...`);
 
         // We explicitly AWAIT each chunk's upload BEFORE reading the next chunk.
@@ -682,16 +671,13 @@ export function useMedia() {
         // 1. RAM: Keeps only 1 chunk in browser memory at a time.
         // 2. Network Priority: Chunk 1 gets 100% bandwidth and is delivered immediately, letting the receiver watch instantly.
         const encrypted = await encryptChunk(chunk, totalChunks);
-        console.log(`[ChunkedVideo] 🚀 Chunk ${chunk.index + 1}/${totalChunks} encrypted. Uploading...`);
         
         await uploadAndInsert(encrypted);
-        console.log(`[ChunkedVideo] ✨ Chunk ${chunk.index + 1}/${totalChunks} FULLY DELIVERED to DB!`);
       }
 
       onStatusChange('Done');
       return true;
     } catch (err) {
-      console.error('[ChunkedVideo] processAndUploadChunked failed:', err);
       return false;
     }
   }, [user, partner]);

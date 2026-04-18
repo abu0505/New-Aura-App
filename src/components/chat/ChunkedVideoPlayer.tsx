@@ -141,7 +141,7 @@ export default function ChunkedVideoPlayer({
 
   /* ── Total duration from chunk metadata ──────────────────────────────── */
   const totalDuration = useMemo(
-    () => chunks.reduce((sum, c) => sum + (c.duration ?? 15), 0),
+    () => chunks.reduce((sum, c) => sum + (c.duration ?? 8), 0),
     [chunks],
   );
   useEffect(() => { totalDurationRef.current = totalDuration; }, [totalDuration]);
@@ -151,7 +151,6 @@ export default function ChunkedVideoPlayer({
   /* ═══════════════════════════════════════════════════════════════════════ */
   useEffect(() => {
     if (typeof MediaSource === 'undefined') {
-      console.error('[MSE] MediaSource API not available in this browser');
       setError('MediaSource API not available in this browser');
       return;
     }
@@ -161,7 +160,6 @@ export default function ChunkedVideoPlayer({
     const url = URL.createObjectURL(ms);
 
     ms.addEventListener('sourceopen', () => {
-      console.log('[MSE] MediaSource opened');
       setMseOpen(true);
     });
 
@@ -223,7 +221,6 @@ export default function ChunkedVideoPlayer({
           }
 
           if (isWebmStreamRef.current) {
-            console.log(`[MSE] Chunk ${idx} is WebM. Appending directly.`);
             if (idx === 0) {
               let mime = 'video/webm; codecs="vp9,opus"';
               if (!MediaSource.isTypeSupported(mime)) {
@@ -235,14 +232,12 @@ export default function ChunkedVideoPlayer({
               const sb = ms.addSourceBuffer(mime);
               sb.mode = 'sequence';
               videoSBRef.current = sb;
-              console.log(`[MSE] WebM SourceBuffer: ${mime}`);
 
               try {
                 if (ms.readyState === 'open') {
                   ms.duration = totalDurationRef.current;
                 }
               } catch (e) {
-                console.warn('[MSE] Could not set duration:', e);
               }
             }
 
@@ -256,7 +251,6 @@ export default function ChunkedVideoPlayer({
 
             if (isFMP4) {
               // ── Append raw chunk directly (it is natively an fMP4) ───
-              console.log(`[MSE] Chunk ${idx} is native fMP4, appending directly.`);
 
               if (idx === 0) {
                 let mimeLine = 'video/mp4';
@@ -273,7 +267,6 @@ export default function ChunkedVideoPlayer({
                     mimeLine = `video/mp4; codecs="${codecs.join(', ')}"`;
                   }
                 } catch (e) {
-                  console.warn('[MSE] Transmuxer codec extraction failed:', e);
                 }
 
                 if (ms.readyState !== 'open') break;
@@ -299,12 +292,10 @@ export default function ChunkedVideoPlayer({
                 try {
                    await appendToSB(videoSBRef.current, rawData);
                 } catch (e) {
-                   console.warn(`[MSE] Failed to append native fMP4 chunk ${idx}:`, e);
                 }
               }
             } else {
               // ── Legacy chunk logic: Transmux standard MP4 to fMP4 ───
-              console.log(`[MSE] Chunk ${idx} is legacy standard MP4, running transmuxer.`);
               const result = await transmuxToFMP4(rawData);
               const videoTrack = result.tracks.find(t => t.type === 'video');
               const audioTrack = result.tracks.find(t => t.type === 'audio');
@@ -321,7 +312,6 @@ export default function ChunkedVideoPlayer({
                     try {
                       await appendToSB(sb, videoTrack.initSegment);
                     } catch (e) {
-                      console.warn(`[MSE] Failed to append video init segment for chunk ${idx}:`, e);
                     }
                   }
                 }
@@ -335,7 +325,6 @@ export default function ChunkedVideoPlayer({
                     try {
                        await appendToSB(sb, audioTrack.initSegment);
                     } catch (e) {
-                       console.warn(`[MSE] Failed to append audio init segment for chunk ${idx}:`, e);
                     }
                   }
                 }
@@ -354,7 +343,6 @@ export default function ChunkedVideoPlayer({
                   try {
                     await appendToSB(videoSBRef.current, seg);
                   } catch (e) {
-                    console.warn(`[MSE] Failed to append video segment for chunk ${idx}:`, e);
                   }
                 }
               }
@@ -363,14 +351,12 @@ export default function ChunkedVideoPlayer({
                   try {
                     await appendToSB(audioSBRef.current, seg);
                   } catch (e) {
-                    console.warn(`[MSE] Failed to append audio segment for chunk ${idx}:`, e);
                   }
                 }
               }
             }
           }
 
-          console.log(`[MSE] Chunk ${idx} appended ✓`);
           nextChunkRef.current = idx + 1;
 
           // Auto-play immediately after the first chunk is ready
@@ -384,7 +370,6 @@ export default function ChunkedVideoPlayer({
               .catch(() => {
                 // Autoplay blocked — let user click
                 setIsBuffering(false);
-                console.warn('[MSE] Autoplay blocked, user click required');
               });
           }
         }
@@ -408,14 +393,11 @@ export default function ChunkedVideoPlayer({
             if (ms.readyState === 'open') {
               ms.endOfStream();
               endOfStreamCalled.current = true;
-              console.log('[MSE] endOfStream() — all chunks loaded');
             }
           } catch (e) {
-            console.warn('[MSE] endOfStream error:', e);
           }
         }
       } catch (err: any) {
-        console.error('[MSE] Processing error:', err);
         setError(err.message || String(err));
       } finally {
         isProcessingRef.current = false;

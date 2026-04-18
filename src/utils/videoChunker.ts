@@ -128,7 +128,6 @@ export async function* splitVideoIntoChunksStreaming(
   const ffmpeg = await getFFmpeg();
 
   const videoDuration = await getVideoDuration(file);
-  const estimatedChunks = Math.ceil(videoDuration / chunkDurationSec);
 
   const ext = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
   const cleanFileName = `input_stream.${ext}`;
@@ -138,8 +137,6 @@ export async function* splitVideoIntoChunksStreaming(
   // MOUNT file natively to worker bypassing RAM completely
   try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
   await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
-
-  console.log(`[VideoChunker] Splitting ${videoDuration.toFixed(1)}s video into ~${estimatedChunks} chunks (segment muxer, stream-copy)`);
 
   // Segment muxer: splits at keyframe boundaries with zero gaps.
   // -reset_timestamps 1: each chunk starts at 0 (standalone playback works).
@@ -176,7 +173,6 @@ export async function* splitVideoIntoChunksStreaming(
       // Clean up immediately to free memory
       try { await ffmpeg.deleteFile(chunkName); } catch { /* ignore */ }
 
-      console.log(`[VideoChunker] Yielding chunk ${index} (${chunkDuration.toFixed(1)}s, ${(blob.size / 1024).toFixed(0)} KB)`);
       yield { file: chunkFile, index, durationSec: chunkDuration };
       index++;
     } catch {
@@ -186,7 +182,6 @@ export async function* splitVideoIntoChunksStreaming(
   }
 
   try { await ffmpeg.unmount('/workerfs'); } catch { /* ignore */ }
-  console.log(`[VideoChunker] Split complete — ${index} chunks yielded`);
 }
 
 /**

@@ -405,7 +405,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         }
       }
     } catch(e) {
-      console.error("Standard upload failed", e);
+      // Standard upload failed
     }
 
     try {
@@ -423,7 +423,6 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
            // Pre-create the message row with the thumbnail so fragments can attach to it
            if (onChunkedVideoCommit) {
              await onChunkedVideoCommit(tempId, thumbDetails, currentReplyId);
-             console.log("[MessageInput] Chunked video message committed to Supabase");
            }
 
            // Now process and upload chunks
@@ -436,19 +435,16 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                (status) => onChunkedVideoStatusUpdate?.(tempId, status)
              );
              if (success) {
-               console.log(`[MessageInput] Video ${tempId} chunking fully completed.`);
              } else {
-               console.error(`[MessageInput] Video ${tempId} chunking failed or aborted.`);
              }
            }
          } catch(e) {
-            console.error("Chunked video upload failed", e);
          } finally {
             if (onChunkedVideoFinalize) onChunkedVideoFinalize(tempId);
          }
       }
     } catch(e) {
-      console.error("Chunked uploads master loop failed", e);
+      // Chunked uploads master loop failed
     }
   };
 

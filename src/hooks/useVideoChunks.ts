@@ -63,8 +63,6 @@ export function useVideoChunks() {
       const chunkIndex: number = row.chunk_index;
       const totalChunks: number = row.total_chunks;
 
-      console.log(`[VideoChunks] Realtime: chunk ${chunkIndex + 1}/${totalChunks} for msg ${msgId.slice(0, 8)}`);
-
       // Initialize chunk array for this message if needed
       if (!chunkStore.has(msgId)) {
         const placeholders: ReceivedChunk[] = Array.from({ length: totalChunks }, (_, i) => ({
@@ -94,7 +92,6 @@ export function useVideoChunks() {
       if (!chunks) return;
 
       const blobUrl = blob ? URL.createObjectURL(blob) : null;
-      console.log(`[VideoChunks] Decrypted chunk ${chunkIndex} for msg ${msgId.slice(0, 8)}: ${blobUrl ? 'OK' : 'FAILED'}`);
       chunks[chunkIndex] = {
         chunkIndex,
         totalChunks,
@@ -138,8 +135,6 @@ export function useVideoChunks() {
     if (loadingSet.has(messageId)) return;
     loadingSet.add(messageId);
 
-    console.log(`[VideoChunks] loadExistingChunks: ${rows.length} rows for msg ${messageId.slice(0, 8)}`);
-
     try {
       if (!rows.length) return;
 
@@ -169,7 +164,6 @@ export function useVideoChunks() {
         if (!chunks) break;
 
         const blobUrl = blob ? URL.createObjectURL(blob) : null;
-        console.log(`[VideoChunks] Loaded chunk ${row.chunk_index} for msg ${messageId.slice(0, 8)}: ${blobUrl ? 'OK' : 'FAIL'}`);
         chunks[row.chunk_index] = {
           chunkIndex: row.chunk_index,
           totalChunks: row.total_chunks,

@@ -121,9 +121,7 @@ function ChatBubble({
         setDecryptedMediaUrl(message.thumbnail_local_url);
         return; // Local thumb exists (first send), no decryption needed
       }
-      // After page reload: thumbnail_local_url is lost (ephemeral blob URL).
       // Fall through to decrypt thumbnail_url from DB — same path as receiver.
-      console.log('[ChatBubble] Sender chunked video — no local thumb, will decrypt from DB');
     }
 
     let targetUrl = message.media_url;
@@ -193,7 +191,6 @@ function ChatBubble({
     // Only skip if we already have usable (decrypted) chunks
     if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) return;
 
-    console.log(`[ChatBubble] Fetching chunks from DB for msg ${message.id.slice(0, 8)}...`);
     supabase
       .from('video_chunks')
       .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
@@ -201,10 +198,7 @@ function ChatBubble({
       .order('chunk_index', { ascending: true })
       .then(({ data }) => {
         if (data && data.length > 0) {
-          console.log(`[ChatBubble] Found ${data.length} chunks, loading for msg ${message.id.slice(0, 8)}`);
           loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
-        } else {
-          console.log(`[ChatBubble] No chunks in DB yet for msg ${message.id.slice(0, 8)}`);
         }
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
