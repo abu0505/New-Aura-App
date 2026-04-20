@@ -227,8 +227,8 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
         canvas,
         drawFrame,
         {
-          frameCount: 9,        // Increased from 5 to 9 for maximum SNR (noise reduction)
-          frameDelayMs: 35,     // ~30fps sampling
+          frameCount: 1,        // Instant capture - no motion blur/ghosting
+          frameDelayMs: 0,
           enableGLFilter: true,
           enableSharpening: true,
           sharpenAmount: 0.4

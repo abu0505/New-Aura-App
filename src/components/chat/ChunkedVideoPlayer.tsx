@@ -33,6 +33,8 @@ interface ChunkedVideoPlayerProps {
   className?: string;
   /** If true, start playing immediately without waiting for a click. */
   autoPlay?: boolean;
+  /** Total video duration in seconds. If provided, overrides the sum of chunk durations. */
+  duration?: number;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -101,6 +103,7 @@ export default function ChunkedVideoPlayer({
   thumbnailUrl,
   className = '',
   autoPlay = false,
+  duration,
 }: ChunkedVideoPlayerProps) {
   /* ── Refs ────────────────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -141,8 +144,12 @@ export default function ChunkedVideoPlayer({
 
   /* ── Total duration from chunk metadata ──────────────────────────────── */
   const totalDuration = useMemo(
-    () => chunks.reduce((sum, c) => sum + (c.duration ?? 8), 0),
-    [chunks],
+    () => {
+      if (duration && duration > 0) return duration;
+      // Fallback for older messages or when duration is not provided
+      return chunks.reduce((sum, c) => sum + (c.duration ?? 5), 0);
+    },
+    [chunks, duration],
   );
   useEffect(() => { totalDurationRef.current = totalDuration; }, [totalDuration]);
 

@@ -25,6 +25,7 @@ interface ChatBubbleProps {
   onReply?: (msgId: string) => void;
   repliedMessage?: ChatMessage;
   onJumpToMessage?: (msgId: string) => void;
+  quickEmojis?: string[];
 }
 
 function ChatBubble({ 
@@ -40,7 +41,8 @@ function ChatBubble({
   onRedirect,
   onReply,
   repliedMessage,
-  onJumpToMessage
+  onJumpToMessage,
+  quickEmojis
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const { getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks();
@@ -433,6 +435,7 @@ function ChatBubble({
               type="chunked_video"
               chunks={chunks}
               thumbnailUrl={thumbSrc}
+              duration={message.duration ?? undefined}
               onClose={() => setIsPreviewOpen(false)}
             />
           )}
@@ -473,6 +476,7 @@ function ChatBubble({
               type="chunked_video" 
               chunks={chunks}
               thumbnailUrl={thumbSrc}
+              duration={message.duration ?? undefined}
               onClose={() => setIsPreviewOpen(false)} 
             />
           )}
@@ -718,7 +722,7 @@ function ChatBubble({
               <div className="relative flex flex-col items-center">
                 {!showAllEmojis ? (
                   <div className="p-2.5 bg-aura-bg-elevated/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 flex justify-center gap-1.5 rounded-full">
-                    {['❤️', '😂', '😮', '😢', '🔥'].map(emoji => (
+                    {(quickEmojis || ['❤️', '😂', '😮', '😢', '🔥', '✨']).map(emoji => (
                       <button 
                         key={emoji}
                         onClick={() => { 
@@ -820,7 +824,7 @@ function ChatBubble({
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${interactionType !== 'none' ? 'scale-95 z-40' : ''} ${
-          (message.type === 'image' || message.type === 'video' || message.type === 'audio' || message.type === 'gif') || isSticker
+          (message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker
              ? 'bg-transparent shadow-none px-0 py-0' 
              : isMine 
                ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 

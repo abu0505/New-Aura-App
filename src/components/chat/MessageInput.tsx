@@ -32,7 +32,7 @@ interface MessageInputProps {
   partnerId?: string;
   onChunkedVideoStart?: (thumbnailLocalUrl: string, replyToId?: string) => string;
   onChunkedVideoStatusUpdate?: (tempId: string, status: string) => void;
-  onChunkedVideoCommit?: (tempId: string, thumbResult: { url: string; key: string; nonce: string } | null, replyToId?: string) => Promise<void>;
+  onChunkedVideoCommit?: (tempId: string, thumbResult: { url: string; key: string; nonce: string } | null, duration: number, replyToId?: string) => Promise<void>;
   onChunkedVideoFinalize?: (tempId: string) => void;
 }
 
@@ -57,6 +57,11 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyBlobUrlRef = useRef<string | null>(null);
   const { processAndUpload, getDecryptedBlob, processAndUploadChunked, generateVideoThumbnailFromFile } = useMedia();
+
+  const getVideoDurationLocally = async (file: File): Promise<number> => {
+    const { getVideoDuration } = await import('../../utils/videoChunker');
+    return await getVideoDuration(file);
+  };
 
   useImperativeHandle(ref, () => ({
     handleDroppedFiles: (files: File[]) => {
@@ -422,7 +427,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
            // Pre-create the message row with the thumbnail so fragments can attach to it
            if (onChunkedVideoCommit) {
-             await onChunkedVideoCommit(tempId, thumbDetails, currentReplyId);
+              const rawDuration = await getVideoDurationLocally(file);
+              const duration = Math.round(rawDuration);
+              await onChunkedVideoCommit(tempId, thumbDetails, duration, currentReplyId);
            }
 
            // Now process and upload chunks

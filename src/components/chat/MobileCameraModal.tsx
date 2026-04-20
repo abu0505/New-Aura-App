@@ -300,8 +300,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         canvas,
         drawFrame,
         {
-          frameCount: 9,         // Increased from 5 to 9 for 90%+ noise reduction
-          frameDelayMs: 35,      // ~30fps cadence (fresh frame every 33-35ms)
+          frameCount: 1,         // Instant capture - no motion blur/ghosting
+          frameDelayMs: 0,
           enableGLFilter: true,
           enableSharpening: true,
           sharpenAmount: 0.4,

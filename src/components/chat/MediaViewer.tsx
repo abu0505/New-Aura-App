@@ -18,9 +18,10 @@ interface MediaViewerProps {
   initialIndex?: number;
   chunks?: any[];
   thumbnailUrl?: string;
+  duration?: number;
 }
 
-export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl }: MediaViewerProps) {
+export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration }: MediaViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
@@ -190,6 +191,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               <ChunkedVideoPlayer 
                 chunks={chunks!} 
                 thumbnailUrl={thumbnailUrl} 
+                duration={duration}
                 autoPlay
                 className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
               />

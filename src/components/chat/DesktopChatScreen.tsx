@@ -61,6 +61,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
   }, [showPinDropdown]);
 
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
+
   const { 
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
     hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
@@ -172,6 +173,18 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
 
     previousMessageCountRef.current = messages.length;
   }, [messages, loading, viewMode]);
+
+  useEffect(() => {
+    if (partnerIsTyping && viewMode === 'chat') {
+       const container = scrollContainerRef.current;
+       if (!container) return;
+       const { scrollHeight, scrollTop, clientHeight } = container;
+       const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+       if (isNearBottom) {
+         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+       }
+    }
+  }, [partnerIsTyping, viewMode]);
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
@@ -572,7 +585,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
             WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%)',
           }}
         >
-          <div className="max-w-[800px] mx-auto px-6 md:px-10 py-10 flex flex-col gap-1 min-h-full">
+          <div className="max-w-[800px] mx-auto px-6 md:px-10 pt-10 pb-24 flex flex-col gap-1 min-h-full">
             {!partner.public_key && (
               <div className="text-center p-8 bg-primary/5 border border-primary/20 text-primary rounded-[3rem] text-xs font-label uppercase tracking-widest leading-loose">
                 Awaiting partner synchronization...
@@ -675,6 +688,7 @@ export default function DesktopChatScreen({ partner, isActive }: DesktopChatScre
                             } : undefined}
                             repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
                             onJumpToMessage={handleJumpToMessage}
+                            quickEmojis={settings?.quick_emojis}
                           />
                         )}
                       </ChatBubbleErrorBoundary>

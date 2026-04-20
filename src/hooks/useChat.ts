@@ -975,6 +975,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const commitChunkedVideoMessage = async (
     tempId: string,
     thumbResult: { url: string; key: string; nonce: string } | null,
+    duration: number,
     replyToId?: string
   ) => {
     if (!user || !partnerId || !partnerPublicKey) return;
@@ -992,6 +993,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
               thumbnail_url: thumbResult?.url || null, 
               media_key: thumbResult?.key || null,
               media_nonce: thumbResult?.nonce || null,
+              duration: Math.round(duration),
               sender_public_key: myPublicKeyStr 
             }
           : m
@@ -1009,6 +1011,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       media_key: thumbResult?.key || null,
       media_nonce: thumbResult?.nonce || null,
       thumbnail_url: thumbResult?.url || null,
+      duration: Math.round(duration),
       reply_to: replyToId || null,
       sender_public_key: myPublicKeyStr,
     });

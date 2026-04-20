@@ -25,7 +25,7 @@ export function useTypingIndicator(partnerId: string | undefined) {
     typingChannel
       .on('broadcast', { event: 'typing' }, (payload) => {
         const data = payload.payload as { user_id: string; typing: boolean };
-
+        
         // Only care about partner's typing events
         if (data.user_id !== partnerId) return;
 
@@ -39,11 +39,10 @@ export function useTypingIndicator(partnerId: string | undefined) {
 
         // If partner started typing, set a safety timeout to auto-hide
         // in case we miss the "typing: false" broadcast.
-        // Must be > throttle interval (1s) + network latency
         if (data.typing) {
           safetyTimeoutRef.current = setTimeout(() => {
             setPartnerIsTyping(false);
-          }, 3000);
+          }, 4000); // 4 seconds
         }
       })
       .subscribe((status) => {
@@ -81,7 +80,7 @@ export function useTypingIndicator(partnerId: string | undefined) {
       event: 'typing',
       payload: { user_id: user?.id, typing: isTyping },
     });
-  }, [user?.id]);
+  }, [user?.id, partnerId]);
 
   return { partnerIsTyping, sendTypingEvent };
 }

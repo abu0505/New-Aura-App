@@ -644,7 +644,7 @@ export function useMedia() {
           chunk_url: chunkUrl,
           chunk_key: enc.chunkKey,
           chunk_nonce: enc.chunkNonce,
-          duration: enc.durationSec,
+          duration: Math.round(enc.durationSec),
           sender_id: senderId,
           receiver_id: receiverId,
         });
@@ -660,54 +660,100 @@ export function useMedia() {
       onStatusChange('Processing chunk 1...');
 
       const PARALLEL_LIMIT = 5;
-      let batch: any[] = [];
+      let nextDeliverIndex = 0;
+      const uploadedChunksQueue = new Map<number, {enc: EncryptedChunk, chunkUrl: string}>();
+      let isDelivering = false;
+      let deliveryError: any = null;
 
-      const processBatch = async (currentBatch: any[]) => {
-        const indices = currentBatch.map(c => c.index).join(', ');
-        console.warn(`[Batch] 🚀 Starting parallel encryption & upload for chunks: [${indices}]`);
-        onStatusChange(`Uploading chunks ${indices}...`);
-
-        // 1. Parallel Encrypt & Upload
-        const uploadPromises = currentBatch.map(async (chunk) => {
-          console.warn(`[Batch] 🔒 Encrypting chunk ${chunk.index}...`);
-          const encrypted = await encryptChunk(chunk, totalChunks);
-          console.warn(`[Batch] ☁️ Uploading chunk ${chunk.index}...`);
-          const result = await uploadEncryptedChunk(encrypted);
-          console.warn(`[Batch] ✅ Upload finished for chunk ${chunk.index}`);
-          return result;
-        });
-
-        // Wait for all uploads in this batch to finish
-        const uploadedChunks = await Promise.all(uploadPromises);
-
-        // 2. Strict Sequential DB Insertion
-        // Promise.all preserves order, so uploadedChunks is correctly ordered (e.g., 0, 1, 2, 3)
-        for (const item of uploadedChunks) {
-          console.warn(`[Batch] 🗄️ Delivering chunk ${item.enc.index} to Supabase...`);
-          await insertChunkToDB(item.enc, item.chunkUrl);
-          console.warn(`[Batch] 🟢 Sequence STRICT: Chunk ${item.enc.index} delivered successfully.`);
+      const tryDeliverQueue = async () => {
+        if (isDelivering || deliveryError) return;
+        isDelivering = true;
+        try {
+          while (true) {
+            if (nextDeliverIndex === 0) {
+              if (totalChunks === 1) {
+                if (uploadedChunksQueue.has(0)) {
+                  const item = uploadedChunksQueue.get(0)!;
+                  uploadedChunksQueue.delete(0);
+                  onStatusChange(`Delivering chunk 1 of 1...`);
+                  await insertChunkToDB(item.enc, item.chunkUrl);
+                  nextDeliverIndex++;
+                } else break;
+              } else {
+                if (uploadedChunksQueue.has(0) && uploadedChunksQueue.has(1)) {
+                  const item0 = uploadedChunksQueue.get(0)!;
+                  const item1 = uploadedChunksQueue.get(1)!;
+                  uploadedChunksQueue.delete(0);
+                  uploadedChunksQueue.delete(1);
+                  onStatusChange(`Delivering chunks 1 & 2 of ${totalChunks}...`);
+                  await insertChunkToDB(item0.enc, item0.chunkUrl);
+                  await insertChunkToDB(item1.enc, item1.chunkUrl);
+                  nextDeliverIndex += 2;
+                } else break;
+              }
+            } else {
+              if (uploadedChunksQueue.has(nextDeliverIndex)) {
+                const item = uploadedChunksQueue.get(nextDeliverIndex)!;
+                uploadedChunksQueue.delete(nextDeliverIndex);
+                onStatusChange(`Delivering chunk ${item.enc.index + 1} of ${totalChunks}...`);
+                await insertChunkToDB(item.enc, item.chunkUrl);
+                nextDeliverIndex++;
+              } else break;
+            }
+          }
+        } catch (err) {
+            deliveryError = err;
+        } finally {
+          isDelivering = false;
+          if (!deliveryError) {
+             const canDeliverMore = nextDeliverIndex === 0 
+                ? (totalChunks === 1 ? uploadedChunksQueue.has(0) : uploadedChunksQueue.has(0) && uploadedChunksQueue.has(1))
+                : uploadedChunksQueue.has(nextDeliverIndex);
+             if (canDeliverMore) {
+                tryDeliverQueue();
+             }
+          }
         }
       };
 
-      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
-        batch.push(chunk);
+      const processChunkAsync = async (chunk: any) => {
+        console.warn(`[Pipeline] 🔒 Encrypting chunk ${chunk.index}...`);
+        const encrypted = await encryptChunk(chunk, totalChunks);
+        console.warn(`[Pipeline] ☁️ Uploading chunk ${chunk.index}...`);
+        const result = await uploadEncryptedChunk(encrypted);
+        console.warn(`[Pipeline] ✅ Upload finished for chunk ${chunk.index}`);
+        uploadedChunksQueue.set(chunk.index, result);
+        tryDeliverQueue(); 
+      };
 
-        // Pre-fill the chunkStore instantly so the sender doesn't have to re-download 
-        // the chunks they literally just uploaded! 
-        // (Dynamic import to prevent circular dependency with useMedia)
+      const activeTasks = new Set<Promise<void>>();
+      const allTasks: Promise<void>[] = [];
+
+      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
+        if (deliveryError) throw deliveryError;
+
         import('./useVideoChunks').then(m => {
-          m.addLocalChunkForSender(messageId, chunk.index, totalChunks, chunk.file, CHUNK_DURATION_SEC);
+          m.addLocalChunkForSender(messageId, chunk.index, totalChunks, chunk.file, chunk.durationSec);
         }).catch(err => console.warn('Failed to inject local chunk:', err));
 
-        if (batch.length === PARALLEL_LIMIT) {
-          await processBatch(batch);
-          batch = []; // clear batch
+        const task = processChunkAsync(chunk);
+        allTasks.push(task);
+        activeTasks.add(task);
+
+        task.finally(() => {
+          activeTasks.delete(task);
+        });
+
+        if (activeTasks.size >= PARALLEL_LIMIT) {
+          await Promise.race(activeTasks);
         }
       }
 
-      // Process any remaining chunks
-      if (batch.length > 0) {
-        await processBatch(batch);
+      await Promise.all(allTasks);
+
+      while (nextDeliverIndex < totalChunks) {
+        if (deliveryError) throw deliveryError;
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
       onStatusChange('Done');

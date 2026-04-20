@@ -1,4 +1,5 @@
 import { useChatSettings } from '../../hooks/useChatSettings';
+import QuickEmojiSettings from './QuickEmojiSettings';
 
 const COLORS = [
   { id: 'gold', hex: '#e6c487', label: 'Sanctuary Gold' },
@@ -79,6 +80,11 @@ export default function AppearanceSettings() {
           <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${isTrueDark ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
             <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${isTrueDark ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
           </div>
+        </div>
+
+        {/* Quick Emojis customization */}
+        <div className="pt-4 border-t border-white/5">
+          <QuickEmojiSettings />
         </div>
       </div>
     </div>

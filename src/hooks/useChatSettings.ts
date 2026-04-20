@@ -17,6 +17,7 @@ export interface ChatSettings {
   notify_messages: boolean;
   notify_reactions: boolean;
   notify_streaks: boolean;
+  quick_emojis: string[];
 }
 
 export function useChatSettings() {
@@ -28,7 +29,7 @@ export function useChatSettings() {
     if (!user) return;
     const { data } = await supabase
       .from('chat_settings')
-      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin,accent_color,true_dark_mode,notify_messages,notify_reactions,notify_streaks')
+      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin,accent_color,true_dark_mode,notify_messages,notify_reactions,notify_streaks,quick_emojis')
       .eq('user_id', user.id)
       .single();
     if (data) setSettings(data);
@@ -40,7 +41,7 @@ export function useChatSettings() {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('chat_settings')
-        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin,accent_color,true_dark_mode,notify_messages,notify_reactions,notify_streaks')
+        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin,accent_color,true_dark_mode,notify_messages,notify_reactions,notify_streaks,quick_emojis')
         .eq('user_id', user.id)
         .single();
 
