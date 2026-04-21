@@ -27,7 +27,7 @@ export default function AppearanceSettings() {
   };
 
   return (
-    <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group relative overflow-hidden">
+    <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-6 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group relative overflow-hidden">
       <div className="flex items-center gap-4 mb-8">
         <span className="material-symbols-outlined text-[var(--gold)] group-hover:scale-110 transition-transform">palette</span>
         <div>

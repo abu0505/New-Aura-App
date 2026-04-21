@@ -125,7 +125,7 @@ export default function ProfileSection() {
   };
 
   return (
-    <section className="relative px-8 pt-20 pb-16 lg:pt-32 lg:pb-24 border-b border-white/5 bg-gradient-to-b from-[var(--bg-secondary)]/50 to-transparent">
+    <section className="relative px-2 pt-20 pb-10 lg:pt-32 lg:pb-24 border-b border-white/5 bg-gradient-to-b from-[var(--bg-secondary)]/50 to-transparent">
       <div className="max-w-4xl mx-auto flex flex-col lg:flex-row items-center gap-12">
         {/* Avatar Handle */}
         <div className="relative group cursor-pointer" onClick={handleAvatarClick}>

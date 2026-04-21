@@ -54,13 +54,13 @@ const delay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, m
  * @param frameCount - Number of frames to capture (default: 5 — best quality/speed ratio)
  * @param frameDelayMs - Delay between frames (default: 33ms ≈ 30fps cadence)
  */
-async function temporalAverage(
+export async function captureFramesForDenoise(
   _videoEl: HTMLVideoElement,
   targetCanvas: HTMLCanvasElement,
   drawFrame: (ctx: CanvasRenderingContext2D) => void,
-  frameCount: number = 5,
+  frameCount: number = 3,
   frameDelayMs: number = 33,
-): Promise<ImageData> {
+): Promise<{ frames: Uint8ClampedArray[], width: number, height: number }> {
   const ctx = targetCanvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) throw new Error('Cannot get 2D context for temporal averaging');
 
@@ -71,13 +71,20 @@ async function temporalAverage(
   for (let i = 0; i < frameCount; i++) {
     drawFrame(ctx);
     const imageData = ctx.getImageData(0, 0, width, height);
-    // Clone the buffer — getImageData reuses its buffer on some browsers
     frames.push(new Uint8ClampedArray(imageData.data));
     if (i < frameCount - 1) {
       await delay(frameDelayMs);
     }
   }
 
+  return { frames, width, height };
+}
+
+async function averageFramesWorker(
+  frames: Uint8ClampedArray[],
+  width: number,
+  height: number
+): Promise<ImageData> {
   // Send to Web Worker for non-blocking averaging
   return new Promise((resolve, reject) => {
     const worker = getDenoiseWorker();
@@ -222,31 +229,27 @@ export interface DenoiseOptions {
  * @param drawFrameFn - Function that draws one video frame onto the canvas (handles zoom, flip, crop)
  * @param options - Optional tuning parameters
  */
-export async function denoiseCapture(
-  videoEl: HTMLVideoElement,
+export async function denoiseCapturedFrames(
+  framesData: { frames: Uint8ClampedArray[], width: number, height: number },
   canvas: HTMLCanvasElement,
-  drawFrameFn: (ctx: CanvasRenderingContext2D) => void,
   options: DenoiseOptions = {},
 ): Promise<ImageData> {
   const {
-    frameCount = 5,
-    frameDelayMs = 33,
     enableGLFilter = true,
     enableSharpening = true,
     sharpenAmount = 0.4,
   } = options;
 
-  // ── LAYER 2: Multi-frame temporal averaging ──
   let result: ImageData;
+  // ── LAYER 2: Multi-frame temporal averaging ──
   try {
-    result = await temporalAverage(videoEl, canvas, drawFrameFn, frameCount, frameDelayMs);
+    // We must clone the buffers or use transferables. averageFramesWorker uses transferables and consumes them!
+    result = await averageFramesWorker(framesData.frames, framesData.width, framesData.height);
   } catch (err) {
-    // Fallback: single frame if averaging fails
-    console.warn('[imageDenoiser] Temporal averaging failed, using single frame:', err);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
-    drawFrameFn(ctx);
-    result = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    console.warn('[imageDenoiser] Worker failed:', err);
+    result = averageFramesSync(framesData.frames, framesData.width, framesData.height);
   }
+  // ... handled above
 
   // ── LAYER 3: WebGL bilateral filter ──
   if (enableGLFilter) {
@@ -281,4 +284,18 @@ export function destroyDenoiser() {
     denoiseWorker.terminate();
     denoiseWorker = null;
   }
+}
+
+/** 
+ * Backward compatibility export 
+ * TODO: Refactor DesktopCameraStudio.tsx to use capture/denoise split 
+ */
+export async function denoiseCapture(
+  _videoEl: HTMLVideoElement,
+  canvas: HTMLCanvasElement,
+  drawFrameFn: (ctx: CanvasRenderingContext2D) => void,
+  options: any = {}
+): Promise<ImageData> {
+  const framesData = await captureFramesForDenoise(_videoEl, canvas, drawFrameFn, options.frameCount || 1, 0);
+  return denoiseCapturedFrames(framesData, canvas, options);
 }

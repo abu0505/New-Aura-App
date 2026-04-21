@@ -38,6 +38,8 @@ const FRAGMENT_SHADER_SRC = `
   const float sigmaSpace = 3.0;
   const float sigmaColor = 0.12;
 
+  varying vec2 vTexCoord;
+
   void main() {
     vec2 uv = vTexCoord;
     vec4 center = texture2D(uTexture, uv);

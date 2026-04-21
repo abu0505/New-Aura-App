@@ -21,7 +21,7 @@ export default function StorageSection() {
   };
 
   return (
-    <div className="md:col-span-2 space-y-8 mt-8">
+    <div className="md:col-span-2 space-y-8">
       {/* Visual Storage Dashboard */}
       <StorageDashboard />
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { denoiseCapture, destroyDenoiser } from '../../utils/imageDenoiser';
+import { captureFramesForDenoise, denoiseCapturedFrames, destroyDenoiser } from '../../utils/imageDenoiser';
 
 interface MobileCameraModalProps {
   isOpen: boolean;
@@ -31,8 +31,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [showShutterFlash, setShowShutterFlash] = useState(false);
 
-  // Noise reduction state — shows "Enhancing..." spinner during denoising pipeline
-  const [isEnhancing, setIsEnhancing] = useState(false);
+  // Background Noise Reduction States
+  const [enhancedFile, setEnhancedFile] = useState<File | null>(null);
+  const [enhancedUrl, setEnhancedUrl] = useState<string | null>(null);
+  const [enhancementStatus, setEnhancementStatus] = useState<'idle' | 'processing' | 'ready'>('idle');
+  const [isEnhancedView, setIsEnhancedView] = useState(false);
+  const [showShimmer, setShowShimmer] = useState(false);
+  const [shimmerKey, setShimmerKey] = useState(0); // For forcing re-animation
 
   // Captured Media
   const [capturedFile, setCapturedFile] = useState<File | null>(null);
@@ -191,10 +196,12 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setIsRecording(false);
       setIsLocked(false);
       setRecordingTime(0);
-      setCaption('');
-      chunksRef.current = [];
-      setIsFlashOn(false);
-      setIsEnhancing(false);
+      setEnhancementStatus('idle');
+      setIsEnhancedView(false);
+      setEnhancedFile(null);
+      if (enhancedUrl) URL.revokeObjectURL(enhancedUrl);
+      setEnhancedUrl(null);
+      setShowShimmer(false);
     }
     // Release WebGL context and Web Worker when camera closes
     return () => { destroyDenoiser(); };
@@ -235,7 +242,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   // --- Photo Capture (with 4-Layer Hybrid Denoising Pipeline) ---
   const takePhoto = useCallback(async () => {
-    if (!videoRef.current || isEnhancing) return;
+    if (!videoRef.current) return;
 
     // SFX & Flash UX
     playShutterSound();
@@ -271,8 +278,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     canvas.width = cw;
     canvas.height = ch;
 
-    // Reusable draw function — captures one frame with zoom/flip/crop applied
-    // This is passed into denoiseCapture so it can call it N times (multi-frame)
+    // Reusable draw function
     const drawFrame = (ctx: CanvasRenderingContext2D) => {
       ctx.save();
       if (isFront) {
@@ -286,48 +292,61 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       ctx.restore();
     };
 
-    // Show premium "Enhancing..." state while the pipeline runs (~200-300ms)
-    setIsEnhancing(true);
-
     try {
-      // ── LAYERS 2, 3, 4: Denoise pipeline ──
-      // denoiseCapture handles:
-      //   - 5-frame temporal averaging (Worker thread)
-      //   - WebGL bilateral chroma filter (GPU)
-      //   - Unsharp masking (edge restoration)
-      const denoisedImageData = await denoiseCapture(
-        video,
-        canvas,
-        drawFrame,
-        {
-          frameCount: 1,         // Instant capture - no motion blur/ghosting
-          frameDelayMs: 0,
-          enableGLFilter: true,
-          enableSharpening: true,
-          sharpenAmount: 0.4,
-        }
-      );
+      // Step 1: Instantly capture raw frames (takes ~66ms for 3 frames)
+      const framesData = await captureFramesForDenoise(video, canvas, drawFrame, 3, 33);
+      
+      // Step 2: Show the first frame immediately to the user
+      const rawCtx = canvas.getContext('2d', { willReadFrequently: true })!;
+      const rawImageData = new ImageData(framesData.frames[0] as any, canvas.width, canvas.height);
+      rawCtx.putImageData(rawImageData, 0, 0);
 
-      // Write the final clean ImageData back onto the canvas for toBlob()
-      const ctx = canvas.getContext('2d')!;
-      ctx.putImageData(denoisedImageData, 0, 0);
-
-      // Encode at slightly higher quality since content is now noise-free
-      // (cleaner images also compress more efficiently → similar or smaller file size)
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `photo_${Date.now()}.webp`, { type: 'image/webp' });
           const url = URL.createObjectURL(blob);
           setCapturedFile(file);
           setPreviewUrl(url);
+          
+          setEnhancementStatus('processing');
+          setIsEnhancedView(false);
+          setEnhancedFile(null);
+          setEnhancedUrl(null);
+          
           setViewMode('preview');
         }
-        setIsEnhancing(false);
-      }, 'image/webp', 0.92); // 0.92 quality (vs old 0.82) — cleaner input = better compression efficiency
+      }, 'image/webp', 0.88);
+
+      // Step 3: Run the heavy noise reduction in background (non-blocking)
+      console.log('[MobileCamera] Starting heavy math in background...');
+      denoiseCapturedFrames(framesData, canvas, {
+        enableGLFilter: true,
+        enableSharpening: true,
+        sharpenAmount: 0.4,
+      }).then(denoisedImageData => {
+        const enhancedCanvas = document.createElement('canvas');
+        enhancedCanvas.width = canvas.width;
+        enhancedCanvas.height = canvas.height;
+        const eCtx = enhancedCanvas.getContext('2d')!;
+        eCtx.putImageData(denoisedImageData, 0, 0);
+        enhancedCanvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `photo_enhanced_${Date.now()}.webp`, { type: 'image/webp' });
+            const url = URL.createObjectURL(blob);
+            setEnhancedFile(file);
+            setEnhancedUrl(url);
+            setEnhancementStatus('ready');
+            console.log('[MobileCamera] Heavy math successfully applied! High-quality image is ready.');
+          }
+        }, 'image/webp', 0.92);
+      }).catch(err => {
+        console.error('[MobileCamera] Background enhancement failed:', err);
+        setEnhancementStatus('idle');
+      });
 
     } catch (err) {
-      // Graceful fallback: if denoising fails, capture single clean frame
-      console.warn('[takePhoto] Denoising pipeline failed, using single frame fallback:', err);
+      // Graceful fallback
+      console.warn('[takePhoto] Capture failed, using fallback:', err);
       const ctx = canvas.getContext('2d')!;
       drawFrame(ctx);
       canvas.toBlob((blob) => {
@@ -336,12 +355,12 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           const url = URL.createObjectURL(blob);
           setCapturedFile(file);
           setPreviewUrl(url);
+          setEnhancementStatus('idle');
           setViewMode('preview');
         }
-        setIsEnhancing(false);
       }, 'image/webp', 0.88);
     }
-  }, [videoRef, isEnhancing, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef]);
+  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef]);
 
   // --- Video Recording ---
   const stopRecording = useCallback(() => {
@@ -514,15 +533,21 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   // --- Handlers ---
   const handleDiscard = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (enhancedUrl) URL.revokeObjectURL(enhancedUrl);
     setPreviewUrl(null);
     setCapturedFile(null);
+    setEnhancedFile(null);
+    setEnhancementStatus('idle');
+    setIsEnhancedView(false);
     setCaption('');
+    setShowShimmer(false);
     setViewMode('camera');
   };
 
   const handleSendFile = () => {
-    if (capturedFile) {
-      onSend(capturedFile, caption);
+    const fileToSend = isEnhancedView && enhancedFile ? enhancedFile : capturedFile;
+    if (fileToSend) {
+      onSend(fileToSend, caption);
       onClose();
     }
   };
@@ -562,39 +587,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
               )}
             </AnimatePresence>
 
-            {/* ✨ Enhancing Overlay — shown during ~250ms noise reduction pipeline */}
-            <AnimatePresence>
-              {isEnhancing && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute inset-0 z-[65] flex items-center justify-center pointer-events-none"
-                  style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
-                >
-                  <motion.div
-                    initial={{ scale: 0.85, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.85, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                    className="flex flex-col items-center gap-3"
-                  >
-                    {/* Animated sparkle ring */}
-                    <div className="relative w-14 h-14 flex items-center justify-center">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                        className="absolute inset-0 rounded-full border-2 border-transparent"
-                        style={{ borderTopColor: 'var(--color-primary, #FFD700)', borderRightColor: 'rgba(255,215,0,0.3)' }}
-                      />
-                      <span className="material-symbols-outlined text-[28px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                    </div>
-                    <span className="text-white text-sm font-semibold tracking-wider" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.6)' }}>Enhancing...</span>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Removed blocking isEnhancing spinner to allow instant preview */}
 
             {/* Front Camera "Soft Flash" (Smooth Transition) */}
             <AnimatePresence>
@@ -860,11 +853,34 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                      <div className="relative w-full h-full overflow-hidden">
+                        <img
+                          src={isEnhancedView && enhancedUrl ? enhancedUrl : previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover transition-opacity duration-300"
+                        />
+                        {/* Shimmer Effect */}
+                        <AnimatePresence>
+                          {showShimmer && (
+                            <motion.div
+                              key={`shimmer-${shimmerKey}`}
+                              initial={{ x: '-120%' }}
+                              animate={{ x: '120%' }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.8, ease: "circOut" }}
+                              onAnimationComplete={() => {
+                                console.log('[MobileCamera] Shimmer effect animation cycle finished.');
+                                setShowShimmer(false);
+                              }}
+                              className="absolute inset-0 z-[100] pointer-events-none skew-x-[30deg]"
+                              style={{ 
+                                background: 'linear-gradient(90deg, transparent 35%, var(--gold) 50%, transparent 65%)',
+                                mixBlendMode: 'screen'
+                              }}
+                            />
+                          )}
+                        </AnimatePresence>
+                      </div>
                     )}
                   </div>
                 );
@@ -872,16 +888,43 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </div>
 
             {/* Preview Top Bar */}
-            <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between">
+            <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between items-center z-50">
               <button
                 onClick={handleDiscard}
                 className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
               >
                 <span className="material-symbols-outlined text-[22px]">delete</span>
               </button>
-              <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium">
-                {capturedFile.type.startsWith('video') ? 'Video Preview' : 'Photo Preview'}
-              </div>
+
+              {/* Enhance Logic Button */}
+              {capturedFile.type.startsWith('image') && enhancementStatus !== 'idle' ? (
+                <button
+                  onClick={() => {
+                    if (enhancementStatus === 'ready') {
+                      console.log(`[MobileCamera] Enhance button clicked! Initiating shimmer UI...`);
+                      setShimmerKey(prev => prev + 1);
+                      setShowShimmer(true);
+                      setIsEnhancedView(prev => !prev);
+                      console.log(`[MobileCamera] View swapped to: ${!isEnhancedView ? 'Enhanced High-Res' : 'Raw Capture'}`);
+                    }
+                  }}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 border backdrop-blur-md ${
+                    isEnhancedView 
+                      ? 'border-primary text-primary bg-black/40 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.5)]' 
+                      : 'border-white/20 text-white bg-black/40 hover:bg-white/10'
+                  }`}
+                >
+                  {enhancementStatus === 'processing' ? (
+                    <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-[22px] shadow-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                  )}
+                </button>
+              ) : (
+                <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium">
+                  {capturedFile.type.startsWith('video') ? 'Video Preview' : 'Photo Preview'}
+                </div>
+              )}
             </div>
 
             {/* Preview Bottom Bar (Caption & Send) */}

@@ -29,7 +29,7 @@ export default function SecuritySection() {
 
   return (
     <>
-      <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group">
+      <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-6 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group">
         <div className="flex items-center gap-4 mb-10">
           <span className="material-symbols-outlined text-[var(--gold)] group-hover:rotate-12 transition-transform">lock</span>
           <h3 className="font-serif italic text-xl text-white">Privacy Protocol</h3>

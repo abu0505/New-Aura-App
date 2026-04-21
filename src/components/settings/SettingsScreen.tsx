@@ -17,7 +17,7 @@ export default function SettingsScreen() {
       <ProfileSection />
 
       {/* 2. Settings Grid */}
-      <div className="px-8 py-16 lg:py-24 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+      <div className="px-4 lg:px-8 py-10 lg:py-24 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
         {/* Appearance & Themes */}
         <AppearanceSettings />
 

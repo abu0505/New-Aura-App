@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { denoiseCapture, destroyDenoiser } from '../../utils/imageDenoiser';
+import { destroyDenoiser, captureFramesForDenoise, denoiseCapturedFrames } from '../../utils/imageDenoiser';
 
 interface DesktopCameraStudioProps {
   onClose: () => void;
@@ -34,7 +34,12 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
   const [recordingTime, setRecordingTime] = useState(0);
 
   // Noise reduction state
-  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [enhancementStatus, setEnhancementStatus] = useState<'idle' | 'processing' | 'ready'>('idle');
+  const [enhancedFile, setEnhancedFile] = useState<File | null>(null);
+  const [enhancedUrl, setEnhancedUrl] = useState<string | null>(null);
+  const [isEnhancedView, setIsEnhancedView] = useState(false);
+  const [showShimmer, setShowShimmer] = useState(false);
+  const [shimmerKey, setShimmerKey] = useState(0); // For forcing re-animation
 
   const [isHardwareMenuOpen, setIsHardwareMenuOpen] = useState(false);
 
@@ -181,7 +186,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
 
   // --- Capture Logic (with Hybrid Denoising Pipeline) ---
   const takePhoto = async () => {
-    if (!videoRef.current || isEnhancing) return;
+    if (!videoRef.current || enhancementStatus === 'processing') return;
 
     playShutterSound();
 
@@ -218,53 +223,74 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
       ctx.restore();
     };
 
-    setIsEnhancing(true);
-
     try {
-      // Execute 4-layer denoise pipeline
-      const denoisedImageData = await denoiseCapture(
-        video,
-        canvas,
-        drawFrame,
-        {
-          frameCount: 1,        // Instant capture - no motion blur/ghosting
-          frameDelayMs: 0,
-          enableGLFilter: true,
-          enableSharpening: true,
-          sharpenAmount: 0.4
-        }
-      );
+      // Step 1: Capture frames sync rapidly (takes ~66ms for 3 frames)
+      const framesData = await captureFramesForDenoise(video, canvas, drawFrame, 3, 0);
 
-      const ctx = canvas.getContext('2d')!;
-      ctx.putImageData(denoisedImageData, 0, 0);
+      // Step 2: Extract the raw image for immediate display
+      const rawImageDataArr = framesData.frames[Math.floor(framesData.frames.length / 2)];
+      const rawImageDataObj = new ImageData(rawImageDataArr as any, framesData.width, framesData.height);
+      const rawCtx = canvas.getContext('2d')!;
+      rawCtx.putImageData(rawImageDataObj, 0, 0);
 
-      // Save high quality WebP
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `desktop_photo_${Date.now()}.webp`, { type: 'image/webp' });
           const url = URL.createObjectURL(blob);
           setCapturedFile(file);
           setPreviewUrl(url);
+
+          setEnhancementStatus('processing');
+          setIsEnhancedView(false);
+          setEnhancedFile(null);
+          setEnhancedUrl(null);
+
           setViewMode('preview');
         }
-        setIsEnhancing(false);
       }, 'image/webp', 0.92);
 
+      // Step 3: Math pipeline in bg
+      console.log('[DesktopCamera] Starting heavy math in background...');
+      denoiseCapturedFrames(framesData, canvas, {
+        enableGLFilter: true,
+        enableSharpening: true,
+        sharpenAmount: 0.4
+      }).then(denoisedImageData => {
+        const enhancedCanvas = document.createElement('canvas');
+        enhancedCanvas.width = canvas.width;
+        enhancedCanvas.height = canvas.height;
+        const eCtx = enhancedCanvas.getContext('2d')!;
+        eCtx.putImageData(denoisedImageData, 0, 0);
+        enhancedCanvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `desktop_photo_enhanced_${Date.now()}.webp`, { type: 'image/webp' });
+            const url = URL.createObjectURL(blob);
+            setEnhancedFile(file);
+            setEnhancedUrl(url);
+            setEnhancementStatus('ready');
+            console.log('[DesktopCamera] Heavy math successfully applied! High-quality image is ready.');
+          }
+        }, 'image/webp', 0.92);
+      }).catch(err => {
+        console.error('[DesktopCamera] Background enhancement failed:', err);
+        setEnhancementStatus('idle');
+      });
+
     } catch (err) {
-      console.warn('[DesktopCamera] Denoise failed, using fallback', err);
+      console.warn('[DesktopCamera] Capture failed, using fallback', err);
       // Fallback
       const ctx = canvas.getContext('2d')!;
       drawFrame(ctx);
-      
+
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `desktop_photo_${Date.now()}.webp`, { type: 'image/webp' });
           const url = URL.createObjectURL(blob);
           setCapturedFile(file);
           setPreviewUrl(url);
+          setEnhancementStatus('idle');
           setViewMode('preview');
         }
-        setIsEnhancing(false);
       }, 'image/webp', 0.82);
     }
   };
@@ -437,15 +463,22 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
   // --- Handlers ---
   const handleDiscard = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (enhancedUrl) URL.revokeObjectURL(enhancedUrl);
     setPreviewUrl(null);
     setCapturedFile(null);
+    setEnhancedUrl(null);
+    setEnhancedFile(null);
+    setEnhancementStatus('idle');
+    setIsEnhancedView(false);
     setCaption('');
+    setShowShimmer(false);
     setViewMode('camera');
   };
 
   const handleSendFile = () => {
-    if (capturedFile) {
-      onSend(capturedFile, caption);
+    const finalFile = (isEnhancedView && enhancedFile) ? enhancedFile : capturedFile;
+    if (finalFile) {
+      onSend(finalFile, caption);
       onClose(); // Auto close studio on send
     }
   };
@@ -503,38 +536,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                     />
                   )}
 
-                  {/* Desktop "Enhancing..." Overlay */}
-                  <AnimatePresence>
-                    {isEnhancing && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute inset-0 z-[65] flex items-center justify-center pointer-events-none"
-                        style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
-                      >
-                        <motion.div
-                          initial={{ scale: 0.85, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.85, opacity: 0 }}
-                          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-                          className="flex flex-col items-center gap-3"
-                        >
-                          <div className="relative w-14 h-14 flex items-center justify-center">
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                              className="absolute inset-0 rounded-full border-2 border-transparent"
-                              style={{ borderTopColor: 'var(--color-primary, #FFD700)', borderRightColor: 'rgba(255,215,0,0.3)' }}
-                            />
-                            <span className="material-symbols-outlined text-[28px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                          </div>
-                          <span className="text-white text-sm font-semibold tracking-wider drop-shadow-md">Enhancing...</span>
-                        </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Removed Enhancing Overlay to match mobile's instant capture experience */}
 
                 </div>
               );
@@ -554,8 +556,8 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                 <button
                   onClick={() => setIsHardwareMenuOpen(!isHardwareMenuOpen)}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full border transition-all duration-300 backdrop-blur-md shadow-lg ${isHardwareMenuOpen
-                      ? 'bg-primary text-background border-primary shadow-glow-gold'
-                      : 'bg-black/40 text-white border-white/10 hover:bg-white/15 hover:border-white/30'
+                    ? 'bg-primary text-background border-primary shadow-glow-gold'
+                    : 'bg-black/40 text-white border-white/10 hover:bg-white/15 hover:border-white/30'
                     }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">tune</span>
@@ -599,8 +601,8 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                               key={ratio}
                               onClick={() => setAspectRatio(ratio as any)}
                               className={`py-2 text-[10px] font-bold rounded-xl uppercase tracking-wider transition-all duration-300 border ${aspectRatio === ratio
-                                  ? 'bg-white/10 text-white border-white/40 shadow-inner'
-                                  : 'bg-black/20 text-white/50 border-white/10 hover:bg-white/5'
+                                ? 'bg-white/10 text-white border-white/40 shadow-inner'
+                                : 'bg-black/20 text-white/50 border-white/10 hover:bg-white/5'
                                 }`}
                             >
                               {ratio}
@@ -658,7 +660,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
             {/* Bottom Overlay Layer */}
             <div className="absolute bottom-0 inset-x-0 pt-32 pb-8 z-40 pointer-events-none flex justify-center items-end">
               <div className="flex flex-col items-center gap-6 w-full px-8 pointer-events-auto">
-                
+
                 {/* Photo/Video Swap */}
                 <div className="bg-black/40 p-1 rounded-full flex items-center border border-white/10 relative shadow-[0_10px_30px_rgba(0,0,0,0.5)] backdrop-blur-2xl overflow-hidden w-[200px]">
                   <motion.div
@@ -691,7 +693,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
 
                   <div className="relative flex items-center justify-center pointer-events-auto w-20 h-20">
                     {isRecording && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10, x: "-50%" }}
                         animate={{ opacity: 1, y: 0, x: "-50%" }}
                         className="absolute -top-16 left-1/2 bg-red-500/20 px-4 py-1.5 rounded-full flex items-center gap-2 backdrop-blur-xl border border-red-500/40 pointer-events-none whitespace-nowrap z-50 shadow-lg"
@@ -730,10 +732,10 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                           onClick={stopRecording}
                           className="w-20 h-20 bg-transparent flex items-center justify-center relative z-30 group"
                         >
-                          <motion.div 
+                          <motion.div
                             animate={{ scale: [1, 1.1, 1] }}
                             transition={{ repeat: Infinity, duration: 1 }}
-                            className="w-8 h-8 rounded-lg bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.8)] group-hover:scale-110 active:scale-90 transition-transform" 
+                            className="w-8 h-8 rounded-lg bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.8)] group-hover:scale-110 active:scale-90 transition-transform"
                           />
                         </button>
                       ) : (
@@ -766,13 +768,61 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
               >
                 <span className="material-symbols-outlined text-[24px]">close</span>
               </button>
+
+              {/* Desktop Enhance Button */}
+              {capturedFile.type.startsWith('image') && enhancementStatus !== 'idle' && (
+                <button
+                  onClick={() => {
+                    if (enhancementStatus === 'ready') {
+                      console.log(`[DesktopCamera] Enhance button clicked! Initiating shimmer UI...`);
+                      setShimmerKey(prev => prev + 1);
+                      setShowShimmer(true);
+                      setIsEnhancedView(prev => !prev);
+                      console.log(`[DesktopCamera] View swapped to: ${!isEnhancedView ? 'Enhanced High-Res' : 'Raw Capture'}`);
+                    }
+                  }}
+                  className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 border backdrop-blur-md pointer-events-auto ${isEnhancedView
+                    ? 'border-primary text-primary bg-black/40 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.5)]'
+                    : 'border-white/20 text-white bg-black/40 hover:bg-white/10'
+                    }`}
+                >
+                  {enhancementStatus === 'processing' ? (
+                    <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-[22px] shadow-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                  )}
+                </button>
+              )}
             </div>
 
             <div className="flex-1 w-full bg-black flex items-center justify-center relative overflow-hidden">
               {capturedFile.type.startsWith('video') ? (
                 <video src={previewUrl} controls autoPlay playsInline loop className="w-full h-full object-contain" />
               ) : (
-                <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
+                <div className="relative w-full h-full overflow-hidden">
+                  <img src={isEnhancedView && enhancedUrl ? enhancedUrl : previewUrl} alt="Preview" className="w-full h-full object-contain transition-opacity duration-300" />
+                  {/* Shimmer Effect */}
+                  <AnimatePresence>
+                    {showShimmer && (
+                      <motion.div
+                        key={`shimmer-${shimmerKey}`}
+                        initial={{ x: '-120%' }}
+                        animate={{ x: '120%' }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 5, ease: "circOut" }}
+                        onAnimationComplete={() => {
+                          console.log('[DesktopCamera] Shimmer effect animation cycle finished.');
+                          setShowShimmer(false);
+                        }}
+                        className="absolute inset-0 z-[100] pointer-events-none skew-x-[30deg]"
+                        style={{ 
+                          background: 'linear-gradient(90deg, transparent 35%, var(--gold) 50%, transparent 65%)',
+                          mixBlendMode: 'screen'
+                        }}
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
             </div>
 

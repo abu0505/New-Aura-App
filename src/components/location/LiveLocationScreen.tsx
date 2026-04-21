@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Map, { Marker, NavigationControl, Layer, useMap } from 'react-map-gl/maplibre';
 import { useLiveLocation } from '../../hooks/useLiveLocation';
 import type { PartnerProfile } from '../../hooks/usePartner';
@@ -41,6 +41,24 @@ function MapController({ center }: { center: { lat: number, lng: number } }) {
       map.resize();
     }
   }, [center.lat, center.lng, map]);
+
+  useEffect(() => {
+    if (map) {
+      const handleMissingImage = (e: any) => {
+        const id = e.id;
+        try {
+          if (!map.hasImage(id)) {
+            map.addImage(id, { width: 1, height: 1, data: new Uint8Array([0,0,0,0]) });
+          }
+        } catch (err) {}
+      };
+      
+      map.on('styleimagemissing', handleMissingImage);
+      return () => {
+        map.off('styleimagemissing', handleMissingImage);
+      };
+    }
+  }, [map]);
 
   return null;
 }
