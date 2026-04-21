@@ -2,6 +2,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import DesktopChatScreen from './DesktopChatScreen';
 import MobileChatScreen from './MobileChatScreen';
 import type { PartnerProfile } from '../../hooks/usePartner';
+import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 
 interface ChatScreenProps {
   partner: PartnerProfile | null;
@@ -10,6 +11,11 @@ interface ChatScreenProps {
 
 export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
   const { signOut } = useAuth();
+  
+  // We call useTypingIndicator here so it is only instantiated once. 
+  // Calling it twice in both mobile/desktop screens leads to duplicated channel 
+  // subscriptions and clobbers the 'typing' Realtime broadcast connection.
+  const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner?.id);
 
   if (!partner) {
     return (
@@ -32,10 +38,10 @@ export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
   return (
     <div className="h-full w-full">
       <div className="hidden lg:block h-full w-full">
-        <DesktopChatScreen partner={partner} isActive={isActive} />
+        <DesktopChatScreen partner={partner} isActive={isActive} partnerIsTyping={partnerIsTyping} sendTypingEvent={sendTypingEvent} />
       </div>
       <div className="lg:hidden h-full w-full">
-        <MobileChatScreen partner={partner} isActive={isActive} />
+        <MobileChatScreen partner={partner} isActive={isActive} partnerIsTyping={partnerIsTyping} sendTypingEvent={sendTypingEvent} />
       </div>
     </div>
   );

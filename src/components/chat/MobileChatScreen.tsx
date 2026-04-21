@@ -1,7 +1,6 @@
 import { useRef, useEffect, useLayoutEffect, useState, useMemo } from 'react'; 
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
-import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { useChatSettings } from '../../hooks/useChatSettings';
 import { useAuth } from '../../contexts/AuthContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
@@ -21,9 +20,11 @@ import EncryptedImage from '../common/EncryptedImage';
 interface MobileChatScreenProps {
   partner: PartnerProfile;
   isActive?: boolean;
+  partnerIsTyping: boolean;
+  sendTypingEvent: (isTyping: boolean) => void;
 }
 
-export default function MobileChatScreen({ partner, isActive }: MobileChatScreenProps) {
+export default function MobileChatScreen({ partner, isActive, partnerIsTyping, sendTypingEvent }: MobileChatScreenProps) {
   const { user } = useAuth();
   const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
   const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
@@ -51,8 +52,6 @@ export default function MobileChatScreen({ partner, isActive }: MobileChatScreen
       document.removeEventListener('pointerdown', handleClickOutside);
     };
   }, [showPinDropdown]);
-
-  const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner.id);
 
   const { 
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
