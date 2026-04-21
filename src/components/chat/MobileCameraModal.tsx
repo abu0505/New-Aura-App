@@ -108,27 +108,27 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       else if (resolution === '1080p') { idealWidth = 1920; idealHeight = 1080; }
       else if (resolution === '720p') { idealWidth = 1280; idealHeight = 720; }
 
-      let ratioValue: number | undefined = undefined;
+      let ratioValue: number = 9 / 16;
       if (aspectRatio === '1:1') ratioValue = 1;
-      else if (aspectRatio === '4:3') ratioValue = 3 / 4; // Mobile is portrait, so 3:4 physically
-      else if (aspectRatio === '16:9') ratioValue = 9 / 16; // 9:16 physically
+      else if (aspectRatio === '4:3') ratioValue = 3 / 4;
+      else if (aspectRatio === '16:9') ratioValue = 16 / 9;
+      else if (aspectRatio === '9:16') ratioValue = 9 / 16;
 
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const constraints: MediaStreamConstraints = {
         video: {
           facingMode,
-          width: { ideal: idealHeight },
-          height: { ideal: idealWidth },
-          ...(ratioValue ? { aspectRatio: { ideal: ratioValue } } : {}),
-          // LAYER 1 — Noise-optimized constraints:
-          // 30fps preferred: slower shutter = more photons per frame = stronger signal = less amplification needed = less noise
+          // Correctly map ideal dimensions for portrait orientation on mobile
+          width: { ideal: ratioValue < 1 ? idealHeight : idealWidth },
+          height: { ideal: ratioValue < 1 ? idealWidth : idealHeight },
+          aspectRatio: { ideal: ratioValue },
           frameRate: { ideal: 30, min: 15 },
-          // Disable Automatic Gain Control: AGC aggressively boosts ISO in low light which is the #1 source of noise
           autoGainControl: false,
-          // Enable browser-level software noise suppression (MediaPipe-based on Chrome Android)
           noiseSuppression: true,
         },
         audio: { noiseSuppression: true, echoCancellation: true }
-      });
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
       // Apply additional low-noise constraints after stream is active
       // (supported on Android Chrome 92+ via MediaTrackConstraints advanced)
@@ -255,7 +255,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     const vh = video.videoHeight;
 
     // Compute canvas dimensions matching the chosen ratio
-    let targetRatio = 1;
+    let targetRatio = 9 / 16;
     if (aspectRatio === '1:1') targetRatio = 1;
     else if (aspectRatio === '4:3') targetRatio = 3 / 4;
     else if (aspectRatio === '16:9') targetRatio = 16 / 9;
@@ -872,7 +872,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                                 console.log('[MobileCamera] Shimmer effect animation cycle finished.');
                                 setShowShimmer(false);
                               }}
-                              className="absolute inset-0 z-[100] pointer-events-none skew-x-[30deg]"
+                              className="absolute inset-x-[-20%] inset-y-0 z-[100] pointer-events-none skew-x-[-15deg]"
                               style={{ 
                                 background: 'linear-gradient(90deg, transparent 35%, var(--gold) 50%, transparent 65%)',
                                 mixBlendMode: 'screen'

@@ -809,14 +809,14 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                         initial={{ x: '-120%' }}
                         animate={{ x: '120%' }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 5, ease: "circOut" }}
+                        transition={{ duration: 0.8, ease: "circOut" }}
                         onAnimationComplete={() => {
                           console.log('[DesktopCamera] Shimmer effect animation cycle finished.');
                           setShowShimmer(false);
                         }}
-                        className="absolute inset-0 z-[100] pointer-events-none skew-x-[30deg]"
+                        className="absolute inset-x-[-20%] inset-y-0 z-[100] pointer-events-none skew-x-[-15deg]"
                         style={{ 
-                          background: 'linear-gradient(90deg, transparent 35%, var(--gold) 50%, transparent 65%)',
+                          background: 'linear-gradient(115deg, transparent 35%, var(--gold) 50%, transparent 65%)',
                           mixBlendMode: 'screen'
                         }}
                       />
