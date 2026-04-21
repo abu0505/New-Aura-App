@@ -12,6 +12,7 @@ import MobileCameraModal from './MobileCameraModal';
 
 import type { ChatMessage } from '../../hooks/useChat';
 import { useAuth } from '../../contexts/AuthContext';
+import { EmojiText } from '../common/PremiumEmoji';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
@@ -511,7 +512,11 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                     )
                   ) : null}
                   <span className="truncate">
-                    {replyingTo.decrypted_content || (replyingTo.type !== 'text' ? (replyingTo.type === 'audio' ? 'Voice Message' : '') : 'Message...')}
+                    {replyingTo.decrypted_content ? (
+                      <EmojiText text={replyingTo.decrypted_content} size={13} />
+                    ) : (
+                      replyingTo.type !== 'text' ? (replyingTo.type === 'audio' ? 'Voice Message' : '') : 'Message...'
+                    )}
                   </span>
                 </span>
               </div>

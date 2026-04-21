@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { STICKER_PACK } from '../../lib/stickers';
+import PremiumEmoji from '../common/PremiumEmoji';
 
 interface StickerPickerProps {
   onSelect: (sticker: { emoji: string, id: string }) => void;
@@ -29,9 +30,9 @@ export const StickerPicker: React.FC<StickerPickerProps> = ({ onSelect, onClose 
             onClick={() => onSelect({ emoji: sticker.emoji, id: sticker.id })}
             className="flex flex-col items-center justify-center p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 transition-all group"
           >
-            <span className="text-3xl mb-1 group-hover:drop-shadow-[0_0_8px_var(--gold-glow)]">
-              {sticker.emoji}
-            </span>
+            <div className="mb-1 group-hover:drop-shadow-[0_0_8px_var(--gold-glow)]">
+              <PremiumEmoji emoji={sticker.emoji} size={36} />
+            </div>
             <span className="text-[10px] text-white/40 uppercase tracking-tighter">
               {sticker.label}
             </span>

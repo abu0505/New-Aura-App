@@ -7,8 +7,9 @@ import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
 import AudioWaveformPlayer from './AudioWaveformPlayer';
 import ChunkedVideoOverlay from './ChunkedVideoOverlay';
-import EmojiPicker, { Theme } from 'emoji-picker-react';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import LinkPreview from './LinkPreview';
+import PremiumEmoji, { EmojiText } from '../common/PremiumEmoji';
 import { supabase } from '../../lib/supabase';
 
 interface ChatBubbleProps {
@@ -88,8 +89,8 @@ function ChatBubble({
 
   const renderContent = (text: string) => {
     if (!text) return null;
-    if (urls.length === 0) return text;
     
+    // First, split by URL. Then for non-URL parts, split by Emoji.
     const parts = text.split(urlRegex);
 
     return parts.map((part, i) => {
@@ -107,7 +108,8 @@ function ChatBubble({
           </a>
         );
       }
-      return <span key={i}>{part}</span>;
+      // For non-URL parts, wrap in EmojiText which handles premium emoji rendering
+      return <EmojiText key={i} text={part} size={18} />;
     });
   };
 
@@ -731,13 +733,13 @@ function ChatBubble({
                           setInteractionType('none'); 
                           setShowAllEmojis(false); 
                         }}
-                        className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 text-xl active:scale-90 ${
+                        className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 active:scale-90 ${
                           message.reaction === emoji 
                             ? 'bg-primary/20 border border-primary/40 scale-110 shadow-glow-gold' 
                             : 'hover:bg-white/10'
                         }`}
                       >
-                        {emoji}
+                        <PremiumEmoji emoji={emoji} size={24} />
                       </button>
                     ))}
                     <button onClick={() => setShowAllEmojis(true)} className="ml-1 w-9 h-9 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors text-primary">
@@ -748,6 +750,7 @@ function ChatBubble({
                   <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
                     <EmojiPicker 
                       theme={Theme.DARK}
+                      emojiStyle={EmojiStyle.APPLE}
                       onEmojiClick={(emojiData) => {
                         const newEmoji = message.reaction === emojiData.emoji ? null : emojiData.emoji;
                         onReact?.(message.id, newEmoji);
@@ -840,13 +843,16 @@ function ChatBubble({
             <span className="text-xs text-red-200/70 font-label tracking-wide uppercase">Decryption Failed</span>
           </div>
         ) : isSticker ? (
-          <motion.span 
+          <motion.div 
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="text-7xl block py-2 select-none filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]"
+            className="py-2 select-none filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.6)]"
           >
-            {message.decrypted_content}
-          </motion.span>
+            <PremiumEmoji 
+              emoji={message.decrypted_content || ''} 
+              size={120} 
+            />
+          </motion.div>
         ) : renderMedia()}
         
         {/* Reply Quote Block */}
@@ -879,7 +885,11 @@ function ChatBubble({
                 )
               ) : null}
               <span className="truncate">
-                {repliedMessage.decrypted_content || (repliedMessage.type !== 'text' ? (repliedMessage.type === 'audio' ? 'Voice Message' : '') : 'Message')}
+                {repliedMessage.decrypted_content ? (
+                  <EmojiText text={repliedMessage.decrypted_content} size={12} />
+                ) : (
+                  repliedMessage.type !== 'text' ? (repliedMessage.type === 'audio' ? 'Voice Message' : '') : 'Message'
+                )}
               </span>
             </div>
           </div>
@@ -933,10 +943,10 @@ function ChatBubble({
         {message.reaction && (
           <button 
             onClick={(e) => { e.stopPropagation(); onReact?.(message.id, null); }}
-            className={`absolute -bottom-[15px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated border border-primary/40 rounded-full px-2.5 py-1 text-sm shadow-[0_4px_15px_rgba(0,0,0,0.5)] z-30 transition-all hover:scale-110 active:scale-90 hover:bg-aura-bg-elevated/80 flex items-center justify-center`}
+            className={`absolute -bottom-[16px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated/90 backdrop-blur-md border border-primary/30 rounded-full px-2.5 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.6)] z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center gap-1`}
             title="Remove reaction"
           >
-            {message.reaction}
+            <PremiumEmoji emoji={message.reaction} size={18} />
           </button>
         )}
 
