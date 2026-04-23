@@ -204,7 +204,6 @@ Deno.serve(async (req) => {
     const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:aura-app@example.com";
 
     if (!vapidPublicKeyStr || !vapidPrivateKeyStr) {
-      console.error("VAPID keys are not configured!");
       return new Response(JSON.stringify({ error: "VAPID keys not set" }), { status: 500, headers });
     }
 
@@ -229,20 +228,35 @@ Deno.serve(async (req) => {
       supabase.from("profiles").select("is_online, last_seen").eq("id", receiverId).single(),
       supabase.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", receiverId),
       supabase.from("profiles").select("display_name").eq("id", senderId).single(),
-      supabase.from("chat_settings").select("notify_messages, notify_reactions, notify_streaks").eq("user_id", receiverId).single()
+      supabase.from("chat_settings").select("notification_alias, notification_bodies").eq("user_id", receiverId).single()
     ]);
 
     const receiverProfile = profileRes.data;
     const subscriptions = subsRes.data;
-    const senderName = senderProfileRes.data?.display_name || "Your partner";
+    const fallbackSenderName = senderProfileRes.data?.display_name || "Your partner";
     const receiverSettings = settingsRes.data;
 
-    // ── CHECK NOTIFICATION PREFERENCES ──
-    // If receiver has explicitly disabled message notifications, skip
-    if (receiverSettings && receiverSettings.notify_messages === false) {
+    // ── PERSONALISED SENDER NAME ──
+    // Use receiver's custom alias if set, else fallback to sender's display name
+    const senderName = receiverSettings?.notification_alias?.trim() || fallbackSenderName;
 
-      return new Response(JSON.stringify({ success: true, message: "Notifications disabled by receiver" }), { headers });
-    }
+    // ── RANDOM NOTIFICATION BODY ──
+    const DEFAULT_BODIES = [
+      'Someone is thinking of you 💭',
+      'A whisper has arrived for you 🤫',
+      'Your sanctuary has a new message ✨',
+      'Something special is waiting for you 💌',
+      'A secret message has arrived 🔐',
+      'You have been summoned to the sanctuary 🕯️',
+      'A gentle knock on your heart 💛',
+      'Love is calling you back 📱',
+      'The universe sent you a signal 🌙',
+      'Your world just got a little brighter ☀️',
+    ];
+    const bodyPool: string[] = (receiverSettings?.notification_bodies?.length ?? 0) >= 1
+      ? receiverSettings!.notification_bodies as string[]
+      : DEFAULT_BODIES;
+    const randomBody = bodyPool[Math.floor(Math.random() * bodyPool.length)];
 
     // SMART SKIP: Check if user is actively online
     if (receiverProfile?.is_online) {
@@ -269,7 +283,7 @@ Deno.serve(async (req) => {
       messageId: message.id,
       senderId: senderId,
       senderName: senderName,
-      body: "Sent you a message",
+      body: randomBody,
       url: "/",
     });
 
@@ -294,10 +308,9 @@ Deno.serve(async (req) => {
           await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
         } else {
           const respBody = await response.text();
-          console.error(`[send-push] Push failed: ${response.status} - ${respBody}`);
         }
       } catch (err: any) {
-        console.error("[send-push] Error sending to endpoint:", err.message);
+        // failed silently
       }
     });
 
