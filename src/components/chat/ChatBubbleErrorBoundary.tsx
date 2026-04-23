@@ -23,7 +23,7 @@ export class ChatBubbleErrorBoundary extends Component<Props, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error, info: { componentStack: string }) {
+  componentDidCatch(_error: Error, _info: { componentStack: string }) {
     
   }
 

@@ -43,8 +43,7 @@ export async function uploadToCloudinary(
     
     if (!response.ok) {
       const errText = await response.text();
-      
-      throw new Error(`Upload failed: ${response.status}`);
+      throw new Error(`Upload failed (${response.status}): ${errText}`);
     }
 
     const data = await response.json();
