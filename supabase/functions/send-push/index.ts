@@ -263,8 +263,8 @@ Deno.serve(async (req) => {
       const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
       const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
       
-      // If user is marked is_online=true AND pinged within the last 90 seconds, they are actively online.
-      if (secondsSinceLastSeen < 90) {
+      // If user is marked is_online=true AND pinged within the last 20 seconds, they are actively online.
+      if (secondsSinceLastSeen < 20) {
 
         return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
       } else {

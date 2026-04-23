@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function KeySetupModal() {
-  const { encryptionStatus, setupEncryption, unlockEncryption, signOut } = useAuth();
+  const { encryptionStatus, setupEncryption, unlockEncryption, signOut, registerThisDevice } = useAuth();
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +22,15 @@ export default function KeySetupModal() {
     try {
       if (encryptionStatus === 'pin_setup_required') {
         await setupEncryption(pin);
+        // Register this device after successful setup so the device-watch starts
+        await registerThisDevice();
       } else if (encryptionStatus === 'pin_unlock_required') {
         const success = await unlockEncryption(pin);
         if (!success) {
           setError('Invalid PIN. Please try again.');
+        } else {
+          // Register this device after successful unlock
+          await registerThisDevice();
         }
       }
     } catch (err: any) {

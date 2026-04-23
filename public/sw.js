@@ -8,9 +8,9 @@ self.addEventListener('push', function(event) {
     const pushData = event.data.json();
 
 
-    // Always use the app name as title for privacy —
-    // no partner names visible on lock screen in public places.
-    const title = pushData.title || 'Aura';
+    // Use personalized sender name from the Edge Function payload,
+    // falling back to 'Aura' if not present.
+    const title = pushData.senderName || pushData.title || 'Aura';
     const body = pushData.body || 'You have a new message';
 
     const options = {

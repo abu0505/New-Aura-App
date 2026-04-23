@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { 
@@ -14,6 +14,16 @@ import {
 // Fix 1.4: Import push debounce timers to clear them on logout
 import { pushDebounceTimers } from '../hooks/useChat';
 
+const DEVICE_TOKEN_KEY = 'aura_device_token';
+
+/** Generates a new device token, saves to localStorage, and writes it to the profiles table. */
+async function registerDeviceToken(userId: string): Promise<string> {
+  const token = crypto.randomUUID();
+  localStorage.setItem(DEVICE_TOKEN_KEY, token);
+  await supabase.from('profiles').update({ current_device_token: token }).eq('id', userId);
+  return token;
+}
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
@@ -23,6 +33,8 @@ interface AuthContextType {
   setupEncryption: (pin: string) => Promise<void>;
   unlockEncryption: (pin: string) => Promise<boolean>;
   refreshUser: () => Promise<void>;
+  /** Call after PIN unlock/setup to register this device and start watching for other logins. */
+  registerThisDevice: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -34,6 +46,7 @@ const AuthContext = createContext<AuthContextType>({
   setupEncryption: async () => {},
   unlockEncryption: async () => false,
   refreshUser: async () => {},
+  registerThisDevice: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -41,6 +54,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [encryptionStatus, setEncryptionStatus] = useState<EncryptionState>('initializing');
+  // Ref to hold the realtime channel for device-token watch (cleanup on logout)
+  const deviceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const isSigningOutRef = useRef(false);
 
   useEffect(() => {
     // Check active session
@@ -58,6 +74,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  /** Subscribe to realtime profile changes to detect when another device logs in. */
+  const startDeviceWatch = (userId: string) => {
+    // Clean up any previous channel first
+    if (deviceChannelRef.current) {
+      supabase.removeChannel(deviceChannelRef.current);
+    }
+
+    const channel = supabase
+      .channel(`device-watch:${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${userId}` },
+        (payload) => {
+          if (isSigningOutRef.current) return;
+          const newToken = (payload.new as any)?.current_device_token;
+          const myToken = localStorage.getItem(DEVICE_TOKEN_KEY);
+          // If DB token changed and it's NOT ours → another device logged in → force sign-out
+          if (newToken && myToken && newToken !== myToken) {
+            performSignOut(userId, /* forcedByOtherDevice */ true);
+          }
+        }
+      )
+      .subscribe();
+
+    deviceChannelRef.current = channel;
+  };
 
   const handleSession = async (currentSession: Session | null) => {
     setSession(currentSession);
@@ -114,23 +157,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return success;
   };
 
-  const signOut = async () => {
-    // Mark offline immediately so the partner sees the change right away
-    if (user) {
+  /** Register this device on login — call this after PIN unlock/setup. */
+  const registerThisDevice = async () => {
+    if (!user) return;
+    await registerDeviceToken(user.id);
+    startDeviceWatch(user.id);
+  };
+
+  const performSignOut = async (userId: string | undefined, forcedByOtherDevice = false) => {
+    isSigningOutRef.current = true;
+
+    // Stop watching for device changes
+    if (deviceChannelRef.current) {
+      supabase.removeChannel(deviceChannelRef.current);
+      deviceChannelRef.current = null;
+    }
+
+    // Clear local device token
+    localStorage.removeItem(DEVICE_TOKEN_KEY);
+
+    if (!forcedByOtherDevice && userId) {
+      // Only mark offline if WE initiated the logout (not the other device)
       try {
         await supabase.from('profiles').update({
           is_online: false,
           last_seen: new Date().toISOString(),
           status_message: null,
-        }).eq('id', user.id);
+        }).eq('id', userId);
       } catch (_) { /* best-effort */ }
     }
-    // Fix 1.4: Clear all pending push timers — prevents ghost notifications
-    // after logout (e.g. if user logs out while a 5s debounce is still running)
+
+    // Fix 1.4: Clear all pending push timers
     pushDebounceTimers.forEach(timer => clearTimeout(timer));
     pushDebounceTimers.clear();
     clearStoredKeys();
     await supabase.auth.signOut();
+    isSigningOutRef.current = false;
+  };
+
+  const signOut = async () => {
+    await performSignOut(user?.id, false);
   };
 
   const refreshUser = async () => {
@@ -147,7 +213,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signOut, 
       setupEncryption,
       unlockEncryption,
-      refreshUser
+      refreshUser,
+      registerThisDevice,
     }}>
       {children}
     </AuthContext.Provider>
