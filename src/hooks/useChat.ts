@@ -777,41 +777,54 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         ));
       }
     } else {
-      // Trigger Web Push Notification asynchronously with a 5s debounce
-      // This prevents rapid message bursts from triggering Chrome's spam detection.
-      const existingTimer = pushDebounceTimers.get(partnerId);
-      if (existingTimer) clearTimeout(existingTimer);
+      // Trigger Web Push Notification using THROTTLE instead of trailing-debounce
+      // This ensures the first message sends a notification immediately, rather than 
+      // waiting for the user to stop typing.
+      const isThrottled = pushDebounceTimers.has(partnerId);
       
-      const newTimer = setTimeout(async () => {
-        // Fix 1.3: Guard — verify message is still in sent state (not failed) before pushing
-        const stillValid = messagesRef.current.find(
-          m => m.id === optimisticMsg.id && !m.is_send_failed && !m.is_pending
-        );
-        if (!stillValid) {
+      if (!isThrottled) {
+        // Set a 5s lock to prevent spamming
+        const lockTimer = setTimeout(() => {
           pushDebounceTimers.delete(partnerId);
-          return;
-        }
-        try {
-          // Ensure session is fresh — prevents 401 on expired JWT
-          const { data: { session: freshSession } } = await supabase.auth.getSession();
-          if (freshSession) {
-            await supabase.functions.invoke('send-push', {
-              body: { 
-                record: { 
-                  id: optimisticMsg.id,
-                  sender_id: user.id,
-                  receiver_id: partnerId,
-                } 
+        }, 5000);
+        pushDebounceTimers.set(partnerId, lockTimer);
+        
+        // Immediately trigger the push
+        setTimeout(async () => {
+          // Fix 1.3: Guard — verify message exists and hasn't failed
+          const stillValid = messagesRef.current.find(
+            m => m.id === optimisticMsg.id && !m.is_send_failed
+          );
+          if (!stillValid) return;
+          
+          try {
+            // Ensure session is fresh — prevents 401 on expired JWT
+            const { data: { session: freshSession } } = await supabase.auth.getSession();
+            if (freshSession) {
+              console.log(`[push-trigger] Attempting to invoke send-push edge function for message ${optimisticMsg.id}`);
+              const { data, error } = await supabase.functions.invoke('send-push', {
+                body: { 
+                  record: { 
+                    id: optimisticMsg.id,
+                    sender_id: user.id,
+                    receiver_id: partnerId,
+                  } 
+                }
+              });
+              if (error) {
+                console.error(`[push-trigger] Error invoking send-push edge function:`, error);
+              } else {
+                console.log(`[push-trigger] Successfully invoked send-push edge function. Response:`, data);
               }
-            });
+            } else {
+              console.warn(`[push-trigger] No valid session found. Cannot send push notification.`);
+            }
+          } catch (err) {
+            console.error(`[push-trigger] Exception while invoking send-push:`, err);
+            // Push notifications are best-effort — silently ignore failures
           }
-        } catch {
-          // Push notifications are best-effort — silently ignore failures
-        }
-        pushDebounceTimers.delete(partnerId);
-      }, 5000);
-      
-      pushDebounceTimers.set(partnerId, newTimer);
+        }, 500); // slight 500ms delay to let the DB insert finish first
+      }
     }
   };
 

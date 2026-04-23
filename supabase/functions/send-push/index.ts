@@ -213,10 +213,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const body = await req.json();
+    console.log("[send-push] Received request body:", JSON.stringify(body));
     const message = body.record || body;
 
 
     if (!message || !message.receiver_id) {
+      console.warn("[send-push] No receiver_id found in payload.");
       return new Response(JSON.stringify({ error: "No receiver_id in payload" }), { status: 400, headers });
     }
 
@@ -235,6 +237,11 @@ Deno.serve(async (req) => {
     const subscriptions = subsRes.data;
     const fallbackSenderName = senderProfileRes.data?.display_name || "Your partner";
     const receiverSettings = settingsRes.data;
+
+    console.log(`[send-push] Fetched data for receiver ${receiverId}:`);
+    console.log(`[send-push] - Profile is_online: ${receiverProfile?.is_online}, last_seen: ${receiverProfile?.last_seen}`);
+    console.log(`[send-push] - Active push subscriptions count: ${subscriptions?.length || 0}`);
+    console.log(`[send-push] - Receiver settings: alias='${receiverSettings?.notification_alias}', custom_bodies_count=${receiverSettings?.notification_bodies?.length || 0}`);
 
     // ── PERSONALISED SENDER NAME ──
     // Use receiver's custom alias if set, else fallback to sender's display name
@@ -263,16 +270,21 @@ Deno.serve(async (req) => {
       const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
       const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
       
+      console.log(`[send-push] Smart skip evaluation: user is marked online. Seconds since last seen: ${secondsSinceLastSeen}s (Threshold is 20s)`);
+      
       // If user is marked is_online=true AND pinged within the last 20 seconds, they are actively online.
       if (secondsSinceLastSeen < 20) {
-
+        console.log(`[send-push] 🛑 Skipping push notification because receiver is actively online (${secondsSinceLastSeen}s < 20s)`);
         return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
       } else {
-
+        console.log(`[send-push] ✅ Proceeding with push notification despite is_online=true, because last_seen is stale (${secondsSinceLastSeen}s >= 20s)`);
       }
+    } else {
+      console.log("[send-push] ✅ Proceeding with push notification because receiver is offline (is_online=false).");
     }
 
     if (subsRes.error || !subscriptions || subscriptions.length === 0) {
+      console.warn(`[send-push] ❌ Cannot send push: No active subscriptions found for receiver ${receiverId}.`);
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
@@ -302,21 +314,24 @@ Deno.serve(async (req) => {
 
 
         if (response.status === 201 || response.status === 200) {
+          console.log(`[send-push] ✅ Push successfully delivered to endpoint: ${sub.endpoint}`);
           successCount++;
         } else if (response.status === 410 || response.status === 404 || response.status === 400) {
-
+          console.warn(`[send-push] ⚠️ Subscription invalid or expired (status ${response.status}) for endpoint: ${sub.endpoint}. Deleting from database.`);
           await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
         } else {
           const respBody = await response.text();
+          console.error(`[send-push] ❌ Failed to deliver push to endpoint: ${sub.endpoint}. Status: ${response.status}, Response: ${respBody}`);
         }
       } catch (err: any) {
+        console.error(`[send-push] ❌ Exception while sending to endpoint: ${sub.endpoint}:`, err.message);
         // failed silently
       }
     });
 
     await Promise.all(sendPromises);
 
-
+    console.log(`[send-push] 🎉 Notification delivery completed. Successfully sent to ${successCount}/${subscriptions.length} devices.`);
     return new Response(JSON.stringify({ success: true, sentTo: successCount }), { headers });
 
   } catch (err: any) {

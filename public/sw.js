@@ -2,10 +2,14 @@
 // Plain JavaScript (no TypeScript) - runs in a separate worker context
 
 self.addEventListener('push', function(event) {
-  if (!event.data) return;
+  if (!event.data) {
+    console.warn('[Service Worker] Push event received but no data attached.');
+    return;
+  }
 
   try {
     const pushData = event.data.json();
+    console.log('[Service Worker] Push event received with data:', pushData);
 
 
     // Use personalized sender name from the Edge Function payload,
