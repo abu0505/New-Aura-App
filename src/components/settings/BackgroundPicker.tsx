@@ -80,7 +80,7 @@ export default function BackgroundPicker() {
         showToast('Custom background applied and secured.');
       }
     } catch (err: any) {
-      console.error('Background upload failed', err);
+      
       setOptimisticBg(undefined);
       showToast('Sanctuary storage error: ' + err.message, true);
     } finally {

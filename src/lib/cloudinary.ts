@@ -2,7 +2,7 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 if (!CLOUD_NAME || !UPLOAD_PRESET) {
-  console.error('Missing Cloudinary environment variables');
+  
 }
 
 interface UploadOptions {
@@ -43,7 +43,7 @@ export async function uploadToCloudinary(
     
     if (!response.ok) {
       const errText = await response.text();
-      console.error('Cloudinary Error:', errText);
+      
       throw new Error(`Upload failed: ${response.status}`);
     }
 

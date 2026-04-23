@@ -85,7 +85,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + 0.1);
     } catch (e) {
-      console.warn('Audio Context not supported for shutter sound');
+      
     }
   }, []);
 
@@ -163,7 +163,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         setDigitalZoom(1);
       }
     } catch (error) {
-      console.error('Camera access denied or error:', error);
+      
       setHasPermission(false);
     }
   }, [facingMode, stopCamera, resolution, aspectRatio]);
@@ -232,10 +232,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           setIsFlashOn(newStatus);
         } else {
           // Fallback if not supported nicely (it will just do nothing gracefully on most browsers)
-          console.warn('Torch is not supported on this device/camera.');
+          
         }
       } catch (err) {
-        console.error('Failed to toggle torch:', err);
+        
       }
     }
   };
@@ -318,7 +318,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       }, 'image/webp', 0.88);
 
       // Step 3: Run the heavy noise reduction in background (non-blocking)
-      console.log('[MobileCamera] Starting heavy math in background...');
+      
       denoiseCapturedFrames(framesData, canvas, {
         enableGLFilter: true,
         enableSharpening: true,
@@ -336,17 +336,17 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             setEnhancedFile(file);
             setEnhancedUrl(url);
             setEnhancementStatus('ready');
-            console.log('[MobileCamera] Heavy math successfully applied! High-quality image is ready.');
+            
           }
         }, 'image/webp', 0.92);
-      }).catch(err => {
-        console.error('[MobileCamera] Background enhancement failed:', err);
+      }).catch(() => {
+        
         setEnhancementStatus('idle');
       });
 
     } catch (err) {
       // Graceful fallback
-      console.warn('[takePhoto] Capture failed, using fallback:', err);
+      
       const ctx = canvas.getContext('2d')!;
       drawFrame(ctx);
       canvas.toBlob((blob) => {
@@ -869,7 +869,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                               exit={{ opacity: 0 }}
                               transition={{ duration: 0.8, ease: "circOut" }}
                               onAnimationComplete={() => {
-                                console.log('[MobileCamera] Shimmer effect animation cycle finished.');
+                                
                                 setShowShimmer(false);
                               }}
                               className="absolute inset-x-[-20%] inset-y-0 z-[100] pointer-events-none skew-x-[-15deg]"
@@ -901,11 +901,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 <button
                   onClick={() => {
                     if (enhancementStatus === 'ready') {
-                      console.log(`[MobileCamera] Enhance button clicked! Initiating shimmer UI...`);
+                      
                       setShimmerKey(prev => prev + 1);
                       setShowShimmer(true);
                       setIsEnhancedView(prev => !prev);
-                      console.log(`[MobileCamera] View swapped to: ${!isEnhancedView ? 'Enhanced High-Res' : 'Raw Capture'}`);
+                      
                     }
                   }}
                   className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 border backdrop-blur-md ${

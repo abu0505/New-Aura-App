@@ -31,7 +31,7 @@ export default function NotificationSettings() {
         }
       }
     } catch (err) {
-      console.error('Push toggle error', err);
+      
     } finally {
       setIsTogglingPush(false);
     }

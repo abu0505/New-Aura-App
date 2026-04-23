@@ -55,7 +55,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
   const { 
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
-    hasMore, sendMessage, loadMore, reactToMessage, editMessage, 
+    hasMore, hasMoreNewer, sendMessage, loadMore, loadMoreNewer, jumpToMessageWindow, jumpToLatest, reactToMessage, editMessage, 
     deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead,
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
@@ -69,6 +69,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const isBottomLocked = useRef(true);
   
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
+  const handleJumpToMessageRef = useRef<((id: string) => void) | null>(null);
 
   useLayoutEffect(() => {
     const container = scrollContainerRef.current;
@@ -139,12 +140,16 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
-    if (!container || loadingMore || !hasMore || viewMode === 'pinned') return;
+    if (!container || loadingMore || viewMode === 'pinned') return;
 
     // Raise threshold to 300px — better UX for touch scrolling
-    if (container.scrollTop < 300) {
+    if (hasMore && container.scrollTop < 300) {
       previousScrollHeightRef.current = container.scrollHeight;
       loadMore();
+    }
+
+    if (hasMoreNewer && container.scrollHeight - container.scrollTop - container.clientHeight < 300) {
+      loadMoreNewer();
     }
   };
 
@@ -210,50 +215,51 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     sendMessage(text, media, replyToId);
   };
 
-  const handleJumpToMessage = (id: string) => {
+  const handleJumpToMessage = async (id: string) => {
     const el = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
     const container = scrollContainerRef.current;
 
     if (el && container) {
+      isBottomLocked.current = false;
       const containerRect = container.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
-      const offset = elRect.top - containerRect.top + container.scrollTop - 100;
+      const offset = elRect.top - containerRect.top + container.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
       container.scrollTo({ top: offset, behavior: 'smooth' });
       setIsJumpingToPinned(null);
     } else {
-      if (hasMore && !loadingMore) {
-        setIsJumpingToPinned(id);
-        if (container) {
-          previousScrollHeightRef.current = container.scrollHeight;
+      setIsJumpingToPinned(id);
+      await jumpToMessageWindow(id);
+      
+      setTimeout(() => {
+        const newEl = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
+        const newContainer = scrollContainerRef.current;
+        if (newEl && newContainer) {
+          isBottomLocked.current = false;
+          const containerRect = newContainer.getBoundingClientRect();
+          const elRect = newEl.getBoundingClientRect();
+          const offset = elRect.top - containerRect.top + newContainer.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
+          newContainer.scrollTo({ top: offset, behavior: 'auto' });
         }
-        loadMore();
-      }
+        setIsJumpingToPinned(null);
+      }, 150);
     }
   };
 
+  handleJumpToMessageRef.current = handleJumpToMessage;
+
   useEffect(() => {
-    if (isJumpingToPinned && !loadingMore) {
-      const el = document.querySelector(`[data-message-id="${isJumpingToPinned}"]`) || document.getElementById(`msg-${isJumpingToPinned}`);
-      const container = scrollContainerRef.current;
-      
-      if (el && container) {
-        setTimeout(() => {
-          const containerRect = container.getBoundingClientRect();
-          const elRect = el.getBoundingClientRect();
-          const offset = elRect.top - containerRect.top + container.scrollTop - 100;
-          container.scrollTo({ top: offset, behavior: 'smooth' });
-        }, 100);
-        setIsJumpingToPinned(null);
-      } else if (hasMore) {
-        if (container) {
-          previousScrollHeightRef.current = container.scrollHeight;
-        }
-        loadMore();
-      } else {
-        setIsJumpingToPinned(null);
+    const handleGlobalJump = (e: any) => {
+      const msgId = e.detail?.messageId;
+      if (msgId) {
+        setViewMode('chat');
+        handleJumpToMessageRef.current?.(msgId);
       }
-    }
-  }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
+    };
+    document.addEventListener('jump-to-message', handleGlobalJump);
+    return () => document.removeEventListener('jump-to-message', handleGlobalJump);
+  }, []);
+
+
   
   // Real-time "Seen" logic using Intersection Observer
   // ══ FIXED: Observer is created ONCE and persists across message changes ══
@@ -291,8 +297,6 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
           if (msgId && !isMine && !isRead) {
             unreadMessages.add(msgId);
-            
-            // Debounce flush — this timer now persists because the effect doesn't re-run
             if (flushTimer) clearTimeout(flushTimer);
             flushTimer = setTimeout(flushReads, 1000);
           }
@@ -568,6 +572,16 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
               const lastReadMyMsg = viewMode === 'chat' 
                 ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at)
                 : null;
+                
+              // Debug logging for lastReadMyMsg
+              if (lastReadMyMsg) {
+                console.log('[Debug] lastReadMyMsg evaluated:', {
+                  id: lastReadMyMsg.id,
+                  is_read: lastReadMyMsg.is_read,
+                  read_at: lastReadMyMsg.read_at,
+                  msg_content_preview: lastReadMyMsg.decrypted_content ? lastReadMyMsg.decrypted_content.substring(0, 10) : ''
+                });
+              }
 
               const groupedList = groupMessages(listToRender);
 
@@ -614,6 +628,10 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                             isMine={firstMsg.sender_id === user?.id}
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
+                            onReply={viewMode === 'chat' ? (id: string) => {
+                              setReplyingTo(messages.find(m => m.id === id) || null);
+                              messageInputRef.current?.focusInput();
+                            } : undefined}
                           />
                         ) : (
                           <ChatBubble 
@@ -651,6 +669,19 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
             <div ref={messagesEndRef} />
           </div>
+
+          {/* Jump to Latest Floating Button */}
+          {hasMoreNewer && viewMode === 'chat' && (
+            <div className="absolute bottom-24 right-4 z-[100]">
+              <button 
+                onClick={jumpToLatest} 
+                className="bg-primary text-background px-4 py-2 rounded-full shadow-lg font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-transform"
+              >
+                <span className="material-symbols-outlined text-[16px]">arrow_downward</span>
+                Jump to Latest
+              </button>
+            </div>
+          )}
 
           {/* Chat Input Bar */}
           {viewMode === 'chat' && (

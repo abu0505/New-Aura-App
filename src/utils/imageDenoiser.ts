@@ -101,11 +101,11 @@ async function averageFramesWorker(
       resolve(new ImageData(e.data.averaged, width, height));
     };
 
-    const onError = (err: ErrorEvent) => {
+    const onError = () => {
       worker.removeEventListener('message', onMessage);
       worker.removeEventListener('error', onError);
       // Fallback: average on main thread if worker fails
-      console.warn('[imageDenoiser] Worker failed, averaging on main thread:', err);
+      
       const averaged = averageFramesSync(frames, width, height);
       resolve(averaged);
     };
@@ -245,8 +245,8 @@ export async function denoiseCapturedFrames(
   try {
     // We must clone the buffers or use transferables. averageFramesWorker uses transferables and consumes them!
     result = await averageFramesWorker(framesData.frames, framesData.width, framesData.height);
-  } catch (err) {
-    console.warn('[imageDenoiser] Worker failed:', err);
+  } catch {
+    
     result = averageFramesSync(framesData.frames, framesData.width, framesData.height);
   }
   // ... handled above
@@ -256,8 +256,8 @@ export async function denoiseCapturedFrames(
     try {
       const filter = getGLFilter();
       result = await filter.apply(result);
-    } catch (err) {
-      console.warn('[imageDenoiser] WebGL filter skipped:', err);
+    } catch {
+      
       // Continue with averaged result
     }
   }
@@ -266,8 +266,8 @@ export async function denoiseCapturedFrames(
   if (enableSharpening) {
     try {
       result = applyUnsharpMask(result, canvas, sharpenAmount);
-    } catch (err) {
-      console.warn('[imageDenoiser] Sharpening skipped:', err);
+    } catch {
+      
     }
   }
 

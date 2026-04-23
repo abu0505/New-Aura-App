@@ -29,7 +29,7 @@ export default function ImageCropperModal({ imageSrc, onCropComplete, onCancel }
         onCropComplete(croppedFile);
       }
     } catch (e: any) {
-      console.error('Error cropping image', e);
+      
       alert('Error cropping image: ' + e.message);
     } finally {
       setIsProcessing(false);

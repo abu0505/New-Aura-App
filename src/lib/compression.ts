@@ -117,7 +117,7 @@ export async function optimizeVideo(
     };
   } catch (error) {
     // Graceful fallback: return original file
-    console.warn('Video optimization failed, using original:', error);
+    
     return {
       optimizedFile: file,
       originalSize,

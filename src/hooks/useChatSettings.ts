@@ -115,7 +115,7 @@ export function useChatSettings() {
     });
 
     if (error) {
-       console.error("Failed to set shared pin:", error);
+       
        refreshSettings();
     }
     return { error };

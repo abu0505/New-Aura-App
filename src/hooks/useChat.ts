@@ -42,6 +42,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [dataLoading, setDataLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [hasMoreNewer, setHasMoreNewer] = useState(false); // NEW
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
   const [firstUnreadId, setFirstUnreadId] = useState<string | null>(null);
   const PAGE_SIZE = 25;
@@ -174,7 +175,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         );
         decryptedText = result;
       } catch (e) {
-        console.error('Decryption failed for message', row.id, e);
+        
         decryptedText = '⚠️ Could not decrypt this message';
         decryptionError = true;
       }
@@ -249,7 +250,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
             }
           }
         } catch (err) {
-          console.error('Failed to flush pending message', msg.id, err);
+          
         }
       }
     };
@@ -305,11 +306,15 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
               return decryptRow(update as any, myKeyPair, currentPartnerKey, currentKeyHistory);
             }
 
+            // These are MY sent messages (sender_id === user.id).
+            // Any is_read=true from the DB is a legitimate read receipt from the partner.
+            // No timing hacks needed — the DB RLS policy now prevents the sender from
+            // ever setting is_read=true on their own messages, so this value is trustworthy.
             return { ...m, ...update };
           }));
         }
       } catch (err) {
-        console.error('Failed to sync missed updates', err);
+        
       }
     };
 
@@ -353,7 +358,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         // Also fetch status updates for existing messages
         fetchMissedUpdates();
       } catch (err) {
-        console.error('Failed to fetch missed messages', err);
+        
       }
     };
 
@@ -377,6 +382,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           const decrypted = await decryptRowsAsync(sortedData, myKeyPair, currentPartnerKey, currentKeyHistory);
           setMessages(decrypted);
           setHasMore(data.length === PAGE_SIZE);
+          setHasMoreNewer(false);
 
           // Find first unread from partner
           const firstUnread = decrypted.find(m => !m.is_mine && !m.is_read);
@@ -391,6 +397,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           }
         } else {
           setMessages((data || []).map(row => ({ ...row, is_mine: row.sender_id === user.id })));
+          setHasMoreNewer(false);
         }
 
         // Fetch pinned messages
@@ -406,6 +413,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       }
     };
 
+    fetchMessagesRef.current = fetchMessages;
     fetchMessages();
 
     // ═══ Use RealtimeHub instead of creating a separate channel ═══
@@ -463,12 +471,44 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       } else if (payload.eventType === 'UPDATE') {
         setMessages((prev) => prev.map(m => {
           if (m.id !== row.id) return m;
+
           const mergedRow = { ...m, ...row } as MessageRow;
+
+          // PROFESSIONAL FIX: Role-based read-status guard.
+          //
+          // Case A — MY outgoing message (sender_id === user.id):
+          //   The partner (receiver) is the one who sets is_read=true on it.
+          //   So a realtime UPDATE on my message CAN carry a legitimate is_read.
+          //   → Accept it as-is (this is how the partner tells me they've read it).
+          //
+          // Case B — PARTNER's incoming message (sender_id !== user.id):
+          //   We (the receiver) are the ones who call markAsRead() ourselves.
+          //   A realtime UPDATE on a partner message that sets is_read=true is
+          //   coming from our own client's markAsRead() call — we don't need to
+          //   re-apply it from the DB echo. Just apply non-read fields.
+          //   → Strip is_read/read_at from the realtime echo to avoid double-updates.
+
+          const isMyMessage = m.sender_id === user.id;
+
+          if (!isMyMessage) {
+            // It's a partner message — we own the read update locally via markAsRead().
+            // Only apply non-read-status fields from the DB echo (e.g. edits, reactions).
+            const { is_read, read_at, ...nonReadFields } = row;
+            const safeRow = { ...m, ...nonReadFields } as MessageRow;
+            if (row.is_edited && row.encrypted_content) {
+              return decryptRow(safeRow, myKeyPair, currentPartnerKey, currentKeyHistory);
+            }
+            return safeRow;
+          }
+
+          // It's my own outgoing message — the DB echo carries partner's read receipt.
+          // Accept the full update including is_read/read_at.
           if (row.is_edited && row.encrypted_content) {
             return decryptRow(mergedRow, myKeyPair, currentPartnerKey, currentKeyHistory);
           }
           return { ...m, ...row };
         }));
+
       } else if (payload.eventType === 'DELETE') {
         setMessages((prev) => prev.filter(m => m.id !== oldRow?.id));
       }
@@ -543,7 +583,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           setPinnedMessageDetails(prev => ({ ...prev, ...decryptedDetails }));
         }
       } catch (err) {
-        console.error('Error fetching pinned messages:', err);
+        
       }
     };
 
@@ -637,7 +677,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           setReplyMessageCache(prev => ({ ...prev, ...newEntries }));
         }
       } catch (err) {
-        console.error('Error fetching reply messages:', err);
+        
         // On error, remove from attempted so retry is possible
         missingReplyIds.forEach(id => attempted.delete(id));
       }
@@ -655,7 +695,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     const myKeyPair = getStoredKeyPair();
     if (!myKeyPair || !partnerPublicKey) {
-      console.error('Missing encryption keys!');
+      
       return;
     }
 
@@ -726,7 +766,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       });
 
     if (error) {
-      console.error('Failed to send message', error);
+      
       if (error.message?.includes('fetch') || error.code === 'PGRST301') {
         setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...m, is_pending: true } : m));
         setPendingMessages(prev => [...prev, { ...optimisticMsg, retry_count: 0 }]);
@@ -825,7 +865,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
     const myKeyPair = getStoredKeyPair();
     if (!myKeyPair || !partnerPublicKey) {
-      console.error('Missing encryption keys!');
+      
       setMessages(prev => prev.map(m => m.id === tempId ? { ...m, is_uploading: false, is_send_failed: true } : m));
       return;
     }
@@ -878,7 +918,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       });
 
     if (error) {
-      console.error('Failed to commit media message', error);
+      
       if (error.message?.includes('fetch') || error.code === 'PGRST301') {
         const msg = messagesRef.current.find(m => m.id === tempId);
         if (msg) {
@@ -1017,7 +1057,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     });
 
     if (error) {
-      console.error('[ChunkedVideo] Failed to commit message:', error);
+      
       setMessages(prev =>
         prev.map(m => m.id === tempId ? { ...m, is_send_failed: true, is_uploading: false } : m)
       );
@@ -1095,25 +1135,32 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   };
 
   const markAsRead = useCallback(async (messageIds: string[]) => {
-    if (messageIds.length === 0) return;
-    
-    // Optimistic update
+    if (messageIds.length === 0 || !user) return;
+
+    // PROFESSIONAL FIX: Only mark PARTNER's messages as read — never your own outgoing messages.
+    // Sender's messages are marked read by the partner (the receiver), not by us.
+    const partnerMessageIds = messageIds.filter(id => {
+      const msg = messagesRef.current.find(m => m.id === id);
+      return msg && msg.sender_id !== user.id;
+    });
+
+    if (partnerMessageIds.length === 0) return;
+
+    // Optimistic update — only for filtered partner messages
     const readAtIso = new Date().toISOString();
-    setMessages(prev => prev.map(m => messageIds.includes(m.id) ? { ...m, is_read: true, is_delivered: true, read_at: readAtIso } : m));
-    
-    const { error } = await supabase
+    setMessages(prev => prev.map(m =>
+      partnerMessageIds.includes(m.id) ? { ...m, is_read: true, is_delivered: true, read_at: readAtIso } : m
+    ));
+
+    await supabase
       .from('messages')
-      .update({ 
-        is_read: true, 
-        is_delivered: true, 
-        read_at: new Date().toISOString() 
+      .update({
+        is_read: true,
+        is_delivered: true,
+        read_at: readAtIso,
       })
-      .in('id', messageIds);
-      
-    if (error) {
-      console.error('Failed to mark messages as read', error);
-    }
-  }, []);
+      .in('id', partnerMessageIds);
+  }, [user]);
 
   const pinMessage = async (messageId: string): Promise<{ success: boolean; reason?: 'max_pins' }> => {
     if (!user) return { success: false };
@@ -1184,7 +1231,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       if (myKeyPair) {
         // Reverse to maintain ASC sequence
         const sortedData = [...data].reverse();
-        const decrypted = sortedData.map(row => decryptRow(row, myKeyPair, currentPartnerKey, currentKeyHistory));
+        const decrypted = await decryptRowsAsync(sortedData, myKeyPair, currentPartnerKey, currentKeyHistory);
         setMessages(prev => [...decrypted, ...prev]);
       } else {
         const sortedData = [...data].reverse();
@@ -1193,11 +1240,130 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       
       setHasMore(data.length === PAGE_SIZE);
     } catch (err) {
-      console.error('Error loading more messages', err);
+      
     } finally {
       setLoadingMore(false);
     }
-  }, [user?.id, partnerId, loadingMore, hasMore, decryptRow]);
+  }, [user?.id, partnerId, loadingMore, hasMore, decryptRowsAsync]);
+
+  const loadMoreNewer = useCallback(async () => {
+    if (loadingMore || !hasMoreNewer || !user || !partnerId) return;
+
+    setLoadingMore(true);
+    const myKeyPair = getStoredKeyPair();
+    const currentPartnerKey = partnerKeyRef.current;
+    const currentKeyHistory = partnerKeyHistoryRef.current;
+    
+    const currentMessages = messagesRef.current;
+    const newestTimestamp = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].created_at : null;
+    if (!newestTimestamp) {
+      setLoadingMore(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select(MSG_COLUMNS)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .gt('created_at', newestTimestamp)
+        .order('created_at', { ascending: true })
+        .limit(PAGE_SIZE);
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        setHasMoreNewer(false);
+        return;
+      }
+
+      if (myKeyPair) {
+        const decrypted = await decryptRowsAsync(data, myKeyPair, currentPartnerKey, currentKeyHistory);
+        setMessages(prev => [...prev, ...decrypted]);
+      } else {
+        setMessages(prev => [...prev, ...data.map(row => ({ ...row, is_mine: row.sender_id === user.id }))]);
+      }
+      
+      setHasMoreNewer(data.length === PAGE_SIZE);
+    } catch (err) {
+      
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user?.id, partnerId, loadingMore, hasMoreNewer, decryptRowsAsync]);
+
+  const jumpToMessageWindow = useCallback(async (messageId: string) => {
+    if (!user || !partnerId) return;
+    setLoadingMore(true);
+
+    const myKeyPair = getStoredKeyPair();
+    const currentPartnerKey = partnerKeyRef.current;
+    const currentKeyHistory = partnerKeyHistoryRef.current;
+
+    try {
+      // 1. Fetch the target message timestamp
+      const { data: targetData, error: targetError } = await supabase
+        .from('messages')
+        .select('created_at')
+        .eq('id', messageId)
+        .single();
+        
+      if (targetError || !targetData) throw targetError;
+      
+      const targetDate = targetData.created_at;
+
+      // 2. Fetch older messages (including target itself by using lte)
+      const { data: olderData, error: olderError } = await supabase
+        .from('messages')
+        .select(MSG_COLUMNS)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .lte('created_at', targetDate)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      // 3. Fetch newer messages
+      const { data: newerData, error: newerError } = await supabase
+        .from('messages')
+        .select(MSG_COLUMNS)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .gt('created_at', targetDate)
+        .order('created_at', { ascending: true })
+        .limit(20);
+
+      if (olderError) throw olderError;
+      if (newerError) throw newerError;
+
+      const olderSorted = olderData ? [...olderData].reverse() : [];
+      const newerSorted = newerData || [];
+      
+      const combinedData = [...olderSorted, ...newerSorted];
+
+      let decrypted: ChatMessage[] = [];
+      if (myKeyPair) {
+        decrypted = await decryptRowsAsync(combinedData, myKeyPair, currentPartnerKey, currentKeyHistory);
+      } else {
+        decrypted = combinedData.map(row => ({ ...row, is_mine: row.sender_id === user.id }));
+      }
+
+      setMessages(decrypted);
+      
+      setHasMore(olderData?.length === 20);
+      setHasMoreNewer(newerData?.length === 20);
+
+    } catch (err) {
+      console.error('Failed to jump to message window:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user?.id, partnerId, decryptRowsAsync]);
+
+  // A ref to store the fetchMessages function from the useEffect
+  const fetchMessagesRef = useRef<(() => Promise<void>) | null>(null);
+
+  const jumpToLatest = useCallback(async () => {
+    if (fetchMessagesRef.current) {
+      await fetchMessagesRef.current();
+    }
+  }, []);
 
   return { 
     messages, 
@@ -1207,8 +1373,12 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     loading: dataLoading || (encryptionStatus !== 'ready' && encryptionStatus !== 'error' && encryptionStatus !== 'pin_setup_required'), 
     loadingMore,
     hasMore,
+    hasMoreNewer,
     sendMessage, 
     loadMore,
+    loadMoreNewer,
+    jumpToMessageWindow,
+    jumpToLatest,
     reactToMessage, 
     editMessage, 
     deleteMessage, 

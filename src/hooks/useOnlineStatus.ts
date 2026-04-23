@@ -67,7 +67,7 @@ export function useOnlineStatus(
       };
       await supabase.from('profiles').update(update).eq('id', userId);
     } catch (err) {
-      console.error('[Status] DB update failed:', err);
+      
     }
   };
 

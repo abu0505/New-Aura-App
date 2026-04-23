@@ -18,9 +18,11 @@ interface ChunkedVideoOverlayProps {
   status: string;
   /** If true, the shimmer/overlay fades out smoothly */
   isDone?: boolean;
+  /** If true, displays the overlay in an error state (red text, no shimmer animation) */
+  isError?: boolean;
 }
 
-export default function ChunkedVideoOverlay({ status, isDone = false }: ChunkedVideoOverlayProps) {
+export default function ChunkedVideoOverlay({ status, isDone = false, isError = false }: ChunkedVideoOverlayProps) {
   // We keep track of the PREVIOUS and CURRENT status text so AnimatePresence
   // can fade one out while fading the next one in.
   const [displayedStatus, setDisplayedStatus] = useState(status);
@@ -39,7 +41,7 @@ export default function ChunkedVideoOverlay({ status, isDone = false }: ChunkedV
 
   return (
     <motion.div
-      className="absolute inset-0 z-10 chunk-shimmer flex flex-col items-center justify-center rounded-2xl overflow-hidden"
+      className={`absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl overflow-hidden ${!isError ? 'chunk-shimmer' : ''}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -59,7 +61,10 @@ export default function ChunkedVideoOverlay({ status, isDone = false }: ChunkedV
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
             className="text-[11px] font-semibold tracking-wide drop-shadow"
-            style={{ color: 'var(--gold-light)', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+            style={{ 
+              color: isError ? '#ff4d4d' : 'var(--gold-light)', 
+              textShadow: isError ? '0 1px 4px rgba(255,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.8)' 
+            }}
           >
             {displayedStatus}
           </motion.span>

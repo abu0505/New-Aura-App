@@ -48,6 +48,7 @@ function ChatBubble({
   const { getDecryptedBlob } = useMedia();
   const { getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
+  const [hasUploadFailed, setHasUploadFailed] = useState(false);
   // For chunked video: force re-render when new chunks arrive
   const [, setChunkTick] = useState(0);
   const chunkTickRef = useRef(0);
@@ -188,21 +189,36 @@ function ChatBubble({
   // Key fix: depends on is_uploading so it re-runs when upload finishes.
   useEffect(() => {
     if (!isChunkedVideo(message)) return;
-    if (!partnerPublicKey) return;
-    if (message.is_uploading) return; // Don't fetch while sender is still uploading
+    if (!partnerPublicKey) {
+      return;
+    }
+    if (message.is_uploading) {
+      return;
+    }
 
     const existingChunks = getChunksForMessage(message.id);
     // Only skip if we already have usable (decrypted) chunks
-    if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) return;
+    if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) {
+      return;
+    }
 
     supabase
       .from('video_chunks')
       .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
       .eq('message_id', message.id)
       .order('chunk_index', { ascending: true })
-      .then(({ data }) => {
-        if (data && data.length > 0) {
+      .then(({ data, error }) => {
+        if (error) {
+          console.error(`[ChatBubble ${message.id}] Error fetching chunks from DB:`, error);
+        } else if (data && data.length > 0) {
+          setHasUploadFailed(false);
           loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
+        } else {
+          // If no chunks are found and the sender has finished uploading (is_uploading is false),
+          // it means the sender's video upload failed (e.g. app crash, network error, RLS issue).
+          if (!message.is_uploading) {
+            setHasUploadFailed(true);
+          }
         }
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -463,7 +479,11 @@ function ChatBubble({
             
             {!isReady ? (
               <AnimatePresence>
-                <ChunkedVideoOverlay status="Receiving video..." />
+                {hasUploadFailed ? (
+                  <ChunkedVideoOverlay status="Upload Failed" isError={true} />
+                ) : (
+                  <ChunkedVideoOverlay status="Receiving video..." />
+                )}
               </AnimatePresence>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
@@ -651,6 +671,7 @@ function ChatBubble({
   return (
     <div 
       ref={bubbleRef}
+      data-message-id={message.id}
       className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group z-10 overflow-visible`}
     >
       {/* Reply Icon Indicator for Swipe (Mobile) */}

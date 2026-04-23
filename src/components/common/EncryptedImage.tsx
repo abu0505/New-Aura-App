@@ -71,7 +71,7 @@ export default function EncryptedImage({
         imageCache.set(url, objectUrl);
         setDecryptedUrl(objectUrl);
       } catch (err) {
-        console.error('Decryption failed for image', err);
+        
         setError(true);
       } finally {
         setLoading(false);

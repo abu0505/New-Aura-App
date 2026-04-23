@@ -19,14 +19,16 @@ interface MediaViewerProps {
   chunks?: any[];
   thumbnailUrl?: string;
   duration?: number;
+  messageId?: string;
+  showViewInChat?: boolean;
 }
 
-export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration }: MediaViewerProps) {
+export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration, messageId, showViewInChat = false }: MediaViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   
-  const currentMedia = allMedia ? allMedia[currentIndex] : { url: initialUrl, type: initialType };
+  const currentMedia = allMedia ? allMedia[currentIndex] : { id: messageId, url: initialUrl, type: initialType };
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -107,6 +109,25 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
         </div>
 
         <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.75rem', zIndex: 10000 }}>
+          {showViewInChat && currentMedia.id && (
+            <button
+              title="View in Chat"
+              onClick={(e) => {
+                e.stopPropagation();
+                const jumpId = currentMedia.id;
+                if (jumpId) {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'chat' }));
+                  setTimeout(() => {
+                    document.dispatchEvent(new CustomEvent('jump-to-message', { detail: { messageId: jumpId } }));
+                  }, 100);
+                  onClose();
+                }
+              }}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-2xl">forum</span>
+            </button>
+          )}
           <a
             href={currentMedia.url}
             download

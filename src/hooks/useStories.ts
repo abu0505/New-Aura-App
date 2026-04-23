@@ -50,7 +50,7 @@ export function useStories() {
           );
           decryptedText = result;
         } catch (e) {
-          console.error('Story decryption failed', e);
+          
           decryptedText = '[Decryption Failed]';
         }
       }
@@ -97,7 +97,7 @@ export function useStories() {
           setStories(validStories.map(row => ({ ...row, is_mine: row.user_id === user.id })));
         }
       } catch (err) {
-        console.error('Error fetching stories:', err);
+        
       } finally {
         setLoading(false);
       }

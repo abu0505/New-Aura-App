@@ -98,7 +98,7 @@ export class WebGLDenoiseFilter {
       }) as WebGLRenderingContext | null;
 
       if (!gl) {
-        console.warn('[WebGLDenoiseFilter] WebGL not supported — skipping GPU filter');
+        
         return false;
       }
 
@@ -115,7 +115,7 @@ export class WebGLDenoiseFilter {
       gl.attachShader(program, fs);
       gl.linkProgram(program);
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        console.error('[WebGLDenoiseFilter] Shader link error:', gl.getProgramInfoLog(program));
+        
         return false;
       }
       this.program = program;
@@ -160,7 +160,7 @@ export class WebGLDenoiseFilter {
       this.initialized = true;
       return true;
     } catch (err) {
-      console.warn('[WebGLDenoiseFilter] Init failed:', err);
+      
       return false;
     }
   }
@@ -170,7 +170,7 @@ export class WebGLDenoiseFilter {
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error('[WebGLDenoiseFilter] Shader compile error:', gl.getShaderInfoLog(shader));
+      
       gl.deleteShader(shader);
       return null;
     }

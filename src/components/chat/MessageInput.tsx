@@ -693,7 +693,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
               >
                 <GifPicker 
-                  onSelect={(gif) => {
+                    onSelect={(gif) => {
                     // Send as a dedicated 'gif' type message. 
                     // No encryption needed for public Tenor URLs, but we keep the structure consistent.
                     onSend('', { url: gif.url, media_key: '', media_nonce: '', type: 'gif' }, replyingTo?.id);

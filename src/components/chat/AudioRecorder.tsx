@@ -136,10 +136,10 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
             });
           } else {
             setError('Upload failed — encryption keys may not be ready. Please try again.');
-            console.error('processAndUpload returned null. Ensure partner public_key is available.');
+            
           }
         } catch (uploadErr) {
-          console.error('Audio upload error:', uploadErr);
+          
           setError('Failed to send audio. Please try again.');
         } finally {
           setIsProcessing(false);
@@ -163,7 +163,7 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
 
       animationFrameRef.current = requestAnimationFrame(updateWaveform);
     } catch (err) {
-      console.error('Failed to start recording', err);
+      
       setError('Microphone access denied');
       isStartedRef.current = false; // Allow retry
     }

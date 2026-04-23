@@ -13,7 +13,7 @@ interface ThrowbackItem extends MessageRow {
 interface OnThisDayCardProps {
   throwbacks: ThrowbackItem[];
   partnerPublicKey: string;
-  onOpenMedia: (url: string, type: string) => void;
+  onOpenMedia: (url: string, type: string, messageId?: string) => void;
 }
 
 export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedia }: OnThisDayCardProps) {
@@ -40,7 +40,7 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, decryptedUrl: url, loading: false } : i));
       }
     } catch (err) {
-      console.error('Decryption failed for throwback:', item.id, err);
+      
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: false } : i));
     }
   };
@@ -80,7 +80,7 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
               key={item.id}
               item={item}
               onDecrypt={() => decryptItem(item)}
-              onClick={() => item.decryptedUrl && onOpenMedia(item.decryptedUrl, item.type || 'image')}
+              onClick={() => item.decryptedUrl && onOpenMedia(item.decryptedUrl, item.type || 'image', item.id)}
             />
           ))}
         </div>

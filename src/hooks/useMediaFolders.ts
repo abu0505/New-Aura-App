@@ -105,7 +105,7 @@ export function useMediaFolders() {
 
       setFolders(decryptedFolders);
     } catch (err) {
-      console.error('Error fetching folders:', err);
+      
     } finally {
       setLoading(false);
     }
@@ -151,7 +151,7 @@ export function useMediaFolders() {
       setFolders(prev => [newFolder, ...prev]);
       return data.id;
     } catch (err) {
-      console.error('Error creating folder:', err);
+      
       return null;
     }
   }, []);
@@ -166,7 +166,7 @@ export function useMediaFolders() {
       if (error) throw error;
       setFolders(prev => prev.filter(f => f.id !== folderId));
     } catch (err) {
-      console.error('Error deleting folder:', err);
+      
     }
   }, []);
 
@@ -201,7 +201,7 @@ export function useMediaFolders() {
 
       return true;
     } catch (err) {
-      console.error('Error adding items to folder:', err);
+      
       return false;
     }
   }, [folders]);
@@ -222,7 +222,7 @@ export function useMediaFolders() {
           : f
       ));
     } catch (err) {
-      console.error('Error removing item from folder:', err);
+      
     }
   }, []);
 
@@ -237,7 +237,7 @@ export function useMediaFolders() {
       if (error) throw error;
       return (data || []).map(d => d.message_id);
     } catch (err) {
-      console.error('Error fetching folder items:', err);
+      
       return [];
     }
   }, []);
@@ -268,7 +268,7 @@ export function useMediaFolders() {
         f.id === folderId ? { ...f, name: newName, encrypted_name: ciphertext, name_nonce: nonce } : f
       ));
     } catch (err) {
-      console.error('Error renaming folder:', err);
+      
     }
   }, []);
 

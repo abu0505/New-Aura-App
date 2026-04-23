@@ -71,7 +71,7 @@ function syncToIndexedDB(secretKeyBase64: string, publicKeyBase64: string) {
       store.put(secretKeyBase64, 'aura_secret_key');
       store.put(publicKeyBase64, 'aura_public_key');
     } catch (e) {
-      console.error('Failed to sync keys to IndexedDB', e);
+      
     }
   };
 }
@@ -94,7 +94,7 @@ export function getStoredKeyPair(): { publicKey: Uint8Array; secretKey: Uint8Arr
       publicKey: decodeBase64(storedPublic),
     };
   } catch (e) {
-    console.error('Failed to decode stored keys', e);
+    
     return null;
   }
 }
@@ -149,7 +149,7 @@ export async function backupKeys(userId: string, pin: string): Promise<void> {
     .eq('id', userId);
 
   if (error) {
-    console.error('Backup keys failed:', error);
+    
     throw new Error(error.message);
   }
 }
@@ -207,7 +207,7 @@ export async function restoreKeys(userId: string, pin: string): Promise<boolean>
 
     return true;
   } catch (e) {
-    console.error('Restore failed', e);
+    
     return false;
   }
 }
@@ -254,7 +254,7 @@ export async function checkEncryptionStatus(userId: string): Promise<EncryptionS
     // GUARD: Verify these keys actually belong to the current user.
     // If a different user logged in on the same browser, the old keys will be stale.
     if (storedOwner && storedOwner !== userId) {
-      console.warn('[Encryption] Local keys belong to a different user — clearing stale keys.');
+      
       clearStoredKeys();
       // Fall through to backup check below
     } else {
@@ -275,7 +275,7 @@ export async function checkEncryptionStatus(userId: string): Promise<EncryptionS
       // GUARD: If the local key is different from what's in the cloud, it means another device
       // has generated a new key pair. We MUST force a restore so the local device isn't stale.
       if (profile?.public_key && profile.public_key !== localPublicKey) {
-        console.warn('[Encryption] Local public key is stale compared to database — forcing restore.');
+        
         if (profile.backup_secret_key) return 'pin_unlock_required';
         // If no backup, treat as setup required (though this shouldn't happen)
         return 'pin_setup_required';

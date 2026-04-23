@@ -72,8 +72,8 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
       if (audioDevices.length > 0 && !selectedMicId) {
         setSelectedMicId(audioDevices[0].deviceId);
       }
-    } catch (err) {
-      console.warn("Could not fetch media devices", err);
+    } catch {
+      
     }
   };
 
@@ -135,8 +135,8 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
       // On first load, permissions are granted. Now fetch readable labels!
       fetchDevices();
 
-    } catch (error) {
-      console.error('Camera access denied or error:', error);
+    } catch {
+      
       setHasPermission(false);
     }
   }, [selectedCameraId, selectedMicId, stopCamera, resolution, aspectRatio]);
@@ -250,7 +250,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
       }, 'image/webp', 0.92);
 
       // Step 3: Math pipeline in bg
-      console.log('[DesktopCamera] Starting heavy math in background...');
+      
       denoiseCapturedFrames(framesData, canvas, {
         enableGLFilter: true,
         enableSharpening: true,
@@ -268,16 +268,16 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
             setEnhancedFile(file);
             setEnhancedUrl(url);
             setEnhancementStatus('ready');
-            console.log('[DesktopCamera] Heavy math successfully applied! High-quality image is ready.');
+            
           }
         }, 'image/webp', 0.92);
-      }).catch(err => {
-        console.error('[DesktopCamera] Background enhancement failed:', err);
+      }).catch(() => {
+        
         setEnhancementStatus('idle');
       });
 
-    } catch (err) {
-      console.warn('[DesktopCamera] Capture failed, using fallback', err);
+    } catch {
+      
       // Fallback
       const ctx = canvas.getContext('2d')!;
       drawFrame(ctx);
@@ -774,11 +774,11 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                 <button
                   onClick={() => {
                     if (enhancementStatus === 'ready') {
-                      console.log(`[DesktopCamera] Enhance button clicked! Initiating shimmer UI...`);
+                      
                       setShimmerKey(prev => prev + 1);
                       setShowShimmer(true);
                       setIsEnhancedView(prev => !prev);
-                      console.log(`[DesktopCamera] View swapped to: ${!isEnhancedView ? 'Enhanced High-Res' : 'Raw Capture'}`);
+                      
                     }
                   }}
                   className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 border backdrop-blur-md pointer-events-auto ${isEnhancedView
@@ -811,7 +811,7 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.8, ease: "circOut" }}
                         onAnimationComplete={() => {
-                          console.log('[DesktopCamera] Shimmer effect animation cycle finished.');
+                          
                           setShowShimmer(false);
                         }}
                         className="absolute inset-x-[-20%] inset-y-0 z-[100] pointer-events-none skew-x-[-15deg]"

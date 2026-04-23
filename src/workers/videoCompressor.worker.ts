@@ -86,7 +86,7 @@ self.onmessage = async (e: MessageEvent) => {
           self.postMessage({ type: 'progress', progress: Math.round((encodedCount / expectedTotalFrames) * 95) });
         },
         error: (err) => {
-          console.error('[VideoWorker] Encoder Error', err);
+          
           self.postMessage({ type: 'error', message: err.message });
         },
       });

@@ -53,7 +53,7 @@ export default function StorageDashboard() {
 
         setStats(aggregated);
       } catch (err) {
-        console.error('Failed to fetch storage stats:', err);
+        
       } finally {
         setLoading(false);
       }

@@ -110,7 +110,7 @@ export default function ProfileSection() {
         await refreshUser();
       }
     } catch (err: any) {
-      console.error('Avatar upload failed', err);
+      
       alert('Sanctuary storage error: ' + err.message);
     } finally {
       setUploading(false);

@@ -17,7 +17,7 @@ export default function LinkPreview({ url }: LinkPreviewProps) {
           setData(result.data);
         }
       } catch (e) {
-        console.error("Failed to fetch link preview:", e);
+        
       } finally {
         setLoading(false);
       }

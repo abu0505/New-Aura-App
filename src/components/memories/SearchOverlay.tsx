@@ -53,7 +53,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
       if (error) throw error;
       setResults((data || []) as MemoryItem[]);
     } catch (err) {
-      console.error('Search error:', err);
+      
     } finally {
       setSearching(false);
     }
@@ -71,7 +71,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         setResults(prev => prev.map(m => m.id === memory.id ? { ...m, decryptedUrl: url, loading: false } : m));
       }
     } catch (err) {
-      console.error('Decryption failed:', err);
+      
       setResults(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
     }
   };

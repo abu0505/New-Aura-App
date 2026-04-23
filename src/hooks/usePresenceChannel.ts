@@ -223,7 +223,7 @@ export function usePresenceChannel(partnerId: string | null) {
         user_id: userId, page, online_at: new Date().toISOString(),
       });
     } catch (err) {
-      console.error('[Presence] Track failed:', err);
+      
     }
   }, []);
 
@@ -233,7 +233,7 @@ export function usePresenceChannel(partnerId: string | null) {
     try {
       await channelRef.current.untrack();
     } catch (err) {
-      console.error('[Presence] Untrack failed:', err);
+      
     }
   }, []);
 

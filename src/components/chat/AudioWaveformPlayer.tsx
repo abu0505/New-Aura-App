@@ -84,7 +84,7 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
         }
 
       } catch (err) {
-        console.error('Waveform static decoding skipped/failed:', err);
+        
         // Fallback: pseudo-random waveform derived from string length to stay mostly consistent
         if (!cancelled) {
           const pseudoSeed = src.length + (preDuration || 10);
@@ -159,8 +159,8 @@ function AudioWaveformPlayerComponent({ src, isMine, duration: preDuration }: Au
       audio.play().then(() => {
         setIsPlaying(true);
         animationRef.current = requestAnimationFrame(animateProgress);
-      }).catch(err => {
-        console.error('Playback failed:', err);
+      }).catch(() => {
+        
       });
     } else {
       audio.pause();

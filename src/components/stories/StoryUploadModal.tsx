@@ -48,7 +48,7 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
         setCaption('');
       }
     } catch (error) {
-      console.error('Upload failed:', error);
+      
     } finally {
       setIsUploading(false);
     }

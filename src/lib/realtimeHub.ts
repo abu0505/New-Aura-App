@@ -112,19 +112,19 @@ function start(userId?: string, partnerId?: string) {
         if (listener.table === table) {
           try {
             listener.callback(payload);
-          } catch (err) {
-            console.error(`[RealtimeHub] Error in listener for ${table}:`, err);
+          } catch {
+            
           }
         }
       }
     });
   }
 
-  channel.subscribe((status, err) => {
+  channel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
       isSetup = true;
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-      console.warn(`[RealtimeHub] Channel status: ${status}`, err);
+      
       isSetup = false;
       // Auto-reconnect after 5 seconds
       setTimeout(() => {

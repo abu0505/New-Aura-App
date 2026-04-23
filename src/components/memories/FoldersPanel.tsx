@@ -41,7 +41,7 @@ function FolderCover({ messageId }: { messageId: string }) {
           setUrl(URL.createObjectURL(blob));
         }
       } catch (err) {
-        console.error('Error loading folder cover:', err);
+        
       } finally {
         if (active) setLoading(false);
       }

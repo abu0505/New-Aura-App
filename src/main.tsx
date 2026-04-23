@@ -16,8 +16,8 @@ if ('serviceWorker' in navigator) {
           }
         });
       },
-      (err) => {
-        console.error('ServiceWorker registration failed:', err);
+      () => {
+        
       }
     );
   });

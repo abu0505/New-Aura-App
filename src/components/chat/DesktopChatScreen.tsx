@@ -63,7 +63,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
 
   const {
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore,
-    hasMore, sendMessage, loadMore, reactToMessage, editMessage,
+    hasMore, hasMoreNewer, sendMessage, loadMore, loadMoreNewer, jumpToMessageWindow, jumpToLatest, reactToMessage, editMessage,
     deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead,
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
@@ -82,6 +82,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const isBottomLocked = useRef(true);
 
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
+  const handleJumpToMessageRef = useRef<((id: string) => void) | null>(null);
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault();
@@ -187,12 +188,16 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
 
   const handleScroll = () => {
     const container = scrollContainerRef.current;
-    if (!container || loadingMore || !hasMore || viewMode === 'pinned') return;
+    if (!container || loadingMore || viewMode === 'pinned') return;
 
     // Trigger load more when user stays near the top (e.g., < 300px)
-    if (container.scrollTop < 300) {
+    if (hasMore && container.scrollTop < 300) {
       previousScrollHeightRef.current = container.scrollHeight;
       loadMore();
+    }
+
+    if (hasMoreNewer && container.scrollHeight - container.scrollTop - container.clientHeight < 300) {
+      loadMoreNewer();
     }
   };
 
@@ -252,45 +257,51 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
     sendMessage(text, media, replyToId);
   };
 
-  const handleJumpToMessage = (id: string) => {
-    const el = document.getElementById(`msg-${id}`);
+  const handleJumpToMessage = async (id: string) => {
+    const el = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
     const container = scrollContainerRef.current;
 
     if (el && container) {
+      isBottomLocked.current = false;
       const containerRect = container.getBoundingClientRect();
       const elRect = el.getBoundingClientRect();
-      const offset = elRect.top - containerRect.top + container.scrollTop - 100;
+      const offset = elRect.top - containerRect.top + container.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
       container.scrollTo({ top: offset, behavior: 'smooth' });
       setIsJumpingToPinned(null);
     } else {
-      if (hasMore && !loadingMore) {
-        setIsJumpingToPinned(id);
-        if (container) previousScrollHeightRef.current = container.scrollHeight;
-        loadMore();
-      }
+      setIsJumpingToPinned(id);
+      await jumpToMessageWindow(id);
+      
+      // Wait for React to render the newly fetched window
+      setTimeout(() => {
+        const newEl = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
+        const newContainer = scrollContainerRef.current;
+        if (newEl && newContainer) {
+          isBottomLocked.current = false;
+          const containerRect = newContainer.getBoundingClientRect();
+          const elRect = newEl.getBoundingClientRect();
+          const offset = elRect.top - containerRect.top + newContainer.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
+          newContainer.scrollTo({ top: offset, behavior: 'auto' });
+        }
+        setIsJumpingToPinned(null);
+      }, 150);
     }
   };
 
+  handleJumpToMessageRef.current = handleJumpToMessage;
+
   useEffect(() => {
-    if (isJumpingToPinned && !loadingMore) {
-      const el = document.getElementById(`msg-${isJumpingToPinned}`);
-      const container = scrollContainerRef.current;
-      if (el && container) {
-        setTimeout(() => {
-          const containerRect = container.getBoundingClientRect();
-          const elRect = el.getBoundingClientRect();
-          const offset = elRect.top - containerRect.top + container.scrollTop - 100;
-          container.scrollTo({ top: offset, behavior: 'smooth' });
-        }, 100);
-        setIsJumpingToPinned(null);
-      } else if (hasMore) {
-        if (container) previousScrollHeightRef.current = container.scrollHeight;
-        loadMore();
-      } else {
-        setIsJumpingToPinned(null);
+    const handleGlobalJump = (e: any) => {
+      const msgId = e.detail?.messageId;
+      if (msgId) {
+        setViewMode('chat');
+        handleJumpToMessageRef.current?.(msgId);
       }
-    }
-  }, [messages.length, loadingMore, isJumpingToPinned, hasMore, loadMore]);
+    };
+    document.addEventListener('jump-to-message', handleGlobalJump);
+    return () => document.removeEventListener('jump-to-message', handleGlobalJump);
+  }, []);
+
 
   // Real-time "Seen" logic using Intersection Observer
   // ══ FIXED: Observer is created ONCE and persists across message changes ══
@@ -584,7 +595,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%)',
             }}
           >
-            <div className="max-w-[800px] mx-auto px-6 md:px-10 pt-10 pb-10 flex flex-col gap-1 min-h-full">
+            <div className="max-w-[800px] mx-auto px-6 md:px-10 pt-10 pb-8 flex flex-col gap-1 min-h-full">
               {!partner.public_key && (
                 <div className="text-center p-8 bg-primary/5 border border-primary/20 text-primary rounded-[3rem] text-xs font-label uppercase tracking-widest leading-loose">
                   Awaiting partner synchronization...
@@ -665,6 +676,10 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                               isMine={firstMsg.sender_id === user?.id}
                               isFirst={isFirstInGroup}
                               isLast={isLastInGroup}
+                              onReply={viewMode === 'chat' ? (id: string) => {
+                                setReplyingTo(messages.find(m => m.id === id) || null);
+                                messageInputRef.current?.focusInput();
+                              } : undefined}
                             />
                           ) : (
                             <ChatBubble
@@ -704,6 +719,19 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               <div ref={messagesEndRef} />
             </div>
           </div>
+
+          {/* Jump to Latest Floating Button */}
+          {hasMoreNewer && viewMode === 'chat' && (
+            <div className="absolute bottom-32 right-10 z-[100]">
+              <button 
+                onClick={jumpToLatest} 
+                className="bg-primary text-background px-4 py-2 rounded-full shadow-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+              >
+                <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                Jump to Latest
+              </button>
+            </div>
+          )}
 
           {/* INPUT AREA - Grid Row 4 */}
           {viewMode === 'chat' && (

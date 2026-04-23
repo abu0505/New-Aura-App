@@ -33,7 +33,7 @@ export const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
       const data = await response.json();
       setGifs(data.data || []);
     } catch (err) {
-      console.error('GIF fetch error:', err);
+      
       setError('Could not load GIFs. Check your connection or API key.');
     } finally {
       setLoading(false);

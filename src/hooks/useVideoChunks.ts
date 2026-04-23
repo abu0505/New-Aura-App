@@ -76,9 +76,13 @@ export function useVideoChunks() {
     const unsubscribe = realtimeHub.on('video_chunks', async (payload) => {
       if (payload.eventType !== 'INSERT') return;
       const row = payload.new as any;
+      
+      console.log(`[useVideoChunks] Realtime INSERT received for message_id: ${row.message_id}, chunk_index: ${row.chunk_index}`);
 
       // Only process chunks addressed to me
-      if (row.receiver_id !== user.id) return;
+      if (row.receiver_id !== user.id) {
+        return;
+      }
 
       const msgId: string = row.message_id;
       const chunkIndex: number = row.chunk_index;
@@ -97,7 +101,12 @@ export function useVideoChunks() {
 
       // Use partner.public_key — video_chunks table does NOT have sender_public_key column
       const partnerKey = partner?.public_key;
-      if (!partnerKey) return;
+      if (!partnerKey) {
+        console.warn(`[useVideoChunks] No partner public key available!`);
+        return;
+      }
+
+
 
       const blob = await getDecryptedBlob(
         row.chunk_url,
@@ -108,6 +117,8 @@ export function useVideoChunks() {
         undefined,
         'video'
       );
+
+
 
       const chunks = chunkStore.get(msgId);
       if (!chunks) return;
@@ -152,8 +163,12 @@ export function useVideoChunks() {
   ) => {
     // Guard: allow re-loading if existing chunks aren't decrypted (e.g., stuck placeholders)
     const existing = chunkStore.get(messageId);
-    if (existing && existing.some(c => c.isDecrypted && c.blobUrl)) return;
-    if (loadingSet.has(messageId)) return;
+    if (existing && existing.some(c => c.isDecrypted && c.blobUrl)) {
+      return;
+    }
+    if (loadingSet.has(messageId)) {
+      return;
+    }
     loadingSet.add(messageId);
 
     try {
@@ -187,6 +202,8 @@ export function useVideoChunks() {
             'video'
           );
 
+
+
           const chunks = chunkStore.get(messageId);
           if (!chunks) return;
 
@@ -202,6 +219,9 @@ export function useVideoChunks() {
           notifyAll();
         }));
       }
+      console.log(`[useVideoChunks] loadExistingChunks finished for ${messageId}. Final chunks:`, chunkStore.get(messageId));
+    } catch (err) {
+      console.error(`[useVideoChunks] Error loading chunks for ${messageId}:`, err);
     } finally {
       loadingSet.delete(messageId);
     }

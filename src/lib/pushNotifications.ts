@@ -27,7 +27,7 @@ async function saveSubscriptionToDatabase(userId: string, subscription: PushSubs
   const subJson = subscription.toJSON();
   
   if (!subJson.endpoint || !subJson.keys?.p256dh || !subJson.keys?.auth) {
-    console.error('Invalid subscription object', subJson);
+    
     return false;
   }
 
@@ -43,7 +43,7 @@ async function saveSubscriptionToDatabase(userId: string, subscription: PushSubs
     });
 
   if (error) {
-    console.error('Failed to save push subscription to Supabase', error);
+    
     return false;
   }
   
@@ -96,7 +96,7 @@ export async function initPushNotifications(userId: string): Promise<boolean> {
 
     if (!subscription) {
       if (!VAPID_PUBLIC_KEY) {
-        console.error('VITE_VAPID_PUBLIC_KEY is not defined in the environment.');
+        
         return false;
       }
       subscription = await registration.pushManager.subscribe({
@@ -107,7 +107,7 @@ export async function initPushNotifications(userId: string): Promise<boolean> {
 
     return await saveSubscriptionToDatabase(userId, subscription);
   } catch (error) {
-    console.error('Error in initPushNotifications:', error);
+    
     return false;
   }
 }
@@ -118,7 +118,7 @@ export async function initPushNotifications(userId: string): Promise<boolean> {
  */
 export async function requestAndSubscribe(userId: string): Promise<'granted' | 'denied' | 'error'> {
   if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-    console.warn('This browser does not support desktop/push notifications');
+    
     return 'error';
   }
 
@@ -137,7 +137,7 @@ export async function requestAndSubscribe(userId: string): Promise<'granted' | '
 
     if (!subscription) {
       if (!VAPID_PUBLIC_KEY) {
-        console.error('VITE_VAPID_PUBLIC_KEY is not defined in the environment.');
+        
         return 'error';
       }
 
@@ -151,7 +151,7 @@ export async function requestAndSubscribe(userId: string): Promise<'granted' | '
     return saved ? 'granted' : 'error';
 
   } catch (error) {
-    console.error('Error subscribing to push notifications', error);
+    
     return 'error';
   }
 }
@@ -176,7 +176,7 @@ export async function unsubscribeFromPushNotifications(userId: string): Promise<
     await supabase.from('push_subscriptions').delete().eq('user_id', userId);
     return true;
   } catch (error) {
-    console.error('Error unsubscribing from push notifications', error);
+    
     return false;
   }
 }

@@ -48,7 +48,7 @@ export function usePartner() {
           setPartner(data as PartnerProfile);
         }
       } catch (err) {
-        console.error('Error fetching partner', err);
+        
       } finally {
         setLoading(false);
       }

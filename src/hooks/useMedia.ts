@@ -717,11 +717,11 @@ export function useMedia() {
       };
 
       const processChunkAsync = async (chunk: any) => {
-        console.warn(`[Pipeline] 🔒 Encrypting chunk ${chunk.index}...`);
+        
         const encrypted = await encryptChunk(chunk, totalChunks);
-        console.warn(`[Pipeline] ☁️ Uploading chunk ${chunk.index}...`);
+        
         const result = await uploadEncryptedChunk(encrypted);
-        console.warn(`[Pipeline] ✅ Upload finished for chunk ${chunk.index}`);
+        
         uploadedChunksQueue.set(chunk.index, result);
         tryDeliverQueue(); 
       };
@@ -734,7 +734,7 @@ export function useMedia() {
 
         import('./useVideoChunks').then(m => {
           m.addLocalChunkForSender(messageId, chunk.index, totalChunks, chunk.file, chunk.durationSec);
-        }).catch(err => console.warn('Failed to inject local chunk:', err));
+        }).catch(() => {});
 
         const task = processChunkAsync(chunk);
         allTasks.push(task);
@@ -759,7 +759,7 @@ export function useMedia() {
       onStatusChange('Done');
       return true;
     } catch (err) {
-      console.error('[useMedia] Chunked upload failed:', err);
+      
       return false;
     }
   }, [user, partner]);

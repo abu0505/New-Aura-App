@@ -105,11 +105,11 @@ export function useLiveLocation() {
               // Actually, looking at the schema, upsert might need to be just an update if not uniquely constrained? 
               // We'll see. The existing code uses upsert without explicit onConflict, but we should probably just find if it exists and update, or upsert based on user_id if that's the PK/unique.
           } catch (e) {
-            console.error('Failed to sync location', e);
+            
           }
         },
         (err) => {
-          console.error(err);
+          
           setError(err.message);
           stopSharing();
         },
@@ -166,7 +166,7 @@ export function useLiveLocation() {
           setPartnerLocation({ lat, lng });
         }
       } catch (e) {
-        console.error('Failed to decrypt partner location', e);
+        
       }
     };
 

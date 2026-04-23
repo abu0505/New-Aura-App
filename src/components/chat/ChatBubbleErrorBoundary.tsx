@@ -24,11 +24,7 @@ export class ChatBubbleErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: { componentStack: string }) {
-    console.error(
-      `[ChatBubble] Render error for message ${this.props.messageId ?? 'unknown'}:`,
-      error,
-      info.componentStack
-    );
+    
   }
 
   render() {

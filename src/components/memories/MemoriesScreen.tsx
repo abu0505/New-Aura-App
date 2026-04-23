@@ -33,7 +33,7 @@ export default function MemoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string, messageId?: string } | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 12;
 
@@ -113,7 +113,7 @@ export default function MemoriesScreen() {
         try {
           setFavorites(new Set(JSON.parse(saved)));
         } catch (e) {
-          console.error('Failed to parse favorites', e);
+          
         }
       }
     };
@@ -236,7 +236,7 @@ export default function MemoriesScreen() {
       // Stop paging if we got fewer rows than the limit.
       setHasMore(newMemories.length === LIMIT);
     } catch (err) {
-      console.error('Error fetching memories:', err);
+      
       setHasMore(false);
     } finally {
       if (pageNumber === 1) setLoading(false);
@@ -261,7 +261,7 @@ export default function MemoriesScreen() {
       if (error) throw error;
       setThrowbacks(data as MemoryItem[]);
     } catch (err) {
-      console.error('Error fetching throwbacks:', err);
+      
     }
   };
 
@@ -323,7 +323,7 @@ export default function MemoriesScreen() {
         setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
       }
     } catch (err) {
-      console.error('Decryption failed for memory:', memory.id, err);
+      
       setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
     } finally {
       activeDecryptionsRef.current--; // Fix 5.4: Release slot when done
@@ -386,7 +386,7 @@ export default function MemoriesScreen() {
       });
     } else {
       if (memory.decryptedUrl) {
-        setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' });
+        setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image', messageId: memory.id });
       }
     }
   };
@@ -452,14 +452,34 @@ export default function MemoriesScreen() {
               </button>
               <p className="text-sm text-white/80 font-medium">{selectedIds.size} selected</p>
             </div>
-            <button
-              onClick={() => setShowFolderPicker(true)}
-              disabled={selectedIds.size === 0}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] hover:bg-[rgba(var(--primary-rgb),_0.2)] transition-all disabled:opacity-30"
-            >
-              <span className="material-symbols-outlined text-[18px]">folder</span>
-              <span className="text-xs font-bold uppercase tracking-wider">Add to Collection</span>
-            </button>
+            
+            <div className="flex items-center gap-2">
+              {selectedIds.size === 1 && (
+                <button
+                  onClick={() => {
+                    const id = Array.from(selectedIds)[0];
+                    document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'chat' }));
+                    setTimeout(() => {
+                      document.dispatchEvent(new CustomEvent('jump-to-message', { detail: { messageId: id } }));
+                    }, 100);
+                    cancelSelection();
+                  }}
+                  className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10 transition-all"
+                >
+                  <span className="material-symbols-outlined text-[18px]">forum</span>
+                  <span className="text-xs font-bold uppercase tracking-wider">View in Chat</span>
+                </button>
+              )}
+              
+              <button
+                onClick={() => setShowFolderPicker(true)}
+                disabled={selectedIds.size === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] hover:bg-[rgba(var(--primary-rgb),_0.2)] transition-all disabled:opacity-30"
+              >
+                <span className="material-symbols-outlined text-[18px]">folder</span>
+                <span className="text-xs font-bold uppercase tracking-wider">Add to Collection</span>
+              </button>
+            </div>
           </div>
         ) : (
           /* Normal Header */
@@ -556,7 +576,7 @@ export default function MemoriesScreen() {
               <OnThisDayCard 
                 throwbacks={throwbacks} 
                 partnerPublicKey={partner?.public_key || ''} 
-                onOpenMedia={(url, type) => setSelectedMedia({ url, type })}
+                onOpenMedia={(url, type, messageId) => setSelectedMedia({ url, type, messageId })}
               />
             )}
 
@@ -636,6 +656,8 @@ export default function MemoriesScreen() {
           <MediaViewer
             url={selectedMedia.url}
             type={selectedMedia.type as any}
+            messageId={selectedMedia.messageId}
+            showViewInChat={true}
             onClose={() => setSelectedMedia(null)}
           />
         )}

@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw backupError;
       }
     } catch (err) {
-      console.error('Failed to setup encryption:', err);
+      
       // Re-throw so the UI component (Modal) can handle and show the error message.
       throw err;
     }

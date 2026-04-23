@@ -101,7 +101,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
       // Folder collections are small (usually 1–50 items), so eager load is fine
       loaded.forEach(item => decryptItem(item));
     } catch (err) {
-      console.error('Error loading folder items:', err);
+      
       setLoadingItems(false);
     }
   };
@@ -127,7 +127,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
         setItems(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
       }
     } catch (err) {
-      console.error('Decryption failed for item:', memory.id, err);
+      
       setItems(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
       decryptingRef.current.delete(memory.id); // allow retry on failure
     }
