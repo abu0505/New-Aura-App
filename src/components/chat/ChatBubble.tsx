@@ -964,10 +964,10 @@ function ChatBubble({
         {message.reaction && (
           <button 
             onClick={(e) => { e.stopPropagation(); onReact?.(message.id, null); }}
-            className={`absolute -bottom-[16px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated/90 backdrop-blur-md border border-primary/30 rounded-full px-2.5 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.6)] z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center gap-1`}
+            className={`absolute -bottom-[14px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated/90 backdrop-blur-xl border border-primary rounded-full px-2 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.6)] z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center gap-1`}
             title="Remove reaction"
           >
-            <PremiumEmoji emoji={message.reaction} size={18} />
+            <PremiumEmoji emoji={message.reaction} size={16} />
           </button>
         )}
 
