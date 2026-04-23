@@ -573,15 +573,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at)
                 : null;
                 
-              // Debug logging for lastReadMyMsg
-              if (lastReadMyMsg) {
-                console.log('[Debug] lastReadMyMsg evaluated:', {
-                  id: lastReadMyMsg.id,
-                  is_read: lastReadMyMsg.is_read,
-                  read_at: lastReadMyMsg.read_at,
-                  msg_content_preview: lastReadMyMsg.decrypted_content ? lastReadMyMsg.decrypted_content.substring(0, 10) : ''
-                });
-              }
+
 
               const groupedList = groupMessages(listToRender);
 
