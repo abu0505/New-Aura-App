@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import QualityChoiceModal from '../chat/QualityChoiceModal';
@@ -56,7 +56,8 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
 
   const handleUploadClick = () => {
     if (file && file.type.startsWith('image/')) {
-      setShowQualityModal(true);
+      // setShowQualityModal(true);
+      startUpload(false);
     } else if (file) {
       startUpload(false);
     } else if (caption.trim()) {

@@ -52,7 +52,8 @@ export const FILE_SIZE_LIMITS = {
 // Bypasses browser-image-compression for better format support.
 // Outputs WebP at 0.82 quality with max 1920px dimension → ~70-75% size reduction.
 
-async function compressImageToWebP(file: File): Promise<File> {
+// @ts-ignore — compression disabled intentionally; kept for future re-enable
+async function _compressImageToWebP(file: File): Promise<File> {
   const MAX_DIMENSION = 1920;
   const WEBP_QUALITY = 0.82;
 
@@ -111,7 +112,8 @@ async function compressImageToWebP(file: File): Promise<File> {
 //   4. If VideoEncoder is unsupported, worker signals { type: 'fallback' } and
 //      we fall back to the existing FFmpeg WASM path.
 
-async function compressVideoWithWebCodecs(
+// @ts-ignore — compression disabled intentionally; kept for future re-enable
+async function _compressVideoWithWebCodecs(
   file: File,
   onProgress: (p: number) => void
 ): Promise<File | null> {
@@ -232,7 +234,8 @@ async function compressVideoWithWebCodecs(
 
 // ─── FFmpeg WASM Fallback ──────────────────────────────────────────────────────
 
-async function compressVideoWithFFmpeg(
+// @ts-ignore — compression disabled intentionally; kept for future re-enable
+async function _compressVideoWithFFmpeg(
   file: File,
   onProgress: (p: number) => void
 ): Promise<File> {
@@ -301,7 +304,7 @@ export function useMedia() {
 
   const processAndUpload = async (
     file: File,
-    options: { optimize?: boolean } = { optimize: true }
+    _options: { optimize?: boolean } = { optimize: true }
   ): Promise<ProcessedMedia | null> => {
     if (!user || !partner?.public_key) return null;
 
@@ -325,37 +328,37 @@ export function useMedia() {
       let fileToProcess = file;
 
       // ── Optimization ──────────────────────────────────────────────────────
-      if (options.optimize) {
-        if (file.type.startsWith('image/') && file.type !== 'image/gif') {
-          // NEW: Canvas → WebP (75% reduction, much faster than library)
-          try {
-            fileToProcess = await compressImageToWebP(file);
-          } catch (err) {
-            // Fallback to original library
-            fileToProcess = await imageCompression(file, {
-              maxSizeMB: 2,
-              maxWidthOrHeight: 1920,
-              useWebWorker: true,
-            });
-          }
-        } else if (file.type.startsWith('video/')) {
-          // NEW: Try WebCodecs first (GPU, 2-5s), fall back to FFmpeg WASM (CPU, 30s)
-          setUploadProgress(2);
-
-
-          const webCodecsResult = await compressVideoWithWebCodecs(file, setUploadProgress);
-
-          if (webCodecsResult) {
-
-            fileToProcess = webCodecsResult;
-          } else {
-            // Fallback to FFmpeg WASM
-
-            setUploadProgress(0);
-            fileToProcess = await compressVideoWithFFmpeg(file, setUploadProgress);
-          }
-        }
-      }
+      // if (options.optimize) {
+      //   if (file.type.startsWith('image/') && file.type !== 'image/gif') {
+      //     // NEW: Canvas → WebP (75% reduction, much faster than library)
+      //     try {
+      //       fileToProcess = await compressImageToWebP(file);
+      //     } catch (err) {
+      //       // Fallback to original library
+      //       fileToProcess = await imageCompression(file, {
+      //         maxSizeMB: 2,
+      //         maxWidthOrHeight: 1920,
+      //         useWebWorker: true,
+      //       });
+      //     }
+      //   } else if (file.type.startsWith('video/')) {
+      //     // NEW: Try WebCodecs first (GPU, 2-5s), fall back to FFmpeg WASM (CPU, 30s)
+      //     setUploadProgress(2);
+      //
+      //
+      //     const webCodecsResult = await compressVideoWithWebCodecs(file, setUploadProgress);
+      //
+      //     if (webCodecsResult) {
+      //
+      //       fileToProcess = webCodecsResult;
+      //     } else {
+      //       // Fallback to FFmpeg WASM
+      //
+      //       setUploadProgress(0);
+      //       fileToProcess = await compressVideoWithFFmpeg(file, setUploadProgress);
+      //     }
+      //   }
+      // }
 
       // ── Encryption (Symmetric) ────────────────────────────────────────────
       const arrayBuffer = await fileToProcess.arrayBuffer();

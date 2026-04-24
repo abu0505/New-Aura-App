@@ -55,7 +55,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
   const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [pendingCaption, setPendingCaption] = useState('');
+  const [pendingCaption, _setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
 
   // ── Folder picker (slash-command) state ──
@@ -89,9 +89,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     handleDroppedFiles: (files: File[]) => {
       if (files.length === 0) return;
       if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
-        setPendingFiles(files);
-        setPendingCaption('');
-        setShowQualityModal(true);
+        // setPendingFiles(files);
+        // setPendingCaption('');
+        // setShowQualityModal(true);
+        performUpload(files, false, '');
       } else {
         performUpload(files, false, '');
       }
@@ -228,9 +229,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   }, [text]);
 
   const handleSend = () => {
-    const textToSend = activeFolderChip
-      ? text.replace(new RegExp(`\\/${activeFolderChip}\\s*`, 'i'), '').trim()
-      : text.trim();
+    const textToSend = text.trim();
 
     if ((textToSend || selectedFolderMedia.length > 0 || isUploading) && !disabled) {
       if (isUploading) return;
@@ -308,9 +307,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     if (files.length > 0) {
       // Prevent pasting the file as text if it's already being handled as a media file
       e.preventDefault();
-      setPendingFiles(files);
-      setPendingCaption('');
-      setShowQualityModal(true);
+      // setPendingFiles(files);
+      // setPendingCaption('');
+      // setShowQualityModal(true);
+      performUpload(files, false, '');
     }
   };
 
@@ -329,9 +329,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   };
 
   const handleMobileCameraSend = (file: File, caption: string) => {
-    setPendingFiles([file]);
-    setPendingCaption(caption);
-    setShowQualityModal(true);
+    // setPendingFiles([file]);
+    // setPendingCaption(caption);
+    // setShowQualityModal(true);
+    performUpload([file], false, caption);
   };
 
   const handleMobileGallerySelect = (files: File[], caption: string) => {
@@ -383,9 +384,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
     // Check if any file requires quality selection (images or videos)
     if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
-      setPendingFiles(files);
-      setPendingCaption('');
-      setShowQualityModal(true);
+      // setPendingFiles(files);
+      // setPendingCaption('');
+      // setShowQualityModal(true);
+      performUpload(files, false, '');
     } else {
       // Direct upload for all
       performUpload(files, false, '');
@@ -394,9 +396,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   const handleGallerySend = (files: File[], caption: string) => {
     if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
-      setPendingFiles(files);
-      setPendingCaption(caption);
-      setShowQualityModal(true);
+      // setPendingFiles(files);
+      // setPendingCaption(caption);
+      // setShowQualityModal(true);
+      performUpload(files, false, caption);
     } else {
       performUpload(files, false, caption);
     }

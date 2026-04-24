@@ -10,6 +10,7 @@ import ChunkedVideoOverlay from './ChunkedVideoOverlay';
 import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import LinkPreview from './LinkPreview';
 import PremiumEmoji, { EmojiText } from '../common/PremiumEmoji';
+import { useMediaFolders } from '../../hooks/useMediaFolders';
 import { supabase } from '../../lib/supabase';
 
 interface ChatBubbleProps {
@@ -47,6 +48,7 @@ function ChatBubble({
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const { getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks();
+  const { folders } = useMediaFolders();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
   const [hasUploadFailed, setHasUploadFailed] = useState(false);
   // For chunked video: force re-render when new chunks arrive
@@ -91,14 +93,21 @@ function ChatBubble({
   const renderContent = (text: string) => {
     if (!text) return null;
     
-    // First, split by URL. Then for non-URL parts, split by Emoji.
+    // Sort folder names by length descending to match longest possible names first
+    const folderNames = folders
+      .map(f => f.name)
+      .filter((n): n is string => !!n)
+      .sort((a, b) => b.length - a.length);
+
+    const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
     const parts = text.split(urlRegex);
 
-    return parts.map((part, i) => {
+    return parts.flatMap((part, i) => {
       if (part && urls.includes(part)) {
-        return (
+        return [
           <a
-            key={i}
+            key={`url-${i}`}
             href={formatUrl(part)}
             target="_blank"
             rel="noopener noreferrer"
@@ -107,10 +116,32 @@ function ChatBubble({
           >
             {part}
           </a>
-        );
+        ];
       }
-      // For non-URL parts, wrap in EmojiText which handles premium emoji rendering
-      return <EmojiText key={i} text={part} size={18} />;
+      
+      if (!part) return [];
+
+      // For non-URL parts, check for folder slash commands
+      if (folderNames.length > 0) {
+        const folderRegex = new RegExp(`(\\/(?:${folderNames.map(escapeRegex).join('|')}))`, 'gi');
+        const subParts = part.split(folderRegex);
+        
+        return subParts.map((sub, j) => {
+          if (sub && sub.startsWith('/') && folderNames.some(fn => `/${fn.toLowerCase()}` === sub.toLowerCase())) {
+            return (
+              <span 
+                key={`folder-${i}-${j}`} 
+                className="font-bold"
+              >
+                {sub}
+              </span>
+            );
+          }
+          return <EmojiText key={`text-${i}-${j}`} text={sub} size={18} />;
+        });
+      }
+
+      return [<EmojiText key={`text-${i}`} text={part} size={18} />];
     });
   };
 
