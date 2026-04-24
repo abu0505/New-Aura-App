@@ -1,5 +1,4 @@
-import { useRef, useEffect, useState, useMemo } from 'react'; 
-import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
+import { useRef, useEffect, useLayoutEffect, useState, useMemo } from 'react'; 
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useChatSettings } from '../../hooks/useChatSettings';
@@ -62,41 +61,184 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
-  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const previousScrollHeightRef = useRef<number>(0);
+  const previousMessageCountRef = useRef<number>(0);
+  const isInitialMount = useRef(true);
   const isBottomLocked = useRef(true);
   
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
   const handleJumpToMessageRef = useRef<((id: string) => void) | null>(null);
 
+  useLayoutEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    if (isInitialMount.current) {
+      if (!loading && messages.length > 0) {
+        // Immediate scroll
+        container.scrollTop = container.scrollHeight;
+        
+        // Secondary scroll via requestAnimationFrame
+        requestAnimationFrame(() => {
+          container.scrollTop = container.scrollHeight;
+        });
+
+        // Tertiary scroll via timeout (catch images that decode quickly)
+        setTimeout(() => {
+          if (isBottomLocked.current) {
+            container.scrollTop = container.scrollHeight;
+          }
+        }, 300);
+
+        isInitialMount.current = false;
+        previousMessageCountRef.current = messages.length;
+      }
+      return;
+    }
+
+    // Scroll anchoring
+    if (previousScrollHeightRef.current) {
+      const hDiff = container.scrollHeight - previousScrollHeightRef.current;
+      if (hDiff > 0) {
+        container.scrollTop += hDiff;
+        previousScrollHeightRef.current = 0;
+        previousMessageCountRef.current = messages.length;
+        return;
+      }
+    }
+
+    const { scrollHeight, scrollTop, clientHeight } = container;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+    
+    // Auto-scroll logic for new messages
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+    const lastMessage = messages[messages.length - 1];
+    const sentByMe = lastMessage?.is_mine;
+
+    // If I sent the message, always scroll to bottom. 
+    // If it's from partner, only scroll if already near bottom.
+    if (viewMode === 'chat' && hasNewMessage && (sentByMe || isNearBottom)) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    previousMessageCountRef.current = messages.length;
+  }, [messages, loading, viewMode]);
+
+  useEffect(() => {
+    if (partnerIsTyping && viewMode === 'chat') {
+       const container = scrollContainerRef.current;
+       if (!container) return;
+       const { scrollHeight, scrollTop, clientHeight } = container;
+       const isNearBottom = scrollHeight - scrollTop - clientHeight < 250;
+       if (isNearBottom) {
+         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+       }
+    }
+  }, [partnerIsTyping, viewMode]);
+
+  const handleScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container || loadingMore || viewMode === 'pinned') return;
+
+    // Raise threshold to 300px — better UX for touch scrolling
+    if (hasMore && container.scrollTop < 300) {
+      previousScrollHeightRef.current = container.scrollHeight;
+      loadMore();
+    }
+
+    if (hasMoreNewer && container.scrollHeight - container.scrollTop - container.clientHeight < 300) {
+      loadMoreNewer();
+    }
+  };
+
+  // Auto-load more if the initial batch is dominated by media messages
+  // (no text visible = user can't scroll to find context above the images)
+  useEffect(() => {
+    if (loading || loadingMore || !hasMore || viewMode !== 'chat') return;
+    if (messages.length === 0) return;
+    const nonMediaCount = messages.filter(m => m.type === 'text' || m.type === 'sticker').length;
+    // If 80%+ of loaded messages are media, auto-load more to surface text context
+    if (nonMediaCount / messages.length < 0.2) {
+      const container = scrollContainerRef.current;
+      if (container) previousScrollHeightRef.current = container.scrollHeight;
+      loadMore();
+    }
+  // Only run once after initial load completes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  // Initial landing "Bottom Lock": Keep anchored to bottom during first 3 seconds
+  // while media and messages are settling/decrypting.
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    // Detect if user scrolls up manually — if they do, unlock the bottom anchor
+    const detectManualScroll = () => {
+      if (!isBottomLocked.current) return;
+      const { scrollHeight, scrollTop, clientHeight } = container;
+      // Allow some slack (100px)
+      if (scrollHeight - scrollTop - clientHeight > 100) {
+        isBottomLocked.current = false;
+      }
+    };
+
+    container.addEventListener('scroll', detectManualScroll, { passive: true });
+    
+    // ResizeObserver monitors height changes inside the container (e.g. images loading)
+    const observer = new ResizeObserver(() => {
+      if (isBottomLocked.current) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+
+    // Observe the content wrapper (first child of scroll container)
+    if (container.firstElementChild) {
+      observer.observe(container.firstElementChild);
+    }
+
+    // Auto-release lock after 3 seconds anyway to be safe
+    const timer = setTimeout(() => {
+      isBottomLocked.current = false;
+    }, 3000);
+
+    return () => {
+      container.removeEventListener('scroll', detectManualScroll);
+      observer.disconnect();
+      clearTimeout(timer);
+    };
+  }, []);
 
   const handleSend = (text: string, media?: any, replyToId?: string) => {
     sendMessage(text, media, replyToId);
   };
 
   const handleJumpToMessage = async (id: string) => {
-    // Check if it's already in the list
-    const index = groupedList.findIndex(item => {
-      if (isMessageGroup(item)) return item.some(m => m.id === id);
-      return item.id === id;
-    });
+    const el = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
+    const container = scrollContainerRef.current;
 
-    if (index !== -1 && virtuosoRef.current) {
+    if (el && container) {
       isBottomLocked.current = false;
-      virtuosoRef.current.scrollToIndex({ index, align: 'center', behavior: 'smooth' });
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const offset = elRect.top - containerRect.top + container.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
+      container.scrollTo({ top: offset, behavior: 'smooth' });
       setIsJumpingToPinned(null);
     } else {
       setIsJumpingToPinned(id);
       await jumpToMessageWindow(id);
       
       setTimeout(() => {
-        // Need to find the new index after jumping
-        const newIndex = groupMessages(viewMode === 'chat' ? messages : pinnedMessagesData).findIndex(item => {
-          if (isMessageGroup(item)) return item.some(m => m.id === id);
-          return item.id === id;
-        });
-        if (newIndex !== -1 && virtuosoRef.current) {
+        const newEl = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
+        const newContainer = scrollContainerRef.current;
+        if (newEl && newContainer) {
           isBottomLocked.current = false;
-          virtuosoRef.current.scrollToIndex({ index: newIndex, align: 'center', behavior: 'auto' });
+          const containerRect = newContainer.getBoundingClientRect();
+          const elRect = newEl.getBoundingClientRect();
+          const offset = elRect.top - containerRect.top + newContainer.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
+          newContainer.scrollTo({ top: offset, behavior: 'auto' });
         }
         setIsJumpingToPinned(null);
       }, 150);
@@ -131,6 +273,9 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   useEffect(() => {
     if (viewMode !== 'chat') return;
 
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
     const unreadMessages = new Set<string>();
     let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -141,8 +286,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       }
     };
 
-    // Create IntersectionObserver — root:null means viewport, which Virtuoso's
-    // internal scroller is within, so visible items are detected correctly.
+    // Create IntersectionObserver ONCE
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -159,13 +303,13 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
         }
       });
     }, {
-      root: null,
+      root: container,
       threshold: 0.1,
     });
 
     // Observe all existing message elements
     const observeAll = () => {
-      document.querySelectorAll('[data-message-id]').forEach(el => {
+      container.querySelectorAll('[data-message-id]').forEach(el => {
         observer.observe(el);
       });
     };
@@ -176,9 +320,11 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       for (const mutation of mutations) {
         for (const node of mutation.addedNodes) {
           if (node instanceof HTMLElement) {
+            // Check if the added node itself is a message element
             if (node.hasAttribute('data-message-id')) {
               observer.observe(node);
             }
+            // Also check descendants
             node.querySelectorAll?.('[data-message-id]')?.forEach(el => {
               observer.observe(el);
             });
@@ -187,7 +333,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       }
     });
 
-    mutationObserver.observe(document.body, { childList: true, subtree: true });
+    mutationObserver.observe(container, { childList: true, subtree: true });
 
     return () => {
       observer.disconnect();
@@ -224,97 +370,6 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     if (viewMode === 'chat') return messages;
     return pinnedMessagesData;
   }, [viewMode, messages, pinnedMessagesData]);
-
-  const groupedList = useMemo(() => groupMessages(listToRender), [listToRender]);
-
-  const lastReadMyMsg = useMemo(() =>
-    viewMode === 'chat'
-      ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at) ?? null
-      : null
-  , [listToRender, viewMode]);
-
-  // Render a single grouped item for Virtuoso
-  const renderItem = (index: number) => {
-    const item = groupedList[index];
-    const isGroup = isMessageGroup(item);
-    const firstMsg = isGroup ? item[0] : item;
-    const lastMsg = isGroup ? item[item.length - 1] : item;
-
-    const currentDateStr = new Date(firstMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-    const prevItem = index > 0 ? groupedList[index - 1] : null;
-    const prevMsg = prevItem ? (isMessageGroup(prevItem) ? prevItem[prevItem.length - 1] : prevItem) : null;
-    const previousDateStr = prevMsg ? new Date(prevMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-
-    const showDateSeparator = currentDateStr !== previousDateStr;
-    const isFirstInGroup = index === 0 || prevMsg?.sender_id !== firstMsg.sender_id || showDateSeparator;
-
-    const nextItem = index < groupedList.length - 1 ? groupedList[index + 1] : null;
-    const nextMsg = nextItem ? (isMessageGroup(nextItem) ? nextItem[0] : nextItem) : null;
-    const nextDateStr = nextMsg ? new Date(nextMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
-    const isLastInGroup = index === groupedList.length - 1 || nextMsg?.sender_id !== lastMsg.sender_id || nextDateStr !== currentDateStr;
-
-    return (
-      <div key={isGroup ? `group-${firstMsg.id}` : firstMsg.id} id={viewMode === 'chat' ? `msg-${firstMsg.id}` : `pinned-${firstMsg.id}`} className="flex flex-col gap-1 w-full message-row">
-        {showDateSeparator && (
-          <div className="flex justify-center my-6">
-            <span className="bg-aura-bg-elevated/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-aura-text-secondary uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
-              {currentDateStr}
-            </span>
-          </div>
-        )}
-        {viewMode === 'chat' && firstUnreadId === firstMsg.id && (
-          <div className="flex items-center gap-4 py-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-            <span className="text-[10px] uppercase tracking-[0.2em] text-primary/60 font-bold">New Messages</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          </div>
-        )}
-        <div className={`flex w-full ${firstMsg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
-          <ChatBubbleErrorBoundary messageId={firstMsg.id}>
-            {isGroup ? (
-              <MediaGridBubble
-                messages={item}
-                partnerPublicKey={partner.public_key}
-                isMine={firstMsg.sender_id === user?.id}
-                isFirst={isFirstInGroup}
-                isLast={isLastInGroup}
-                onReply={viewMode === 'chat' ? (id: string) => {
-                  setReplyingTo(messages.find(m => m.id === id) || null);
-                  messageInputRef.current?.focusInput();
-                } : undefined}
-              />
-            ) : (
-              <ChatBubble
-                message={item}
-                partnerPublicKey={partner.public_key}
-                onReact={viewMode === 'chat' ? reactToMessage : undefined}
-                onEdit={viewMode === 'chat' ? editMessage : undefined}
-                onDelete={viewMode === 'chat' ? deleteMessage : undefined}
-                onPin={pinMessage}
-                isFirst={isFirstInGroup}
-                isLast={isLastInGroup}
-                isPinnedView={viewMode === 'pinned'}
-                onRedirect={viewMode === 'pinned' ? (id) => {
-                  setViewMode('chat');
-                  handleJumpToMessage(id);
-                } : undefined}
-                onReply={viewMode === 'chat' ? (id: string) => {
-                  setReplyingTo(messages.find(m => m.id === id) || null);
-                  messageInputRef.current?.focusInput();
-                } : undefined}
-                repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
-                onJumpToMessage={handleJumpToMessage}
-                quickEmojis={settings?.quick_emojis}
-              />
-            )}
-          </ChatBubbleErrorBoundary>
-        </div>
-        {lastReadMyMsg && lastReadMyMsg.id === lastMsg.id && (
-          <SeenIndicator timestamp={lastReadMyMsg.read_at!} />
-        )}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -474,82 +529,137 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             </div>
           )}
 
-          {/* Message List — Virtualized */}
-          <div
-            className="flex-1 relative overflow-hidden"
+          {/* Message List */}
+          <div 
+            ref={scrollContainerRef} 
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-6 pb-24 flex flex-col gap-1 custom-scrollbar anchor-none"
             style={{
               maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
               WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
             }}
           >
+            {hasMore && !loading && viewMode === 'chat' && (
+              <div className="flex justify-center py-4 anchor-none">
+                {loadingMore ? (
+                  <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                ) : (
+                  <div className="text-[9px] text-aura-text-secondary uppercase tracking-[0.2em] opacity-60 font-bold">Scroll up for older memories</div>
+                )}
+              </div>
+            )}
+
             {!partner.public_key && (
-              <div className="absolute inset-0 flex items-center justify-center z-10 px-6">
-                <div className="text-center p-6 bg-primary/5 border border-primary/20 text-primary rounded-[2rem] text-[10px] font-label uppercase tracking-widest leading-loose shadow-xl">
-                  Establishing Sanctuary Connection...<br/>Generating Encryption Keys.
-                </div>
+              <div className="text-center p-6 bg-primary/5 border border-primary/20 text-primary rounded-[2rem] text-[10px] font-label uppercase tracking-widest leading-loose shadow-xl">
+                Establishing Sanctuary Connection...<br/>Generating Encryption Keys.
               </div>
             )}
 
             {loading ? (
               <div className="flex justify-center p-12">
-                <div className="w-6 h-6 border-2 border-primary rounded-full border-t-transparent animate-spin"></div>
+                 <div className="w-6 h-6 border-2 border-primary rounded-full border-t-transparent animate-spin"></div>
               </div>
-            ) : viewMode === 'pinned' && groupedList.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full p-8 opacity-60">
-                <span className="material-symbols-outlined text-4xl text-primary mb-2">push_pin</span>
-                <span className="text-sm text-aura-text-primary font-label uppercase tracking-widest text-center">No Pinned Messages Found</span>
-              </div>
-            ) : (
-              <Virtuoso
-                ref={virtuosoRef}
-                style={{ height: '100%' }}
-                className="custom-scrollbar"
-                data={groupedList}
-                initialTopMostItemIndex={groupedList.length > 0 ? groupedList.length - 1 : 0}
-                followOutput={(isAtBottom) => {
-                  const lastMsg = messages[messages.length - 1];
-                  if (lastMsg?.is_mine) return 'smooth';
-                  return isAtBottom ? 'smooth' : false;
-                }}
-                atTopStateChange={(atTop) => {
-                  if (atTop && hasMore && !loadingMore && viewMode === 'chat') {
-                    loadMore();
-                  }
-                }}
-                atBottomStateChange={(atBottom) => {
-                  if (atBottom && hasMoreNewer && viewMode === 'chat') {
-                    loadMoreNewer();
-                  }
-                }}
-                startReached={() => {
-                  if (hasMore && !loadingMore && viewMode === 'chat') loadMore();
-                }}
-                endReached={() => {
-                  if (hasMoreNewer && viewMode === 'chat') loadMoreNewer();
-                }}
-                components={{
-                  Header: () => hasMore && viewMode === 'chat' ? (
-                    <div className="flex justify-center py-4">
-                      {loadingMore
-                        ? <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                        : <div className="text-[9px] text-aura-text-secondary uppercase tracking-[0.2em] opacity-60 font-bold">Scroll up for older memories</div>
-                      }
-                    </div>
-                  ) : <div className="pt-4" />,
-                  Footer: () => (
-                    <div className="pb-28">
-                      {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
-                    </div>
-                  ),
-                }}
-                increaseViewportBy={{ top: 600, bottom: 600 }}
-                itemContent={(index) => (
-                  <div className="px-2 py-0.5">
-                    {renderItem(index)}
+            ) : (() => {
+              if (viewMode === 'pinned' && listToRender.length === 0) {
+                return (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 opacity-60">
+                    <span className="material-symbols-outlined text-4xl text-primary mb-2">push_pin</span>
+                    <span className="text-sm text-aura-text-primary font-label uppercase tracking-widest text-center">No Pinned Messages Found</span>
                   </div>
-                )}
-              />
-            )}
+                );
+              }
+
+              const lastReadMyMsg = viewMode === 'chat' 
+                ? [...listToRender].reverse().find(m => m.is_mine && m.is_read && !!m.read_at)
+                : null;
+                
+
+
+              const groupedList = groupMessages(listToRender);
+
+              return groupedList.map((item, index) => {
+                const isGroup = isMessageGroup(item);
+                const firstMsg = isGroup ? item[0] : item;
+                const lastMsg = isGroup ? item[item.length - 1] : item;
+                
+                const currentDateStr = new Date(firstMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+                const prevItem = index > 0 ? groupedList[index - 1] : null;
+                const prevMsg = prevItem ? (isMessageGroup(prevItem) ? prevItem[prevItem.length - 1] : prevItem) : null;
+                const previousDateStr = prevMsg ? new Date(prevMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+                
+                const showDateSeparator = currentDateStr !== previousDateStr;
+                const isFirstInGroup = index === 0 || prevMsg?.sender_id !== firstMsg.sender_id || showDateSeparator;
+                
+                const nextItem = index < groupedList.length - 1 ? groupedList[index + 1] : null;
+                const nextMsg = nextItem ? (isMessageGroup(nextItem) ? nextItem[0] : nextItem) : null;
+                const nextDateStr = nextMsg ? new Date(nextMsg.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+                const isLastInGroup = index === groupedList.length - 1 || nextMsg?.sender_id !== lastMsg.sender_id || nextDateStr !== currentDateStr;
+
+                return (
+                  <div key={isGroup ? `group-${firstMsg.id}` : firstMsg.id} id={viewMode === 'chat' ? `msg-${firstMsg.id}` : `pinned-${firstMsg.id}`} className="flex flex-col gap-1 w-full message-row">
+                    {showDateSeparator && (
+                      <div className="flex justify-center my-6">
+                        <span className="bg-aura-bg-elevated/80 backdrop-blur-md px-3 py-1 rounded-full text-[10px] text-aura-text-secondary uppercase tracking-[0.2em] font-bold border border-white/5 shadow-md">
+                          {currentDateStr}
+                        </span>
+                      </div>
+                    )}
+                    {viewMode === 'chat' && firstUnreadId === firstMsg.id && (
+                      <div className="flex items-center gap-4 py-6">
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                        <span className="text-[10px] uppercase tracking-[0.2em] text-primary/60 font-bold">New Messages</span>
+                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+                      </div>
+                    )}
+                    <div className={`flex w-full ${firstMsg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
+                      <ChatBubbleErrorBoundary messageId={firstMsg.id}>
+                        {isGroup ? (
+                          <MediaGridBubble 
+                            messages={item}
+                            partnerPublicKey={partner.public_key}
+                            isMine={firstMsg.sender_id === user?.id}
+                            isFirst={isFirstInGroup}
+                            isLast={isLastInGroup}
+                            onReply={viewMode === 'chat' ? (id: string) => {
+                              setReplyingTo(messages.find(m => m.id === id) || null);
+                              messageInputRef.current?.focusInput();
+                            } : undefined}
+                          />
+                        ) : (
+                          <ChatBubble 
+                            message={item} 
+                            partnerPublicKey={partner.public_key}
+                            onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                            onEdit={viewMode === 'chat' ? editMessage : undefined}
+                            onDelete={viewMode === 'chat' ? deleteMessage : undefined}
+                            onPin={pinMessage}
+                            isFirst={isFirstInGroup}
+                            isLast={isLastInGroup}
+                            isPinnedView={viewMode === 'pinned'}
+                            onRedirect={viewMode === 'pinned' ? (id) => {
+                              setViewMode('chat');
+                              handleJumpToMessage(id);
+                            } : undefined}
+                            onReply={viewMode === 'chat' ? (id: string) => {
+                              setReplyingTo(messages.find(m => m.id === id) || null);
+                              messageInputRef.current?.focusInput();
+                            } : undefined}
+                            repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
+                            onJumpToMessage={handleJumpToMessage}
+                            quickEmojis={settings?.quick_emojis}
+                          />
+                        )}
+                      </ChatBubbleErrorBoundary>
+                    </div>
+                    {lastReadMyMsg && lastReadMyMsg.id === lastMsg.id && (
+                      <SeenIndicator timestamp={lastReadMyMsg.read_at!} />
+                    )}
+                  </div>
+                );
+              });
+            })()}
+            {partnerIsTyping && viewMode === 'chat' && <TypingIndicator />}
+            <div ref={messagesEndRef} />
           </div>
 
           {/* Jump to Latest Floating Button */}
