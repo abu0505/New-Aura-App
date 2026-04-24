@@ -1,4 +1,4 @@
-import { useRef, useEffect, useLayoutEffect, useState, useMemo } from 'react'; 
+import { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react'; 
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useChatSettings } from '../../hooks/useChatSettings';
@@ -246,6 +246,31 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   };
 
   handleJumpToMessageRef.current = handleJumpToMessage;
+
+  // ── Stable callback refs ──────────────────────────────────────────────────
+  // messagesRef always holds the latest messages without causing handlers to
+  // be recreated. This is the key fix for mobile: React.memo(ChatBubble) was
+  // broken by inline arrow functions that were re-created every render, forcing
+  // every bubble to re-render on a single emoji reaction or reply state change.
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Stable reply handler – same reference for the entire component lifetime.
+  const handleReply = useCallback((id: string) => {
+    setReplyingTo(messagesRef.current.find(m => m.id === id) || null);
+    messageInputRef.current?.focusInput();
+  }, []);
+
+  // Stable jump handler – always delegates to latest implementation via ref.
+  const stableHandleJumpToMessage = useCallback((id: string) => {
+    handleJumpToMessageRef.current?.(id);
+  }, []);
+
+  // Stable redirect from pinned view back to chat at the right scroll position.
+  const handlePinnedRedirect = useCallback((id: string) => {
+    setViewMode('chat');
+    handleJumpToMessageRef.current?.(id);
+  }, []);
 
   useEffect(() => {
     const handleGlobalJump = (e: any) => {
@@ -620,10 +645,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                             isMine={firstMsg.sender_id === user?.id}
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
-                            onReply={viewMode === 'chat' ? (id: string) => {
-                              setReplyingTo(messages.find(m => m.id === id) || null);
-                              messageInputRef.current?.focusInput();
-                            } : undefined}
+                            onReply={viewMode === 'chat' ? handleReply : undefined}
                           />
                         ) : (
                           <ChatBubble 
@@ -636,16 +658,10 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
                             isPinnedView={viewMode === 'pinned'}
-                            onRedirect={viewMode === 'pinned' ? (id) => {
-                              setViewMode('chat');
-                              handleJumpToMessage(id);
-                            } : undefined}
-                            onReply={viewMode === 'chat' ? (id: string) => {
-                              setReplyingTo(messages.find(m => m.id === id) || null);
-                              messageInputRef.current?.focusInput();
-                            } : undefined}
+                            onRedirect={viewMode === 'pinned' ? handlePinnedRedirect : undefined}
+                            onReply={viewMode === 'chat' ? handleReply : undefined}
                             repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
-                            onJumpToMessage={handleJumpToMessage}
+                            onJumpToMessage={stableHandleJumpToMessage}
                             quickEmojis={settings?.quick_emojis}
                           />
                         )}

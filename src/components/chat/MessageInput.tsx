@@ -101,12 +101,18 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
   }));
 
-  // Auto-resize textarea
+  // Auto-resize textarea.
+  // Deferred to requestAnimationFrame so the browser can paint the typed character
+  // *before* forcing a layout reflow to measure scrollHeight. This eliminates the
+  // keystroke lag that becomes noticeable after many messages are in the DOM.
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
-    }
+    const el = textareaRef.current;
+    if (!el) return;
+    const raf = requestAnimationFrame(() => {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+    });
+    return () => cancelAnimationFrame(raf);
   }, [text]);
 
   // Handle auto-focus when tab becomes active
