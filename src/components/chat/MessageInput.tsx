@@ -405,7 +405,14 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
   };
 
+  const MAX_MEDIA_LIMIT = 10;
+
   const performUpload = async (files: File[], optimize: boolean, caption: string) => {
+    if (files.length > MAX_MEDIA_LIMIT) {
+      alert(`Bhai aaram se! Ek sath sirf ${MAX_MEDIA_LIMIT} files bhej sakte ho. Pehli ${MAX_MEDIA_LIMIT} hi upload hongi.`);
+      files = files.slice(0, MAX_MEDIA_LIMIT);
+    }
+
     const hasOptimistic = !!onOptimisticMediaStart && !!onOptimisticMediaComplete;
     
     if (!hasOptimistic) {

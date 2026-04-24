@@ -19,7 +19,7 @@ export function groupMessages(messages: ChatMessage[]): MessageItem[] {
     const msg = messages[i];
     const prevMsg = i > 0 ? messages[i - 1] : null;
 
-    const isMedia = (msg.type === 'image' || msg.type === 'video') && !msg.decrypted_content && !msg.is_deleted_for_everyone;
+    const isMedia = (msg.type === 'image' || msg.type === 'video' || msg.type === 'gif') && !msg.decrypted_content && !msg.is_deleted_for_everyone;
     
     // Grouping conditions:
     // 1. Current is media
@@ -30,7 +30,7 @@ export function groupMessages(messages: ChatMessage[]): MessageItem[] {
       isMedia && 
       prevMsg && 
       prevMsg.sender_id === msg.sender_id && 
-      ((msg.type === 'image' || msg.type === 'video') && !prevMsg.decrypted_content && !prevMsg.is_deleted_for_everyone) &&
+      ((msg.type === 'image' || msg.type === 'video' || msg.type === 'gif') && !prevMsg.decrypted_content && !prevMsg.is_deleted_for_everyone) &&
       (new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime()) <= 120000;
 
     if (shouldGroup) {

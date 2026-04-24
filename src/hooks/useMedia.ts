@@ -492,6 +492,8 @@ export function useMedia() {
           else if (url.includes('.gif')) mimeType = 'image/gif';
           else if (url.includes('.webp')) mimeType = 'image/webp';
           else mimeType = 'image/webp'; // Default to WebP since we now compress to WebP
+        } else if (mediaType === 'gif') {
+          mimeType = 'image/gif';
         } else {
           // Fallback: sniff from URL when no type provided
           if (url.includes('.webm')) mimeType = 'audio/webm';
