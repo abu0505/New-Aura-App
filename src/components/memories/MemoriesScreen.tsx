@@ -27,7 +27,7 @@ export default function MemoriesScreen() {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
-  const { folders, addItemsToFolder } = useMediaFolders();
+  const { folders, addItemsToFolder, createFolder } = useMediaFolders();
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [throwbacks, setThrowbacks] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +45,9 @@ export default function MemoriesScreen() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [isCreatingInPicker, setIsCreatingInPicker] = useState(false);
+  const [newFolderNameInPicker, setNewFolderNameInPicker] = useState('');
+  const [creatingInPicker, setCreatingInPicker] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generatedUrlsRef = useRef<Set<string>>(new Set());
   const pageRef = useRef(1);          // tracks current page synchronously
@@ -402,6 +405,19 @@ export default function MemoriesScreen() {
     if (success) {
       cancelSelection();
       setShowFolderPicker(false);
+      setIsCreatingInPicker(false);
+      setNewFolderNameInPicker('');
+    }
+  };
+
+  const handleCreateAndAdd = async () => {
+    if (!newFolderNameInPicker.trim()) return;
+    setCreatingInPicker(true);
+    const newFolderId = await createFolder(newFolderNameInPicker.trim());
+    if (newFolderId) {
+      await handleAddToFolder(newFolderId);
+    } else {
+      setCreatingInPicker(false);
     }
   };
 
@@ -708,11 +724,45 @@ export default function MemoriesScreen() {
             >
               <div className="p-4 border-b border-white/5 shrink-0">
                 <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4"></div>
-                <h3 className="font-serif italic text-lg text-[var(--gold)]">Add to Collection</h3>
-                <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81] mt-1">
-                  {selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-serif italic text-lg text-[var(--gold)]">Add to Collection</h3>
+                    <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81] mt-1">
+                      {selectedIds.size} item{selectedIds.size !== 1 ? 's' : ''} selected
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsCreatingInPicker(!isCreatingInPicker)}
+                    className={`p-2 rounded-xl transition-all ${isCreatingInPicker ? 'bg-[var(--gold)] text-[var(--on-accent)]' : 'bg-white/5 text-[var(--gold)] border border-white/10 hover:bg-white/10'}`}
+                  >
+                    <span className="material-symbols-outlined text-[20px] block">{isCreatingInPicker ? 'close' : 'create_new_folder'}</span>
+                  </button>
+                </div>
               </div>
+
+              {isCreatingInPicker && (
+                <div className="p-4 bg-[var(--gold)]/5 border-b border-white/5 animate-in slide-in-from-top duration-300">
+                  <p className="font-label text-[9px] uppercase tracking-[0.2em] text-[var(--gold)] mb-2 font-bold">New Collection Name</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newFolderNameInPicker}
+                      onChange={e => setNewFolderNameInPicker(e.target.value)}
+                      placeholder="e.g. Summer Trip 2026"
+                      autoFocus
+                      onKeyDown={e => e.key === 'Enter' && handleCreateAndAdd()}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-[var(--gold)]/40 transition-colors"
+                    />
+                    <button
+                      onClick={handleCreateAndAdd}
+                      disabled={!newFolderNameInPicker.trim() || creatingInPicker}
+                      className="px-4 py-2 rounded-xl bg-[var(--gold)] text-[var(--on-accent)] font-bold text-xs uppercase tracking-wider disabled:opacity-30"
+                    >
+                      {creatingInPicker ? '...' : 'Create & Add'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 {folders.length === 0 ? (

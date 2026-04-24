@@ -19,6 +19,7 @@ import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
 import { realtimeHub } from './lib/realtimeHub';
 import ThemeProvider from './components/common/ThemeProvider';
+import { MediaFoldersProvider } from './contexts/MediaFoldersContext';
 
 function InnerApp({ 
   session, 
@@ -283,13 +284,15 @@ export default function App() {
   // Authenticated — show app wrapped in navigation layout
   return (
     <AppLockProvider>
-      <InnerApp 
-        session={session} 
-        partner={partner} 
-        streakCount={streakCount} 
-        showCelebration={showCelebration}
-        setShowCelebration={setShowCelebration}
-      />
+      <MediaFoldersProvider>
+        <InnerApp 
+          session={session} 
+          partner={partner} 
+          streakCount={streakCount} 
+          showCelebration={showCelebration}
+          setShowCelebration={setShowCelebration}
+        />
+      </MediaFoldersProvider>
     </AppLockProvider>
   );
 }

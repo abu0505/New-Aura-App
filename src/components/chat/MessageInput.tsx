@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
+import { useMediaFolders } from '../../hooks/useMediaFolders';
 import AttachmentSheet from './AttachmentSheet';
 import MediaGalleryDrawer from './MediaGalleryDrawer';
 import AudioRecorder from './AudioRecorder';
@@ -9,6 +10,8 @@ import QualityChoiceModal from './QualityChoiceModal';
 import { StickerPicker } from './StickerPicker';
 import { GifPicker } from './GifPicker';
 import MobileCameraModal from './MobileCameraModal';
+import FolderPickerPopup from './FolderPickerPopup';
+import type { SelectedMemoryMedia } from './FolderPickerPopup';
 
 import type { ChatMessage } from '../../hooks/useChat';
 import { useAuth } from '../../contexts/AuthContext';
@@ -41,6 +44,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick, onOptimisticMediaStart, onOptimisticMediaComplete, partnerId, onChunkedVideoStart, onChunkedVideoStatusUpdate, onChunkedVideoCommit, onChunkedVideoFinalize
 }, ref) => {
   const { user } = useAuth();
+  const { folders, loading: foldersLoading } = useMediaFolders(); // Prefetch here
   const [text, setText] = useState('');
   const [isAttachmentOpen, setIsAttachmentOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -53,6 +57,23 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
+
+  // ── Folder picker (slash-command) state ──
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [folderSearch, setFolderSearch] = useState('');
+  const [activeFolderChip, setActiveFolderChip] = useState<string | null>(null); // folder name shown as bold chip
+  const [selectedFolderMedia, setSelectedFolderMedia] = useState<SelectedMemoryMedia[]>([]);
+  const mirrorRef = useRef<HTMLDivElement>(null);
+
+  // Clear selected media if chip is removed
+  useEffect(() => {
+    if (!activeFolderChip) {
+      setSelectedFolderMedia([]);
+    }
+  }, [activeFolderChip]);
+
+  // slashStartPos tracks the caret position where '/' was typed so we can replace that slice
+  const slashStartPosRef = useRef<number>(-1);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +88,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   useImperativeHandle(ref, () => ({
     handleDroppedFiles: (files: File[]) => {
       if (files.length === 0) return;
-      if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
+      if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
         setPendingFiles(files);
         setPendingCaption('');
         setShowQualityModal(true);
@@ -201,12 +222,36 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   }, [text]);
 
   const handleSend = () => {
-    if ((text.trim() || isUploading) && !disabled) {
+    const textToSend = activeFolderChip
+      ? text.replace(new RegExp(`\\/${activeFolderChip}\\s*`, 'i'), '').trim()
+      : text.trim();
+
+    if ((textToSend || selectedFolderMedia.length > 0 || isUploading) && !disabled) {
       if (isUploading) return;
       clearTypingTimers();
       onTypingRef.current?.(false);
-      onSend(text.trim(), undefined, replyingTo?.id);
+      
+      const currentReplyId = replyingTo?.id;
+
+      // Send selected media first, without the text
+      selectedFolderMedia.forEach((item, idx) => {
+        onSend(
+          '', // No text attached to media bubbles
+          { url: item.media_url, media_key: item.media_key, media_nonce: item.media_nonce, type: item.type },
+          idx === 0 ? currentReplyId : undefined
+        );
+      });
+
+      // Send the text message if any (after media)
+      if (textToSend) {
+        onSend(textToSend, undefined, selectedFolderMedia.length === 0 ? currentReplyId : undefined);
+      }
+
       setText('');
+      setActiveFolderChip(null);
+      setSelectedFolderMedia([]);
+      setShowFolderPicker(false);
+      slashStartPosRef.current = -1;
       if (onCancelReply) onCancelReply();
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
@@ -220,6 +265,26 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       e.preventDefault();
       handleSend();
     }
+    // Smart Backspace for folder chip
+    if (e.key === 'Backspace' && activeFolderChip) {
+      const chipStr = `/${activeFolderChip}`;
+      const chipIdx = text.indexOf(chipStr);
+      if (chipIdx !== -1) {
+        const chipEnd = chipIdx + chipStr.length;
+        const caret = textareaRef.current?.selectionStart ?? 0;
+        const caretEnd = textareaRef.current?.selectionEnd ?? 0;
+        
+        // If cursor is within the chip or immediately after its trailing space
+        if (caret === caretEnd && caret > chipIdx && caret <= chipEnd + 1) {
+          e.preventDefault();
+          const before = text.slice(0, chipIdx);
+          const after = text.slice(caret === chipEnd + 1 ? chipEnd + 1 : chipEnd).trimStart();
+          setText(before + after);
+          setActiveFolderChip(null);
+          return;
+        }
+      }
+    }
   };
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -228,7 +293,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
     const files: File[] = [];
     for (let i = 0; i < items.length; i++) {
-      if (items[i].type.startsWith('image/') || items[i].type.startsWith('video/')) {
+      if (items[i].type.includes('image/') || items[i].type.includes('video/')) {
         const file = items[i].getAsFile();
         if (file) files.push(file);
       }
@@ -280,7 +345,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
           (pos) => {
              // Send as a structured location payload for mini-map rendering
              onSend(`${pos.coords.latitude},${pos.coords.longitude}`, { url: '', media_key: '', media_nonce: '', type: 'location' }, replyingTo?.id);
-             if (onCancelReply) onCancelReply();
+              if (onCancelReply) onCancelReply();
           },
           () => alert('Location permission denied.')
         );
@@ -311,7 +376,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     if (files.length === 0) return;
 
     // Check if any file requires quality selection (images or videos)
-    if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
+    if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
       setPendingFiles(files);
       setPendingCaption('');
       setShowQualityModal(true);
@@ -322,7 +387,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   };
 
   const handleGallerySend = (files: File[], caption: string) => {
-    if (files.some(f => f.type.startsWith('image/') || f.type.startsWith('video/'))) {
+    if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
       setPendingFiles(files);
       setPendingCaption(caption);
       setShowQualityModal(true);
@@ -375,7 +440,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const type = file.type.startsWith('video/') ? 'video' : (file.type.startsWith('audio/') ? 'audio' : 'image');
+      const type = file.type.includes('video/') ? 'video' : (file.type.includes('audio/') ? 'audio' : 'image');
       
       if (type === 'video' && onChunkedVideoStart) {
         // Generate a quick local thumbnail for the optimistic UI
@@ -477,6 +542,66 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   return (
     <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-2 md:px-8 flex flex-col items-center justify-end">
+
+      {/* ── Folder Picker Popup (appears above input when '/' typed) ── */}
+      <AnimatePresence>
+        {showFolderPicker && (
+          <FolderPickerPopup
+            folders={folders}
+            foldersLoading={foldersLoading}
+            searchQuery={folderSearch}
+            onFolderSelect={(name) => {
+              setActiveFolderChip(name);
+              let newCursorPos = 0;
+              
+              setText(prev => {
+                const start = slashStartPosRef.current !== -1 ? slashStartPosRef.current : prev.lastIndexOf('/');
+                if (start === -1) {
+                  const added = `/${name} `;
+                  newCursorPos = added.length;
+                  return added + prev;
+                }
+                
+                // Find the end of the current slash command word
+                const afterSlash = prev.slice(start);
+                const match = afterSlash.match(/^\/\S*/);
+                const endIdx = match ? start + match[0].length : prev.length;
+                
+                const before = prev.slice(0, start);
+                const after = prev.slice(endIdx).trimStart();
+                
+                const inserted = `/${name} `;
+                newCursorPos = before.length + inserted.length;
+                
+                return `${before}${inserted}${after}`;
+              });
+              
+              // Focus the textarea and set cursor right after the newly inserted folder name
+              setTimeout(() => {
+                if (textareaRef.current) {
+                  textareaRef.current.focus();
+                  textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+                }
+              }, 10);
+            }}
+            onToggleMedia={(item) => {
+              setSelectedFolderMedia(prev => {
+                const isSelected = prev.some(m => m.messageId === item.messageId);
+                if (isSelected) {
+                  return prev.filter(m => m.messageId !== item.messageId);
+                } else {
+                  return [...prev, item];
+                }
+              });
+            }}
+            selectedMediaIds={new Set(selectedFolderMedia.map(m => m.messageId))}
+            onDismiss={() => {
+              setShowFolderPicker(false);
+              slashStartPosRef.current = -1;
+            }}
+          />
+        )}
+      </AnimatePresence>
       
       <AnimatePresence>
         {replyingTo && (
@@ -533,7 +658,53 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         )}
       </AnimatePresence>
 
-      <div className="w-full max-w-[720px] mx-auto flex items-center bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-2 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
+      <AnimatePresence>
+        {selectedFolderMedia.length > 0 && !showFolderPicker && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="w-full max-w-[720px] px-4 mb-3"
+          >
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 pr-4">
+              {selectedFolderMedia.map((item) => (
+                <div 
+                  key={item.messageId} 
+                  className="relative shrink-0 w-20 h-20 rounded-2xl overflow-hidden shadow-lg border border-primary/20 group"
+                >
+                  {item.type === 'video' ? (
+                    <div className="w-full h-full relative">
+                      <video src={item.decryptedUrl} className="w-full h-full object-cover" muted />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <span className="material-symbols-outlined text-white/70 text-lg">play_circle</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <img src={item.decryptedUrl} className="w-full h-full object-cover" alt="" />
+                  )}
+                  {/* Remove Button */}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedFolderMedia(prev => prev.filter(m => m.messageId !== item.messageId));
+                    }}
+                    className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-md text-white/90 border border-white/10 hover:bg-aura-danger hover:text-white transition-all duration-300 z-20 active:scale-90 shadow-lg"
+                    title="Remove media"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">close</span>
+                  </button>
+
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div 
+        layout="position"
+        className="w-full max-w-[720px] mx-auto flex items-center bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-2 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
         {/* Camera Button on the Left */}
         <button
           onClick={handleCameraClick}
@@ -545,18 +716,101 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         </button>
 
         {/* Input Area */}
-        <div className="flex-1 flex items-center min-h-[40px] py-1">
+        <div className="flex-1 min-h-[40px] flex items-center">
+          <div className="relative w-full">
+            {/* Mirror Div for styling the prefix while keeping it part of the text */}
+            {activeFolderChip && (() => {
+              const chipStr = `/${activeFolderChip}`;
+              const parts = text.split(chipStr);
+              return (
+                <div 
+                  ref={mirrorRef}
+                  className="absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm py-1 pl-3 leading-normal"
+                  style={{ 
+                    fontFamily: 'inherit',
+                    color: 'var(--text-primary)'
+                  }}
+                  aria-hidden="true"
+                >
+                  {parts.map((part, i) => (
+                    <Fragment key={i}>
+                      <span className="opacity-100">{part}</span>
+                      {i < parts.length - 1 && (
+                        <span 
+                          className="text-white"
+                          style={{ textShadow: '0.4px 0 0 white, -0.4px 0 0 white' }}
+                        >
+                          {chipStr}
+                        </span>
+                      )}
+                    </Fragment>
+                  ))}
+                </div>
+              );
+            })()}
+
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onScroll={(e) => {
+              if (mirrorRef.current) {
+                mirrorRef.current.scrollTop = e.currentTarget.scrollTop;
+              }
+            }}
+            style={{ paddingLeft: '12px' }}
+            onChange={(e) => {
+              let val = e.target.value;
+              if (activeFolderChip) {
+                const prefix = `/${activeFolderChip}`;
+                if (!val.includes(prefix)) {
+                  setActiveFolderChip(null);
+                }
+              }
+              setText(val);
+
+              // Detect '/' at start or after whitespace to open folder picker
+              const caret = e.target.selectionStart ?? 0;
+              const lastSlashIdx = val.lastIndexOf('/', caret);
+              if (lastSlashIdx !== -1) {
+                const charBefore = lastSlashIdx === 0 ? '' : val[lastSlashIdx - 1];
+                const isValidTrigger = (lastSlashIdx === 0 || charBefore === ' ' || charBefore === '\n');
+                if (isValidTrigger) {
+                  const query = val.slice(lastSlashIdx + 1, caret);
+                  // Only show picker if no space yet in query (space = not a slash command)
+                  if (!query.includes(' ')) {
+                    slashStartPosRef.current = lastSlashIdx;
+                    setFolderSearch(query);
+                    setShowFolderPicker(true);
+                  } else {
+                    setShowFolderPicker(false);
+                  }
+                } else {
+                  setShowFolderPicker(false);
+                }
+              } else {
+                setShowFolderPicker(false);
+              }
+            }}
+            onKeyDown={(e) => {
+              // Dismiss picker on Escape
+              if (e.key === 'Escape' && showFolderPicker) {
+                e.preventDefault();
+                setShowFolderPicker(false);
+                return;
+              }
+              handleKeyDown(e);
+            }}
             onPaste={handlePaste}
             placeholder={isUploading ? "Securing media..." : "I love you..."}
             disabled={disabled || isUploading}
-            className="w-full pl-3 bg-transparent border-none text-sm text-aura-text-primary placeholder:text-aura-text-secondary/50 resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1"
+            className={`w-full border-none text-sm resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal pl-3 ${
+              activeFolderChip 
+                ? 'text-transparent caret-white bg-transparent' 
+                : 'text-aura-text-primary bg-transparent'
+            } placeholder:text-aura-text-secondary/50`}
             rows={1}
           />
+          </div>
         </div>
 
         {/* Toggleable Buttons */}
@@ -627,6 +881,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             )}
           </AnimatePresence>
         </div>
+        </motion.div>
 
         {/* Hidden File Input */}
         <input 
@@ -636,7 +891,6 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
           className="hidden"
           multiple
         />
-      </div>
 
       {typeof document !== 'undefined' ? createPortal(
         <>
