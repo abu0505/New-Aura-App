@@ -11,7 +11,7 @@
  *  - Use partner.public_key instead of row.sender_public_key (column doesn't exist in video_chunks).
  */
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { realtimeHub } from '../lib/realtimeHub';
 import { useAuth } from '../contexts/AuthContext';
 import { useMedia } from './useMedia';
@@ -31,24 +31,49 @@ type ChunkMap = Map<string, ReceivedChunk[]>;
 const chunkStore: ChunkMap = new Map();
 const loadingSet = new Set<string>(); // tracks in-progress loadExistingChunks calls
 const updateCallbacks = new Set<() => void>();
-
+let notifyTimeout: any = null;
 function notifyAll() {
-  for (const cb of updateCallbacks) cb();
+  if (notifyTimeout) return;
+  notifyTimeout = setTimeout(() => {
+    notifyTimeout = null;
+    console.log('[CHUNK_STORE] notifyAll (throttled)', { subscriberCount: updateCallbacks.size });
+    for (const cb of updateCallbacks) cb();
+  }, 100); // Max 10 updates per second
+}
+
+function getSafeTotal(total: number, index: number = 0): number {
+  if (!isFinite(total) || total <= 0) return Math.max(index + 1, 1);
+  return Math.min(total, 1000); // Cap at 1000 chunks
 }
 
 export function addLocalChunkForSender(messageId: string, chunkIndex: number, totalChunks: number, blob: Blob, duration?: number) {
   let chunks = chunkStore.get(messageId);
+  
+  const safeTotal = getSafeTotal(totalChunks, chunkIndex);
+
   if (!chunks) {
-    chunks = Array.from({ length: totalChunks }, (_, i) => ({
+    chunks = Array.from({ length: safeTotal }, (_, i) => ({
       chunkIndex: i,
-      totalChunks,
+      totalChunks: safeTotal,
       blobUrl: null,
       isDecrypted: false,
     }));
   }
+  
+  // If the array is too small (e.g. estimate was wrong), expand it
+  if (chunkIndex >= chunks.length) {
+    const additional = Array.from({ length: chunkIndex - chunks.length + 1 }, (_, i) => ({
+      chunkIndex: chunks!.length + i,
+      totalChunks: safeTotal,
+      blobUrl: null,
+      isDecrypted: false,
+    }));
+    chunks = [...chunks, ...additional];
+  }
+
   chunks[chunkIndex] = {
     chunkIndex: chunkIndex,
-    totalChunks: totalChunks,
+    totalChunks: safeTotal,
     blobUrl: URL.createObjectURL(blob),
     isDecrypted: true,
     duration: duration,
@@ -57,17 +82,36 @@ export function addLocalChunkForSender(messageId: string, chunkIndex: number, to
   notifyAll();
 }
 
-export function useVideoChunks() {
+export function updateTotalChunksForSender(messageId: string, total: number) {
+  let chunks = chunkStore.get(messageId);
+  if (chunks) {
+    if (chunks.length > total) {
+      const newChunks = chunks.slice(0, total).map(c => ({ ...c, totalChunks: total }));
+      chunkStore.set(messageId, newChunks);
+      notifyAll();
+    }
+  }
+}
+
+export function useVideoChunks(messageId?: string) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
+  const [chunks, setChunks] = useState<ReceivedChunk[]>([]);
 
   // Register update listener so consuming components can re-render when chunks arrive
   useEffect(() => {
-    const cb = () => {};
-    updateCallbacks.add(cb);
-    return () => { updateCallbacks.delete(cb); };
-  }, []);
+    const update = () => {
+      if (messageId) {
+        const c = chunkStore.get(messageId);
+        if (c) setChunks([...c]);
+      }
+    };
+    
+    update(); // initial load
+    updateCallbacks.add(update);
+    return () => { updateCallbacks.delete(update); };
+  }, [messageId]);
 
   // ── Subscribe to realtime video_chunks inserts ──────────────────────────
   useEffect(() => {
@@ -89,11 +133,13 @@ export function useVideoChunks() {
       const chunkIndex: number = row.chunk_index;
       const totalChunks: number = row.total_chunks;
 
+      const safeTotal = getSafeTotal(totalChunks, chunkIndex);
+
       // Initialize chunk array for this message if needed
       if (!chunkStore.has(msgId)) {
-        const placeholders: ReceivedChunk[] = Array.from({ length: totalChunks }, (_, i) => ({
+        const placeholders: ReceivedChunk[] = Array.from({ length: safeTotal }, (_, i) => ({
           chunkIndex: i,
-          totalChunks,
+          totalChunks: safeTotal,
           blobUrl: null,
           isDecrypted: false,
         }));
@@ -176,9 +222,11 @@ export function useVideoChunks() {
       if (!rows.length) return;
 
       const totalChunks = rows[0]?.total_chunks ?? rows.length;
-      const placeholders: ReceivedChunk[] = Array.from({ length: totalChunks }, (_, i) => ({
+      const safeTotal = getSafeTotal(totalChunks, rows.length);
+
+      const placeholders: ReceivedChunk[] = Array.from({ length: safeTotal }, (_, i) => ({
         chunkIndex: i,
-        totalChunks,
+        totalChunks: safeTotal,
         blobUrl: null,
         isDecrypted: false,
       }));
@@ -236,5 +284,5 @@ export function useVideoChunks() {
     return msg.type === 'video' && !msg.media_url;
   }, []);
 
-  return { getChunksForMessage, loadExistingChunks, isChunkedVideo };
+  return { chunks, getChunksForMessage, loadExistingChunks, isChunkedVideo };
 }

@@ -670,7 +670,7 @@ export function useMedia() {
       const { getVideoDuration } = await import('../utils/videoChunker');
       const videoDuration = await getVideoDuration(fileToChunk);
       let totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
-      if (totalChunks === 0) totalChunks = 1;
+      if (!isFinite(totalChunks) || totalChunks <= 0) totalChunks = 12; // 60s estimate fallback
       let actualChunksYielded = 0;
 
       onStatusChange('Processing chunk 1...');
@@ -770,20 +770,34 @@ export function useMedia() {
       await Promise.all(allTasks);
 
       // FFmpeg may yield fewer chunks than estimated (e.g. lack of keyframes)
-      if (actualChunksYielded > 0 && actualChunksYielded !== totalChunks) {
+      // or even 0 chunks if the video is extremely short or corrupted.
+      if (actualChunksYielded !== totalChunks) {
         totalChunks = actualChunksYielded;
-        // Re-trigger delivery queue in case it was waiting for chunks that will never arrive
-        tryDeliverQueue();
         
-        // Update any already inserted rows with the correct total
-        await supabase.from('video_chunks')
-          .update({ total_chunks: totalChunks })
-          .eq('message_id', messageId);
+        if (actualChunksYielded > 0) {
+          // Re-trigger delivery queue in case it was waiting for chunks that will never arrive
+          tryDeliverQueue();
+          
+          // Update any already inserted rows with the correct total
+          await supabase.from('video_chunks')
+            .update({ total_chunks: totalChunks })
+            .eq('message_id', messageId);
+
+          // Update local store so sender-side preview doesn't wait for non-existent chunks
+          import('./useVideoChunks').then(m => {
+            m.updateTotalChunksForSender(messageId, totalChunks);
+          }).catch(() => {});
+        }
       }
 
       while (nextDeliverIndex < totalChunks) {
         if (deliveryError) throw deliveryError;
+        if (actualChunksYielded === 0) break; // Safety break if no chunks were ever produced
         await new Promise(resolve => setTimeout(resolve, 50));
+      }
+
+      if (actualChunksYielded === 0) {
+        throw new Error('Video processing failed: No chunks were produced.');
       }
 
       onStatusChange('Done');

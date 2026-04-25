@@ -360,6 +360,9 @@ export default function MemoriesScreen() {
     return () => observer.disconnect();
   }, [loadMore]);
 
+  const memoriesRef = useRef(memories);
+  useEffect(() => { memoriesRef.current = memories; }, [memories]);
+
   // ── Priority Queue Logic ──
   const processQueue = useCallback(async () => {
     if (processingIdsRef.current.size >= MAX_CONCURRENT_DECRYPTIONS) return;
@@ -369,7 +372,7 @@ export default function MemoriesScreen() {
     const nextId = decryptionQueueRef.current.find(id => !processingIdsRef.current.has(id));
     if (!nextId) return;
 
-    const memory = memories.find(m => m.id === nextId);
+    const memory = memoriesRef.current.find(m => m.id === nextId);
     if (!memory || memory.decryptedUrl || memory.loading) {
       // Remove invalid items from queue
       decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
@@ -407,21 +410,22 @@ export default function MemoriesScreen() {
       // Process next in queue
       processQueue();
     }
-  }, [memories, partner?.public_key, getDecryptedBlob]);
+  }, [partner?.public_key, getDecryptedBlob]);
 
   // Update queue based on visibility and proximity
-  // Fix: Dependencies now include memories to catch loading/decrypted changes
+  const lastMemoriesCountRef = useRef(0);
   useEffect(() => {
     if (memories.length === 0 || !partner?.public_key) return;
+
+    // Only refresh the whole queue if visibility changed OR new memories were loaded (pagination)
+    // If memories changed but length is same, it's likely just a loading/decrypted state update,
+    // which we should NOT trigger a queue refresh for (infinite loop prevention).
+    lastMemoriesCountRef.current = memories.length;
 
     const itemsToDecrypt = filteredMemories.filter(m => !m.decryptedUrl && !m.loading && !processingIdsRef.current.has(m.id));
     if (itemsToDecrypt.length === 0) return;
 
-    // Sort by priority: 
-    // 1. Visible IDs (Highest)
-    // 2. Next 30 items after the lowest visible index (High)
-    // 3. Others (Lower)
-    
+    // Sort by priority...
     const visibleIndices = Array.from(visibleIds)
       .map(id => filteredMemories.findIndex(m => m.id === id))
       .filter(idx => idx !== -1);
@@ -431,20 +435,15 @@ export default function MemoriesScreen() {
     const sorted = [...itemsToDecrypt].sort((a, b) => {
       const aIdx = filteredMemories.findIndex(m => m.id === a.id);
       const bIdx = filteredMemories.findIndex(m => m.id === b.id);
-      
       const aVisible = visibleIds.has(a.id);
       const bVisible = visibleIds.has(b.id);
-      
       if (aVisible && !bVisible) return -1;
       if (!aVisible && bVisible) return 1;
-      
       const aInLookAhead = aIdx > maxVisibleIdx && aIdx <= maxVisibleIdx + LOOK_AHEAD_COUNT;
       const bInLookAhead = bIdx > maxVisibleIdx && bIdx <= maxVisibleIdx + LOOK_AHEAD_COUNT;
-      
       if (aInLookAhead && !bInLookAhead) return -1;
       if (!aInLookAhead && bInLookAhead) return 1;
-      
-      return aIdx - bIdx; // Default to natural order
+      return aIdx - bIdx;
     });
 
     decryptionQueueRef.current = sorted.map(m => m.id);
@@ -453,7 +452,7 @@ export default function MemoriesScreen() {
     for (let i = 0; i < MAX_CONCURRENT_DECRYPTIONS; i++) {
       processQueue();
     }
-  }, [visibleIds, memories, partner?.public_key, processQueue]);
+  }, [visibleIds, partner?.public_key, processQueue, memories.length]);
 
   // Robust IntersectionObserver for visibility tracking
   const observerRef = useRef<IntersectionObserver | null>(null);

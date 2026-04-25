@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
-import { useVideoChunks } from '../../hooks/useVideoChunks';
+import { useVideoChunks, type ReceivedChunk } from '../../hooks/useVideoChunks';
 import type { ChatMessage } from '../../hooks/useChat';
 import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
@@ -47,13 +47,11 @@ function ChatBubble({
   quickEmojis
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
-  const { getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks();
+  const { chunks: hookChunks, getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks(message.id);
   const { folders } = useMediaFolders();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
   const [hasUploadFailed, setHasUploadFailed] = useState(false);
-  // For chunked video: force re-render when new chunks arrive
-  const [, setChunkTick] = useState(0);
-  const chunkTickRef = useRef(0);
+  // For chunked video: we use hookChunks which is reactive
   const [repliedMediaUrl, setRepliedMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
@@ -255,18 +253,7 @@ function ChatBubble({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message.id, partnerPublicKey, message.is_uploading]);
 
-  // Poll chunk store every 400ms so UI re-renders as chunks decrypt
-  useEffect(() => {
-    if (!isChunkedVideo(message)) return;
-    const interval = setInterval(() => {
-      const chunks = getChunksForMessage(message.id);
-      if (chunks) {
-        chunkTickRef.current++;
-        setChunkTick(chunkTickRef.current);
-      }
-    }, 400);
-    return () => clearInterval(interval);
-  }, [message.id, isChunkedVideo, getChunksForMessage]);
+
   
   // Decrypt media for replied messages
   useEffect(() => {
@@ -452,9 +439,9 @@ function ChatBubble({
 
     // ── Chunked Video: Sender side (upload complete — rendered after reload too) ───
     if (isChunkedVideo(message) && message.is_mine && !message.is_uploading) {
-      const chunks = getChunksForMessage(message.id);
+      const chunks = hookChunks;
       const thumbSrc = decryptedMediaUrl || message.thumbnail_local_url || undefined;
-      const isReady = chunks && chunks.some(c => c.isDecrypted && c.blobUrl);
+      const isReady = chunks && chunks.some((c: ReceivedChunk) => c.isDecrypted && c.blobUrl);
       return (
         <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
           <div
@@ -494,10 +481,10 @@ function ChatBubble({
 
     // ── Chunked Video: Receiver side (playing progressively) ─────────────────
     if (isChunkedVideo(message) && !message.is_mine) {
-      const chunks = getChunksForMessage(message.id);
+      const chunks = hookChunks;
       const thumbSrc = decryptedMediaUrl || undefined;
       
-      const isReady = chunks && chunks.some(c => c.isDecrypted && c.blobUrl);
+      const isReady = chunks && chunks.some((c: ReceivedChunk) => c.isDecrypted && c.blobUrl);
 
       return (
         <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
