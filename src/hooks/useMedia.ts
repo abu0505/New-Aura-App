@@ -578,12 +578,12 @@ export function useMedia() {
    *   - Removing the shimmer overlay once all chunks are uploaded.
    */
   const processAndUploadChunked = useCallback(async (
-    file: File,
+    fileToChunk: File,
     messageId: string,
     senderId: string,
     receiverId: string,
     onStatusChange: (status: string) => void,
-    _options: { optimize?: boolean } = { optimize: true }
+    durationOverride?: number
   ): Promise<boolean> => {
     if (!user || !partner?.public_key) return false;
     const myKeyPair = getStoredKeyPair();
@@ -591,12 +591,6 @@ export function useMedia() {
 
     try {
       onStatusChange('Preparing video...');
-
-      // ── Chunked pipeline skips video compression ──────────────────────────
-      // WebCodecs strips audio tracks entirely; FFmpeg WASM is slow (~1x realtime).
-      // The segment muxer uses stream-copy (no re-encoding) so splitting is
-      // near-instant and preserves both audio and video quality perfectly.
-      let fileToChunk = file;
 
       // Helper: upload raw encrypted bytes to Cloudinary
       const uploadEncryptedBytes = async (data: Uint8Array): Promise<string> => {
@@ -667,8 +661,11 @@ export function useMedia() {
 
       // We need total chunk count upfront for the DB rows — get video duration first
       const CHUNK_DURATION_SEC = 5; // Reduced to 5s to guarantee chunks < 10MB for Cloudinary (even with VBR spikes on Desktop 8Mbps)
-      const { getVideoDuration } = await import('../utils/videoChunker');
-      const videoDuration = await getVideoDuration(fileToChunk);
+      let videoDuration = durationOverride;
+      if (videoDuration === undefined) {
+        const { getVideoDuration } = await import('../utils/videoChunker');
+        videoDuration = await getVideoDuration(fileToChunk);
+      }
       let totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
       if (!isFinite(totalChunks) || totalChunks <= 0) totalChunks = 12; // 60s estimate fallback
       let actualChunksYielded = 0;

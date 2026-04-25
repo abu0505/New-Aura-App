@@ -388,12 +388,15 @@ export default function FolderPickerPopup({
             >
               {items.length === 0 && isLoadingMedia ? (
                 /* Shimmer loading */
-                <div className="flex gap-2 px-2 py-2 h-full items-center">
-                  {Array.from({ length: 6 }).map((_, i) => (
+                <div 
+                  className="grid grid-flow-col gap-2 px-2 py-2 h-full items-center"
+                  style={{ gridTemplateRows: isTwoRow ? 'repeat(2, 80px)' : 'repeat(1, 80px)' }}
+                >
+                  {Array.from({ length: 8 }).map((_, i) => (
                     <div
                       key={i}
                       className="shrink-0 rounded-xl bg-white/5 chunk-shimmer relative overflow-hidden"
-                      style={{ width: 80, height: isTwoRow ? 160 : 80 }}
+                      style={{ width: 80, height: 80 }}
                     />
                   ))}
                 </div>
@@ -419,11 +422,10 @@ export default function FolderPickerPopup({
                 <div
                   ref={stripRef}
                   onScroll={handleStripScroll}
-                  className="flex overflow-x-auto overflow-y-hidden gap-2 px-2 py-2 h-full scrollbar-hide"
+                  className="grid grid-flow-col overflow-x-auto overflow-y-hidden gap-2 px-2 py-2 h-full scrollbar-hide"
                   style={{ 
+                    gridTemplateRows: isTwoRow ? 'repeat(2, 80px)' : 'repeat(1, 80px)',
                     scrollSnapType: 'x mandatory',
-                    flexWrap: isTwoRow ? 'wrap' : 'nowrap',
-                    alignContent: isTwoRow ? 'flex-start' : 'center',
                     WebkitOverflowScrolling: 'touch',
                   }}
                 >

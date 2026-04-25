@@ -420,7 +420,7 @@ function ChatBubble({
       const thumbSrc = decryptedMediaUrl || message.thumbnail_local_url || undefined;
       return (
         <div className={`relative max-w-[240px] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
-          <div className="relative overflow-hidden shadow-lg border border-white/5" style={{ borderRadius: '1rem', borderBottomLeftRadius: isFirst ? '1rem' : '4px', borderTopLeftRadius: isLast ? '1rem' : '4px', borderTopRightRadius: isFirst ? '1rem' : '4px', borderBottomRightRadius: isLast ? '4px' : '1rem' }}>
+          <div className={`relative overflow-hidden shadow-lg border border-white/5 ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'}`}>
             {thumbSrc ? (
               <img src={thumbSrc} alt="Video" className="w-full max-h-[360px] h-auto object-cover opacity-80 blur-[1px]" />
             ) : (
@@ -445,8 +445,7 @@ function ChatBubble({
       return (
         <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
           <div
-            className="relative overflow-hidden shadow-lg border border-white/5 cursor-pointer"
-            style={{ borderRadius: '1rem', borderBottomLeftRadius: isFirst ? '1rem' : '4px', borderTopLeftRadius: isLast ? '1rem' : '4px', borderTopRightRadius: isFirst ? '1rem' : '4px', borderBottomRightRadius: isLast ? '4px' : '1rem' }}
+            className={`relative overflow-hidden shadow-lg border border-white/5 cursor-pointer ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'}`}
             onClick={() => isReady && setIsPreviewOpen(true)}
           >
             {thumbSrc ? (
@@ -488,7 +487,7 @@ function ChatBubble({
 
       return (
         <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
-          <div className="relative overflow-hidden shadow-lg border border-white/5 cursor-pointer" style={{ borderRadius: '1rem', borderBottomLeftRadius: isFirst ? '1rem' : '4px', borderTopLeftRadius: isLast ? '1rem' : '4px', borderTopRightRadius: isFirst ? '1rem' : '4px', borderBottomRightRadius: isLast ? '4px' : '1rem' }} onClick={() => setIsPreviewOpen(true)}>
+          <div className={`relative overflow-hidden shadow-lg border border-white/5 cursor-pointer ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'}`} onClick={() => setIsPreviewOpen(true)}>
             {thumbSrc ? (
               <img src={thumbSrc} alt="Video" className={`w-full max-h-[360px] h-auto object-cover ${!isReady ? 'opacity-70 blur-[1px]' : ''}`} />
             ) : (

@@ -331,11 +331,11 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
   };
 
-  const handleMobileCameraSend = (file: File, caption: string) => {
+  const handleMobileCameraSend = (file: File, caption: string, duration?: number) => {
     // setPendingFiles([file]);
     // setPendingCaption(caption);
     // setShowQualityModal(true);
-    performUpload([file], false, caption);
+    performUpload([file], false, caption, duration);
   };
 
   const handleMobileGallerySelect = (files: File[], caption: string) => {
@@ -410,7 +410,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   const MAX_MEDIA_LIMIT = 10;
 
-  const performUpload = async (files: File[], optimize: boolean, caption: string) => {
+  const performUpload = async (files: File[], optimize: boolean, caption: string, durationOverride?: number) => {
     if (files.length > MAX_MEDIA_LIMIT) {
       toast(`Aree MERI BEGHAM JII aaram se! Ek sath sirf ${MAX_MEDIA_LIMIT} files bhej sakte ho. Pehli ${MAX_MEDIA_LIMIT} hi upload hongi. 😘💋`, {
         description: "Aura suggests smaller batches for absolute security.",
@@ -515,7 +515,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
            // Pre-create the message row with the thumbnail so fragments can attach to it
            if (onChunkedVideoCommit) {
-              const rawDuration = await getVideoDurationLocally(file);
+              // Use precise duration from camera if provided, else fallback to metadata extraction
+              const rawDuration = durationOverride !== undefined ? durationOverride : await getVideoDurationLocally(file);
               const duration = Math.round(rawDuration);
               await onChunkedVideoCommit(tempId, thumbDetails, duration, currentReplyId);
            }
@@ -527,7 +528,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                tempId,
                user.id,
                partnerId,
-               (status) => onChunkedVideoStatusUpdate?.(tempId, status)
+               (status) => onChunkedVideoStatusUpdate?.(tempId, status),
+               durationOverride
              );
              if (success) {
              } else {

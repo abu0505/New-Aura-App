@@ -6,7 +6,7 @@ import { captureFramesForDenoise, denoiseCapturedFrames, destroyDenoiser } from 
 interface MobileCameraModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (file: File, caption: string) => void;
+  onSend: (file: File, caption: string, duration?: number) => void;
   onGallerySelect: (files: File[], caption: string) => void;
 }
 
@@ -58,6 +58,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isCanvasRecordingRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const startTimeRef = useRef<number>(0);
 
   // Fix 3.3: Debounce ref to prevent rapid camera restarts on settings toggle
   const cameraRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -381,7 +382,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     setIsLocked(false);
     setDigitalZoom(1);
     startPosRef.current = null;
-    setRecordingTime(0);
+    
+    // Set final precise duration
+    const finalDuration = (Date.now() - startTimeRef.current) / 1000;
+    setRecordingTime(Math.max(0.5, finalDuration));
 
     shutterControls.start({ 
       scale: 1, 
@@ -396,17 +400,14 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     if (isRecording) {
-      setRecordingTime(0);
       interval = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
+        setRecordingTime((Date.now() - startTimeRef.current) / 1000);
+      }, 100); // More frequent updates for smooth UI
 
       // Max duration limit (60s)
       timer = setTimeout(() => {
         stopRecording();
       }, 60000);
-    } else {
-      setRecordingTime(0);
     }
 
     return () => {
@@ -478,6 +479,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     };
 
     recorder.start(200); // collect data every 200ms (smooth buffer)
+    startTimeRef.current = Date.now();
     setIsRecording(true);
 
     if (navigator.vibrate) navigator.vibrate(50);
@@ -561,7 +563,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const handleSendFile = () => {
     const fileToSend = isEnhancedView && enhancedFile ? enhancedFile : capturedFile;
     if (fileToSend) {
-      onSend(fileToSend, caption);
+      // Pass the recorded duration if it's a video and we have it
+      const isVideo = fileToSend.type.includes('video');
+      onSend(fileToSend, caption, isVideo ? recordingTime : undefined);
       onClose();
     }
   };
