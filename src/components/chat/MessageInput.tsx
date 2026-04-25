@@ -465,7 +465,12 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const type = file.type.includes('video/') ? 'video' : (file.type.includes('audio/') ? 'audio' : 'image');
-      const isDirectRecording = file.name.startsWith('desktop_video_') || file.name.startsWith('video_');
+      // A "direct recording" is a file produced by MobileCameraModal or DesktopCameraStudio.
+      // These use timestamp-based names: `video_<ms>.webm`, `video_<ms>.mp4`, `desktop_video_<ms>.webm`.
+      // We check for the exact timestamp pattern to avoid matching gallery files that might
+      // also start with "video_" (e.g., WhatsApp saves as video_2024-01-01.mp4).
+      const directRecordingPattern = /^(desktop_video_|video_)\d+\.(webm|mp4)$/;
+      const isDirectRecording = directRecordingPattern.test(file.name);
       
       if (type === 'video' && onChunkedVideoStart && !isDirectRecording) {
         // Generate a quick local thumbnail for the optimistic UI

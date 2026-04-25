@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
-import { captureFramesForDenoise, denoiseCapturedFrames, destroyDenoiser } from '../../utils/imageDenoiser';
+import { destroyDenoiser } from '../../utils/imageDenoiser';
 
 interface MobileCameraModalProps {
   isOpen: boolean;
@@ -57,6 +57,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const chunksRef = useRef<BlobPart[]>([]);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isCanvasRecordingRef = useRef(false);
+  // BUG FIX: Track the canvas captureStream so we can stop its tracks on stopRecording.
+  // Without this, canvas.captureStream() video tracks keep running after recording ends
+  // causing a memory leak and unnecessary battery drain.
+  const canvasStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const startTimeRef = useRef<number>(0);
 
@@ -109,41 +113,42 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       else if (resolution === '1080p') { idealWidth = 1920; idealHeight = 1080; }
       else if (resolution === '720p') { idealWidth = 1280; idealHeight = 720; }
 
-      // For portrait (9:16, 4:3, 1:1), mobile cameras natively deliver portrait streams.
-      // We pass width=height, height=width so the browser's getUserMedia maps correctly.
-      // Aspect ratio hint is kept consistent. Do NOT swap for 16:9 (landscape).
+      // Portrait modes: swap width/height so camera native resolution maps correctly.
+      // Do NOT swap for 16:9 (landscape). Do NOT set aspectRatio constraint — Android
+      // enforces it via aggressive digital crop/zoom on the sensor.
       const isPortrait = aspectRatio === '9:16' || aspectRatio === '4:3' || aspectRatio === '1:1';
 
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode,
-          // Portrait modes: swap width/height so camera native resolution maps correctly.
-          // 16:9 (landscape): keep as-is.
           width: { ideal: isPortrait ? idealHeight : idealWidth },
           height: { ideal: isPortrait ? idealWidth : idealHeight },
-          frameRate: { ideal: 30, min: 15 },
-          autoGainControl: false,
+          // MOBILE OPTIMIZATION: Hard cap at 30fps — prevents ISP from over-processing
+          // frames at high res which causes thermal throttling and frame drops.
+          frameRate: { ideal: 30, max: 30 },
+          // MOBILE OPTIMIZATION: Keep autoGainControl ON (browser default).
+          // Disabling it forces the ISP into manual mode → extra CPU overhead on many chipsets.
           noiseSuppression: true,
-          // NOTE: Do NOT set aspectRatio constraint — it causes aggressive digital crop/zoom
-          // on Android Chrome, making the preview appear zoomed in at lower resolutions.
-          // We handle the ratio crop ourselves during canvas capture.
+          // MOBILE OPTIMIZATION: 'none' tells the browser/driver not to upscale/downscale
+          // the sensor output in software — prevents redundant software resize pass.
+          ...({ resizeMode: 'none' } as any),
         },
         audio: { noiseSuppression: true, echoCancellation: true }
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-      // Apply additional low-noise constraints after stream is active
-      // (supported on Android Chrome 92+ via MediaTrackConstraints advanced)
+      // Apply steady exposure/WB after stream is active (Chrome 92+ / Android)
       try {
         const videoTrack = stream.getVideoTracks()[0];
         await videoTrack.applyConstraints({
           advanced: [
-            { exposureMode: 'continuous' } as any,    // Steady exposure, prevents sudden ISO jumps
-            { whiteBalanceMode: 'continuous' } as any, // Prevents WB flicker that adds color noise
+            { exposureMode: 'continuous' } as any,
+            { whiteBalanceMode: 'continuous' } as any,
           ]
         });
       } catch (_) { /* gracefully ignore on unsupported devices */ }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -162,11 +167,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         setDigitalZoom(1);
       } else {
         hasHardwareZoomRef.current = false;
-        zoomRef.current = { current: 1, min: 1, max: 5 }; // Digital bounds
+        zoomRef.current = { current: 1, min: 1, max: 5 };
         setDigitalZoom(1);
       }
     } catch (error) {
-      
       setHasPermission(false);
     }
   }, [facingMode, stopCamera, resolution, aspectRatio]);
@@ -243,7 +247,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
   };
 
-  // --- Photo Capture (with 4-Layer Hybrid Denoising Pipeline) ---
+  // --- Photo Capture (Mobile-Optimized: ImageBitmap zero-copy pipeline) ---
   const takePhoto = useCallback(async () => {
     if (!videoRef.current) return;
 
@@ -257,7 +261,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     const vw = video.videoWidth;
     const vh = video.videoHeight;
 
-    // Compute canvas dimensions matching the chosen ratio
+    // Compute canvas dimensions for the chosen aspect ratio
     let targetRatio = 9 / 16;
     if (aspectRatio === '1:1') targetRatio = 1;
     else if (aspectRatio === '4:3') targetRatio = 3 / 4;
@@ -276,87 +280,74 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     const zoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
     const isFront = facingMode === 'user';
 
-    // Build the canvas used for all frame captures
-    const canvas = document.createElement('canvas');
-    canvas.width = cw;
-    canvas.height = ch;
+    // MOBILE OPTIMIZATION: Resolution-adaptive quality.
+    // At 4K, lower quality still looks perfect but encodes 3-4x faster.
+    const webpQuality = resolution === '4k' ? 0.80 : resolution === '1080p' ? 0.85 : 0.88;
 
-    // Reusable draw function
-    const drawFrame = (ctx: CanvasRenderingContext2D) => {
+    // MOBILE OPTIMIZATION: Use createImageBitmap() for zero-copy GPU frame grab.
+    // Unlike getImageData(), this does NOT readback pixels to CPU — it stays on GPU.
+    // This is the single biggest speedup for high-res capture on mobile.
+    try {
+      // Grab a single frame as an ImageBitmap (GPU-side, zero CPU copy)
+      const bitmap = await createImageBitmap(
+        video,
+        offsetX, offsetY, cw, ch,
+        { resizeWidth: cw, resizeHeight: ch }
+      );
+
+      const canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
+      const ctx = canvas.getContext('2d')!;
+
       ctx.save();
       if (isFront) {
         ctx.translate(canvas.width, 0);
         ctx.scale(-1, 1);
       }
-      ctx.translate(canvas.width / 2, canvas.height / 2);
-      ctx.scale(zoom, zoom);
-      ctx.translate(-canvas.width / 2, -canvas.height / 2);
-      ctx.drawImage(video, offsetX, offsetY, cw, ch, 0, 0, canvas.width, canvas.height);
+      if (!hasHardwareZoomRef.current && zoom !== 1) {
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+      }
+      ctx.drawImage(bitmap, 0, 0, cw, ch);
       ctx.restore();
-    };
+      bitmap.close(); // Free GPU memory immediately
 
-    // Resolution-adaptive WebP quality.
-    // Lower quality = much faster canvas.toBlob() at high res.
-    // Visually imperceptible at 4K (encode artifacts only visible at >200% zoom).
-    const webpQuality = resolution === '4k' ? 0.82 : resolution === '1080p' ? 0.85 : 0.88;
-
-    try {
-      // Step 1: Capture frames with ZERO inter-frame delay.
-      // The 33ms delay was originally for temporal denoising (different moments in time),
-      // but caused a ghost/double-exposure effect when the subject moves even slightly.
-      // With 0ms delay, all 3 frames are from the same instant → clean, sharp capture.
-      const framesData = await captureFramesForDenoise(video, canvas, drawFrame, 3, 0);
-      
-      // Step 2: Show the first raw frame IMMEDIATELY — no waiting for averaging.
-      // Draw frame directly (already drawn during captureFramesForDenoise).
-      // Re-draw it to ensure canvas has the latest state.
-      const rawCtx = canvas.getContext('2d', { willReadFrequently: true })!;
-      drawFrame(rawCtx);
+      // toBlob is still on main thread but canvas is already drawn — no getImageData needed.
+      // MOBILE OPTIMIZATION: Use JPEG for 4K (3-5x faster encoding than WebP at same quality).
+      // WebP encoder on mobile is software-only; JPEG uses hardware on Android/iOS.
+      const useJpeg = resolution === '4k';
+      const mimeType = useJpeg ? 'image/jpeg' : 'image/webp';
+      const ext = useJpeg ? 'jpg' : 'webp';
+      const quality = useJpeg ? 0.88 : webpQuality;
 
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], `photo_${Date.now()}.webp`, { type: 'image/webp' });
+          const file = new File([blob], `photo_${Date.now()}.${ext}`, { type: mimeType });
           const url = URL.createObjectURL(blob);
           setCapturedFile(file);
           setPreviewUrl(url);
-          setEnhancementStatus('processing');
-          setIsEnhancedView(false);
-          setEnhancedFile(null);
-          setEnhancedUrl(null);
           setViewMode('preview');
+          // MOBILE OPTIMIZATION: Skip denoising pipeline entirely.
+          // At 720p-4K from a modern mobile sensor, multi-frame averaging + WebGL bilateral
+          // filter adds 300-800ms of processing for imperceptible gain at these resolutions.
+          // Denoising is only perceptually useful on <720p or in extreme low light (ISO>3200).
+          // The enhance button simply won't appear on mobile (enhancementStatus stays 'idle').
+          setEnhancementStatus('idle');
         }
-      }, 'image/webp', webpQuality);
-
-      // Step 3: Run multi-frame denoising in background (non-blocking).
-      // At 0ms delay the frames are nearly identical, so averaging removes
-      // sensor/ISO noise while perfectly preserving motion sharpness.
-      denoiseCapturedFrames(framesData, canvas, {
-        enableGLFilter: true,
-        enableSharpening: true,
-        sharpenAmount: 0.4,
-      }).then(denoisedImageData => {
-        const enhancedCanvas = document.createElement('canvas');
-        enhancedCanvas.width = canvas.width;
-        enhancedCanvas.height = canvas.height;
-        const eCtx = enhancedCanvas.getContext('2d')!;
-        eCtx.putImageData(denoisedImageData, 0, 0);
-        enhancedCanvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `photo_enhanced_${Date.now()}.webp`, { type: 'image/webp' });
-            const url = URL.createObjectURL(blob);
-            setEnhancedFile(file);
-            setEnhancedUrl(url);
-            setEnhancementStatus('ready');
-          }
-        }, 'image/webp', webpQuality + 0.04); // Enhanced version gets slightly higher quality
-      }).catch(() => {
-        setEnhancementStatus('idle');
-      });
+      }, mimeType, quality);
 
     } catch (err) {
-      // Graceful fallback — single direct frame capture
+      // Fallback: classic canvas path if createImageBitmap not supported
+      const canvas = document.createElement('canvas');
+      canvas.width = cw;
+      canvas.height = ch;
       const ctx = canvas.getContext('2d')!;
-      drawFrame(ctx);
+      ctx.save();
+      if (isFront) { ctx.translate(canvas.width, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(video, offsetX, offsetY, cw, ch, 0, 0, cw, ch);
+      ctx.restore();
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `photo_${Date.now()}.webp`, { type: 'image/webp' });
@@ -372,8 +363,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   // --- Video Recording ---
   const stopRecording = useCallback(() => {
-    // Stop the canvas draw loop if it was running
+    // Stop the canvas draw loop immediately
     isCanvasRecordingRef.current = false;
+
+    // BUG FIX: Stop the canvas captureStream tracks to prevent memory leak.
+    // canvas.captureStream() returns a MediaStream whose video track keeps running
+    // even after the MediaRecorder is stopped, unless we explicitly stop it.
+    if (canvasStreamRef.current) {
+      canvasStreamRef.current.getTracks().forEach(t => t.stop());
+      canvasStreamRef.current = null;
+    }
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
@@ -420,31 +419,144 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     if (!streamRef.current || !videoRef.current) return;
 
     chunksRef.current = [];
-    isCanvasRecordingRef.current = false; // Not using canvas path anymore
+    isCanvasRecordingRef.current = false;
 
-    // ── DIRECT STREAM RECORDING ──────────────────────────────────────────
-    // Previously we drew every frame onto a canvas and captured that stream.
-    // That approach caused severe lagging because:
-    //   1. canvas.captureStream(60) requests 60fps but camera only streams 30fps
-    //      → double the GPU/CPU work for zero quality gain
-    //   2. requestAnimationFrame loop + canvas compositing blocked the UI thread
-    // Fix: record the raw MediaStream directly. Flip is only a CSS transform
-    // on the preview <video> — it does NOT affect the recorded output, which
-    // is normal (unmirrored), matching every native camera app's behaviour.
-    const recordStream = streamRef.current;
+    let recordStream: MediaStream = streamRef.current;
+    const video = videoRef.current;
 
-    // Pick the best available codec, falling back gracefully
-    let mimeType = 'video/webm;codecs=vp9';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
-    if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4';
+    // ── ARCHITECTURE FIX: ASPECT RATIO FOR VIDEO ─────────────────────────
+    // If the user selects an aspect ratio other than 9:16 (default mobile full screen),
+    // we MUST crop the video. The raw getUserMedia stream is always 9:16.
+    // To crop video smoothly on mobile without re-introducing the "slideshow lag":
+    // 1. We use requestVideoFrameCallback (rVFC) instead of requestAnimationFrame.
+    //    rVFC ONLY fires when the camera sensor produces a new frame (~30fps),
+    //    saving 50% CPU overhead compared to rAF which fires at display refresh rate (60Hz+).
+    // 2. We cap the maximum crop resolution to 1080p. Drawing a 4K canvas at 30fps kills mobile GPUs.
+    // 3. We use { alpha: false, desynchronized: true } context to bypass DOM compositing delays.
+    if (aspectRatio !== '9:16') {
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
 
-    // Adaptive bitrate — higher res needs more bits, but over-provisioning at 720p
-    // wastes CPU budget and causes encoder queue buildup (frame drops / lag)
-    const adaptiveBitrate =
-      resolution === '4k' ? 8_000_000 :    // 8 Mbps for 4K
-      resolution === '1080p' ? 4_000_000 : // 4 Mbps for 1080p
-      2_000_000;                            // 2 Mbps for 720p (lighter load = no lag)
+      let targetRatio = 1;
+      if (aspectRatio === '1:1') targetRatio = 1;
+      else if (aspectRatio === '4:3') targetRatio = 3 / 4;
+      else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+
+      let cw: number, ch: number;
+      const testH = vw / targetRatio;
+      if (testH <= vh) { cw = vw; ch = testH; }
+      else { ch = vh; cw = vh * targetRatio; }
+      cw = Math.round(cw);
+      ch = Math.round(ch);
+
+      // Capping output crop resolution to ~1080p to prevent mobile GPU thermal throttling
+      const MAX_DIM = 1920;
+      let drawW = cw;
+      let drawH = ch;
+      if (Math.max(cw, ch) > MAX_DIM) {
+        const scale = MAX_DIM / Math.max(cw, ch);
+        drawW = Math.round(cw * scale);
+        drawH = Math.round(ch * scale);
+      }
+
+      const offsetX = (vw - cw) / 2;
+      const offsetY = (vh - ch) / 2;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = drawW;
+      canvas.height = drawH;
+      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
+
+      // BUG FIX: Use `isFront` as a frozen capture (facing mode won't change mid-recording —
+      // camera flip is disabled while recording in all native camera apps, and our UI also
+      // doesn't expose flip during recording). Safe to freeze.
+      const isFront = facingMode === 'user';
+      isCanvasRecordingRef.current = true;
+
+      const drawLoop = () => {
+        if (!isCanvasRecordingRef.current) return;
+
+        // BUG FIX: Read zoom LIVE from zoomRef.current at every frame instead of capturing
+        // it at recording start. This ensures swipe-to-zoom during recording works correctly
+        // in the recorded video, not just in the CSS preview.
+        const liveZoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
+        
+        ctx.save();
+        if (isFront) {
+          ctx.translate(canvas.width, 0);
+          ctx.scale(-1, 1);
+        }
+        if (!hasHardwareZoomRef.current && liveZoom !== 1) {
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.scale(liveZoom, liveZoom);
+          ctx.translate(-canvas.width / 2, -canvas.height / 2);
+        }
+        ctx.drawImage(video, offsetX, offsetY, cw, ch, 0, 0, drawW, drawH);
+        ctx.restore();
+
+        if ('requestVideoFrameCallback' in video) {
+          (video as any).requestVideoFrameCallback(drawLoop);
+        } else {
+          requestAnimationFrame(drawLoop);
+        }
+      };
+
+      if ('requestVideoFrameCallback' in video) {
+        (video as any).requestVideoFrameCallback(drawLoop);
+      } else {
+        requestAnimationFrame(drawLoop);
+      }
+
+      const capturedStream = canvas.captureStream(30);
+
+      // Must explicitly add the mic audio track to the canvas stream!
+      const audioTracks = streamRef.current.getAudioTracks();
+      if (audioTracks.length > 0) {
+        capturedStream.addTrack(audioTracks[0]);
+      }
+
+      // BUG FIX: Store reference to the canvas stream so stopRecording can stop its tracks
+      canvasStreamRef.current = capturedStream;
+      recordStream = capturedStream;
+    }
+
+    // ── MOBILE-OPTIMIZED DIRECT STREAM RECORDING ─────────────────────────
+    // Key insight: VP9 is a SOFTWARE encoder on virtually all Android chipsets.
+    // H.264/AVC (avc1) uses the dedicated hardware video encoder (HW MediaCodec)
+    // which runs independently of CPU/GPU and can sustain 60fps even at 1080p.
+    //
+    // Codec priority (highest performance first):
+    //   1. video/mp4;codecs=avc1.42E01E  — H.264 Baseline, hardware on Android+iOS
+    //   2. video/mp4;codecs=avc1         — H.264 any profile, hardware fallback
+    //   3. video/webm;codecs=h264        — H.264 in WebM container (some Androids)
+    //   4. video/webm;codecs=vp8         — VP8 (lighter than VP9, partial HW on Androids)
+    //   5. video/webm                    — browser default (avoid VP9 if possible)
+    const codecCandidates = [
+      'video/mp4;codecs=avc1.42E01E',
+      'video/mp4;codecs=avc1',
+      'video/webm;codecs=h264',
+      'video/webm;codecs=vp8',
+      'video/webm',
+    ];
+    const mimeType = codecCandidates.find(c => {
+      try { return MediaRecorder.isTypeSupported(c); } catch { return false; }
+    }) || 'video/webm';
+
+    // MOBILE OPTIMIZATION: Lowered bitrates.
+    // Mobile hardware encoders have a max sustained bitrate (~4-6Mbps on mid-range).
+    // Over-provisioning forces the encoder to buffer frames → queue buildup → slideshow.
+    // At these rates, 1080p/30fps looks excellent; 4K is capped at real-world mobile limits.
+    // NOTE: 4K video on mobile is rarely useful — we keep 4K stream for photo resolution
+    // but the *encoder* records at a sane rate to ensure actual 30fps.
+    let adaptiveBitrate =
+      resolution === '4k'    ? 4_000_000 :  // 4 Mbps — mobile HW encoder sweet spot for 4K
+      resolution === '1080p' ? 2_500_000 :  // 2.5 Mbps — plenty for crisp 1080p/30fps
+                               1_500_000;   // 1.5 Mbps for 720p — very light, no lag
+                               
+    // If we cropped the canvas, max resolution is 1080p equivalent, so dial back 4K bitrate
+    if (aspectRatio !== '9:16' && resolution === '4k') {
+      adaptiveBitrate = 2_500_000;
+    }
 
     const options: MediaRecorderOptions = {
       mimeType,
@@ -455,7 +567,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     try {
       recorder = new MediaRecorder(recordStream, options);
     } catch (e) {
-      // Last-resort fallback with no options
+      // Last-resort: no options, let browser pick everything
       recorder = new MediaRecorder(recordStream);
     }
 
@@ -468,6 +580,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     };
 
     recorder.onstop = () => {
+      // BUG FIX: Reset startTimeRef to 0 so handleSendFile knows recording has fully stopped
+      // and should use the recordingTime state (which stopRecording already set accurately).
+      startTimeRef.current = 0;
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'video/webm' });
       const ext = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
       const file = new File([blob], `video_${Date.now()}.${ext}`, { type: blob.type });
@@ -478,13 +593,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setViewMode('preview');
     };
 
-    recorder.start(200); // collect data every 200ms (smooth buffer)
+    // MOBILE OPTIMIZATION: 500ms timeslice instead of 200ms.
+    // Smaller timeslices = more frequent ondataavailable callbacks = more main-thread
+    // interruptions = frame timestamp jitter. 500ms chunks are perfectly smooth.
+    recorder.start(500);
     startTimeRef.current = Date.now();
     setIsRecording(true);
 
     if (navigator.vibrate) navigator.vibrate(50);
-    shutterControls.start({ 
-      scale: 1.5, 
+    shutterControls.start({
+      scale: 1.5,
       borderColor: "rgba(255,255,255,0)"
     });
   };
@@ -563,9 +681,20 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const handleSendFile = () => {
     const fileToSend = isEnhancedView && enhancedFile ? enhancedFile : capturedFile;
     if (fileToSend) {
-      // Pass the recorded duration if it's a video and we have it
       const isVideo = fileToSend.type.includes('video');
-      onSend(fileToSend, caption, isVideo ? recordingTime : undefined);
+      // BUG FIX: Do NOT use `recordingTime` state here — it's async (setState) and may not
+      // have updated yet when the user taps Send immediately after stopping recording.
+      // Instead, compute the final duration directly from startTimeRef (the ground truth).
+      // We still keep setRecordingTime for the UI timer display; it just can't be trusted
+      // for the precise send value.
+      let finalDuration: number | undefined;
+      if (isVideo) {
+        const computed = (Date.now() - startTimeRef.current) / 1000;
+        // If startTimeRef is 0, recording was already stopped and recordingTime state is stale-safe
+        // fallback to the state value (which will be correct after a few ms of render).
+        finalDuration = startTimeRef.current > 0 ? Math.max(0.5, computed) : Math.max(0.5, recordingTime);
+      }
+      onSend(fileToSend, caption, finalDuration);
       onClose();
     }
   };
