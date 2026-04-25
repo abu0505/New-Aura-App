@@ -1130,14 +1130,18 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         media_url: null
       } : m));
       
-      await supabase.from('messages').update({ 
-        is_deleted_for_everyone: true,
-        encrypted_content: '',
-        nonce: '',
-        media_url: null,
-        media_key: null,
-        media_nonce: null
-      }).eq('id', messageId);
+      await Promise.all([
+        supabase.from('messages').update({ 
+          is_deleted_for_everyone: true,
+          encrypted_content: '',
+          nonce: '',
+          media_url: null,
+          media_key: null,
+          media_nonce: null
+        }).eq('id', messageId),
+        supabase.from('media_folder_items').delete().eq('message_id', messageId),
+        supabase.from('video_chunks').delete().eq('message_id', messageId)
+      ]);
     } else {
       const msg = messagesRef.current.find(m => m.id === messageId);
       const isSender = msg?.sender_id === user?.id;

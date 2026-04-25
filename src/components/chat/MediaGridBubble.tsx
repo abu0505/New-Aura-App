@@ -3,27 +3,43 @@ import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import type { ChatMessage } from '../../hooks/useChat';
 import MediaViewer from './MediaViewer';
+import MessageContextMenu from './MessageContextMenu';
+import { AnimatePresence } from 'framer-motion';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
+import PremiumEmoji from '../common/PremiumEmoji';
 
 interface MediaGridBubbleProps {
   messages: ChatMessage[];
   partnerPublicKey: string | null;
+  onReact?: (msgId: string, emoji: string | null) => void;
   isMine: boolean;
   isFirst?: boolean;
   isLast?: boolean;
   onReply?: (msgId: string) => void;
+  onDelete?: (msgId: string, forEveryone: boolean) => void;
+  onPin?: (msgId: string) => void;
+  quickEmojis?: string[];
 }
 
 function MediaGridBubble({ 
   messages, 
   partnerPublicKey, 
+  onReact,
   isMine, 
   isFirst = true, 
   isLast = true,
-  onReply
+  onReply,
+  onDelete,
+  onPin,
+  quickEmojis
 }: MediaGridBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const [decryptedUrls, setDecryptedUrls] = useState<Record<string, string>>({});
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
+  const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
+  const [showAllEmojis, setShowAllEmojis] = useState(false);
+  const pressTimer = useRef<number | null>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
   
   const blobUrlsRef = useRef<Record<string, string>>({});
   const touchStartX = useRef<number | null>(null);
@@ -39,6 +55,9 @@ function MediaGridBubble({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    pressTimer.current = window.setTimeout(() => {
+      setInteractionType('menu');
+    }, 600);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -63,9 +82,14 @@ function MediaGridBubble({
     } else {
       hapticTriggered.current = false;
     }
+
+    if (Math.abs(diff) > 10 && pressTimer.current) {
+      clearTimeout(pressTimer.current);
+    }
   };
 
   const handleTouchEnd = () => {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
     if (touchStartX.current !== null) {
       if (Math.abs(swipeX.get()) >= 45 && onReply) {
         onReply(messages[0].id);
@@ -75,6 +99,27 @@ function MediaGridBubble({
       hapticTriggered.current = false;
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (e: Event) => {
+      if (bubbleRef.current && !bubbleRef.current.contains(e.target as Node)) {
+        setInteractionType('none');
+        setShowAllEmojis(false);
+      }
+    };
+
+    if (interactionType !== 'none') {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener('pointerdown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside);
+    };
+  }, [interactionType]);
 
   useEffect(() => {
     let mounted = true;
@@ -152,6 +197,11 @@ function MediaGridBubble({
         key={msg.id} 
         className={`relative ${!isUploading ? 'cursor-pointer' : ''} group h-full w-full overflow-hidden`}
         onClick={() => { if (!isUploading) setSelectedMediaIndex(index) }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setInteractionType('menu');
+        }}
       >
         {msg.type === 'video' ? (
           <div className="w-full h-full relative">
@@ -193,6 +243,7 @@ function MediaGridBubble({
 
   return (
     <div 
+      ref={bubbleRef}
       className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group z-10 overflow-visible`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -211,14 +262,100 @@ function MediaGridBubble({
         <span className="material-symbols-outlined text-[18px]">reply</span>
       </motion.div>
 
+      <AnimatePresence>
+        {interactionType !== 'none' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            className={`absolute bottom-full mb-4 ${isMine ? 'right-0' : 'left-0'} z-50`}
+          >
+            {interactionType === 'reactions' && (
+              <div className={`flex flex-col gap-2 ${isMine ? 'items-end' : 'items-start'}`}>
+                {!showAllEmojis ? (
+                  <div className="flex items-center gap-1 bg-aura-bg-elevated/95 backdrop-blur-md p-1.5 rounded-full border border-white/5 shadow-2xl">
+                    {(quickEmojis || ['❤️', '😂', '😮', '😢', '🙏']).map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => {
+                          const newEmoji = messages[0].reaction === emoji ? null : emoji;
+                          onReact?.(messages[0].id, newEmoji);
+                          setInteractionType('none');
+                        }}
+                        className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition-all hover:scale-125 active:scale-95"
+                      >
+                        <PremiumEmoji emoji={emoji} size={24} />
+                      </button>
+                    ))}
+                    <button 
+                      onClick={() => setShowAllEmojis(true)}
+                      className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition-all text-aura-text-secondary hover:text-aura-text-primary"
+                    >
+                      <span className="material-symbols-outlined">add</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
+                    <EmojiPicker 
+                      theme={Theme.DARK}
+                      emojiStyle={EmojiStyle.APPLE}
+                      onEmojiClick={(emojiData) => {
+                        const newEmoji = messages[0].reaction === emojiData.emoji ? null : emojiData.emoji;
+                        onReact?.(messages[0].id, newEmoji);
+                        setInteractionType('none');
+                        setShowAllEmojis(false);
+                      }}
+                      lazyLoadEmojis={true}
+                      autoFocusSearch={false}
+                      searchPlaceHolder="Search emoji"
+                      previewConfig={{ showPreview: false }}
+                      skinTonesDisabled={true}
+                      width={300}
+                      height={400}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {interactionType === 'menu' && !showAllEmojis && (
+              <MessageContextMenu 
+                isMine={isMine}
+                onPin={() => { onPin?.(messages[0].id); setInteractionType('none'); }}
+                onDeleteForMe={() => { 
+                  messages.forEach(msg => onDelete?.(msg.id, false)); 
+                  setInteractionType('none');
+                }}
+                onDeleteForEveryone={messages.some(msg => !msg.is_deleted_for_everyone) ? () => { 
+                  messages.forEach(msg => onDelete?.(msg.id, true)); 
+                  setInteractionType('none');
+                } : undefined}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className={`flex items-center gap-2 w-full ${isMine ? 'justify-end' : 'justify-start'} relative z-10`}>
         {isMine && (
           <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <button 
+              onClick={() => setInteractionType('reactions')} 
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add_reaction</span>
+            </button>
             <button 
               onClick={() => onReply?.(messages[0].id)} 
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">reply</span>
+            </button>
+            <button 
+              onClick={() => setInteractionType('menu')} 
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">more_vert</span>
             </button>
           </div>
         )}
@@ -237,13 +374,24 @@ function MediaGridBubble({
               return (
                 <div 
                   key={msg.id} 
-                  className={`${isThreeItems && isFirstItem ? 'row-span-2' : ''}`}
+                  className={`relative ${isThreeItems && isFirstItem ? 'row-span-2' : ''}`}
                 >
                   {renderItem(msg, idx)}
                 </div>
               );
             })}
           </div>
+
+          {/* Reaction Badge */}
+          {messages[0].reaction && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); onReact?.(messages[0].id, null); }}
+              className={`absolute -bottom-[14px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated/90 backdrop-blur-xl border border-primary rounded-full px-2 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.6)] z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center gap-1`}
+              title="Remove reaction"
+            >
+              <PremiumEmoji emoji={messages[0].reaction} size={16} />
+            </button>
+          )}
 
           {/* Unified Status Info Overlay */}
           <div className="absolute bottom-2 right-2 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md shadow-lg flex items-center gap-1.5 pointer-events-none">
@@ -264,10 +412,22 @@ function MediaGridBubble({
         {!isMine && (
           <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <button 
+              onClick={() => setInteractionType('reactions')} 
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">add_reaction</span>
+            </button>
+            <button 
               onClick={() => onReply?.(messages[0].id)} 
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">reply</span>
+            </button>
+            <button 
+              onClick={() => setInteractionType('menu')} 
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">more_vert</span>
             </button>
           </div>
         )}
@@ -276,13 +436,13 @@ function MediaGridBubble({
       {selectedMediaIndex !== null && (
         <MediaViewer 
           url={decryptedUrls[messages[selectedMediaIndex]?.id] || ''}
-          type={messages[selectedMediaIndex]?.type as 'image' | 'video'}
+          type={messages[selectedMediaIndex]?.type as 'image' | 'video' | 'gif'}
           onClose={() => setSelectedMediaIndex(null)}
           // Future-proofing for swipable gallery
           allMedia={messages.map(m => ({
             id: m.id,
             url: decryptedUrls[m.id],
-            type: m.type as 'image' | 'video'
+            type: m.type as 'image' | 'video' | 'gif'
           }))}
           initialIndex={selectedMediaIndex}
         />

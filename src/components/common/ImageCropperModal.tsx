@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import Cropper from 'react-easy-crop';
 import type { Point, Area } from 'react-easy-crop';
 import getCroppedImg from '../../utils/cropImage';
@@ -30,7 +31,9 @@ export default function ImageCropperModal({ imageSrc, onCropComplete, onCancel }
       }
     } catch (e: any) {
       
-      alert('Error cropping image: ' + e.message);
+      toast.error('Error cropping image', {
+        description: e.message,
+      });
     } finally {
       setIsProcessing(false);
     }

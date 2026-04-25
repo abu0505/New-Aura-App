@@ -7,12 +7,12 @@ import ChunkedVideoPlayer from './ChunkedVideoPlayer';
 interface MediaItem {
   id: string;
   url: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'gif';
 }
 
 interface MediaViewerProps {
   url: string;
-  type: 'image' | 'video' | 'chunked_video';
+  type: 'image' | 'video' | 'chunked_video' | 'gif';
   onClose: () => void;
   allMedia?: MediaItem[];
   initialIndex?: number;
@@ -180,7 +180,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          {currentMedia.type === 'image' ? (
+          {currentMedia.type === 'image' || currentMedia.type === 'gif' ? (
             <TransformWrapper
               initialScale={1}
               minScale={0.5}

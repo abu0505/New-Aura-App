@@ -321,6 +321,8 @@ export function useMedia() {
     setIsProcessing(true);
     setUploadProgress(0);
 
+    console.log(`%c[Media Pipeline] Starting process/upload for: ${file.name} (${file.type})`, 'color: #3b82f6; font-weight: bold;');
+
     try {
       const myKeyPair = getStoredKeyPair();
       if (!myKeyPair) throw new Error('Private key missing');
@@ -378,6 +380,7 @@ export function useMedia() {
         formData.append('file', new Blob([data as any]), filename || 'encrypted_file.raw');
         formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
+        console.log(`%c[Media Pipeline] Starting upload: ${filename || 'file'}`, 'color: #f59e0b; font-weight: bold;');
         const response = await fetch(
           `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/${type}/upload`,
           { method: 'POST', body: formData }
@@ -387,6 +390,11 @@ export function useMedia() {
       };
 
       const uploadResult = await uploadFile(encryptedData, 'raw', fileToProcess.name);
+      console.log(`%c[Media Pipeline] Upload successful: ${file.name}`, 'color: #10b981; font-weight: bold;', {
+        url: uploadResult.secure_url,
+        size: file.size,
+        type: file.type
+      });
 
       // ── Thumbnail ──────────────────────────────────────────────────────
       let thumbnailUrl = '';
@@ -399,7 +407,8 @@ export function useMedia() {
       }
 
       // Fix 4.3: Determine and return explicit MIME type
-      const mimeType = file.type.startsWith('image/') ? 'image/webp' :
+      const mimeType = file.type === 'image/gif' ? 'image/gif' :
+                       file.type.startsWith('image/') ? 'image/webp' :
                        file.type.startsWith('video/') ? (fileToProcess.type || 'video/mp4') :
                        file.type.startsWith('audio/') ? (file.type || 'audio/webm') :
                        file.type || 'application/octet-stream';
@@ -410,8 +419,7 @@ export function useMedia() {
         media_key: `${keyNonce}:${encryptedKey}`, // Packed for storage
         media_key_nonce: keyNonce,
         media_nonce: encodeBase64(nonce),
-        type: file.type === 'image/gif' ? 'gif' :
-              file.type.startsWith('image/') ? 'image' :
+        type: (file.type === 'image/gif' || file.type.startsWith('image/')) ? 'image' :
               file.type.startsWith('video/') ? 'video' :
               file.type.startsWith('audio/') ? 'audio' : 'document',
         mime_type: mimeType, // Fix 4.3: explicit MIME to persist to DB
@@ -420,6 +428,7 @@ export function useMedia() {
       };
 
     } catch (error) {
+      console.error(`%c[Media Pipeline] FAILED: ${file.name}`, 'color: #ef4444; font-weight: bold;', error);
       return null;
     } finally {
       setIsProcessing(false);

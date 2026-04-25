@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, Fragment } from 'react';
+import { toast } from 'sonner';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
@@ -111,7 +112,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     if (!el) return;
     const raf = requestAnimationFrame(() => {
       el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+      const scHeight = el.scrollHeight;
+      // Force 25px for single line, otherwise use scrollHeight
+      el.style.height = `${scHeight <= 32 ? 25 : Math.min(scHeight, 120)}px`;
     });
     return () => cancelAnimationFrame(raf);
   }, [text]);
@@ -354,10 +357,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
              onSend(`${pos.coords.latitude},${pos.coords.longitude}`, { url: '', media_key: '', media_nonce: '', type: 'location' }, replyingTo?.id);
               if (onCancelReply) onCancelReply();
           },
-          () => alert('Location permission denied.')
+          () => toast.error('Location permission denied.')
         );
       } else {
-        alert('Geolocation is not supported by your browser.');
+        toast.error('Geolocation is not supported by your browser.');
       }
     } else if (type === 'sticker') {
       setIsStickerPickerOpen(true);
@@ -409,7 +412,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   const performUpload = async (files: File[], optimize: boolean, caption: string) => {
     if (files.length > MAX_MEDIA_LIMIT) {
-      alert(`Bhai aaram se! Ek sath sirf ${MAX_MEDIA_LIMIT} files bhej sakte ho. Pehli ${MAX_MEDIA_LIMIT} hi upload hongi.`);
+      toast(`Aree MERI BEGHAM JII aaram se! Ek sath sirf ${MAX_MEDIA_LIMIT} files bhej sakte ho. Pehli ${MAX_MEDIA_LIMIT} hi upload hongi. 😘💋`, {
+        description: "Aura suggests smaller batches for absolute security.",
+        duration: 9000,
+      });
       files = files.slice(0, MAX_MEDIA_LIMIT);
     }
 

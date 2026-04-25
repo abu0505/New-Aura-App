@@ -1,4 +1,5 @@
 import { useAuth } from '../../contexts/AuthContext';
+import { toast } from 'sonner';
 import { useMedia } from '../../hooks/useMedia';
 import StorageDashboard from './StorageDashboard';
 
@@ -17,7 +18,9 @@ export default function StorageSection() {
     // Clear runtime Blob URL map (this frees actual RAM/Egress)
     clearCache();
 
-    alert('Local cache cleared. Only non-essential data was removed.');
+    toast.success('Local cache cleared', {
+      description: 'Only non-essential data was removed from your sanctuary.',
+    });
   };
 
   return (

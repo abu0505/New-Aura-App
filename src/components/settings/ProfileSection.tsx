@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { supabase } from '../../lib/supabase';
@@ -32,7 +33,9 @@ export default function ProfileSection() {
       ]);
 
       if (authResult.error) {
-        alert('Failed to update identity: ' + authResult.error.message);
+        toast.error('Failed to update identity', {
+          description: authResult.error.message,
+        });
       }
       await refreshUser();
     } finally {
@@ -105,13 +108,17 @@ export default function ProfileSection() {
       ]);
 
       if (authResult.error) {
-        alert('Authentication update failed: ' + authResult.error.message);
+        toast.error('Authentication update failed', {
+          description: authResult.error.message,
+        });
       } else {
         await refreshUser();
       }
     } catch (err: any) {
       
-      alert('Sanctuary storage error: ' + err.message);
+      toast.error('Sanctuary storage error', {
+        description: err.message,
+      });
     } finally {
       setUploading(false);
     }

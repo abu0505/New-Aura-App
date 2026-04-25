@@ -642,10 +642,14 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                           <MediaGridBubble 
                             messages={item}
                             partnerPublicKey={partner.public_key}
+                            onReact={viewMode === 'chat' ? reactToMessage : undefined}
                             isMine={firstMsg.sender_id === user?.id}
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
                             onReply={viewMode === 'chat' ? handleReply : undefined}
+                            onDelete={viewMode === 'chat' ? deleteMessage : undefined}
+                            onPin={pinMessage}
+                            quickEmojis={settings?.quick_emojis}
                           />
                         ) : (
                           <ChatBubble 

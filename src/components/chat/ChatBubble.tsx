@@ -647,7 +647,7 @@ function ChatBubble({
             {isPreviewOpen && (
               <MediaViewer 
                 url={decryptedMediaUrl || message.media_url || ''} 
-                type={(decryptedMediaUrl || message.media_url)?.includes('.mp4') ? 'video' : 'image'} 
+                type={(decryptedMediaUrl || message.media_url)?.includes('.mp4') ? 'video' : 'gif'} 
                 onClose={() => setIsPreviewOpen(false)} 
               />
             )}

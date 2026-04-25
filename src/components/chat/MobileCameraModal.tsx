@@ -108,22 +108,24 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       else if (resolution === '1080p') { idealWidth = 1920; idealHeight = 1080; }
       else if (resolution === '720p') { idealWidth = 1280; idealHeight = 720; }
 
-      let ratioValue: number = 9 / 16;
-      if (aspectRatio === '1:1') ratioValue = 1;
-      else if (aspectRatio === '4:3') ratioValue = 3 / 4;
-      else if (aspectRatio === '16:9') ratioValue = 16 / 9;
-      else if (aspectRatio === '9:16') ratioValue = 9 / 16;
+      // For portrait (9:16, 4:3, 1:1), mobile cameras natively deliver portrait streams.
+      // We pass width=height, height=width so the browser's getUserMedia maps correctly.
+      // Aspect ratio hint is kept consistent. Do NOT swap for 16:9 (landscape).
+      const isPortrait = aspectRatio === '9:16' || aspectRatio === '4:3' || aspectRatio === '1:1';
 
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode,
-          // Correctly map ideal dimensions for portrait orientation on mobile
-          width: { ideal: ratioValue < 1 ? idealHeight : idealWidth },
-          height: { ideal: ratioValue < 1 ? idealWidth : idealHeight },
-          aspectRatio: { ideal: ratioValue },
+          // Portrait modes: swap width/height so camera native resolution maps correctly.
+          // 16:9 (landscape): keep as-is.
+          width: { ideal: isPortrait ? idealHeight : idealWidth },
+          height: { ideal: isPortrait ? idealWidth : idealHeight },
           frameRate: { ideal: 30, min: 15 },
           autoGainControl: false,
           noiseSuppression: true,
+          // NOTE: Do NOT set aspectRatio constraint — it causes aggressive digital crop/zoom
+          // on Android Chrome, making the preview appear zoomed in at lower resolutions.
+          // We handle the ratio crop ourselves during canvas capture.
         },
         audio: { noiseSuppression: true, echoCancellation: true }
       };
@@ -292,14 +294,23 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       ctx.restore();
     };
 
+    // Resolution-adaptive WebP quality.
+    // Lower quality = much faster canvas.toBlob() at high res.
+    // Visually imperceptible at 4K (encode artifacts only visible at >200% zoom).
+    const webpQuality = resolution === '4k' ? 0.82 : resolution === '1080p' ? 0.85 : 0.88;
+
     try {
-      // Step 1: Instantly capture raw frames (takes ~66ms for 3 frames)
-      const framesData = await captureFramesForDenoise(video, canvas, drawFrame, 3, 33);
+      // Step 1: Capture frames with ZERO inter-frame delay.
+      // The 33ms delay was originally for temporal denoising (different moments in time),
+      // but caused a ghost/double-exposure effect when the subject moves even slightly.
+      // With 0ms delay, all 3 frames are from the same instant → clean, sharp capture.
+      const framesData = await captureFramesForDenoise(video, canvas, drawFrame, 3, 0);
       
-      // Step 2: Show the first frame immediately to the user
+      // Step 2: Show the first raw frame IMMEDIATELY — no waiting for averaging.
+      // Draw frame directly (already drawn during captureFramesForDenoise).
+      // Re-draw it to ensure canvas has the latest state.
       const rawCtx = canvas.getContext('2d', { willReadFrequently: true })!;
-      const rawImageData = new ImageData(framesData.frames[0] as any, canvas.width, canvas.height);
-      rawCtx.putImageData(rawImageData, 0, 0);
+      drawFrame(rawCtx);
 
       canvas.toBlob((blob) => {
         if (blob) {
@@ -307,18 +318,17 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           const url = URL.createObjectURL(blob);
           setCapturedFile(file);
           setPreviewUrl(url);
-          
           setEnhancementStatus('processing');
           setIsEnhancedView(false);
           setEnhancedFile(null);
           setEnhancedUrl(null);
-          
           setViewMode('preview');
         }
-      }, 'image/webp', 0.88);
+      }, 'image/webp', webpQuality);
 
-      // Step 3: Run the heavy noise reduction in background (non-blocking)
-      
+      // Step 3: Run multi-frame denoising in background (non-blocking).
+      // At 0ms delay the frames are nearly identical, so averaging removes
+      // sensor/ISO noise while perfectly preserving motion sharpness.
       denoiseCapturedFrames(framesData, canvas, {
         enableGLFilter: true,
         enableSharpening: true,
@@ -336,17 +346,14 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             setEnhancedFile(file);
             setEnhancedUrl(url);
             setEnhancementStatus('ready');
-            
           }
-        }, 'image/webp', 0.92);
+        }, 'image/webp', webpQuality + 0.04); // Enhanced version gets slightly higher quality
       }).catch(() => {
-        
         setEnhancementStatus('idle');
       });
 
     } catch (err) {
-      // Graceful fallback
-      
+      // Graceful fallback — single direct frame capture
       const ctx = canvas.getContext('2d')!;
       drawFrame(ctx);
       canvas.toBlob((blob) => {
@@ -358,9 +365,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           setEnhancementStatus('idle');
           setViewMode('preview');
         }
-      }, 'image/webp', 0.88);
+      }, 'image/webp', webpQuality);
     }
-  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef]);
+  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef, resolution]);
 
   // --- Video Recording ---
   const stopRecording = useCallback(() => {
@@ -431,9 +438,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
     if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/mp4';
 
+    // Adaptive bitrate — higher res needs more bits, but over-provisioning at 720p
+    // wastes CPU budget and causes encoder queue buildup (frame drops / lag)
+    const adaptiveBitrate =
+      resolution === '4k' ? 8_000_000 :    // 8 Mbps for 4K
+      resolution === '1080p' ? 4_000_000 : // 4 Mbps for 1080p
+      2_000_000;                            // 2 Mbps for 720p (lighter load = no lag)
+
     const options: MediaRecorderOptions = {
       mimeType,
-      videoBitsPerSecond: 2_500_000, // 2.5 Mbps — sufficient for 1080p 30fps chat video
+      videoBitsPerSecond: adaptiveBitrate,
     };
 
     let recorder: MediaRecorder;
@@ -635,7 +649,12 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                       muted
                       className="w-full h-full object-cover pointer-events-auto"
                       style={{
-                        transform: facingMode === 'user' ? `scaleX(-1) scale(${digitalZoom})` : `scale(${digitalZoom})`,
+                        // Mirror front camera. Apply digitalZoom ONLY when NOT using hardware zoom.
+                        // Hardware zoom is applied via track.applyConstraints, so no CSS scale needed.
+                        // Using scale() here on top of hardware zoom causes double-zoom (the reported bug).
+                        transform: facingMode === 'user'
+                          ? `scaleX(-1)${!hasHardwareZoomRef.current && digitalZoom !== 1 ? ` scale(${digitalZoom})` : ''}`
+                          : (!hasHardwareZoomRef.current && digitalZoom !== 1 ? `scale(${digitalZoom})` : 'none'),
                         transformOrigin: 'center'
                       }}
                       onDoubleClick={toggleCamera}

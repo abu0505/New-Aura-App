@@ -6,6 +6,7 @@ import { usePartner } from '../../hooks/usePartner';
 import { useMedia } from '../../hooks/useMedia';
 import { useMediaFolders, type MediaFolder } from '../../hooks/useMediaFolders';
 import type { Database } from '../../integrations/supabase/types';
+import { realtimeHub } from '../../lib/realtimeHub';
 import MediaViewer from '../chat/MediaViewer';
 import SearchOverlay from './SearchOverlay';
 import FoldersPanel from './FoldersPanel';
@@ -33,7 +34,7 @@ export default function MemoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string, messageId?: string } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string, messageId?: string, initialIndex?: number } | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 12;
 
@@ -53,9 +54,16 @@ export default function MemoriesScreen() {
   const pageRef = useRef(1);          // tracks current page synchronously
   const isFetchingMoreRef = useRef(false); // prevents concurrent fetches
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  // Fix 5.4: Throttle concurrent decryptions — max 3 at a time to avoid main-thread jank
-  const activeDecryptionsRef = useRef(0);
-  const MAX_CONCURRENT_DECRYPTIONS = 3;
+  
+  // ── Phase 7: Priority Decryption Queue ──────────────────────────────
+  // Fix: Implements a priority-based loading system.
+  // ++1 (Highest): Items currently visible on screen.
+  // +1  (High):    Next 20-30 items below the viewport.
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
+  const decryptionQueueRef = useRef<string[]>([]);
+  const processingIdsRef = useRef<Set<string>>(new Set());
+  const MAX_CONCURRENT_DECRYPTIONS = 8; // Increased for "full speed"
+  const LOOK_AHEAD_COUNT = 30; // Pre-fetch next 30 items
 
   // ── Phase 4: Pinch-to-Zoom grid density ─────────────────────────────
   type GridDensity = 2 | 3 | 4;
@@ -152,6 +160,58 @@ export default function MemoriesScreen() {
       document.dispatchEvent(new CustomEvent('hide-global-nav'));
     }
   }, [selectionMode, showFolderPicker]);
+
+  // ── Phase 6: Real-time media synchronization ────────────────────────
+  // Ensures new media uploaded in chat appears instantly in the gallery
+  // without needing a page refresh or manual re-fetch.
+  useEffect(() => {
+    if (!user || !partner) return;
+
+    const unsubscribe = realtimeHub.on('messages', (payload) => {
+      if (payload.eventType === 'INSERT') {
+        const newMsg = payload.new as MemoryItem;
+        
+        // Filter: must have media and belong to this specific conversation
+        if (!newMsg.media_url) return;
+        
+        const isFromMe = newMsg.sender_id === user.id && newMsg.receiver_id === partner.id;
+        const isFromPartner = newMsg.sender_id === partner.id && newMsg.receiver_id === user.id;
+        
+        if (isFromMe || isFromPartner) {
+          setMemories(prev => {
+            // Deduplication guard
+            if (prev.some(m => m.id === newMsg.id)) return prev;
+            // Prepend the new memory so it appears at the top of the grid
+            return [newMsg, ...prev];
+          });
+        }
+      } else if (payload.eventType === 'UPDATE') {
+        const updatedMsg = payload.new as MemoryItem;
+        // Handle media updates (e.g. if a message is edited to add media, though rare)
+        if (updatedMsg.media_url) {
+          setMemories(prev => {
+            const exists = prev.some(m => m.id === updatedMsg.id);
+            if (exists) {
+              return prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m);
+            } else {
+              // If it now has media but wasn't in memories, check conversation and add it
+              const isFromMe = updatedMsg.sender_id === user.id && updatedMsg.receiver_id === partner.id;
+              const isFromPartner = updatedMsg.sender_id === partner.id && updatedMsg.receiver_id === user.id;
+              if (isFromMe || isFromPartner) return [updatedMsg, ...prev];
+              return prev;
+            }
+          });
+        }
+      } else if (payload.eventType === 'DELETE') {
+        const oldMsg = payload.old as any;
+        if (oldMsg?.id) {
+          setMemories(prev => prev.filter(m => m.id !== oldMsg.id));
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user?.id, partner?.id]);
 
   // ── Pinch gesture on mobile ───────────────────────────────────────────
   const getDist = (touches: React.TouchList) =>
@@ -300,38 +360,135 @@ export default function MemoriesScreen() {
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const decryptMedia = async (memory: MemoryItem) => {
-    if (memory.decryptedUrl || !partner?.public_key || !memory.media_url || !memory.media_key || !memory.media_nonce) return;
-    // Fix 5.4: Throttle concurrent decryptions to prevent main-thread overload on scroll
-    if (activeDecryptionsRef.current >= MAX_CONCURRENT_DECRYPTIONS) return;
+  // ── Priority Queue Logic ──
+  const processQueue = useCallback(async () => {
+    if (processingIdsRef.current.size >= MAX_CONCURRENT_DECRYPTIONS) return;
+    if (decryptionQueueRef.current.length === 0) return;
 
-    activeDecryptionsRef.current++;
-    setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: true } : m));
+    // Filter out items already being processed
+    const nextId = decryptionQueueRef.current.find(id => !processingIdsRef.current.has(id));
+    if (!nextId) return;
+
+    const memory = memories.find(m => m.id === nextId);
+    if (!memory || memory.decryptedUrl || memory.loading) {
+      // Remove invalid items from queue
+      decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
+      processQueue();
+      return;
+    }
+
+    // Start decryption
+    processingIdsRef.current.add(nextId);
+    setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: true } : m));
 
     try {
       const blob = await getDecryptedBlob(
-        memory.media_url,
-        memory.media_key,
-        memory.media_nonce,
-        partner.public_key,
+        memory.media_url!,
+        memory.media_key!,
+        memory.media_nonce!,
+        partner!.public_key!,
         memory.sender_public_key,
-        undefined,       // partnerKeyHistory — not tracked per-memory
-        memory.type      // ← critical: pass type so MIME is set correctly
+        undefined,
+        memory.type
       );
+
       if (blob) {
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
-        setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, decryptedUrl: url, loading: false } : m));
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, decryptedUrl: url, loading: false } : m));
       } else {
-        setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false } : m));
       }
-    } catch (err) {
-      
-      setMemories(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
+    } catch {
+      setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false } : m));
     } finally {
-      activeDecryptionsRef.current--; // Fix 5.4: Release slot when done
+      processingIdsRef.current.delete(nextId);
+      decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
+      // Process next in queue
+      processQueue();
     }
-  };
+  }, [memories, partner?.public_key, getDecryptedBlob]);
+
+  // Update queue based on visibility and proximity
+  // Fix: Dependencies now include memories to catch loading/decrypted changes
+  useEffect(() => {
+    if (memories.length === 0 || !partner?.public_key) return;
+
+    const itemsToDecrypt = filteredMemories.filter(m => !m.decryptedUrl && !m.loading && !processingIdsRef.current.has(m.id));
+    if (itemsToDecrypt.length === 0) return;
+
+    // Sort by priority: 
+    // 1. Visible IDs (Highest)
+    // 2. Next 30 items after the lowest visible index (High)
+    // 3. Others (Lower)
+    
+    const visibleIndices = Array.from(visibleIds)
+      .map(id => filteredMemories.findIndex(m => m.id === id))
+      .filter(idx => idx !== -1);
+    
+    const maxVisibleIdx = visibleIndices.length > 0 ? Math.max(...visibleIndices) : -1;
+    
+    const sorted = [...itemsToDecrypt].sort((a, b) => {
+      const aIdx = filteredMemories.findIndex(m => m.id === a.id);
+      const bIdx = filteredMemories.findIndex(m => m.id === b.id);
+      
+      const aVisible = visibleIds.has(a.id);
+      const bVisible = visibleIds.has(b.id);
+      
+      if (aVisible && !bVisible) return -1;
+      if (!aVisible && bVisible) return 1;
+      
+      const aInLookAhead = aIdx > maxVisibleIdx && aIdx <= maxVisibleIdx + LOOK_AHEAD_COUNT;
+      const bInLookAhead = bIdx > maxVisibleIdx && bIdx <= maxVisibleIdx + LOOK_AHEAD_COUNT;
+      
+      if (aInLookAhead && !bInLookAhead) return -1;
+      if (!aInLookAhead && bInLookAhead) return 1;
+      
+      return aIdx - bIdx; // Default to natural order
+    });
+
+    decryptionQueueRef.current = sorted.map(m => m.id);
+    
+    // Kick off workers up to limit
+    for (let i = 0; i < MAX_CONCURRENT_DECRYPTIONS; i++) {
+      processQueue();
+    }
+  }, [visibleIds, memories, partner?.public_key, processQueue]);
+
+  // Robust IntersectionObserver for visibility tracking
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver((entries) => {
+      setVisibleIds(prev => {
+        const next = new Set(prev);
+        entries.forEach(entry => {
+          const id = entry.target.getAttribute('data-id');
+          if (!id) return;
+          if (entry.isIntersecting) {
+            next.add(id);
+          } else {
+            next.delete(id);
+          }
+        });
+        return next;
+      });
+    }, {
+      root: null,
+      rootMargin: '200px', // Increased margin for smoother proactive loading
+      threshold: 0.01
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
+
+  const cardRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && observerRef.current) {
+      observerRef.current.observe(node);
+    }
+  }, []);
 
   const filteredMemories = memories.filter(m => {
     if (filter === 'all') return true;
@@ -365,6 +522,17 @@ export default function MemoriesScreen() {
       return { dateKey, dateLabel, items };
     });
   }, [filteredMemories]);
+  
+  // Media Viewer Navigation List
+  const allMediaForViewer = useMemo(() => {
+    return filteredMemories
+      .filter(m => m.decryptedUrl)
+      .map(m => ({
+        id: m.id,
+        url: m.decryptedUrl!,
+        type: (m.type === 'video') ? 'video' : 'image' as 'image' | 'video' | 'gif'
+      }));
+  }, [filteredMemories]);
 
   // Selection handlers
   const handleLongPress = (id: string) => {
@@ -389,7 +557,13 @@ export default function MemoriesScreen() {
       });
     } else {
       if (memory.decryptedUrl) {
-        setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image', messageId: memory.id });
+        const index = allMediaForViewer.findIndex(m => m.id === memory.id);
+        setSelectedMedia({ 
+          url: memory.decryptedUrl, 
+          type: memory.type || 'image', 
+          messageId: memory.id,
+          initialIndex: index !== -1 ? index : 0
+        });
       }
     }
   };
@@ -622,7 +796,7 @@ export default function MemoriesScreen() {
                         key={memory.id}
                         memory={memory}
                         index={index}
-                        onDecrypt={() => decryptMedia(memory)}
+                        cardRef={cardRef}
                         onClick={() => handleTap(memory)}
                         onLongPress={() => handleLongPress(memory.id)}
                         onTouchStart={(e) => handleTouchStart(memory.id, e)}
@@ -673,6 +847,8 @@ export default function MemoriesScreen() {
             url={selectedMedia.url}
             type={selectedMedia.type as any}
             messageId={selectedMedia.messageId}
+            allMedia={allMediaForViewer}
+            initialIndex={selectedMedia.initialIndex ?? 0}
             showViewInChat={true}
             onClose={() => setSelectedMedia(null)}
           />
@@ -800,7 +976,7 @@ export default function MemoriesScreen() {
 interface MemoryCardProps {
   memory: MemoryItem;
   index: number;
-  onDecrypt: () => void;
+  cardRef?: (node: HTMLDivElement | null) => void;
   onClick: () => void;
   onLongPress: () => void;
   onTouchStart: (e: React.TouchEvent) => void;
@@ -812,7 +988,7 @@ interface MemoryCardProps {
   onToggleFavorite: () => void;
 }
 
-function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchStart, onTouchMove, onTouchEnd, isSelected, selectionMode, isFavorited, onToggleFavorite }: MemoryCardProps) {
+function MemoryCard({ memory, index, cardRef, onClick, onLongPress, onTouchStart, onTouchMove, onTouchEnd, isSelected, selectionMode, isFavorited, onToggleFavorite }: MemoryCardProps) {
   const isTall = index % 5 === 0;
   const isWide = index % 7 === 0;
   const lastTapRef = useRef<number>(0);
@@ -847,11 +1023,11 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
 
   return (
     <motion.div
+      ref={cardRef}
+      data-id={memory.id}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      viewport={{ once: true, margin: "400px" }}
-      onViewportEnter={onDecrypt}
       onPointerDown={handlePointerDown}
       onClick={handleInternalClick}
       onTouchStart={onTouchStart}
@@ -859,7 +1035,7 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
       onTouchEnd={onTouchEnd}
       onTouchCancel={onTouchEnd}
       onContextMenu={(e) => { e.preventDefault(); onLongPress(); }}
-      className={`relative group rounded-[2rem] overflow-hidden bg-black/40 border cursor-pointer shadow-xl select-none ${
+      className={`memory-card relative group rounded-[2rem] overflow-hidden bg-black/40 border cursor-pointer shadow-xl select-none ${
         isTall ? 'row-span-2' : isWide ? 'col-span-2' : ''
       } ${isSelected ? 'border-[var(--gold)] ring-2 ring-[rgba(var(--primary-rgb),_0.4)]' : 'border-white/5'}`}
       style={{
@@ -875,7 +1051,7 @@ function MemoryCard({ memory, index, onDecrypt, onClick, onLongPress, onTouchSta
         </div>
       ) : memory.decryptedUrl ? (
         <>
-          {memory.type === 'image' && (
+          {((memory.type as string) === 'image' || (memory.type as string) === 'gif' || (memory.type as string) === 'sticker') && (
             <img src={memory.decryptedUrl} className="w-full h-full object-cover" alt="Memory" loading="lazy" />
           )}
           {memory.type === 'video' && (

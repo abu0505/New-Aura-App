@@ -39,7 +39,12 @@ export function groupMessages(messages: ChatMessage[]): MessageItem[] {
         const lastAdded = grouped.pop();
         if (lastAdded) {
           if (Array.isArray(lastAdded)) {
-            currentMediaGroup = [...lastAdded, msg];
+            if (lastAdded.length < 10) {
+              currentMediaGroup = [...lastAdded, msg];
+            } else {
+              grouped.push(lastAdded);
+              currentMediaGroup = [msg];
+            }
           } else {
             currentMediaGroup = [lastAdded, msg];
           }
@@ -47,7 +52,12 @@ export function groupMessages(messages: ChatMessage[]): MessageItem[] {
           currentMediaGroup = [msg];
         }
       } else {
-        currentMediaGroup.push(msg);
+        if (currentMediaGroup.length < 10) {
+          currentMediaGroup.push(msg);
+        } else {
+          grouped.push(currentMediaGroup);
+          currentMediaGroup = [msg];
+        }
       }
       
       // If we are at the end, push the group
