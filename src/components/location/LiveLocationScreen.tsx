@@ -137,7 +137,7 @@ export default function LiveLocationScreen({ partner }: LiveLocationScreenProps)
           dragRotate={false} // Disable rotation for 2D simplicity
           touchZoomRotate={false}
           cooperativeGestures={false}
-          onError={(e) => console.error('Map error:', e)}
+          onError={() => {}}
           attributionControl={false}
         >
           <MapController center={mapCenter} />

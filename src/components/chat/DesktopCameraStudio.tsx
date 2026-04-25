@@ -153,6 +153,13 @@ const DesktopCameraStudio: React.FC<DesktopCameraStudioProps> = ({
     };
   }, [viewMode, selectedCameraId, selectedMicId, resolution, aspectRatio, startCamera, stopCamera]);
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (enhancedUrl) URL.revokeObjectURL(enhancedUrl);
+    };
+  }, [previewUrl, enhancedUrl]);
+
   // Handle click outside settings to close
   useEffect(() => {
     if (!isHardwareMenuOpen) return;

@@ -23,7 +23,7 @@ export default function SecuritySection() {
     if (partner?.id) {
       getPartnerPublicKey(partner.id).then(key => {
         setPartnerFingerprint(getKeyFingerprint(key));
-      }).catch(console.error);
+      }).catch(() => {});
     }
   }, [partner?.id]);
 

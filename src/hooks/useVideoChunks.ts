@@ -36,7 +36,6 @@ function notifyAll() {
   if (notifyTimeout) return;
   notifyTimeout = setTimeout(() => {
     notifyTimeout = null;
-    console.log('[CHUNK_STORE] notifyAll (throttled)', { subscriberCount: updateCallbacks.size });
     for (const cb of updateCallbacks) cb();
   }, 100); // Max 10 updates per second
 }
@@ -270,7 +269,7 @@ export function useVideoChunks(messageId?: string) {
       }
 
     } catch (err) {
-      console.error(`[useVideoChunks] Error loading chunks for ${messageId}:`, err);
+      // Error loading chunks
     } finally {
       loadingSet.delete(messageId);
     }

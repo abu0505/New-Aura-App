@@ -10,6 +10,7 @@ import AudioRecorder from './AudioRecorder';
 import QualityChoiceModal from './QualityChoiceModal';
 import { StickerPicker } from './StickerPicker';
 import { GifPicker } from './GifPicker';
+import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import MobileCameraModal from './MobileCameraModal';
 import FolderPickerPopup from './FolderPickerPopup';
 import type { SelectedMemoryMedia } from './FolderPickerPopup';
@@ -55,6 +56,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [isMobileCameraOpen, setIsMobileCameraOpen] = useState(false);
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
   const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
+  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, _setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
@@ -463,8 +465,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const type = file.type.includes('video/') ? 'video' : (file.type.includes('audio/') ? 'audio' : 'image');
+      const isDirectRecording = file.name.startsWith('desktop_video_') || file.name.startsWith('video_');
       
-      if (type === 'video' && onChunkedVideoStart) {
+      if (type === 'video' && onChunkedVideoStart && !isDirectRecording) {
         // Generate a quick local thumbnail for the optimistic UI
         const thumbBlob = await generateVideoThumbnailFromFile(file);
         const thumbUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : '';
@@ -551,6 +554,29 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     setIsRecording(false);
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    const el = textareaRef.current;
+    if (!el) {
+      setText(prev => prev + emoji);
+      return;
+    }
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    
+    const newText = before + emoji + after;
+    setText(newText);
+    
+    // Set cursor position after the emoji
+    const newPos = start + emoji.length;
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(newPos, newPos);
+    }, 10);
+  };
+
   if (isRecording) {
     return (
       <div className="px-6 py-4 bg-background/80 backdrop-blur-3xl border-t border-white/5">
@@ -565,7 +591,44 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   }
 
   return (
-    <footer className="shrink-0 w-full relative z-40 pt-4 pb-4 md:pb-6 px-2 md:px-8 flex flex-col items-center justify-end">
+    <footer className="shrink-0 w-full relative z-40 pt-2 pb-4 md:pb-6 px-2 md:px-8 flex flex-col items-center justify-end">
+      {/* Emoji Picker positioned directly above input */}
+      <AnimatePresence>
+        {isEmojiPickerOpen && (
+          <Fragment>
+            {/* Click-outside backdrop (covers full screen reliably) */}
+            <div 
+              className="fixed inset-0 z-40 cursor-default pointer-events-auto bg-transparent" 
+              onClick={() => setIsEmojiPickerOpen(false)}
+            />
+            <div className="absolute bottom-full -translate-x-1/2 z-50">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.3 }}
+                className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container pointer-events-auto"
+                style={{ width: 350, height: 400 }}
+              >
+                <EmojiPicker 
+                  theme={Theme.DARK}
+                  emojiStyle={EmojiStyle.APPLE}
+                  onEmojiClick={(emojiData) => {
+                    handleEmojiSelect(emojiData.emoji);
+                  }}
+                  lazyLoadEmojis={true}
+                  autoFocusSearch={false}
+                  searchPlaceHolder="Search emoji"
+                  previewConfig={{ showPreview: false }}
+                  skinTonesDisabled={true}
+                  width="100%"
+                  height="100%"
+                />
+              </motion.div>
+            </div>
+          </Fragment>
+        )}
+      </AnimatePresence>
 
       {/* ── Folder Picker Popup (appears above input when '/' typed) ── */}
       <AnimatePresence>
@@ -729,15 +792,40 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       <motion.div 
         layout="position"
         className="w-full max-w-[720px] mx-auto flex items-center bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-2 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
-        {/* Camera Button on the Left */}
-        <button
-          onClick={handleCameraClick}
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
-          title="Camera"
-          disabled={disabled || isUploading}
-        >
-          <span className="material-symbols-outlined text-[24px]">photo_camera</span>
-        </button>
+        {/* Left Action Button (Camera or Emoji) */}
+        <div className="relative flex items-center justify-center w-10 h-10 shrink-0">
+          <AnimatePresence mode="wait">
+            {!text.trim() ? (
+              <motion.button
+                key="camera-btn"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={handleCameraClick}
+                className="w-full h-full flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
+                title="Camera"
+                disabled={disabled || isUploading}
+              >
+                <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+              </motion.button>
+            ) : (
+              <motion.button
+                key="emoji-btn"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={() => setIsEmojiPickerOpen(true)}
+                className="w-full h-full flex items-center justify-center rounded-full text-white transition-all active:scale-90"
+                title="Emoji"
+                disabled={disabled || isUploading}
+              >
+                <span className="material-symbols-outlined text-[24px]">sentiment_satisfied</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Input Area */}
         <div className="flex-1 min-h-[40px] flex items-center">
@@ -791,6 +879,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 }
               }
               setText(val);
+              
+              // Close emoji picker if user starts typing
+              if (isEmojiPickerOpen) setIsEmojiPickerOpen(false);
 
               // Detect '/' at start or after whitespace to open folder picker
               const caret = e.target.selectionStart ?? 0;
@@ -959,6 +1050,26 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                     setIsStickerPickerOpen(false);
                   }}
                   onClose={() => setIsStickerPickerOpen(false)}
+                />
+              </motion.div>
+            )}
+
+            {isGifPickerOpen && (
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
+              >
+                <GifPicker 
+                    onSelect={(gif) => {
+                    // Send as a dedicated 'gif' type message. 
+                    // No encryption needed for public Tenor URLs, but we keep the structure consistent.
+                    onSend('', { url: gif.url, media_key: '', media_nonce: '', type: 'gif' }, replyingTo?.id);
+                    if (onCancelReply) onCancelReply();
+                    setIsGifPickerOpen(false);
+                  }}
+                  onClose={() => setIsGifPickerOpen(false)}
                 />
               </motion.div>
             )}

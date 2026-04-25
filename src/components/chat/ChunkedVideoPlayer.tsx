@@ -176,6 +176,7 @@ export default function ChunkedVideoPlayer({
     }
 
     return () => {
+      if (video) video.src = '';
       URL.revokeObjectURL(url);
       try {
         if (ms.readyState === 'open') ms.endOfStream();

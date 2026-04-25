@@ -195,10 +195,6 @@ export async function* splitVideoIntoChunksStreaming(
   try { await ffmpeg.unmount('/workerfs'); } catch { /* ignore */ }
 }
 
-/**
- * Gets the duration of a video file in seconds using the browser's
- * native video element (no FFmpeg needed, just metadata).
- */
 export function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
     const video = document.createElement('video');
@@ -206,16 +202,27 @@ export function getVideoDuration(file: File): Promise<number> {
     video.muted = true;
     const url = URL.createObjectURL(file);
 
-    video.onloadedmetadata = () => {
+    let resolved = false;
+    const safeResolve = (duration: number) => {
+      if (resolved) return;
+      resolved = true;
       URL.revokeObjectURL(url);
-      resolve(isFinite(video.duration) ? video.duration : 60);
       video.remove();
+      resolve(duration);
+    };
+
+    const timeout = setTimeout(() => {
+      safeResolve(60); // fallback estimate
+    }, 2000);
+
+    video.onloadedmetadata = () => {
+      clearTimeout(timeout);
+      safeResolve(isFinite(video.duration) ? video.duration : 60);
     };
 
     video.onerror = () => {
-      URL.revokeObjectURL(url);
-      resolve(60); // fallback estimate
-      video.remove();
+      clearTimeout(timeout);
+      safeResolve(60); // fallback estimate
     };
 
     video.src = url;
@@ -241,13 +248,27 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
       video.remove();
     };
 
+    let resolved = false;
+    const safeResolve = (blob: Blob | null) => {
+      if (resolved) return;
+      resolved = true;
+      cleanup();
+      resolve(blob);
+    };
+
+    const timeout = setTimeout(() => {
+      safeResolve(null);
+    }, 3000);
+
     video.onloadedmetadata = () => {
       // Seek to 0.1s to avoid all-black first frame on some codecs
+      // For WebMs without cues, this might hang, which is why we have the timeout
       video.currentTime = 0.1;
     };
 
     video.onseeked = () => {
       try {
+        clearTimeout(timeout);
         const canvas = document.createElement('canvas');
         // Cap thumbnail to 480x270 (16:9) for fast transfer
         const MAX_W = 480;
@@ -260,21 +281,24 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
         canvas.height = Math.round((video.videoHeight || MAX_H) * ratio);
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) { cleanup(); resolve(null); return; }
+        if (!ctx) { safeResolve(null); return; }
 
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(
-          (blob) => { cleanup(); resolve(blob); },
+          (blob) => safeResolve(blob),
           'image/webp',
           0.75
         );
       } catch {
-        cleanup();
-        resolve(null);
+        safeResolve(null);
       }
     };
 
-    video.onerror = () => { cleanup(); resolve(null); };
+    video.onerror = () => {
+      clearTimeout(timeout);
+      safeResolve(null);
+    };
+
     video.src = url;
   });
 }

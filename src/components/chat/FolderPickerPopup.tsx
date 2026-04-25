@@ -150,7 +150,6 @@ export default function FolderPickerPopup({
         await loadWindow(ids, 0);
       }
     } catch (err) {
-      console.error("[FolderPicker] loadFolderIndex error:", err);
       setLoadError(true);
     }
   };
@@ -192,7 +191,6 @@ export default function FolderPickerPopup({
       }, 300);
 
     } catch (err) {
-      console.error("[FolderPicker] loadWindow error:", err);
       setLoadError(true);
     } finally {
       setIsLoadingMedia(false);

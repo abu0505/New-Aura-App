@@ -119,7 +119,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
 
       setFolders(decryptedFolders);
     } catch (err) {
-      console.error('Error fetching folders:', err);
+      // Error fetching folders
     } finally {
       setLoading(false);
     }
@@ -165,7 +165,6 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
       setFolders(prev => [newFolder, ...prev]);
       return data.id;
     } catch (err) {
-      console.error('Error creating folder:', err);
       return null;
     }
   }, []);
@@ -180,7 +179,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
       if (error) throw error;
       setFolders(prev => prev.filter(f => f.id !== folderId));
     } catch (err) {
-      console.error('Error deleting folder:', err);
+      // Error deleting folder
     }
   }, []);
 
@@ -219,7 +218,6 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
 
       return true;
     } catch (err) {
-      console.error('Error adding items to folder:', err);
       return false;
     }
   }, [folders]);
@@ -240,7 +238,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
           : f
       ));
     } catch (err) {
-      console.error('Error removing item from folder:', err);
+      // Error removing item from folder
     }
   }, []);
 
@@ -255,7 +253,6 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
       if (error) throw error;
       return (data || []).map(d => d.message_id);
     } catch (err) {
-      console.error('Error fetching folder items:', err);
       return [];
     }
   }, []);
@@ -279,14 +276,14 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
           sender_public_key: encodeBase64(myKeys.publicKey),
         })
         .eq('id', folderId);
-
+      
       if (error) throw error;
 
       setFolders(prev => prev.map(f =>
         f.id === folderId ? { ...f, name: newName, encrypted_name: ciphertext, name_nonce: nonce } : f
       ));
     } catch (err) {
-      console.error('Error renaming folder:', err);
+      // Error renaming folder
     }
   }, []);
 

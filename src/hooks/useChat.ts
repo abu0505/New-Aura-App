@@ -801,8 +801,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
             // Ensure session is fresh — prevents 401 on expired JWT
             const { data: { session: freshSession } } = await supabase.auth.getSession();
             if (freshSession) {
-              console.log(`[push-trigger] Attempting to invoke send-push edge function for message ${optimisticMsg.id}`);
-              const { data, error } = await supabase.functions.invoke('send-push', {
+              await supabase.functions.invoke('send-push', {
                 body: { 
                   record: { 
                     id: optimisticMsg.id,
@@ -811,16 +810,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
                   } 
                 }
               });
-              if (error) {
-                console.error(`[push-trigger] Error invoking send-push edge function:`, error);
-              } else {
-                console.log(`[push-trigger] Successfully invoked send-push edge function. Response:`, data);
-              }
-            } else {
-              console.warn(`[push-trigger] No valid session found. Cannot send push notification.`);
             }
           } catch (err) {
-            console.error(`[push-trigger] Exception while invoking send-push:`, err);
             // Push notifications are best-effort — silently ignore failures
           }
         }, 500); // slight 500ms delay to let the DB insert finish first
@@ -1367,7 +1358,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       setHasMoreNewer(newerData?.length === 20);
 
     } catch (err) {
-      console.error('Failed to jump to message window:', err);
+      // Failed to jump to message window
     } finally {
       setLoadingMore(false);
     }

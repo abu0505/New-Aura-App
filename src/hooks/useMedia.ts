@@ -321,8 +321,6 @@ export function useMedia() {
     setIsProcessing(true);
     setUploadProgress(0);
 
-    console.log(`%c[Media Pipeline] Starting process/upload for: ${file.name} (${file.type})`, 'color: #3b82f6; font-weight: bold;');
-
     try {
       const myKeyPair = getStoredKeyPair();
       if (!myKeyPair) throw new Error('Private key missing');
@@ -380,7 +378,6 @@ export function useMedia() {
         formData.append('file', new Blob([data as any]), filename || 'encrypted_file.raw');
         formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
 
-        console.log(`%c[Media Pipeline] Starting upload: ${filename || 'file'}`, 'color: #f59e0b; font-weight: bold;');
         const response = await fetch(
           `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/${type}/upload`,
           { method: 'POST', body: formData }
@@ -390,11 +387,6 @@ export function useMedia() {
       };
 
       const uploadResult = await uploadFile(encryptedData, 'raw', fileToProcess.name);
-      console.log(`%c[Media Pipeline] Upload successful: ${file.name}`, 'color: #10b981; font-weight: bold;', {
-        url: uploadResult.secure_url,
-        size: file.size,
-        type: file.type
-      });
 
       // ── Thumbnail ──────────────────────────────────────────────────────
       let thumbnailUrl = '';
@@ -428,7 +420,6 @@ export function useMedia() {
       };
 
     } catch (error) {
-      console.error(`%c[Media Pipeline] FAILED: ${file.name}`, 'color: #ef4444; font-weight: bold;', error);
       return null;
     } finally {
       setIsProcessing(false);

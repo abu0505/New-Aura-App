@@ -238,15 +238,22 @@ function ChatBubble({
       .order('chunk_index', { ascending: true })
       .then(({ data, error }) => {
         if (error) {
-          console.error(`[ChatBubble ${message.id}] Error fetching chunks from DB:`, error);
+          // Error fetching chunks from DB
         } else if (data && data.length > 0) {
           setHasUploadFailed(false);
           loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
         } else {
           // If no chunks are found and the sender has finished uploading (is_uploading is false),
-          // it means the sender's video upload failed (e.g. app crash, network error, RLS issue).
-          if (!message.is_uploading) {
-            setHasUploadFailed(true);
+          // it means the sender's video upload failed.
+          // However, for the receiver, is_uploading is always undefined/false initially because it's local state.
+          // So we only assume immediate failure for the sender. For the receiver, we check if it's an old message.
+          if (message.is_mine) {
+            if (!message.is_uploading) setHasUploadFailed(true);
+          } else {
+            const ageMs = Date.now() - new Date(message.created_at).getTime();
+            if (ageMs > 60 * 1000) { // 1 minute timeout for receiver
+              setHasUploadFailed(true);
+            }
           }
         }
       });
