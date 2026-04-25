@@ -669,7 +669,9 @@ export function useMedia() {
       const CHUNK_DURATION_SEC = 5; // Reduced to 5s to guarantee chunks < 10MB for Cloudinary (even with VBR spikes on Desktop 8Mbps)
       const { getVideoDuration } = await import('../utils/videoChunker');
       const videoDuration = await getVideoDuration(fileToChunk);
-      const totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
+      let totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
+      if (totalChunks === 0) totalChunks = 1;
+      let actualChunksYielded = 0;
 
       onStatusChange('Processing chunk 1...');
 
@@ -746,6 +748,8 @@ export function useMedia() {
       for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
         if (deliveryError) throw deliveryError;
 
+        actualChunksYielded++;
+
         import('./useVideoChunks').then(m => {
           m.addLocalChunkForSender(messageId, chunk.index, totalChunks, chunk.file, chunk.durationSec);
         }).catch(() => {});
@@ -764,6 +768,18 @@ export function useMedia() {
       }
 
       await Promise.all(allTasks);
+
+      // FFmpeg may yield fewer chunks than estimated (e.g. lack of keyframes)
+      if (actualChunksYielded > 0 && actualChunksYielded !== totalChunks) {
+        totalChunks = actualChunksYielded;
+        // Re-trigger delivery queue in case it was waiting for chunks that will never arrive
+        tryDeliverQueue();
+        
+        // Update any already inserted rows with the correct total
+        await supabase.from('video_chunks')
+          .update({ total_chunks: totalChunks })
+          .eq('message_id', messageId);
+      }
 
       while (nextDeliverIndex < totalChunks) {
         if (deliveryError) throw deliveryError;

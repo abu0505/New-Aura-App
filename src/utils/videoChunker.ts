@@ -47,7 +47,11 @@ export async function splitVideoIntoChunks(
   const videoDuration = await getVideoDuration(file);
   const estimatedChunks = Math.ceil(videoDuration / chunkDurationSec);
 
-  const ext = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
+  const ext = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() || 'mp4' : 'mp4';
+  const isWebm = file.type.includes('webm') || ext === 'webm';
+  const outExt = isWebm ? 'webm' : 'mp4';
+  const segmentFormat = isWebm ? 'webm' : 'mp4';
+  
   const cleanFileName = `input_chunk.${ext}`;
   const cleanFile = new File([file], cleanFileName, { type: file.type });
   const inputName = `/workerfs/${cleanFileName}`;
@@ -56,11 +60,11 @@ export async function splitVideoIntoChunks(
   try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
   await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
 
+  const segmentOptions = isWebm 
+    ? [] 
+    : ['-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0'];
+
   // Use segment muxer with stream-copy
-  // -reset_timestamps 1: each chunk starts at 0 (makes standalone playback work)
-  // -segment_time: chunk duration in seconds
-  // -f segment: use segment muxer
-  // -c copy: stream copy (no re-encoding = instant)
   await ffmpeg.exec([
     '-fflags', '+genpts',
     '-i', inputName,
@@ -70,9 +74,9 @@ export async function splitVideoIntoChunks(
     '-segment_time', String(chunkDurationSec),
     '-reset_timestamps', '1',
     '-avoid_negative_ts', 'make_zero',
-    '-segment_format', 'mp4',
-    '-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0',
-    'chunk_%03d.mp4',
+    '-segment_format', segmentFormat,
+    ...segmentOptions,
+    `chunk_%03d.${outExt}`,
   ]);
 
   // Collect all chunks
@@ -80,11 +84,12 @@ export async function splitVideoIntoChunks(
   let index = 0;
 
   while (true) {
-    const chunkName = `chunk_${String(index).padStart(3, '0')}.mp4`;
+    const chunkName = `chunk_${String(index).padStart(3, '0')}.${outExt}`;
     try {
       const data = await ffmpeg.readFile(chunkName);
-      const blob = new Blob([data as any], { type: 'video/mp4' });
-      const chunkFile = new File([blob], chunkName, { type: 'video/mp4' });
+      const mime = isWebm ? 'video/webm' : 'video/mp4';
+      const blob = new Blob([data as any], { type: mime });
+      const chunkFile = new File([blob], chunkName, { type: mime });
 
       // Estimate chunk duration (last chunk may be shorter)
       const chunkDuration = Math.min(
@@ -129,7 +134,11 @@ export async function* splitVideoIntoChunksStreaming(
 
   const videoDuration = await getVideoDuration(file);
 
-  const ext = file.name.includes('.') ? file.name.split('.').pop() : 'mp4';
+  const ext = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() || 'mp4' : 'mp4';
+  const isWebm = file.type.includes('webm') || ext === 'webm';
+  const outExt = isWebm ? 'webm' : 'mp4';
+  const segmentFormat = isWebm ? 'webm' : 'mp4';
+
   const cleanFileName = `input_stream.${ext}`;
   const cleanFile = new File([file], cleanFileName, { type: file.type });
   const inputName = `/workerfs/${cleanFileName}`;
@@ -138,9 +147,10 @@ export async function* splitVideoIntoChunksStreaming(
   try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
   await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
 
-  // Segment muxer: splits at keyframe boundaries with zero gaps.
-  // -reset_timestamps 1: each chunk starts at 0 (standalone playback works).
-  // -c copy: no re-encoding = near-instant + preserves audio.
+  const segmentOptions = isWebm 
+    ? [] 
+    : ['-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0'];
+
   await ffmpeg.exec([
     '-fflags', '+genpts',
     '-i', inputName,
@@ -150,20 +160,21 @@ export async function* splitVideoIntoChunksStreaming(
     '-segment_time', String(chunkDurationSec),
     '-reset_timestamps', '1',
     '-avoid_negative_ts', 'make_zero',
-    '-segment_format', 'mp4',
-    '-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0',
-    'stream_chunk_%03d.mp4',
+    '-segment_format', segmentFormat,
+    ...segmentOptions,
+    `stream_chunk_%03d.${outExt}`,
   ]);
 
   // Read and yield chunks sequentially.
   // Caller can start encrypt+upload of chunk[i] while we read chunk[i+1].
   let index = 0;
   while (true) {
-    const chunkName = `stream_chunk_${String(index).padStart(3, '0')}.mp4`;
+    const chunkName = `stream_chunk_${String(index).padStart(3, '0')}.${outExt}`;
     try {
       const data = await ffmpeg.readFile(chunkName);
-      const blob = new Blob([data as any], { type: 'video/mp4' });
-      const chunkFile = new File([blob], chunkName, { type: 'video/mp4' });
+      const mime = isWebm ? 'video/webm' : 'video/mp4';
+      const blob = new Blob([data as any], { type: mime });
+      const chunkFile = new File([blob], chunkName, { type: mime });
 
       const chunkDuration = Math.min(
         chunkDurationSec,
