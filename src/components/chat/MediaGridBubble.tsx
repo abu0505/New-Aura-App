@@ -205,7 +205,7 @@ function MediaGridBubble({
       >
         {msg.type === 'video' ? (
           <div className="w-full h-full relative">
-            <video src={url} className={`w-full h-full object-cover ${isUploading ? 'opacity-60 blur-[2px] grayscale-[20%]' : ''}`} />
+            <video src={url} className={`w-full h-full object-cover ${isUploading ? 'opacity-60 blur-[2px] grayscale-[20%]' : ''}`} preload="metadata" playsInline muted />
             {!isUploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
                 <span className="material-symbols-outlined text-white text-3xl opacity-80">play_circle</span>

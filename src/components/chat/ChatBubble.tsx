@@ -574,7 +574,10 @@ function ChatBubble({
             <div className={`relative group ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true) }}>
               <video 
                 src={decryptedMediaUrl ?? undefined} 
-                className="w-full pointer-events-none" 
+                className="w-full pointer-events-none"
+                preload="metadata"
+                playsInline
+                muted
               />
               {!message.is_uploading && !message.is_chunked_video && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">

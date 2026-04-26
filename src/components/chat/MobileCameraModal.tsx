@@ -48,7 +48,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:3' | '9:16' | '16:9'>('9:16');
   const [showSettings, setShowSettings] = useState(false);
-  const [digitalZoom, setDigitalZoom] = useState(1);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -107,30 +106,19 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const startCamera = useCallback(async () => {
     stopCamera();
     try {
-      let idealWidth = 1920;
-      let idealHeight = 1080;
-      if (resolution === '4k') { idealWidth = 3840; idealHeight = 2160; }
-      else if (resolution === '1080p') { idealWidth = 1920; idealHeight = 1080; }
-      else if (resolution === '720p') { idealWidth = 1280; idealHeight = 720; }
-
-      // Portrait modes: swap width/height so camera native resolution maps correctly.
-      // Do NOT swap for 16:9 (landscape). Do NOT set aspectRatio constraint — Android
-      // enforces it via aggressive digital crop/zoom on the sensor.
-      const isPortrait = aspectRatio === '9:16' || aspectRatio === '4:3' || aspectRatio === '1:1';
-
+      // BUG 5 FIX: Always request at max sensor resolution for consistent FOV across settings.
+      // When we requested low res (720p/1080p), Android driver cropped the sensor to deliver
+      // that exact resolution → narrower field of view → appeared "zoomed in" vs 4K.
+      // Solution: always stream at the sensor's native max (4K ideal). Resolution setting
+      // now only controls OUTPUT quality (photo canvas size, video canvas bitrate).
+      // This matches how Instagram/Snapchat/native camera apps work.
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode,
-          width: { ideal: isPortrait ? idealHeight : idealWidth },
-          height: { ideal: isPortrait ? idealWidth : idealHeight },
-          // MOBILE OPTIMIZATION: Hard cap at 30fps — prevents ISP from over-processing
-          // frames at high res which causes thermal throttling and frame drops.
+          width: { ideal: 3840 },   // Request max — camera delivers native sensor FOV
+          height: { ideal: 2160 },  // Same FOV for all resolution settings
           frameRate: { ideal: 30, max: 30 },
-          // MOBILE OPTIMIZATION: Keep autoGainControl ON (browser default).
-          // Disabling it forces the ISP into manual mode → extra CPU overhead on many chipsets.
           noiseSuppression: true,
-          // MOBILE OPTIMIZATION: 'none' tells the browser/driver not to upscale/downscale
-          // the sensor output in software — prevents redundant software resize pass.
           ...({ resizeMode: 'none' } as any),
         },
         audio: { noiseSuppression: true, echoCancellation: true }
@@ -164,16 +152,14 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           min: capabilities.zoom.min || 1,
           max: capabilities.zoom.max || 5
         };
-        setDigitalZoom(1);
       } else {
         hasHardwareZoomRef.current = false;
         zoomRef.current = { current: 1, min: 1, max: 5 };
-        setDigitalZoom(1);
       }
     } catch (error) {
       setHasPermission(false);
     }
-  }, [facingMode, stopCamera, resolution, aspectRatio]);
+  }, [facingMode, stopCamera]);
 
   // Fix 3.3: Debounce camera start (wait 200ms) to prevent overlapping streams
   // on rapid facingMode/resolution/aspectRatio setting changes
@@ -379,7 +365,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
     setIsRecording(false);
     setIsLocked(false);
-    setDigitalZoom(1);
     startPosRef.current = null;
     
     // Set final precise duration
@@ -421,118 +406,110 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     chunksRef.current = [];
     isCanvasRecordingRef.current = false;
 
-    let recordStream: MediaStream = streamRef.current;
     const video = videoRef.current;
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const isFront = facingMode === 'user';
 
-    // ── ARCHITECTURE FIX: ASPECT RATIO FOR VIDEO ─────────────────────────
-    // If the user selects an aspect ratio other than 9:16 (default mobile full screen),
-    // we MUST crop the video. The raw getUserMedia stream is always 9:16.
-    // To crop video smoothly on mobile without re-introducing the "slideshow lag":
-    // 1. We use requestVideoFrameCallback (rVFC) instead of requestAnimationFrame.
-    //    rVFC ONLY fires when the camera sensor produces a new frame (~30fps),
-    //    saving 50% CPU overhead compared to rAF which fires at display refresh rate (60Hz+).
-    // 2. We cap the maximum crop resolution to 1080p. Drawing a 4K canvas at 30fps kills mobile GPUs.
-    // 3. We use { alpha: false, desynchronized: true } context to bypass DOM compositing delays.
-    if (aspectRatio !== '9:16') {
-      const vw = video.videoWidth;
-      const vh = video.videoHeight;
+    // ── ALWAYS USE CANVAS FOR RECORDING ────────────────────────────────────
+    // Reasons:
+    // BUG 2 FIX: Direct stream recording captures UNMIRRORED video. Front camera preview
+    //   is mirrored via CSS, but the file was not. Now we apply scaleX(-1) in the canvas
+    //   so the recorded file IS mirrored (matches user expectation, same as Instagram).
+    // BUG 3 FIX: Android Chrome delivers the stream as landscape (e.g. 1920x1080) with a
+    //   90° rotation metadata tag. <video> respects this tag, but ChatBubble reading
+    //   videoWidth/videoHeight sees 1920x1080 (landscape) and shows wrong ratio.
+    //   Canvas output has REAL portrait dimensions (e.g. 1080x1920) — no rotation tag.
+    // BUG 1 FIX: We set canvas size based on resolution setting (not stream size), so
+    //   4K video is recorded at a manageable canvas size, preventing encoder crash.
 
-      let targetRatio = 1;
-      if (aspectRatio === '1:1') targetRatio = 1;
-      else if (aspectRatio === '4:3') targetRatio = 3 / 4;
-      else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+    // Determine target crop region from stream for selected aspect ratio
+    let targetRatio: number;
+    if (aspectRatio === '1:1') targetRatio = 1;
+    else if (aspectRatio === '4:3') targetRatio = 3 / 4;   // portrait 4:3
+    else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+    else targetRatio = 9 / 16; // '9:16' default portrait
 
-      let cw: number, ch: number;
-      const testH = vw / targetRatio;
-      if (testH <= vh) { cw = vw; ch = testH; }
-      else { ch = vh; cw = vh * targetRatio; }
-      cw = Math.round(cw);
-      ch = Math.round(ch);
+    // Crop source region from the stream (centered)
+    let srcW: number, srcH: number;
+    if (targetRatio >= 1) {
+      // Wider than tall (16:9 or square): use full width, crop height
+      srcW = vw;
+      srcH = Math.round(vw / targetRatio);
+      if (srcH > vh) { srcH = vh; srcW = Math.round(vh * targetRatio); }
+    } else {
+      // Taller than wide (9:16, 4:3 portrait): use full height, crop width
+      srcH = vh;
+      srcW = Math.round(vh * targetRatio);
+      if (srcW > vw) { srcW = vw; srcH = Math.round(vw / targetRatio); }
+    }
+    const srcX = Math.round((vw - srcW) / 2);
+    const srcY = Math.round((vh - srcH) / 2);
 
-      // Capping output crop resolution to ~1080p to prevent mobile GPU thermal throttling
-      const MAX_DIM = 1920;
-      let drawW = cw;
-      let drawH = ch;
-      if (Math.max(cw, ch) > MAX_DIM) {
-        const scale = MAX_DIM / Math.max(cw, ch);
-        drawW = Math.round(cw * scale);
-        drawH = Math.round(ch * scale);
+    // Output canvas dimensions based on resolution setting (this controls output quality)
+    // Cap at 1920 on longest side to stay within mobile encoder limits
+    let outLong: number;
+    if (resolution === '4k') outLong = 1920;        // 4K stream → 1080p output (safe for mobile)
+    else if (resolution === '1080p') outLong = 1080; // 1080p output
+    else outLong = 720;                              // 720p output
+
+    let outW: number, outH: number;
+    if (srcW >= srcH) {
+      outW = outLong; outH = Math.round(outLong / (srcW / srcH));
+    } else {
+      outH = outLong; outW = Math.round(outLong * (srcW / srcH));
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
+
+    isCanvasRecordingRef.current = true;
+
+    const drawLoop = () => {
+      if (!isCanvasRecordingRef.current) return;
+
+      const liveZoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
+
+      ctx.save();
+      // BUG 2 FIX: Apply mirror for front camera IN THE CANVAS so the video file
+      // is correctly mirrored (same as Instagram/Snapchat selfie behavior).
+      if (isFront) {
+        ctx.translate(outW, 0);
+        ctx.scale(-1, 1);
       }
-
-      const offsetX = (vw - cw) / 2;
-      const offsetY = (vh - ch) / 2;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = drawW;
-      canvas.height = drawH;
-      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
-
-      // BUG FIX: Use `isFront` as a frozen capture (facing mode won't change mid-recording —
-      // camera flip is disabled while recording in all native camera apps, and our UI also
-      // doesn't expose flip during recording). Safe to freeze.
-      const isFront = facingMode === 'user';
-      isCanvasRecordingRef.current = true;
-
-      const drawLoop = () => {
-        if (!isCanvasRecordingRef.current) return;
-
-        // BUG FIX: Read zoom LIVE from zoomRef.current at every frame instead of capturing
-        // it at recording start. This ensures swipe-to-zoom during recording works correctly
-        // in the recorded video, not just in the CSS preview.
-        const liveZoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
-        
-        ctx.save();
-        if (isFront) {
-          ctx.translate(canvas.width, 0);
-          ctx.scale(-1, 1);
-        }
-        if (!hasHardwareZoomRef.current && liveZoom !== 1) {
-          ctx.translate(canvas.width / 2, canvas.height / 2);
-          ctx.scale(liveZoom, liveZoom);
-          ctx.translate(-canvas.width / 2, -canvas.height / 2);
-        }
-        ctx.drawImage(video, offsetX, offsetY, cw, ch, 0, 0, drawW, drawH);
-        ctx.restore();
-
-        if ('requestVideoFrameCallback' in video) {
-          (video as any).requestVideoFrameCallback(drawLoop);
-        } else {
-          requestAnimationFrame(drawLoop);
-        }
-      };
+      if (!hasHardwareZoomRef.current && liveZoom !== 1) {
+        ctx.translate(outW / 2, outH / 2);
+        ctx.scale(liveZoom, liveZoom);
+        ctx.translate(-outW / 2, -outH / 2);
+      }
+      ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+      ctx.restore();
 
       if ('requestVideoFrameCallback' in video) {
         (video as any).requestVideoFrameCallback(drawLoop);
       } else {
         requestAnimationFrame(drawLoop);
       }
+    };
 
-      const capturedStream = canvas.captureStream(30);
-
-      // Must explicitly add the mic audio track to the canvas stream!
-      const audioTracks = streamRef.current.getAudioTracks();
-      if (audioTracks.length > 0) {
-        capturedStream.addTrack(audioTracks[0]);
-      }
-
-      // BUG FIX: Store reference to the canvas stream so stopRecording can stop its tracks
-      canvasStreamRef.current = capturedStream;
-      recordStream = capturedStream;
+    if ('requestVideoFrameCallback' in video) {
+      (video as any).requestVideoFrameCallback(drawLoop);
+    } else {
+      requestAnimationFrame(drawLoop);
     }
 
-    // ── MOBILE-OPTIMIZED DIRECT STREAM RECORDING ─────────────────────────
-    // Key insight: VP9 is a SOFTWARE encoder on virtually all Android chipsets.
-    // H.264/AVC (avc1) uses the dedicated hardware video encoder (HW MediaCodec)
-    // which runs independently of CPU/GPU and can sustain 60fps even at 1080p.
-    //
-    // Codec priority (highest performance first):
-    //   1. video/mp4;codecs=avc1.42E01E  — H.264 Baseline, hardware on Android+iOS
-    //   2. video/mp4;codecs=avc1         — H.264 any profile, hardware fallback
-    //   3. video/webm;codecs=h264        — H.264 in WebM container (some Androids)
-    //   4. video/webm;codecs=vp8         — VP8 (lighter than VP9, partial HW on Androids)
-    //   5. video/webm                    — browser default (avoid VP9 if possible)
+    const capturedStream = canvas.captureStream(30);
+    const audioTracks = streamRef.current.getAudioTracks();
+    if (audioTracks.length > 0) capturedStream.addTrack(audioTracks[0]);
+    canvasStreamRef.current = capturedStream;
+
+    // ── CODEC SELECTION ────────────────────────────────────────────────────
+    // BUG 1 FIX: avc1.42E01E often fails at high resolutions on some Android devices
+    // even when isTypeSupported returns true. Use vp8 as a safe fallback — it's
+    // broadly hardware-accelerated on Android and never fails silently.
     const codecCandidates = [
-      'video/mp4;codecs=avc1.42E01E',
       'video/mp4;codecs=avc1',
       'video/webm;codecs=h264',
       'video/webm;codecs=vp8',
@@ -542,48 +519,48 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       try { return MediaRecorder.isTypeSupported(c); } catch { return false; }
     }) || 'video/webm';
 
-    // MOBILE OPTIMIZATION: Lowered bitrates.
-    // Mobile hardware encoders have a max sustained bitrate (~4-6Mbps on mid-range).
-    // Over-provisioning forces the encoder to buffer frames → queue buildup → slideshow.
-    // At these rates, 1080p/30fps looks excellent; 4K is capped at real-world mobile limits.
-    // NOTE: 4K video on mobile is rarely useful — we keep 4K stream for photo resolution
-    // but the *encoder* records at a sane rate to ensure actual 30fps.
-    let adaptiveBitrate =
-      resolution === '4k'    ? 4_000_000 :  // 4 Mbps — mobile HW encoder sweet spot for 4K
-      resolution === '1080p' ? 2_500_000 :  // 2.5 Mbps — plenty for crisp 1080p/30fps
-                               1_500_000;   // 1.5 Mbps for 720p — very light, no lag
-                               
-    // If we cropped the canvas, max resolution is 1080p equivalent, so dial back 4K bitrate
-    if (aspectRatio !== '9:16' && resolution === '4k') {
-      adaptiveBitrate = 2_500_000;
-    }
-
-    const options: MediaRecorderOptions = {
-      mimeType,
-      videoBitsPerSecond: adaptiveBitrate,
-    };
+    const adaptiveBitrate =
+      resolution === '4k'    ? 2_500_000 :  // Canvas capped at 1080p equivalent
+      resolution === '1080p' ? 2_000_000 :
+                               1_200_000;
 
     let recorder: MediaRecorder;
     try {
-      recorder = new MediaRecorder(recordStream, options);
+      recorder = new MediaRecorder(capturedStream, { mimeType, videoBitsPerSecond: adaptiveBitrate });
     } catch (e) {
-      // Last-resort: no options, let browser pick everything
-      recorder = new MediaRecorder(recordStream);
+      recorder = new MediaRecorder(capturedStream);
     }
 
     mediaRecorderRef.current = recorder;
 
     recorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) {
-        chunksRef.current.push(event.data);
+      if (event.data && event.data.size > 0) chunksRef.current.push(event.data);
+    };
+
+    // BUG 1 FIX: Handle encoder errors gracefully — stop recording, reset state, show error.
+    recorder.onerror = () => {
+      isCanvasRecordingRef.current = false;
+      if (canvasStreamRef.current) {
+        canvasStreamRef.current.getTracks().forEach(t => t.stop());
+        canvasStreamRef.current = null;
       }
+      setIsRecording(false);
+      setIsLocked(false);
+      startTimeRef.current = 0;
+      import('sonner').then(({ toast }) => toast.error('Recording failed. Try a lower resolution.'));
     };
 
     recorder.onstop = () => {
-      // BUG FIX: Reset startTimeRef to 0 so handleSendFile knows recording has fully stopped
-      // and should use the recordingTime state (which stopRecording already set accurately).
-      startTimeRef.current = 0;
+      // BUG 1 FIX: Don't reset startTimeRef here — stopRecording already computed duration.
+      // Check blob validity: if empty, the encoder failed silently (common at 4K on some devices).
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'video/webm' });
+      if (blob.size < 1000) {
+        // Empty recording — encoder likely failed. Reset and show error.
+        setIsRecording(false);
+        setIsLocked(false);
+        import('sonner').then(({ toast }) => toast.error('Recording failed. Try a lower resolution.'));
+        return;
+      }
       const ext = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
       const file = new File([blob], `video_${Date.now()}.${ext}`, { type: blob.type });
       const url = URL.createObjectURL(blob);
@@ -593,18 +570,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setViewMode('preview');
     };
 
-    // MOBILE OPTIMIZATION: 500ms timeslice instead of 200ms.
-    // Smaller timeslices = more frequent ondataavailable callbacks = more main-thread
-    // interruptions = frame timestamp jitter. 500ms chunks are perfectly smooth.
     recorder.start(500);
     startTimeRef.current = Date.now();
     setIsRecording(true);
-
     if (navigator.vibrate) navigator.vibrate(50);
-    shutterControls.start({
-      scale: 1.5,
-      borderColor: "rgba(255,255,255,0)"
-    });
+    shutterControls.start({ scale: 1.5, borderColor: 'rgba(255,255,255,0)' });
   };
 
   // --- Gesture Handlers ---
@@ -636,30 +606,37 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (isRecording && !isLocked && startPosRef.current) {
-      const deltaX = e.clientX - startPosRef.current.x; // Swipe right
-      const deltaY = startPosRef.current.y - e.clientY; // Swipe up
+      const deltaX = e.clientX - startPosRef.current.x;
+      const deltaY = startPosRef.current.y - e.clientY;
 
-      // Swipe right to lock
       if (deltaX > 80) {
         setIsLocked(true);
-        lockIconControls.start({ x: 0, scale: 1.2, color: "#10B981" }); // Turn green
-        if (navigator.vibrate) navigator.vibrate(100); // Lock feedback
+        lockIconControls.start({ x: 0, scale: 1.2, color: '#10B981' });
+        if (navigator.vibrate) navigator.vibrate(100);
       } else if (deltaX > 20) {
         lockIconControls.start({ x: deltaX - 20, opacity: 1 });
       }
 
-      // Swipe up to zoom
-      const zoomProgress = Math.max(0, Math.min(1, deltaY / 300)); // up to 300px
+      const zoomProgress = Math.max(0, Math.min(1, deltaY / 300));
       const { min, max } = zoomRef.current;
       const targetZoom = min + (max - min) * zoomProgress;
 
       if (hasHardwareZoomRef.current && streamRef.current) {
         const track = streamRef.current.getVideoTracks()[0];
-        track.applyConstraints({ advanced: [{ zoom: targetZoom }] } as any).catch(() => { });
+        track.applyConstraints({ advanced: [{ zoom: targetZoom }] } as any).catch(() => {});
         zoomRef.current.current = targetZoom;
       } else {
-        setDigitalZoom(targetZoom);
+        // BUG 4 FIX: Bypass React state (setDigitalZoom) entirely during gesture.
+        // setState triggers a full re-render on every pointer move = ~60 renders/sec = lag.
+        // Instead, directly update the video element's transform via DOM ref (zero re-render).
+        // zoomRef.current.current is read by the canvas drawLoop live, so recorded video
+        // also reflects the correct zoom without any state update overhead.
         zoomRef.current.current = targetZoom;
+        if (videoRef.current) {
+          videoRef.current.style.transform = facingMode === 'user'
+            ? `scaleX(-1) scale(${targetZoom})`
+            : `scale(${targetZoom})`;
+        }
       }
     }
   };
@@ -675,6 +652,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     setIsEnhancedView(false);
     setCaption('');
     setShowShimmer(false);
+    // Reset any stuck recording state (can happen when encoder errors silently)
+    setIsRecording(false);
+    setIsLocked(false);
+    setRecordingTime(0);
+    // Reset zoom DOM transform (set directly without React state during gesture)
+    if (videoRef.current) videoRef.current.style.transform = '';
+    zoomRef.current.current = zoomRef.current.min;
     setViewMode('camera');
   };
 
@@ -682,19 +666,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     const fileToSend = isEnhancedView && enhancedFile ? enhancedFile : capturedFile;
     if (fileToSend) {
       const isVideo = fileToSend.type.includes('video');
-      // BUG FIX: Do NOT use `recordingTime` state here — it's async (setState) and may not
-      // have updated yet when the user taps Send immediately after stopping recording.
-      // Instead, compute the final duration directly from startTimeRef (the ground truth).
-      // We still keep setRecordingTime for the UI timer display; it just can't be trusted
-      // for the precise send value.
-      let finalDuration: number | undefined;
-      if (isVideo) {
-        const computed = (Date.now() - startTimeRef.current) / 1000;
-        // If startTimeRef is 0, recording was already stopped and recordingTime state is stale-safe
-        // fallback to the state value (which will be correct after a few ms of render).
-        finalDuration = startTimeRef.current > 0 ? Math.max(0.5, computed) : Math.max(0.5, recordingTime);
-      }
-      onSend(fileToSend, caption, finalDuration);
+      onSend(fileToSend, caption, isVideo ? Math.max(0.5, recordingTime) : undefined);
       onClose();
     }
   };
@@ -782,12 +754,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                       muted
                       className="w-full h-full object-cover pointer-events-auto"
                       style={{
-                        // Mirror front camera. Apply digitalZoom ONLY when NOT using hardware zoom.
-                        // Hardware zoom is applied via track.applyConstraints, so no CSS scale needed.
-                        // Using scale() here on top of hardware zoom causes double-zoom (the reported bug).
-                        transform: facingMode === 'user'
-                          ? `scaleX(-1)${!hasHardwareZoomRef.current && digitalZoom !== 1 ? ` scale(${digitalZoom})` : ''}`
-                          : (!hasHardwareZoomRef.current && digitalZoom !== 1 ? `scale(${digitalZoom})` : 'none'),
+                        // Mirror front camera in viewfinder.
+                        // Zoom is applied via direct DOM update in handlePointerMove (no re-render).
+                        // digitalZoom state is only used to trigger a re-render when zoom resets to 1.
+                        transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
                         transformOrigin: 'center'
                       }}
                       onDoubleClick={toggleCamera}
