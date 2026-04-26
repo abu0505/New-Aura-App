@@ -236,7 +236,7 @@ function InnerApp({
             <MemoriesScreen />
           </div>
           <div className={activeTab === 'location' ? 'h-full w-full' : 'hidden'}>
-            <LiveLocationScreen partner={partnerWithPresence} />
+            <LiveLocationScreen partner={partnerWithPresence} isActive={activeTab === 'location' && !isLocked} />
           </div>
           <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>
             <SettingsScreen />

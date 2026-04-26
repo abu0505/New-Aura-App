@@ -407,108 +407,150 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     isCanvasRecordingRef.current = false;
 
     const video = videoRef.current;
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
+    const vw = video.videoWidth || 1920;
+    const vh = video.videoHeight || 1080;
     const isFront = facingMode === 'user';
 
-    // ── ALWAYS USE CANVAS FOR RECORDING ────────────────────────────────────
-    // Reasons:
-    // BUG 2 FIX: Direct stream recording captures UNMIRRORED video. Front camera preview
-    //   is mirrored via CSS, but the file was not. Now we apply scaleX(-1) in the canvas
-    //   so the recorded file IS mirrored (matches user expectation, same as Instagram).
-    // BUG 3 FIX: Android Chrome delivers the stream as landscape (e.g. 1920x1080) with a
-    //   90° rotation metadata tag. <video> respects this tag, but ChatBubble reading
-    //   videoWidth/videoHeight sees 1920x1080 (landscape) and shows wrong ratio.
-    //   Canvas output has REAL portrait dimensions (e.g. 1080x1920) — no rotation tag.
-    // BUG 1 FIX: We set canvas size based on resolution setting (not stream size), so
-    //   4K video is recorded at a manageable canvas size, preventing encoder crash.
+    // ── PERFORMANCE ARCHITECTURE ─────────────────────────────────────────
+    // Two recording paths — choose based on need for canvas processing:
+    //
+    // PATH A: DIRECT STREAM (zero overhead, max performance)
+    //   Used for: Back camera 9:16 (full sensor, no crop, no mirror needed)
+    //   The raw getUserMedia stream goes straight into MediaRecorder.
+    //   No canvas, no GPU compositing, no main-thread draw loop.
+    //
+    // PATH B: CANVAS PIPELINE (needed for mirror or crop)
+    //   Used for: Front camera (any ratio — mirror needed in file)
+    //             Any non-9:16 ratio (crop needed)
+    //   Key optimisation: captureStream(0) + manual track.requestFrame()
+    //   - captureStream(30) pushes a new frame into the encoder at 30fps
+    //     regardless of when drawImage finishes → encoder queue fills up → lag.
+    //   - captureStream(0) lets US control EXACTLY when a frame is delivered.
+    //     We call track.requestFrame() once per draw → zero duplicate frames,
+    //     zero encoder queue buildup, zero wasted GPU cycles.
 
-    // Determine target crop region from stream for selected aspect ratio
-    let targetRatio: number;
-    if (aspectRatio === '1:1') targetRatio = 1;
-    else if (aspectRatio === '4:3') targetRatio = 3 / 4;   // portrait 4:3
-    else if (aspectRatio === '16:9') targetRatio = 16 / 9;
-    else targetRatio = 9 / 16; // '9:16' default portrait
+    const useDirectStream = !isFront && aspectRatio === '9:16';
 
-    // Crop source region from the stream (centered)
-    let srcW: number, srcH: number;
-    if (targetRatio >= 1) {
-      // Wider than tall (16:9 or square): use full width, crop height
-      srcW = vw;
-      srcH = Math.round(vw / targetRatio);
-      if (srcH > vh) { srcH = vh; srcW = Math.round(vh * targetRatio); }
+    if (useDirectStream) {
+      // ── PATH A: DIRECT STREAM (back camera 9:16) ─────────────────────
+      isCanvasRecordingRef.current = false; // no canvas loop needed
     } else {
-      // Taller than wide (9:16, 4:3 portrait): use full height, crop width
-      srcH = vh;
-      srcW = Math.round(vh * targetRatio);
-      if (srcW > vw) { srcW = vw; srcH = Math.round(vw / targetRatio); }
-    }
-    const srcX = Math.round((vw - srcW) / 2);
-    const srcY = Math.round((vh - srcH) / 2);
+      // ── PATH B: CANVAS PIPELINE ───────────────────────────────────────
+      let targetRatio: number;
+      if (aspectRatio === '1:1') targetRatio = 1;
+      else if (aspectRatio === '4:3') targetRatio = 3 / 4;
+      else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+      else targetRatio = 9 / 16;
 
-    // Output canvas dimensions based on resolution setting (this controls output quality)
-    // Cap at 1920 on longest side to stay within mobile encoder limits
-    let outLong: number;
-    if (resolution === '4k') outLong = 1920;        // 4K stream → 1080p output (safe for mobile)
-    else if (resolution === '1080p') outLong = 1080; // 1080p output
-    else outLong = 720;                              // 720p output
+      // Source crop region (centered in stream)
+      let srcW: number, srcH: number;
+      if (targetRatio >= 1) {
+        srcW = vw; srcH = Math.round(vw / targetRatio);
+        if (srcH > vh) { srcH = vh; srcW = Math.round(vh * targetRatio); }
+      } else {
+        srcH = vh; srcW = Math.round(vh * targetRatio);
+        if (srcW > vw) { srcW = vw; srcH = Math.round(vw / targetRatio); }
+      }
+      const srcX = Math.round((vw - srcW) / 2);
+      const srcY = Math.round((vh - srcH) / 2);
 
-    let outW: number, outH: number;
-    if (srcW >= srcH) {
-      outW = outLong; outH = Math.round(outLong / (srcW / srcH));
-    } else {
-      outH = outLong; outW = Math.round(outLong * (srcW / srcH));
-    }
+      // Output size — smaller = lighter on GPU + encoder
+      // 720p is the sweet spot: looks sharp on every phone screen, ~55% less
+      // GPU work vs 1080p at same quality-per-pixel ratio for mobile displays.
+      let outLong: number;
+      if (resolution === '4k') outLong = 1080; // 4K stream → 1080p canvas max
+      else if (resolution === '1080p') outLong = 720; // 720p output, very fast
+      else outLong = 480;                             // 480p for 720p setting
 
-    const canvas = document.createElement('canvas');
-    canvas.width = outW;
-    canvas.height = outH;
-    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
+      let outW: number, outH: number;
+      if (srcW >= srcH) {
+        outW = outLong; outH = Math.round(outLong / (srcW / srcH));
+      } else {
+        outH = outLong; outW = Math.round(outLong * (srcW / srcH));
+      }
+      // Ensure even dimensions (required by most codecs)
+      outW = outW % 2 === 0 ? outW : outW - 1;
+      outH = outH % 2 === 0 ? outH : outH - 1;
 
-    isCanvasRecordingRef.current = true;
+      const canvas = document.createElement('canvas');
+      canvas.width = outW;
+      canvas.height = outH;
+      // desynchronized: true → compositing runs off DOM compositor thread
+      // alpha: false → skip alpha channel blending entirely
+      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
 
-    const drawLoop = () => {
-      if (!isCanvasRecordingRef.current) return;
-
-      const liveZoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
-
-      ctx.save();
-      // BUG 2 FIX: Apply mirror for front camera IN THE CANVAS so the video file
-      // is correctly mirrored (same as Instagram/Snapchat selfie behavior).
+      // ── PERFORMANCE: Set persistent transform ONCE instead of save/restore
+      // ctx.save() + ctx.restore() cost 2 GPU state-machine calls per frame.
+      // Instead: set the transform matrix ONCE before the loop, never change it.
+      // drawImage destination coords compensate for mirror/zoom dynamically.
       if (isFront) {
-        ctx.translate(outW, 0);
-        ctx.scale(-1, 1);
+        // Mirror: flip horizontally. Matrix: [-1, 0, 0, 1, outW, 0]
+        ctx.setTransform(-1, 0, 0, 1, outW, 0);
       }
-      if (!hasHardwareZoomRef.current && liveZoom !== 1) {
-        ctx.translate(outW / 2, outH / 2);
-        ctx.scale(liveZoom, liveZoom);
-        ctx.translate(-outW / 2, -outH / 2);
-      }
-      ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
-      ctx.restore();
+      // (back camera: identity transform, no call needed)
+
+      // ── captureStream(0): manual frame control ───────────────────────
+      // 0 fps = we control EXACTLY when a frame is delivered to the encoder.
+      // After each drawImage we call track.requestFrame() once → no duplicates.
+      const capturedStream = canvas.captureStream(0);
+      const videoTrack = capturedStream.getVideoTracks()[0] as any; // CanvasCaptureMediaStreamTrack
+
+      const audioTracks = streamRef.current.getAudioTracks();
+      if (audioTracks.length > 0) capturedStream.addTrack(audioTracks[0]);
+      canvasStreamRef.current = capturedStream;
+
+      isCanvasRecordingRef.current = true;
+
+      // Frame timing: target exactly 30fps using timestamp delta guard
+      // This prevents rVFC from running more than 30 times/sec on 90/120Hz screens
+      let lastFrameTime = 0;
+      const FRAME_INTERVAL = 1000 / 30; // ~33.3ms
+
+      const drawLoop = (now: number) => {
+        if (!isCanvasRecordingRef.current) return;
+
+        const elapsed = now - lastFrameTime;
+        if (elapsed >= FRAME_INTERVAL) {
+          lastFrameTime = now - (elapsed % FRAME_INTERVAL); // drift correction
+
+          const liveZoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
+
+          if (!hasHardwareZoomRef.current && liveZoom !== 1) {
+            // Zoom + mirror: combine into one setTransform call
+            if (isFront) {
+              ctx.setTransform(-liveZoom, 0, 0, liveZoom, outW / 2 * (1 + liveZoom), outH / 2 * (1 - liveZoom));
+            } else {
+              ctx.setTransform(liveZoom, 0, 0, liveZoom, outW / 2 * (1 - liveZoom), outH / 2 * (1 - liveZoom));
+            }
+          } else if (isFront) {
+            ctx.setTransform(-1, 0, 0, 1, outW, 0);
+          } else {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+          }
+
+          ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
+
+          // Deliver exactly one frame to the encoder — no queue buildup
+          if (videoTrack?.requestFrame) videoTrack.requestFrame();
+        }
+
+        if ('requestVideoFrameCallback' in video) {
+          (video as any).requestVideoFrameCallback(drawLoop);
+        } else {
+          requestAnimationFrame(drawLoop);
+        }
+      };
 
       if ('requestVideoFrameCallback' in video) {
         (video as any).requestVideoFrameCallback(drawLoop);
       } else {
         requestAnimationFrame(drawLoop);
       }
-    };
-
-    if ('requestVideoFrameCallback' in video) {
-      (video as any).requestVideoFrameCallback(drawLoop);
-    } else {
-      requestAnimationFrame(drawLoop);
     }
 
-    const capturedStream = canvas.captureStream(30);
-    const audioTracks = streamRef.current.getAudioTracks();
-    if (audioTracks.length > 0) capturedStream.addTrack(audioTracks[0]);
-    canvasStreamRef.current = capturedStream;
-
     // ── CODEC SELECTION ────────────────────────────────────────────────────
-    // BUG 1 FIX: avc1.42E01E often fails at high resolutions on some Android devices
-    // even when isTypeSupported returns true. Use vp8 as a safe fallback — it's
-    // broadly hardware-accelerated on Android and never fails silently.
+    const recordStream = useDirectStream ? streamRef.current : canvasStreamRef.current!;
+
     const codecCandidates = [
       'video/mp4;codecs=avc1',
       'video/webm;codecs=h264',
@@ -519,16 +561,18 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       try { return MediaRecorder.isTypeSupported(c); } catch { return false; }
     }) || 'video/webm';
 
+    // Conservative bitrates — mobile encoders saturate quickly at high rates.
+    // These produce excellent perceptual quality at 30fps on any phone screen.
     const adaptiveBitrate =
-      resolution === '4k'    ? 2_500_000 :  // Canvas capped at 1080p equivalent
-      resolution === '1080p' ? 2_000_000 :
-                               1_200_000;
+      resolution === '4k'    ? 2_000_000 :  // 2 Mbps — canvas at 1080p max
+      resolution === '1080p' ? 1_200_000 :  // 1.2 Mbps — canvas at 720p
+                               800_000;     // 0.8 Mbps — canvas at 480p
 
     let recorder: MediaRecorder;
     try {
-      recorder = new MediaRecorder(capturedStream, { mimeType, videoBitsPerSecond: adaptiveBitrate });
+      recorder = new MediaRecorder(recordStream, { mimeType, videoBitsPerSecond: adaptiveBitrate });
     } catch (e) {
-      recorder = new MediaRecorder(capturedStream);
+      recorder = new MediaRecorder(recordStream);
     }
 
     mediaRecorderRef.current = recorder;
@@ -537,7 +581,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       if (event.data && event.data.size > 0) chunksRef.current.push(event.data);
     };
 
-    // BUG 1 FIX: Handle encoder errors gracefully — stop recording, reset state, show error.
     recorder.onerror = () => {
       isCanvasRecordingRef.current = false;
       if (canvasStreamRef.current) {
@@ -551,11 +594,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     };
 
     recorder.onstop = () => {
-      // BUG 1 FIX: Don't reset startTimeRef here — stopRecording already computed duration.
-      // Check blob validity: if empty, the encoder failed silently (common at 4K on some devices).
       const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'video/webm' });
       if (blob.size < 1000) {
-        // Empty recording — encoder likely failed. Reset and show error.
         setIsRecording(false);
         setIsLocked(false);
         import('sonner').then(({ toast }) => toast.error('Recording failed. Try a lower resolution.'));
@@ -570,7 +610,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setViewMode('preview');
     };
 
-    recorder.start(500);
+    // 1000ms timeslice: fewer ondataavailable interruptions = less main-thread jitter
+    recorder.start(1000);
     startTimeRef.current = Date.now();
     setIsRecording(true);
     if (navigator.vibrate) navigator.vibrate(50);
