@@ -57,6 +57,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [isStickerPickerOpen, setIsStickerPickerOpen] = useState(false);
   const [isGifPickerOpen, setIsGifPickerOpen] = useState(false);
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [lastSelectedEmoji, setLastSelectedEmoji] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, _setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
@@ -79,6 +80,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const slashStartPosRef = useRef<number>(-1);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastCursorPosRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyBlobUrlRef = useRef<string | null>(null);
   const { processAndUpload, getDecryptedBlob, processAndUploadChunked, generateVideoThumbnailFromFile } = useMedia();
@@ -560,26 +562,24 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   };
 
   const handleEmojiSelect = (emoji: string) => {
-    const el = textareaRef.current;
-    if (!el) {
-      setText(prev => prev + emoji);
-      return;
-    }
-
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const before = text.substring(0, start);
-    const after = text.substring(end);
+    setLastSelectedEmoji(emoji);
     
-    const newText = before + emoji + after;
-    setText(newText);
+    // Use functional update to ensure we don't lose emojis during fast spamming
+    setText(prev => {
+      const start = lastCursorPosRef.current;
+      // If for some reason start is greater than text length, clamp it
+      const safeStart = Math.min(start, prev.length);
+      
+      const before = prev.substring(0, safeStart);
+      const after = prev.substring(safeStart);
+      
+      // Update the ref so the NEXT emoji (during spam) goes right after this one
+      lastCursorPosRef.current = safeStart + emoji.length;
+      
+      return before + emoji + after;
+    });
     
-    // Set cursor position after the emoji
-    const newPos = start + emoji.length;
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(newPos, newPos);
-    }, 10);
+    // Focus stays on the picker for spamming
   };
 
   if (isRecording) {
@@ -612,6 +612,12 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.3 }}
+                onKeyDown={(e) => {
+                  // Manual spam logic: if Enter is held (repeat), keep adding the emoji
+                  if (e.key === 'Enter' && lastSelectedEmoji) {
+                    handleEmojiSelect(lastSelectedEmoji);
+                  }
+                }}
                 className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container pointer-events-auto"
                 style={{ width: 350, height: 400 }}
               >
@@ -875,8 +881,18 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
               }
             }}
             style={{ paddingLeft: '12px' }}
+            onBlur={() => {
+              lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
+            }}
+            onSelect={(e) => {
+              lastCursorPosRef.current = e.currentTarget.selectionStart || 0;
+            }}
+            onClick={() => {
+              lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
+            }}
             onChange={(e) => {
               let val = e.target.value;
+              lastCursorPosRef.current = e.target.selectionStart || 0;
               if (activeFolderChip) {
                 const prefix = `/${activeFolderChip}`;
                 if (!val.includes(prefix)) {

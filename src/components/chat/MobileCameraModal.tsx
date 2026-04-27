@@ -49,21 +49,23 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:3' | '9:16' | '16:9'>('9:16');
   const [showSettings, setShowSettings] = useState(false);
 
+  // 4K device capability
+  const [device4kSupported, setDevice4kSupported] = useState<boolean | null>(null);
+
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isCanvasRecordingRef = useRef(false);
-  // BUG FIX: Track the canvas captureStream so we can stop its tracks on stopRecording.
-  // Without this, canvas.captureStream() video tracks keep running after recording ends
-  // causing a memory leak and unnecessary battery drain.
-  const canvasStreamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const startTimeRef = useRef<number>(0);
 
-  // Fix 3.3: Debounce ref to prevent rapid camera restarts on settings toggle
+  // WebCodecs / Worker refs (Telegram-style architecture)
+  const cameraWorkerRef = useRef<Worker | null>(null);
+  const videoProcessorRef = useRef<ReadableStreamDefaultReader<VideoFrame> | null>(null);
+  const audioProcessorRef = useRef<ReadableStreamDefaultReader<AudioData> | null>(null);
+  const isWorkerRecordingRef = useRef(false);
+
+  // Debounce ref to prevent rapid camera restarts on settings toggle
   const cameraRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startPosRef = useRef<{ x: number, y: number } | null>(null);
@@ -93,6 +95,55 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
   }, []);
 
+  // --- Device Tier Detection ---
+  const getDeviceTier = useCallback((): 'low' | 'high' => {
+    const cores = navigator.hardwareConcurrency || 4;
+    const memory = (navigator as any).deviceMemory || 4;
+    if (cores < 6 || memory < 6) return 'low';
+    return 'high';
+  }, []);
+
+  // --- 4K Capability Check ---
+  // Probes whether the device's VideoEncoder can actually handle 4K H.264.
+  // Sets device4kSupported once on camera open. No stream needed — isConfigSupported is a dry-run.
+  useEffect(() => {
+    if (!isOpen || device4kSupported !== null) return;
+    (async () => {
+      try {
+        if (typeof VideoEncoder === 'undefined') { setDevice4kSupported(false); return; }
+        const result = await VideoEncoder.isConfigSupported({
+          codec: 'avc1.640034',
+          width: 3840, height: 2160,
+          bitrate: 20_000_000,
+          framerate: 30,
+          hardwareAcceleration: 'prefer-hardware',
+        });
+        setDevice4kSupported(result.supported ?? false);
+      } catch {
+        setDevice4kSupported(false);
+      }
+    })();
+  }, [isOpen, device4kSupported]);
+
+  // --- Worker lifecycle ---
+  // Pre-initialize the camera worker when the modal opens so it is instantly ready.
+  useEffect(() => {
+    if (isOpen) {
+      if (!cameraWorkerRef.current) {
+        cameraWorkerRef.current = new Worker(
+          new URL('../../workers/camera.worker.ts', import.meta.url),
+          { type: 'module' }
+        );
+      }
+    } else {
+      // Terminate worker on close to free memory
+      if (cameraWorkerRef.current) {
+        cameraWorkerRef.current.terminate();
+        cameraWorkerRef.current = null;
+      }
+    }
+  }, [isOpen]);
+
   // Stop camera feed
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -106,22 +157,34 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const startCamera = useCallback(async () => {
     stopCamera();
     try {
-      // BUG 5 FIX: Always request at max sensor resolution for consistent FOV across settings.
-      // When we requested low res (720p/1080p), Android driver cropped the sensor to deliver
-      // that exact resolution → narrower field of view → appeared "zoomed in" vs 4K.
-      // Solution: always stream at the sensor's native max (4K ideal). Resolution setting
-      // now only controls OUTPUT quality (photo canvas size, video canvas bitrate).
-      // This matches how Instagram/Snapchat/native camera apps work.
+      const tier = getDeviceTier();
+      
+      // LIGHTWEIGHT ARCHITECTURE FIX:
+      // Requesting 4K on mid/low tier devices causes severe lag and frame drops.
+      // We now dynamically request resolution based on device capability and user setting.
+      // We use 'crop-and-scale' to ask the browser to handle FOV consistently if possible.
+      let targetWidth = 1920;
+      let targetHeight = 1080;
+
+      if (resolution === '4k') {
+        targetWidth = tier === 'high' ? 3840 : 1920; // Cap 4K to 1080p on low-end
+        targetHeight = tier === 'high' ? 2160 : 1080;
+      } else if (resolution === '720p') {
+        targetWidth = 1280;
+        targetHeight = 720;
+      }
+
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode,
-          width: { ideal: 3840 },   // Request max — camera delivers native sensor FOV
-          height: { ideal: 2160 },  // Same FOV for all resolution settings
+          width: { ideal: targetWidth },
+          height: { ideal: targetHeight },
           frameRate: { ideal: 30, max: 30 },
-          noiseSuppression: true,
-          ...({ resizeMode: 'none' } as any),
+          // Disable software noise suppression on video to save CPU on mid/low tier
+          noiseSuppression: tier === 'high',
+          ...({ resizeMode: 'crop-and-scale' } as any),
         },
-        audio: { noiseSuppression: true, echoCancellation: true }
+        audio: { noiseSuppression: tier === 'high', echoCancellation: true }
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -159,7 +222,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     } catch (error) {
       setHasPermission(false);
     }
-  }, [facingMode, stopCamera]);
+  }, [facingMode, stopCamera, resolution, getDeviceTier]);
 
   // Fix 3.3: Debounce camera start (wait 200ms) to prevent overlapping streams
   // on rapid facingMode/resolution/aspectRatio setting changes
@@ -195,6 +258,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       if (enhancedUrl) URL.revokeObjectURL(enhancedUrl);
       setEnhancedUrl(null);
       setShowShimmer(false);
+      // Reset worker recording flag and 4K probe so they re-run on next open
+      isWorkerRecordingRef.current = false;
+      setDevice4kSupported(null);
     }
     // Release WebGL context and Web Worker when camera closes
     return () => { destroyDenoiser(); };
@@ -347,33 +413,38 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
   }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef, resolution]);
 
-  // --- Video Recording ---
+  // ── TELEGRAM-STYLE RECORDING: stopRecording ────────────────────────────────
   const stopRecording = useCallback(() => {
-    // Stop the canvas draw loop immediately
-    isCanvasRecordingRef.current = false;
+    // 1. Flag the pump loops to stop ASAP
+    isWorkerRecordingRef.current = false;
 
-    // BUG FIX: Stop the canvas captureStream tracks to prevent memory leak.
-    // canvas.captureStream() returns a MediaStream whose video track keeps running
-    // even after the MediaRecorder is stopped, unless we explicitly stop it.
-    if (canvasStreamRef.current) {
-      canvasStreamRef.current.getTracks().forEach(t => t.stop());
-      canvasStreamRef.current = null;
+    // 2. CRITICAL: Cancel the reader streams immediately.
+    //    Without this, the pump loops are stuck on `await reader.read()` and will
+    //    deliver frames to the worker AFTER we send STOP — crashing the encoder.
+    if (videoProcessorRef.current) {
+      videoProcessorRef.current.cancel().catch(() => {});
+      videoProcessorRef.current = null;
+    }
+    if (audioProcessorRef.current) {
+      audioProcessorRef.current.cancel().catch(() => {});
+      audioProcessorRef.current = null;
     }
 
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-      mediaRecorderRef.current.stop();
+    // 3. Signal the worker to flush encoders and finalize the MP4
+    if (cameraWorkerRef.current) {
+      cameraWorkerRef.current.postMessage({ type: 'STOP' });
     }
+
     setIsRecording(false);
     setIsLocked(false);
     startPosRef.current = null;
-    
-    // Set final precise duration
+
     const finalDuration = (Date.now() - startTimeRef.current) / 1000;
     setRecordingTime(Math.max(0.5, finalDuration));
 
-    shutterControls.start({ 
-      scale: 1, 
-      borderColor: isFlashOn && facingMode === 'user' ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.5)" 
+    shutterControls.start({
+      scale: 1,
+      borderColor: isFlashOn && facingMode === 'user' ? 'rgba(0,0,0,0.4)' : 'rgba(255,255,255,0.5)'
     });
     lockIconControls.start({ opacity: 0 });
   }, [shutterControls, lockIconControls, isFlashOn, facingMode]);
@@ -386,12 +457,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     if (isRecording) {
       interval = setInterval(() => {
         setRecordingTime((Date.now() - startTimeRef.current) / 1000);
-      }, 100); // More frequent updates for smooth UI
-
-      // Max duration limit (60s)
-      timer = setTimeout(() => {
-        stopRecording();
-      }, 60000);
+      }, 100);
+      timer = setTimeout(() => stopRecording(), 60000);
     }
 
     return () => {
@@ -400,227 +467,188 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     };
   }, [isRecording, stopRecording]);
 
+  // ── TELEGRAM-STYLE RECORDING: startRecording ───────────────────────────────
   const startRecording = () => {
-    if (!streamRef.current || !videoRef.current) return;
+    if (!streamRef.current || !videoRef.current || !cameraWorkerRef.current) return;
 
-    chunksRef.current = [];
-    isCanvasRecordingRef.current = false;
-
+    const worker = cameraWorkerRef.current;
     const video = videoRef.current;
     const vw = video.videoWidth || 1920;
     const vh = video.videoHeight || 1080;
     const isFront = facingMode === 'user';
+    const fps = 30;
 
-    // ── PERFORMANCE ARCHITECTURE ─────────────────────────────────────────
-    // Two recording paths — choose based on need for canvas processing:
-    //
-    // PATH A: DIRECT STREAM (zero overhead, max performance)
-    //   Used for: Back camera 9:16 (full sensor, no crop, no mirror needed)
-    //   The raw getUserMedia stream goes straight into MediaRecorder.
-    //   No canvas, no GPU compositing, no main-thread draw loop.
-    //
-    // PATH B: CANVAS PIPELINE (needed for mirror or crop)
-    //   Used for: Front camera (any ratio — mirror needed in file)
-    //             Any non-9:16 ratio (crop needed)
-    //   Key optimisation: captureStream(0) + manual track.requestFrame()
-    //   - captureStream(30) pushes a new frame into the encoder at 30fps
-    //     regardless of when drawImage finishes → encoder queue fills up → lag.
-    //   - captureStream(0) lets US control EXACTLY when a frame is delivered.
-    //     We call track.requestFrame() once per draw → zero duplicate frames,
-    //     zero encoder queue buildup, zero wasted GPU cycles.
+    // ── Compute source crop region ─────────────────────────────────────────
+    let targetRatio: number;
+    if (aspectRatio === '1:1') targetRatio = 1;
+    else if (aspectRatio === '4:3') targetRatio = 3 / 4;
+    else if (aspectRatio === '16:9') targetRatio = 16 / 9;
+    else targetRatio = 9 / 16;
 
-    const useDirectStream = !isFront && aspectRatio === '9:16';
-
-    if (useDirectStream) {
-      // ── PATH A: DIRECT STREAM (back camera 9:16) ─────────────────────
-      isCanvasRecordingRef.current = false; // no canvas loop needed
+    let srcW: number, srcH: number;
+    if (targetRatio >= 1) {
+      srcW = vw; srcH = Math.round(vw / targetRatio);
+      if (srcH > vh) { srcH = vh; srcW = Math.round(vh * targetRatio); }
     } else {
-      // ── PATH B: CANVAS PIPELINE ───────────────────────────────────────
-      let targetRatio: number;
-      if (aspectRatio === '1:1') targetRatio = 1;
-      else if (aspectRatio === '4:3') targetRatio = 3 / 4;
-      else if (aspectRatio === '16:9') targetRatio = 16 / 9;
-      else targetRatio = 9 / 16;
+      srcH = vh; srcW = Math.round(vh * targetRatio);
+      if (srcW > vw) { srcW = vw; srcH = Math.round(vw / targetRatio); }
+    }
+    const srcX = Math.round((vw - srcW) / 2);
+    const srcY = Math.round((vh - srcH) / 2);
 
-      // Source crop region (centered in stream)
-      let srcW: number, srcH: number;
-      if (targetRatio >= 1) {
-        srcW = vw; srcH = Math.round(vw / targetRatio);
-        if (srcH > vh) { srcH = vh; srcW = Math.round(vh * targetRatio); }
-      } else {
-        srcH = vh; srcW = Math.round(vh * targetRatio);
-        if (srcW > vw) { srcW = vw; srcH = Math.round(vw / targetRatio); }
-      }
-      const srcX = Math.round((vw - srcW) / 2);
-      const srcY = Math.round((vh - srcH) / 2);
-
-      // Output size — smaller = lighter on GPU + encoder
-      // 720p is the sweet spot: looks sharp on every phone screen, ~55% less
-      // GPU work vs 1080p at same quality-per-pixel ratio for mobile displays.
-      let outLong: number;
-      if (resolution === '4k') outLong = 1080; // 4K stream → 1080p canvas max
-      else if (resolution === '1080p') outLong = 720; // 720p output, very fast
-      else outLong = 480;                             // 480p for 720p setting
-
-      let outW: number, outH: number;
-      if (srcW >= srcH) {
-        outW = outLong; outH = Math.round(outLong / (srcW / srcH));
-      } else {
-        outH = outLong; outW = Math.round(outLong * (srcW / srcH));
-      }
-      // Ensure even dimensions (required by most codecs)
-      outW = outW % 2 === 0 ? outW : outW - 1;
-      outH = outH % 2 === 0 ? outH : outH - 1;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = outW;
-      canvas.height = outH;
-      // desynchronized: true → compositing runs off DOM compositor thread
-      // alpha: false → skip alpha channel blending entirely
-      const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
-
-      // ── PERFORMANCE: Set persistent transform ONCE instead of save/restore
-      // ctx.save() + ctx.restore() cost 2 GPU state-machine calls per frame.
-      // Instead: set the transform matrix ONCE before the loop, never change it.
-      // drawImage destination coords compensate for mirror/zoom dynamically.
-      if (isFront) {
-        // Mirror: flip horizontally. Matrix: [-1, 0, 0, 1, outW, 0]
-        ctx.setTransform(-1, 0, 0, 1, outW, 0);
-      }
-      // (back camera: identity transform, no call needed)
-
-      // ── captureStream(0): manual frame control ───────────────────────
-      // 0 fps = we control EXACTLY when a frame is delivered to the encoder.
-      // After each drawImage we call track.requestFrame() once → no duplicates.
-      const capturedStream = canvas.captureStream(0);
-      const videoTrack = capturedStream.getVideoTracks()[0] as any; // CanvasCaptureMediaStreamTrack
-
-      const audioTracks = streamRef.current.getAudioTracks();
-      if (audioTracks.length > 0) capturedStream.addTrack(audioTracks[0]);
-      canvasStreamRef.current = capturedStream;
-
-      isCanvasRecordingRef.current = true;
-
-      // Frame timing: target exactly 30fps using timestamp delta guard
-      // This prevents rVFC from running more than 30 times/sec on 90/120Hz screens
-      let lastFrameTime = 0;
-      const FRAME_INTERVAL = 1000 / 30; // ~33.3ms
-
-      const drawLoop = (now: number) => {
-        if (!isCanvasRecordingRef.current) return;
-
-        const elapsed = now - lastFrameTime;
-        if (elapsed >= FRAME_INTERVAL) {
-          lastFrameTime = now - (elapsed % FRAME_INTERVAL); // drift correction
-
-          const liveZoom = hasHardwareZoomRef.current ? 1 : zoomRef.current.current;
-
-          if (!hasHardwareZoomRef.current && liveZoom !== 1) {
-            // Zoom + mirror: combine into one setTransform call
-            if (isFront) {
-              ctx.setTransform(-liveZoom, 0, 0, liveZoom, outW / 2 * (1 + liveZoom), outH / 2 * (1 - liveZoom));
-            } else {
-              ctx.setTransform(liveZoom, 0, 0, liveZoom, outW / 2 * (1 - liveZoom), outH / 2 * (1 - liveZoom));
-            }
-          } else if (isFront) {
-            ctx.setTransform(-1, 0, 0, 1, outW, 0);
-          } else {
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-          }
-
-          ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
-
-          // Deliver exactly one frame to the encoder — no queue buildup
-          if (videoTrack?.requestFrame) videoTrack.requestFrame();
-        }
-
-        if ('requestVideoFrameCallback' in video) {
-          (video as any).requestVideoFrameCallback(drawLoop);
-        } else {
-          requestAnimationFrame(drawLoop);
-        }
-      };
-
-      if ('requestVideoFrameCallback' in video) {
-        (video as any).requestVideoFrameCallback(drawLoop);
-      } else {
-        requestAnimationFrame(drawLoop);
-      }
+    // ── Compute output canvas size based on resolution & device tier ────────
+    // High-tier: deliver true resolution. Low-tier: cap to avoid overheating.
+    const tier = getDeviceTier();
+    let outLong: number;
+    if (resolution === '4k') {
+      // True 4K canvas is not feasible in-browser. Deliver 4K sensor → 1080p/720p output.
+      outLong = tier === 'high' ? 1080 : 720;
+    } else if (resolution === '1080p') {
+      outLong = tier === 'high' ? 1080 : 720; // True 1080p on high-tier devices
+    } else {
+      outLong = tier === 'high' ? 720 : 480;
     }
 
-    // ── CODEC SELECTION ────────────────────────────────────────────────────
-    const recordStream = useDirectStream ? streamRef.current : canvasStreamRef.current!;
-
-    const codecCandidates = [
-      'video/mp4;codecs=avc1',
-      'video/webm;codecs=h264',
-      'video/webm;codecs=vp8',
-      'video/webm',
-    ];
-    const mimeType = codecCandidates.find(c => {
-      try { return MediaRecorder.isTypeSupported(c); } catch { return false; }
-    }) || 'video/webm';
-
-    // Conservative bitrates — mobile encoders saturate quickly at high rates.
-    // These produce excellent perceptual quality at 30fps on any phone screen.
-    const adaptiveBitrate =
-      resolution === '4k'    ? 2_000_000 :  // 2 Mbps — canvas at 1080p max
-      resolution === '1080p' ? 1_200_000 :  // 1.2 Mbps — canvas at 720p
-                               800_000;     // 0.8 Mbps — canvas at 480p
-
-    let recorder: MediaRecorder;
-    try {
-      recorder = new MediaRecorder(recordStream, { mimeType, videoBitsPerSecond: adaptiveBitrate });
-    } catch (e) {
-      recorder = new MediaRecorder(recordStream);
+    let outW: number, outH: number;
+    if (srcW >= srcH) {
+      outW = outLong; outH = Math.round(outLong / (srcW / srcH));
+    } else {
+      outH = outLong; outW = Math.round(outLong * (srcW / srcH));
     }
+    // Ensure even dimensions (required by H.264 codec)
+    outW = outW % 2 === 0 ? outW : outW - 1;
+    outH = outH % 2 === 0 ? outH : outH - 1;
 
-    mediaRecorderRef.current = recorder;
+    // ── Bitrates — optimised for hardware encoder on each tier ───────────
+    const videoBitrate =
+      resolution === '4k'    ? (tier === 'high' ? 8_000_000  : 4_000_000) :
+      resolution === '1080p' ? (tier === 'high' ? 4_000_000  : 2_500_000) :
+                               (tier === 'high' ? 2_000_000  : 1_200_000);
 
-    recorder.ondataavailable = (event) => {
-      if (event.data && event.data.size > 0) chunksRef.current.push(event.data);
-    };
+    // ── Set up worker message handler ─────────────────────────────────────
+    worker.onmessage = (e: MessageEvent) => {
+      const { type } = e.data;
+      if (type === 'READY') {
+        // Worker is initialized — start pumping frames
+        isWorkerRecordingRef.current = true;
+        startTimeRef.current = Date.now();
+        setIsRecording(true);
+        if (navigator.vibrate) navigator.vibrate(50);
+        shutterControls.start({ scale: 1.5, borderColor: 'rgba(255,255,255,0)' });
 
-    recorder.onerror = () => {
-      isCanvasRecordingRef.current = false;
-      if (canvasStreamRef.current) {
-        canvasStreamRef.current.getTracks().forEach(t => t.stop());
-        canvasStreamRef.current = null;
+        // ── VIDEO: MediaStreamTrackProcessor → Worker ───────────────────
+        // This is the core of the Telegram architecture:
+        // MediaStreamTrackProcessor gives us raw VideoFrame objects directly
+        // from the GPU camera pipeline — no canvas, no main-thread copy.
+        const videoTrack = streamRef.current!.getVideoTracks()[0];
+        if ('MediaStreamTrackProcessor' in window && videoTrack) {
+          const processor = new (window as any).MediaStreamTrackProcessor({ track: videoTrack });
+          const reader = processor.readable.getReader() as ReadableStreamDefaultReader<VideoFrame>;
+          videoProcessorRef.current = reader;
+
+          // Frame pump loop — runs asynchronously, does NOT block main thread
+          const pumpVideo = async () => {
+            try {
+              while (isWorkerRecordingRef.current) {
+                const { value: frame, done } = await reader.read();
+                if (done || !frame) break;
+                if (!isWorkerRecordingRef.current) { frame.close(); break; }
+                // Transfer frame to worker (zero-copy — GPU handle moved, not copied)
+                worker.postMessage({ type: 'VIDEO_FRAME', frame }, [frame as any]);
+              }
+            } catch { /* Recording stopped */ }
+          };
+          pumpVideo();
+        }
+
+        // ── AUDIO: MediaStreamTrackProcessor → Worker ───────────────────
+        const audioTrack = streamRef.current!.getAudioTracks()[0];
+        if ('MediaStreamTrackProcessor' in window && audioTrack) {
+          const audioProcessor = new (window as any).MediaStreamTrackProcessor({ track: audioTrack });
+          const audioReader = audioProcessor.readable.getReader() as ReadableStreamDefaultReader<AudioData>;
+          audioProcessorRef.current = audioReader;
+
+          const pumpAudio = async () => {
+            try {
+              while (isWorkerRecordingRef.current) {
+                const { value: data, done } = await audioReader.read();
+                if (done || !data) break;
+                if (!isWorkerRecordingRef.current) { data.close(); break; }
+                worker.postMessage({ type: 'AUDIO_DATA', data }, [data as any]);
+              }
+            } catch { /* Recording stopped */ }
+          };
+          pumpAudio();
+        }
       }
-      setIsRecording(false);
-      setIsLocked(false);
-      startTimeRef.current = 0;
-      import('sonner').then(({ toast }) => toast.error('Recording failed. Try a lower resolution.'));
-    };
 
-    recorder.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || 'video/webm' });
-      if (blob.size < 1000) {
+      else if (type === 'COMPLETE') {
+        // Worker finished — we have the final MP4 buffer
+        const buffer: ArrayBuffer = e.data.buffer;
+        const blob = new Blob([buffer], { type: 'video/mp4' });
+        if (blob.size < 1000) {
+          import('sonner').then(({ toast }) => toast.error('Recording failed. Try a lower resolution.'));
+          return;
+        }
+        const file = new File([blob], `video_${Date.now()}.mp4`, { type: 'video/mp4' });
+        const url = URL.createObjectURL(blob);
+        setCapturedFile(file);
+        setPreviewUrl(url);
+        if (navigator.vibrate) navigator.vibrate([50, 50]);
+        setViewMode('preview');
+
+        // Re-create a fresh worker for potential next recording.
+        // The old worker's internal state (muxer, encoder) is now finalized and cannot be reused.
+        if (cameraWorkerRef.current) {
+          cameraWorkerRef.current.terminate();
+        }
+        cameraWorkerRef.current = new Worker(
+          new URL('../../workers/camera.worker.ts', import.meta.url),
+          { type: 'module' }
+        );
+      }
+
+      else if (type === 'FALLBACK') {
+        // WebCodecs not supported — fall back to MediaRecorder
+        import('sonner').then(({ toast }) => toast.error('Your browser does not support hardware encoding. Try updating Chrome.'));
+        setIsRecording(false);
+      }
+
+      else if (type === 'ERROR') {
+        import('sonner').then(({ toast }) => toast.error(`Recording error: ${e.data.message}`));
         setIsRecording(false);
         setIsLocked(false);
-        import('sonner').then(({ toast }) => toast.error('Recording failed. Try a lower resolution.'));
-        return;
       }
-      const ext = recorder.mimeType.includes('mp4') ? 'mp4' : 'webm';
-      const file = new File([blob], `video_${Date.now()}.${ext}`, { type: blob.type });
-      const url = URL.createObjectURL(blob);
-      setCapturedFile(file);
-      setPreviewUrl(url);
-      if (navigator.vibrate) navigator.vibrate([50, 50]);
-      setViewMode('preview');
     };
 
-    // 1000ms timeslice: fewer ondataavailable interruptions = less main-thread jitter
-    recorder.start(1000);
-    startTimeRef.current = Date.now();
-    setIsRecording(true);
-    if (navigator.vibrate) navigator.vibrate(50);
-    shutterControls.start({ scale: 1.5, borderColor: 'rgba(255,255,255,0)' });
+    // ── Audio track metadata (needed for AudioEncoder config in worker) ──
+    const audioTrack = streamRef.current.getAudioTracks()[0];
+    const audioSettings = audioTrack?.getSettings();
+    const audioSampleRate = audioSettings?.sampleRate || 48000;
+    const audioChannelCount = audioSettings?.channelCount || 1;
+
+    // ── START the worker with recording config ───────────────────────────
+    worker.postMessage({
+      type: 'START',
+      config: {
+        outWidth: outW,
+        outHeight: outH,
+        srcX, srcY, srcW, srcH,
+        mirror: isFront,
+        fps,
+        videoBitrate,
+        audioSampleRate,
+        audioChannelCount,
+      }
+    });
   };
+
 
   // --- Gesture Handlers ---
   const handlePointerDown = (e: React.PointerEvent) => {
     if (isRecording) return;
+    // Block recording if user selected 4K on a device that can't handle it
+    if (resolution === '4k' && device4kSupported === false) return;
     startPosRef.current = { x: e.clientX, y: e.clientY };
     // Delay to differentiate tap vs long-press
     holdTimerRef.current = setTimeout(() => {
@@ -734,6 +762,64 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       >
         {viewMode === 'camera' && (
           <div className="relative w-full h-full flex flex-col bg-black" onClick={() => { if (showSettings) setShowSettings(false); }}>
+
+            {/* ── 4K UNSUPPORTED OVERLAY ────────────────────────────────────────────
+                Shows when user picks 4K but the device encoder cannot handle it.
+                Blocks recording entirely and gives a clear, friendly explanation. */}
+            <AnimatePresence>
+              {resolution === '4k' && device4kSupported === false && (
+                <motion.div
+                  key="4k-unsupported"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-[90] flex flex-col items-center justify-center bg-black/85 backdrop-blur-xl pointer-events-auto"
+                >
+                  <motion.div
+                    initial={{ scale: 0.85, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: 'spring', damping: 20, stiffness: 280, delay: 0.05 }}
+                    className="flex flex-col items-center gap-5 px-8 text-center max-w-xs"
+                  >
+                    {/* Icon */}
+                    <div className="w-20 h-20 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[40px] text-red-400">videocam_off</span>
+                    </div>
+
+                    {/* Badge */}
+                    <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-red-400 bg-red-500/10 border border-red-500/30 px-3 py-1 rounded-full">
+                      4K Not Supported
+                    </span>
+
+                    {/* Heading */}
+                    <h2 className="text-white font-bold text-xl leading-tight">
+                      Tera device 4K handle nahi kar sakta 😔
+                    </h2>
+
+                    {/* Description */}
+                    <p className="text-white/55 text-sm leading-relaxed">
+                      Tere phone ka hardware encoder 4K (3840×2160) recording support nahi karta.
+                      1080p pe switch kar — jo bilkul equally sharp dikhegi teri screen par.
+                    </p>
+
+                    {/* CTA */}
+                    <button
+                      onClick={() => setResolution('1080p')}
+                      className="mt-2 w-full py-4 rounded-2xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 active:scale-95 transition-all shadow-2xl"
+                    >
+                      Switch to 1080p ✨
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="text-white/30 text-xs uppercase tracking-widest hover:text-white/60 transition-colors"
+                    >
+                      Close Camera
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Shutter UI Flash */}
             <AnimatePresence>
               {showShutterFlash && (
