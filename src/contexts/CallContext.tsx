@@ -26,7 +26,7 @@ interface CallContextType {
 const CallContext = createContext<CallContextType | null>(null);
 
 export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, encryptionStatus } = useAuth();
   const { partner } = usePartner();
   
   const [callState, setCallState] = useState<CallState>('idle');
@@ -124,7 +124,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Derive and set encryption key
     // We get key history from partner, assuming the primary key is public_key
-    const { encryptionStatus } = useAuth();
     if (partner.public_key && encryptionStatus === 'ready') {
       try {
         // AppKeyLocked corresponds to our secret key (Wait, the user's secret key is in AuthContext or IndexedDB)
