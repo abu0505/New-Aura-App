@@ -61,6 +61,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, _setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
+  
+  const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  const maxHeight = isMobile ? 72 : 120;
 
   // ── Folder picker (slash-command) state ──
   const [showFolderPicker, setShowFolderPicker] = useState(false);
@@ -117,11 +120,20 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     const raf = requestAnimationFrame(() => {
       el.style.height = 'auto';
       const scHeight = el.scrollHeight;
-      // Force 25px for single line, otherwise use scrollHeight
-      el.style.height = `${scHeight <= 32 ? 25 : Math.min(scHeight, 120)}px`;
+      
+      // Fix: If content fits within max-height, disable overflow to prevent 
+      // the "grabbing placeholder scroll" bug, especially on mobile.
+      if (scHeight <= maxHeight) {
+        el.style.overflowY = 'hidden';
+      } else {
+        el.style.overflowY = 'auto';
+      }
+
+      // Force 25px for single line if it's very small, otherwise use scrollHeight
+      el.style.height = `${scHeight <= 32 ? 25 : Math.min(scHeight, maxHeight)}px`;
     });
     return () => cancelAnimationFrame(raf);
-  }, [text]);
+  }, [text, maxHeight]);
 
   // Handle auto-focus when tab becomes active
   useEffect(() => {
@@ -880,7 +892,6 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 mirrorRef.current.scrollTop = e.currentTarget.scrollTop;
               }
             }}
-            style={{ paddingLeft: '12px' }}
             onBlur={() => {
               lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
             }}
@@ -939,11 +950,14 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             onPaste={handlePaste}
             placeholder={isUploading ? "Securing media..." : "I love you..."}
             disabled={disabled || isUploading}
-            className={`w-full border-none text-sm resize-none max-h-[120px] focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal pl-3 ${
+            className={`w-full border-none text-sm resize-none focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal px-1 ${
               activeFolderChip 
                 ? 'text-transparent caret-white bg-transparent' 
                 : 'text-aura-text-primary bg-transparent'
             } placeholder:text-aura-text-secondary/50`}
+            style={{ 
+              maxHeight: `${maxHeight}px`
+            }}
             rows={1}
           />
           </div>

@@ -14,6 +14,7 @@ import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
 import { LastSeenStatus } from './LastSeenStatus';
 import EncryptedImage from '../common/EncryptedImage';
+import { useCall } from '../../contexts/CallContext';
 
 
 
@@ -61,6 +62,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
+  const { initiateCall } = useCall();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previousScrollHeightRef = useRef<number>(0);
@@ -468,10 +470,16 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 <span className="text-[9px] uppercase tracking-widest text-red-200 font-bold">Offline</span>
               </div>
             )}
-            <button className="hover:text-primary transition-colors active:scale-90">
+            <button 
+              onClick={() => initiateCall(false)}
+              className="hover:text-primary transition-colors active:scale-90"
+            >
               <span className="material-symbols-outlined">call</span>
             </button>
-            <button className="hover:text-primary transition-colors active:scale-90">
+            <button 
+              onClick={() => initiateCall(true)}
+              className="hover:text-primary transition-colors active:scale-90"
+            >
               <span className="material-symbols-outlined">videocam</span>
             </button>
             

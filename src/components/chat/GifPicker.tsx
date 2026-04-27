@@ -25,8 +25,8 @@ export const GifPicker: React.FC<GifPickerProps> = ({ onSelect, onClose }) => {
     setError(null);
     try {
       const endpoint = searchQuery 
-        ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(searchQuery)}&limit=20&rating=g`
-        : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20&rating=g`;
+        ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(searchQuery)}&limit=40&rating=g`
+        : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=40&rating=g`;
       
       const response = await fetch(endpoint);
       if (!response.ok) throw new Error('Failed to fetch GIFs from GIPHY');

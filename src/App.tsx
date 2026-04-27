@@ -21,6 +21,8 @@ import { realtimeHub } from './lib/realtimeHub';
 import ThemeProvider from './components/common/ThemeProvider';
 import { MediaFoldersProvider } from './contexts/MediaFoldersContext';
 import { Toaster } from 'sonner';
+import { CallProvider } from './contexts/CallContext';
+import CallOverlay from './components/call/CallOverlay';
 
 function InnerApp({ 
   session, 
@@ -252,6 +254,7 @@ function InnerApp({
           onClose={() => setShowCelebration(false)}
         />
       </Suspense>
+      <CallOverlay />
       </div>
     </ThemeProvider>
   );
@@ -305,13 +308,15 @@ export default function App() {
   return (
     <AppLockProvider>
       <MediaFoldersProvider>
-        <InnerApp 
-          session={session} 
-          partner={partner} 
-          streakCount={streakCount} 
-          showCelebration={showCelebration}
-          setShowCelebration={setShowCelebration}
-        />
+        <CallProvider>
+          <InnerApp 
+            session={session} 
+            partner={partner} 
+            streakCount={streakCount} 
+            showCelebration={showCelebration}
+            setShowCelebration={setShowCelebration}
+          />
+        </CallProvider>
       </MediaFoldersProvider>
     </AppLockProvider>
   );

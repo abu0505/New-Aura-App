@@ -157,7 +157,11 @@ export default function FolderPickerPopup({
   // ─── Step 2: Load a page of actual message rows ────────────────────────────
 
   const loadWindow = useCallback(async (ids: string[], fromIndex: number) => {
-    const slice = ids.slice(fromIndex, fromIndex + PAGE_SIZE + PRELOAD_AHEAD);
+    const multiplier = isTwoRow ? 2 : 1;
+    const effectivePageSize = PAGE_SIZE * multiplier;
+    const effectivePreload = PRELOAD_AHEAD * multiplier;
+
+    const slice = ids.slice(fromIndex, fromIndex + effectivePageSize + effectivePreload);
     if (slice.length === 0) return;
 
     setIsLoadingMedia(true);
@@ -181,13 +185,14 @@ export default function FolderPickerPopup({
         return [...prev, ...newRows];
       });
 
-      setLoadedCount(fromIndex + PAGE_SIZE + PRELOAD_AHEAD);
+      const multiplier = isTwoRow ? 2 : 1;
+      const effectivePageSize = PAGE_SIZE * multiplier;
 
       // Decrypt visible window (first PAGE_SIZE) eagerly, rest lazily
-      rows.slice(0, PAGE_SIZE).forEach(item => decryptItem(item));
+      rows.slice(0, effectivePageSize).forEach(item => decryptItem(item));
       // Preload the rest in the background
       setTimeout(() => {
-        rows.slice(PAGE_SIZE).forEach(item => decryptItem(item));
+        rows.slice(effectivePageSize).forEach(item => decryptItem(item));
       }, 300);
 
     } catch (err) {
@@ -258,7 +263,11 @@ export default function FolderPickerPopup({
     const lastVisible = scrolledItems + visibleCount;
 
     // If user is VISIBLE_TRIGGER items away from the loaded boundary, fetch next page
-    if (lastVisible >= loadedCount - VISIBLE_TRIGGER && loadedCount < allMessageIds.length) {
+    const multiplier = isTwoRow ? 2 : 1;
+    const effectiveVisible = lastVisible * multiplier;
+    const effectiveTrigger = VISIBLE_TRIGGER * multiplier;
+
+    if (effectiveVisible >= loadedCount - effectiveTrigger && loadedCount < allMessageIds.length) {
       loadWindow(allMessageIds, loadedCount);
     }
   }, [isLoadingMedia, loadedCount, allMessageIds, loadWindow, isTwoRow]);

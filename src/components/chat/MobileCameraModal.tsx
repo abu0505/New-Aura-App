@@ -47,10 +47,12 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   // Settings
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:3' | '9:16' | '16:9'>('9:16');
+  const [fpsSetting, setFpsSetting] = useState<'30' | '60'>('30');
   const [showSettings, setShowSettings] = useState(false);
 
-  // 4K device capability
+  // Hardware capability
   const [device4kSupported, setDevice4kSupported] = useState<boolean | null>(null);
+  const [device60fpsSupported, setDevice60fpsSupported] = useState<boolean | null>(null);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -125,6 +127,26 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     })();
   }, [isOpen, device4kSupported]);
 
+  // --- 60 FPS Capability Check ---
+  useEffect(() => {
+    if (!isOpen || device60fpsSupported !== null) return;
+    (async () => {
+      try {
+        if (typeof VideoEncoder === 'undefined') { setDevice60fpsSupported(false); return; }
+        const result = await VideoEncoder.isConfigSupported({
+          codec: 'avc1.42001f', // Use Baseline for broader capability check
+          width: 1920, height: 1080,
+          bitrate: 4_000_000,
+          framerate: 60,
+          hardwareAcceleration: 'prefer-hardware',
+        });
+        setDevice60fpsSupported(result.supported ?? false);
+      } catch {
+        setDevice60fpsSupported(false);
+      }
+    })();
+  }, [isOpen, device60fpsSupported]);
+
   // --- Worker lifecycle ---
   // Pre-initialize the camera worker when the modal opens so it is instantly ready.
   useEffect(() => {
@@ -174,12 +196,14 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         targetHeight = 720;
       }
 
+      const targetFps = fpsSetting === '60' ? 60 : 30;
+
       const constraints: MediaStreamConstraints = {
         video: {
           facingMode,
           width: { ideal: targetWidth },
           height: { ideal: targetHeight },
-          frameRate: { min: 30, ideal: 30, max: 30 },
+          frameRate: { min: targetFps, ideal: targetFps, max: targetFps },
           // Disable software noise suppression on video to save CPU on mid/low tier
           noiseSuppression: tier === 'high',
           ...({ resizeMode: 'crop-and-scale' } as any),
@@ -258,9 +282,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       if (enhancedUrl) URL.revokeObjectURL(enhancedUrl);
       setEnhancedUrl(null);
       setShowShimmer(false);
-      // Reset worker recording flag and 4K probe so they re-run on next open
+      // Reset worker recording flag and hardware probes so they re-run on next open
       isWorkerRecordingRef.current = false;
       setDevice4kSupported(null);
+      setDevice60fpsSupported(null);
     }
     // Release WebGL context and Web Worker when camera closes
     return () => { destroyDenoiser(); };
@@ -476,7 +501,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     const vw = video.videoWidth || 1920;
     const vh = video.videoHeight || 1080;
     const isFront = facingMode === 'user';
-    const fps = 30;
+    const fps = fpsSetting === '60' ? 60 : 30;
 
     // ── Compute source crop region ─────────────────────────────────────────
     let targetRatio: number;
@@ -649,6 +674,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     if (isRecording) return;
     // Block recording if user selected 4K on a device that can't handle it
     if (resolution === '4k' && device4kSupported === false) return;
+    // Block recording if user selected 60fps on a device that can't handle it
+    if (fpsSetting === '60' && device60fpsSupported === false) return;
+    
     startPosRef.current = { x: e.clientX, y: e.clientY };
     // Delay to differentiate tap vs long-press
     holdTimerRef.current = setTimeout(() => {
@@ -773,13 +801,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-[90] flex flex-col items-center justify-center bg-black/85 backdrop-blur-xl pointer-events-auto"
+                  className="absolute inset-0 z-[90] flex flex-col items-center justify-center bg-transparent backdrop-blur-xl pointer-events-auto"
                 >
                   <motion.div
                     initial={{ scale: 0.85, y: 20 }}
                     animate={{ scale: 1, y: 0 }}
                     transition={{ type: 'spring', damping: 20, stiffness: 280, delay: 0.05 }}
-                    className="flex flex-col items-center gap-5 px-8 text-center max-w-xs"
+                    className="flex flex-col items-center p-6 gap-5 px-8 rounded-2xl text-center max-w-xs bg-black/25 border border-primary"
                   >
                     {/* Icon */}
                     <div className="w-20 h-20 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
@@ -793,13 +821,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
                     {/* Heading */}
                     <h2 className="text-white font-bold text-xl leading-tight">
-                      Tera device 4K handle nahi kar sakta 😔
+                      Begham jii aapka device 4K handle nai kr skta
                     </h2>
 
                     {/* Description */}
                     <p className="text-white/55 text-sm leading-relaxed">
-                      Tere phone ka hardware encoder 4K (3840×2160) recording support nahi karta.
-                      1080p pe switch kar — jo bilkul equally sharp dikhegi teri screen par.
+                      Tumhare phone ka hardware encoder 4K (3840×2160) recording support nahi karta.
+                      1080p pe switch karo — jo bilkul equally sharp dikhegi aapki screen par. 💋
                     </p>
 
                     {/* CTA */}
@@ -808,6 +836,62 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                       className="mt-2 w-full py-4 rounded-2xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 active:scale-95 transition-all shadow-2xl"
                     >
                       Switch to 1080p ✨
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="text-white/30 text-xs uppercase tracking-widest hover:text-white/60 transition-colors"
+                    >
+                      Close Camera
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* ── 60 FPS UNSUPPORTED OVERLAY ────────────────────────────────────────────
+                Shows when user picks 60fps but the device encoder cannot handle it. */}
+            <AnimatePresence>
+              {fpsSetting === '60' && device60fpsSupported === false && (
+                <motion.div
+                  key="60fps-unsupported"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-[90] flex flex-col items-center justify-center bg-transparent backdrop-blur-xl pointer-events-auto"
+                >
+                  <motion.div
+                    initial={{ scale: 0.85, y: 20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    transition={{ type: 'spring', damping: 20, stiffness: 280, delay: 0.05 }}
+                    className="flex flex-col p-6 rounded-2xl items-center gap-5 px-8 text-center max-w-xs border border-primary bg-black/25"
+                  >
+                    {/* Icon */}
+                    <div className="w-20 h-20 rounded-full bg-orange-500/15 border border-orange-500/30 flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[40px] text-orange-400">slow_motion_video</span>
+                    </div>
+
+                    {/* Badge */}
+                    <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-orange-400 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded-full">
+                      60 FPS Not Supported
+                    </span>
+
+                    {/* Heading */}
+                    <h2 className="text-white font-bold text-lg leading-tight">
+                      Meri biwii tumhara phone 60 FPS pe struggle kar raha hai
+                    </h2>
+
+                    {/* Description */}
+                    <p className="text-white/55 text-sm leading-relaxed">
+                      Aapka camera sensor ya encoder ke paas 60 FPS real-time process karne ki power nahi hai.
+                      Standard 30 FPS pe switch kar0, wo bhi kaafi smooth lagegi! 💋
+                    </p>
+
+                    {/* CTA */}
+                    <button
+                      onClick={() => setFpsSetting('30')}
+                      className="mt-2 w-full py-4 rounded-2xl bg-white text-black font-bold text-sm tracking-wide hover:bg-white/90 active:scale-95 transition-all shadow-2xl"
+                    >
+                      Switch to 30 FPS ✨
                     </button>
                     <button
                       onClick={onClose}
@@ -922,6 +1006,20 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                       </div>
                     </div>
                     <div>
+                      <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2 block">Frame Rate</span>
+                      <div className="flex bg-black/30 rounded-xl p-1 mb-2">
+                        {['30', '60'].map(f => (
+                          <button
+                            key={f}
+                            onClick={() => setFpsSetting(f as any)}
+                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg uppercase tracking-wider transition-colors ${fpsSetting === f ? 'bg-primary text-background' : 'text-white/70 hover:text-white'}`}
+                          >
+                            {f} FPS
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
                       <span className="text-[10px] text-white/50 uppercase tracking-widest font-bold mb-2 block">Aspect Ratio</span>
                       <div className="grid grid-cols-2 gap-2">
                         {['1:1', '4:3', '16:9', '9:16'].map(ratio => (
@@ -957,6 +1055,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   >
                     <span className="material-symbols-outlined text-[16px]">tune</span>
                     <span className="text-xs font-bold font-mono tracking-widest">{resolution.toUpperCase()}</span>
+                    <span className="w-1 h-1 rounded-full bg-current opacity-30" />
+                    <span className="text-xs font-bold uppercase">{fpsSetting} FPS</span>
                     <span className="w-1 h-1 rounded-full bg-current opacity-30" />
                     <span className="text-xs font-bold uppercase">{aspectRatio}</span>
                   </button>

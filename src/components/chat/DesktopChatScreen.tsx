@@ -18,6 +18,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import DesktopCameraStudio from './DesktopCameraStudio';
 import { LastSeenStatus } from './LastSeenStatus';
 import { useTabNotification } from '../../hooks/useTabNotification';
+import { useCall } from '../../contexts/CallContext';
 
 
 
@@ -69,6 +70,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettings();
+  const { initiateCall } = useCall();
 
   // ── Browser Tab Notification Badge (Desktop only) ──
   // Shows "(3) AURA" / "(9+) AURA" in the tab when there are unread messages.
@@ -534,8 +536,18 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Sanctuary</span>
                 </div>
               )}
-              <span className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors">call</span>
-              <span className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors">videocam</span>
+              <span 
+                className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
+                onClick={() => initiateCall(false)}
+              >
+                call
+              </span>
+              <span 
+                className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
+                onClick={() => initiateCall(true)}
+              >
+                videocam
+              </span>
               <div className="relative" ref={pinDropdownRef}>
                 <span
                   className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
