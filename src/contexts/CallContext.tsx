@@ -43,6 +43,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [callStartTime, setCallStartTime] = useState<number | null>(null);
   const [amICaller, setAmICaller] = useState(false);
   const prevCallStateRef = useRef<CallState>('idle');
+  const currentStateRef = useRef<CallState>('idle');
+  currentStateRef.current = callState;
   const isVideoRef = useRef<boolean>(true);
 
   // Monitor callState changes to log call history
@@ -113,11 +115,11 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       switch (msg.type) {
         case 'call_request':
-          if (callState === 'idle') {
+          if (currentStateRef.current === 'idle') {
             console.log(`[WEBRTC Context] Handling incoming call request from ${msg.sender_id}`);
             setIncomingCall({ partnerId: msg.sender_id, video: msg.payload?.video ?? true });
           } else {
-            console.log(`[WEBRTC Context] Rejecting incoming call request because we are busy. state=${callState}`);
+            console.log(`[WEBRTC Context] Rejecting incoming call request because we are busy. state=${currentStateRef.current}`);
             // Already busy
             callSignaling.sendMessage({
               type: 'call_reject',
@@ -168,7 +170,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
       callSignaling.stop();
     };
-  }, [user, partner, callState]);
+  }, [user?.id, partner?.id]);
 
   const initManager = async () => {
     if (!user || !partner) return null;
