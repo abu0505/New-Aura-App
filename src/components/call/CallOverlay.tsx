@@ -86,7 +86,18 @@ export default function CallOverlay() {
     );
   }
 
-  if (callState === 'idle') return null;
+  if (callState === 'idle') {
+    if (error) {
+      return (
+        <div className="fixed inset-0 z-[9999] pointer-events-none flex items-start justify-center pt-12">
+          <div className="bg-red-500/90 text-white px-6 py-3 rounded-full text-sm font-bold tracking-widest uppercase shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-top-4">
+            {error}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex flex-col">

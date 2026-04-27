@@ -103,24 +103,31 @@ export class WebRTCManager {
     }
   }
 
-  async startLocalStream(video: boolean = true) {
+  async startLocalStream(video: boolean = true, preAcquiredStream?: MediaStream) {
     try {
-      this.localStream = await navigator.mediaDevices.getUserMedia({
-        video: video ? { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } } : false,
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      });
+      if (preAcquiredStream) {
+        this.localStream = preAcquiredStream;
+      } else {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          throw new Error('Camera access requires HTTPS or localhost');
+        }
+        this.localStream = await navigator.mediaDevices.getUserMedia({
+          video: video ? { facingMode: 'user' } : false,
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+      }
       this.options.onLocalStream(this.localStream);
       return true;
-    } catch (err) {
-      this.options.onError('Failed to access camera or microphone');
+    } catch (err: any) {
+      this.options.onError(err?.message || 'Failed to access camera or microphone');
       console.error(err);
       return false;
     }
   }
 
-  async initiateCall(video: boolean) {
+  async initiateCall(video: boolean, stream?: MediaStream) {
     if (this.callState !== 'idle') return;
-    const success = await this.startLocalStream(video);
+    const success = await this.startLocalStream(video, stream);
     if (!success) return;
 
     this.setCallState('calling');
@@ -146,8 +153,8 @@ export class WebRTCManager {
     });
   }
 
-  async acceptCall(video: boolean) {
-    const success = await this.startLocalStream(video);
+  async acceptCall(video: boolean, stream?: MediaStream) {
+    const success = await this.startLocalStream(video, stream);
     if (!success) {
       this.rejectCall();
       return;

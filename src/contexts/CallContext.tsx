@@ -157,9 +157,26 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     setIsVideoEnabled(video);
     setIsAudioEnabled(true);
+    
+    // Acquire stream immediately to preserve user gesture context for iOS Safari
+    let stream: MediaStream | undefined;
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access requires HTTPS or localhost');
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: video ? { facingMode: 'user' } : false,
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      setLocalStream(stream);
+    } catch (err: any) {
+      setError(err?.message || 'Camera access denied');
+      return; // Stop if we can't get media
+    }
+
     const mgr = await initManager();
     if (mgr) {
-      await mgr.initiateCall(video);
+      await mgr.initiateCall(video, stream);
     }
   };
 
@@ -168,9 +185,27 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     setIsVideoEnabled(incomingCall.video);
     setIsAudioEnabled(true);
+    
+    // Acquire stream immediately to preserve user gesture context for iOS Safari
+    let stream: MediaStream | undefined;
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access requires HTTPS or localhost');
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: incomingCall.video ? { facingMode: 'user' } : false,
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
+      setLocalStream(stream);
+    } catch (err: any) {
+      setError(err?.message || 'Camera access denied');
+      rejectCall();
+      return;
+    }
+
     const mgr = await initManager();
     if (mgr) {
-      await mgr.acceptCall(incomingCall.video);
+      await mgr.acceptCall(incomingCall.video, stream);
     }
     setIncomingCall(null);
   };
