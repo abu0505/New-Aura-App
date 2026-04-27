@@ -779,7 +779,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                     initial={{ scale: 0.85, y: 20 }}
                     animate={{ scale: 1, y: 0 }}
                     transition={{ type: 'spring', damping: 20, stiffness: 280, delay: 0.05 }}
-                    className="flex flex-col items-center gap-5 px-8 text-center max-w-xs"
+                    className="flex flex-col items-center gap-5 px-8 py-12 text-center max-w-xs bg-black/40 backdrop-blur-2xl rounded-[40px] border border-primary/50 shadow-2xl"
                   >
                     {/* Icon */}
                     <div className="w-20 h-20 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
