@@ -49,6 +49,7 @@ export class WebRTCManager {
 
     this.peerConnection.onicecandidate = (event) => {
       if (event.candidate) {
+        console.log(`[WEBRTC Manager] Generated ICE candidate, sending to partner`);
         callSignaling.sendMessage({
           type: 'ice_candidate',
           sender_id: this.myUserId,
@@ -59,6 +60,7 @@ export class WebRTCManager {
     };
 
     this.peerConnection.ontrack = (event) => {
+      console.log(`[WEBRTC Manager] Received remote track: ${event.track.kind}`);
       if (!this.remoteStream) {
         this.remoteStream = new MediaStream();
         this.options.onRemoteStream(this.remoteStream);
@@ -67,6 +69,7 @@ export class WebRTCManager {
     };
 
     this.peerConnection.onconnectionstatechange = () => {
+      console.log(`[WEBRTC Manager] Connection state changed to: ${this.peerConnection?.connectionState}`);
       switch (this.peerConnection?.connectionState) {
         case 'connected':
           this.setCallState('connected');
@@ -126,7 +129,11 @@ export class WebRTCManager {
   }
 
   async initiateCall(video: boolean, stream?: MediaStream) {
-    if (this.callState !== 'idle') return;
+    console.log(`[WEBRTC Manager] initiateCall(video=${video})`);
+    if (this.callState !== 'idle') {
+      console.warn(`[WEBRTC Manager] initiateCall called but state is not idle: ${this.callState}`);
+      return;
+    }
     const success = await this.startLocalStream(video, stream);
     if (!success) return;
 
@@ -145,6 +152,7 @@ export class WebRTCManager {
     // We can hook this into the 'track' event later, but wait, RTCPeerConnection receiver
     // can be accessed when transceivers are created.
 
+    console.log(`[WEBRTC Manager] Sending call_request...`);
     callSignaling.sendMessage({
       type: 'call_request',
       sender_id: this.myUserId,
@@ -154,8 +162,10 @@ export class WebRTCManager {
   }
 
   async acceptCall(video: boolean, stream?: MediaStream) {
+    console.log(`[WEBRTC Manager] acceptCall(video=${video})`);
     const success = await this.startLocalStream(video, stream);
     if (!success) {
+      console.error(`[WEBRTC Manager] Failed to start local stream, rejecting call`);
       this.rejectCall();
       return;
     }
@@ -170,6 +180,7 @@ export class WebRTCManager {
       }
     });
 
+    console.log(`[WEBRTC Manager] Sending call_accept...`);
     callSignaling.sendMessage({
       type: 'call_accept',
       sender_id: this.myUserId,
@@ -178,6 +189,7 @@ export class WebRTCManager {
   }
 
   rejectCall() {
+    console.log(`[WEBRTC Manager] rejectCall()`);
     callSignaling.sendMessage({
       type: 'call_reject',
       sender_id: this.myUserId,
@@ -187,14 +199,17 @@ export class WebRTCManager {
   }
 
   async handleAccept() {
+    console.log(`[WEBRTC Manager] handleAccept()`);
     this.setCallState('connecting');
     
     if (!this.peerConnection) return;
     
     try {
+      console.log(`[WEBRTC Manager] Creating offer...`);
       const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(offer);
       
+      console.log(`[WEBRTC Manager] Sending sdp_offer...`);
       callSignaling.sendMessage({
         type: 'sdp_offer',
         sender_id: this.myUserId,
@@ -207,16 +222,18 @@ export class WebRTCManager {
         this.applyTransform(receiver, 'decrypt');
       });
     } catch (e) {
-      console.error('Failed to create offer', e);
+      console.error('[WEBRTC Manager] Failed to create offer', e);
       this.options.onError('Failed to establish connection');
     }
   }
 
   async handleOffer(offer: RTCSessionDescriptionInit) {
+    console.log(`[WEBRTC Manager] handleOffer() received`);
     if (!this.peerConnection) return;
     
     try {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+      console.log(`[WEBRTC Manager] Creating answer...`);
       const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(answer);
 
@@ -225,6 +242,7 @@ export class WebRTCManager {
         this.applyTransform(receiver, 'decrypt');
       });
       
+      console.log(`[WEBRTC Manager] Sending sdp_answer...`);
       callSignaling.sendMessage({
         type: 'sdp_answer',
         sender_id: this.myUserId,
@@ -232,25 +250,27 @@ export class WebRTCManager {
         payload: answer,
       });
     } catch (e) {
-      console.error('Failed to handle offer', e);
+      console.error('[WEBRTC Manager] Failed to handle offer', e);
     }
   }
 
   async handleAnswer(answer: RTCSessionDescriptionInit) {
+    console.log(`[WEBRTC Manager] handleAnswer() received`);
     if (!this.peerConnection) return;
     try {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
     } catch (e) {
-      console.error('Failed to handle answer', e);
+      console.error('[WEBRTC Manager] Failed to handle answer', e);
     }
   }
 
   async handleIceCandidate(candidate: RTCIceCandidateInit) {
+    console.log(`[WEBRTC Manager] handleIceCandidate() received`);
     if (!this.peerConnection) return;
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (e) {
-      console.error('Failed to add ICE candidate', e);
+      console.error('[WEBRTC Manager] Failed to add ICE candidate', e);
     }
   }
 
@@ -271,7 +291,9 @@ export class WebRTCManager {
   }
 
   endCall(notifyPartner: boolean = true) {
+    console.log(`[WEBRTC Manager] endCall(notifyPartner=${notifyPartner})`);
     if (notifyPartner) {
+      console.log(`[WEBRTC Manager] Sending call_end...`);
       callSignaling.sendMessage({
         type: 'call_end',
         sender_id: this.myUserId,
