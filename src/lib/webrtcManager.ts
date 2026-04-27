@@ -83,6 +83,8 @@ export class WebRTCManager {
     };
 
     // Setup Encoded Transforms if supported and sessionKey is present
+    // DISABLED: Temporarily disabled E2EE worker for mobile compatibility
+    /*
     if (this.sessionKey && 'RTCRtpScriptTransform' in window) {
       try {
         this.worker = new Worker(new URL('../workers/callEncryptionWorker.ts', import.meta.url), { type: 'module' });
@@ -91,9 +93,13 @@ export class WebRTCManager {
         console.warn('Could not initialize encryption worker', e);
       }
     }
+    */
   }
 
   private applyTransform(senderOrReceiver: RTCRtpSender | RTCRtpReceiver, operation: 'encrypt' | 'decrypt') {
+    // DISABLED: Temporarily disabled E2EE worker for mobile compatibility
+    return;
+    /*
     if (!this.worker || !('RTCRtpScriptTransform' in window)) return;
     
     try {
@@ -104,6 +110,7 @@ export class WebRTCManager {
     } catch (e) {
       console.warn('Failed to apply RTCRtpScriptTransform:', e);
     }
+    */
   }
 
   async startLocalStream(video: boolean = true, preAcquiredStream?: MediaStream) {
