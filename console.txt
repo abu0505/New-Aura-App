@@ -1,219 +1,109 @@
-react-dom_client.js?v=25ef15d7:14338 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-CallOverlay.tsx:101 [Intervention] Blocked call to navigator.vibrate because user hasn't tapped on the frame or any embedded frame yet: https://www.chromestatus.com/feature/5644273861001216.
-(anonymous) @ CallOverlay.tsx:101
-react_stack_bottom_frame @ react-dom_client.js?v=25ef15d7:12908
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-commitHookEffectListUnmount @ react-dom_client.js?v=25ef15d7:6642
-commitHookPassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:6655
-disconnectPassiveEffect @ react-dom_client.js?v=25ef15d7:7842
-recursivelyTraverseDisconnectPassiveEffects @ react-dom_client.js?v=25ef15d7:7834
-disconnectPassiveEffect @ react-dom_client.js?v=25ef15d7:7849
-recursivelyTraverseDisconnectPassiveEffects @ react-dom_client.js?v=25ef15d7:7834
-disconnectPassiveEffect @ react-dom_client.js?v=25ef15d7:7843
-doubleInvokeEffectsOnFiber @ react-dom_client.js?v=25ef15d7:8924
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8917
-commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=25ef15d7:8932
-flushPassiveEffects @ react-dom_client.js?v=25ef15d7:8809
-(anonymous) @ react-dom_client.js?v=25ef15d7:8562
-performWorkUntilDeadline @ react-dom_client.js?v=25ef15d7:36
-<CallOverlay>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=25ef15d7:193
-InnerApp @ App.tsx:257
-react_stack_bottom_frame @ react-dom_client.js?v=25ef15d7:12868
-renderWithHooksAgain @ react-dom_client.js?v=25ef15d7:4268
-renderWithHooks @ react-dom_client.js?v=25ef15d7:4219
-updateFunctionComponent @ react-dom_client.js?v=25ef15d7:5569
-beginWork @ react-dom_client.js?v=25ef15d7:6140
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-performUnitOfWork @ react-dom_client.js?v=25ef15d7:8429
-workLoopSync @ react-dom_client.js?v=25ef15d7:8325
-renderRootSync @ react-dom_client.js?v=25ef15d7:8309
-performWorkOnRoot @ react-dom_client.js?v=25ef15d7:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=25ef15d7:9059
-performWorkUntilDeadline @ react-dom_client.js?v=25ef15d7:36
-<InnerApp>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=25ef15d7:193
-App @ App.tsx:312
-react_stack_bottom_frame @ react-dom_client.js?v=25ef15d7:12868
-renderWithHooksAgain @ react-dom_client.js?v=25ef15d7:4268
-renderWithHooks @ react-dom_client.js?v=25ef15d7:4219
-updateFunctionComponent @ react-dom_client.js?v=25ef15d7:5569
-beginWork @ react-dom_client.js?v=25ef15d7:6140
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-performUnitOfWork @ react-dom_client.js?v=25ef15d7:8429
-workLoopSync @ react-dom_client.js?v=25ef15d7:8325
-renderRootSync @ react-dom_client.js?v=25ef15d7:8309
-performWorkOnRoot @ react-dom_client.js?v=25ef15d7:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=25ef15d7:9059
-performWorkUntilDeadline @ react-dom_client.js?v=25ef15d7:36
-<App>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=25ef15d7:193
-(anonymous) @ main.tsx:29
-callSignaling.ts:30 [WEBRTC Signaling] Starting signaling for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868. Current status: connected=false
-callSignaling.ts:37 [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
-callSignaling.ts:98 [WEBRTC Signaling] Stopping signaling and removing channel.
-callSignaling.ts:59 [WEBRTC Signaling] Channel status changed to: CLOSED
-callSignaling.ts:65 [WEBRTC Signaling] Disconnected due to CLOSED
-(anonymous) @ callSignaling.ts:65
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:7398
-trigger @ @supabase_supabase-js.js?v=25ef15d7:5882
-onClose @ @supabase_supabase-js.js?v=25ef15d7:5818
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:5821
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:5544
-matchReceive @ @supabase_supabase-js.js?v=25ef15d7:5544
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:5565
-trigger @ @supabase_supabase-js.js?v=25ef15d7:5882
-trigger @ @supabase_supabase-js.js?v=25ef15d7:5578
-leave @ @supabase_supabase-js.js?v=25ef15d7:5823
-unsubscribe @ @supabase_supabase-js.js?v=25ef15d7:7212
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:7779
-unsubscribe @ @supabase_supabase-js.js?v=25ef15d7:7778
-removeChannel @ @supabase_supabase-js.js?v=25ef15d7:8204
-removeChannel @ @supabase_supabase-js.js?v=25ef15d7:17485
-stop @ callSignaling.ts:100
-(anonymous) @ CallContext.tsx:171
-react_stack_bottom_frame @ react-dom_client.js?v=25ef15d7:12908
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-commitHookEffectListUnmount @ react-dom_client.js?v=25ef15d7:6642
-commitHookPassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:6655
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7798
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7802
-flushPassiveEffects @ react-dom_client.js?v=25ef15d7:8804
-flushPendingEffects @ react-dom_client.js?v=25ef15d7:8769
-performSyncWorkOnRoot @ react-dom_client.js?v=25ef15d7:9064
-flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=25ef15d7:8984
-flushSyncWork$1 @ react-dom_client.js?v=25ef15d7:8122
-batchedUpdates$1 @ react-dom_client.js?v=25ef15d7:2047
-dispatchEventForPluginEventSystem @ react-dom_client.js?v=25ef15d7:9240
-dispatchEvent @ react-dom_client.js?v=25ef15d7:11319
-dispatchDiscreteEvent @ react-dom_client.js?v=25ef15d7:11301
-<CallProvider>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=25ef15d7:193
-App @ App.tsx:311
-react_stack_bottom_frame @ react-dom_client.js?v=25ef15d7:12868
-renderWithHooksAgain @ react-dom_client.js?v=25ef15d7:4268
-renderWithHooks @ react-dom_client.js?v=25ef15d7:4219
-updateFunctionComponent @ react-dom_client.js?v=25ef15d7:5569
-beginWork @ react-dom_client.js?v=25ef15d7:6140
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-performUnitOfWork @ react-dom_client.js?v=25ef15d7:8429
-workLoopSync @ react-dom_client.js?v=25ef15d7:8325
-renderRootSync @ react-dom_client.js?v=25ef15d7:8309
-performWorkOnRoot @ react-dom_client.js?v=25ef15d7:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=25ef15d7:9059
-performWorkUntilDeadline @ react-dom_client.js?v=25ef15d7:36
-<App>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=25ef15d7:193
-(anonymous) @ main.tsx:29
-callSignaling.ts:71 [WEBRTC Signaling] Clearing message queue. Had 0 messages.
-callSignaling.ts:30 [WEBRTC Signaling] Starting signaling for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868. Current status: connected=false
-callSignaling.ts:37 [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
-callSignaling.ts:59 [WEBRTC Signaling] Channel status changed to: SUBSCRIBED
-login#:1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
-@supabase_supabase-js.js?v=25ef15d7:17108  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 net::ERR_FAILED 502 (Bad Gateway)
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:17108
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:17122
-callSignaling.ts:98 [WEBRTC Signaling] Stopping signaling and removing channel.
-callSignaling.ts:59 [WEBRTC Signaling] Channel status changed to: CLOSED
-callSignaling.ts:65 [WEBRTC Signaling] Disconnected due to CLOSED
-(anonymous) @ callSignaling.ts:65
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:7398
-trigger @ @supabase_supabase-js.js?v=25ef15d7:5882
-onClose @ @supabase_supabase-js.js?v=25ef15d7:5818
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:5821
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:5544
-matchReceive @ @supabase_supabase-js.js?v=25ef15d7:5544
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:5565
-trigger @ @supabase_supabase-js.js?v=25ef15d7:5882
-trigger @ @supabase_supabase-js.js?v=25ef15d7:5578
-leave @ @supabase_supabase-js.js?v=25ef15d7:5823
-unsubscribe @ @supabase_supabase-js.js?v=25ef15d7:7212
-(anonymous) @ @supabase_supabase-js.js?v=25ef15d7:7779
-unsubscribe @ @supabase_supabase-js.js?v=25ef15d7:7778
-removeChannel @ @supabase_supabase-js.js?v=25ef15d7:8204
-removeChannel @ @supabase_supabase-js.js?v=25ef15d7:17485
-stop @ callSignaling.ts:100
-(anonymous) @ CallContext.tsx:171
-react_stack_bottom_frame @ react-dom_client.js?v=25ef15d7:12908
-runWithFiberInDEV @ react-dom_client.js?v=25ef15d7:851
-commitHookEffectListUnmount @ react-dom_client.js?v=25ef15d7:6642
-commitHookPassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:6655
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7798
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7797
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7814
-recursivelyTraversePassiveUnmountEffects @ react-dom_client.js?v=25ef15d7:7789
-commitPassiveUnmountOnFiber @ react-dom_client.js?v=25ef15d7:7802
-flushPassiveEffects @ react-dom_client.js?v=25ef15d7:8804
-(anonymous) @ react-dom_client.js?v=25ef15d7:8562
-performWorkUntilDeadline @ react-dom_client.js?v=25ef15d7:36
-callSignaling.ts:71 [WEBRTC Signaling] Clearing message queue. Had 0 messages.
-callSignaling.ts:30 [WEBRTC Signaling] Starting signaling for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868. Current status: connected=false
-callSignaling.ts:37 [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
-callSignaling.ts:59 [WEBRTC Signaling] Channel status changed to: SUBSCRIBED
-CallContext.tsx:225 [WEBRTC Context] initiateCall(video=false) requested
-CallContext.tsx:238 [WEBRTC Context] Requesting getUserMedia
-CallContext.tsx:243 [WEBRTC Context] getUserMedia success
-CallContext.tsx:253 [WEBRTC Context] Manager initialized, calling initiateCall on manager
-webrtcManager.ts:132 [WEBRTC Manager] initiateCall(video=false)
-webrtcManager.ts:155 [WEBRTC Manager] Sending call_request...
-callSignaling.ts:129 [WEBRTC Signaling] Sending message: call_request to 8bb51234-4a86-470f-9f7d-96a95f551952
-CallContext.tsx:311 [WEBRTC Context] endCall() requested
-webrtcManager.ts:294 [WEBRTC Manager] endCall(notifyPartner=true)
-webrtcManager.ts:296 [WEBRTC Manager] Sending call_end...
-callSignaling.ts:129 [WEBRTC Signaling] Sending message: call_end to 8bb51234-4a86-470f-9f7d-96a95f551952
-callSignaling.ts:71 [WEBRTC Signaling] Clearing message queue. Had 0 messages.
-CallContext.tsx:225 [WEBRTC Context] initiateCall(video=true) requested
-CallContext.tsx:238 [WEBRTC Context] Requesting getUserMedia
-CallContext.tsx:243 [WEBRTC Context] getUserMedia success
-CallContext.tsx:253 [WEBRTC Context] Manager initialized, calling initiateCall on manager
-webrtcManager.ts:132 [WEBRTC Manager] initiateCall(video=true)
-webrtcManager.ts:155 [WEBRTC Manager] Sending call_request...
-callSignaling.ts:129 [WEBRTC Signaling] Sending message: call_request to 8bb51234-4a86-470f-9f7d-96a95f551952
-CallContext.tsx:311 [WEBRTC Context] endCall() requested
-webrtcManager.ts:294 [WEBRTC Manager] endCall(notifyPartner=true)
-webrtcManager.ts:296 [WEBRTC Manager] Sending call_end...
-callSignaling.ts:129 [WEBRTC Signaling] Sending message: call_end to 8bb51234-4a86-470f-9f7d-96a95f551952
-callSignaling.ts:71 [WEBRTC Signaling] Clearing message queue. Had 0 messages.
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Starting signaling for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868. Current status: connected=false
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Channel status changed to: SUBSCRIBED
+index-WZ7OFfR5.js:40 [WEBRTC Context] initiateCall(video=true) requested
+index-WZ7OFfR5.js:40 [WEBRTC Context] Requesting getUserMedia
+index-WZ7OFfR5.js:40 [WEBRTC Context] getUserMedia success
+index-WZ7OFfR5.js:40 [WEBRTC Context] Manager initialized, calling initiateCall on manager
+index-WZ7OFfR5.js:40 [WEBRTC Manager] initiateCall(video=true)
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Sending call_request...
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: call_request to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: call_accept
+index-WZ7OFfR5.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleAccept()
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Creating offer...
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Sending sdp_offer...
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: sdp_offer to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: call_accept
+index-WZ7OFfR5.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleAccept()
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Creating offer...
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Sending sdp_offer...
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: sdp_offer to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: call_accept
+index-WZ7OFfR5.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleAccept()
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Creating offer...
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Sending sdp_offer...
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Sending message: sdp_offer to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: sdp_answer
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: sdp_answer
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received SDP answer.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleAnswer() received
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: ice_candidate
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received ICE candidate.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Received remote track: audio
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Received remote track: video
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Connection state changed to: connecting
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: sdp_answer
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: sdp_answer
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received SDP answer.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleAnswer() received
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: ice_candidate
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received ICE candidate.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: ice_candidate
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received ICE candidate.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Failed to handle answer InvalidStateError: Failed to execute 'setRemoteDescription' on 'RTCPeerConnection': Failed to set remote answer sdp: Called in wrong state: stable
+handleAnswer @ index-WZ7OFfR5.js:40
+await in handleAnswer
+(anonymous) @ index-WZ7OFfR5.js:40
+(anonymous) @ index-WZ7OFfR5.js:40
+(anonymous) @ index-WZ7OFfR5.js:40
+trigger @ encryption-C835slEB.js:3
+(anonymous) @ encryption-C835slEB.js:4
+decode @ encryption-C835slEB.js:3
+onConnMessage @ encryption-C835slEB.js:4
+conn.onmessage @ encryption-C835slEB.js:4
+index-WZ7OFfR5.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: sdp_answer
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received message: sdp_answer
+index-WZ7OFfR5.js:40 [WEBRTC Context] Received SDP answer.
+index-WZ7OFfR5.js:40 [WEBRTC Manager] handleAnswer() received
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Failed to handle answer InvalidStateError: Failed to execute 'setRemoteDescription' on 'RTCPeerConnection': Failed to set remote answer sdp: Called in wrong state: stable
+handleAnswer @ index-WZ7OFfR5.js:40
+await in handleAnswer
+(anonymous) @ index-WZ7OFfR5.js:40
+(anonymous) @ index-WZ7OFfR5.js:40
+(anonymous) @ index-WZ7OFfR5.js:40
+trigger @ encryption-C835slEB.js:3
+(anonymous) @ encryption-C835slEB.js:4
+decode @ encryption-C835slEB.js:3
+onConnMessage @ encryption-C835slEB.js:4
+conn.onmessage @ encryption-C835slEB.js:4
+index-WZ7OFfR5.js:40 [WEBRTC Manager] Connection state changed to: connected

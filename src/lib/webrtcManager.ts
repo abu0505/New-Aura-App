@@ -203,6 +203,10 @@ export class WebRTCManager {
     this.setCallState('connecting');
     
     if (!this.peerConnection) return;
+    if (this.peerConnection.signalingState !== 'stable') {
+      console.warn(`[WEBRTC Manager] Ignoring handleAccept because signalingState is ${this.peerConnection.signalingState}`);
+      return;
+    }
     
     try {
       console.log(`[WEBRTC Manager] Creating offer...`);
@@ -230,6 +234,10 @@ export class WebRTCManager {
   async handleOffer(offer: RTCSessionDescriptionInit) {
     console.log(`[WEBRTC Manager] handleOffer() received`);
     if (!this.peerConnection) return;
+    if (this.peerConnection.signalingState !== 'stable') {
+      console.warn(`[WEBRTC Manager] Ignoring handleOffer because signalingState is ${this.peerConnection.signalingState}`);
+      return;
+    }
     
     try {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
@@ -257,6 +265,10 @@ export class WebRTCManager {
   async handleAnswer(answer: RTCSessionDescriptionInit) {
     console.log(`[WEBRTC Manager] handleAnswer() received`);
     if (!this.peerConnection) return;
+    if (this.peerConnection.signalingState !== 'have-local-offer') {
+      console.warn(`[WEBRTC Manager] Ignoring handleAnswer because signalingState is ${this.peerConnection.signalingState}`);
+      return;
+    }
     try {
       await this.peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
     } catch (e) {
