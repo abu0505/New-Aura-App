@@ -695,6 +695,56 @@ function ChatBubble({
   // don't render an empty bubble (unless it's a media/location type which handle their own loading)
   if ((!message.type || message.type === 'text') && !message.decrypted_content && !message.is_deleted_for_everyone) return null;
 
+  // Render Call History
+  const callMatch = message.decrypted_content?.match(/^\[CALL:(video|audio):(missed|answered):(\d+)\]$/);
+  if (callMatch) {
+    const [, callType, status, durationStr] = callMatch;
+    const duration = parseInt(durationStr, 10);
+    
+    const formatDuration = (secs: number) => {
+      const m = Math.floor(secs / 60);
+      const s = secs % 60;
+      if (m > 0) return `${m}m ${s}s`;
+      return `${s}s`;
+    };
+
+    const isMissed = status === 'missed';
+    
+    return (
+      <div 
+        ref={bubbleRef}
+        data-message-id={message.id}
+        className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} my-2 z-10`}
+      >
+        <div className={`flex items-center gap-4 px-5 py-3 rounded-2xl border ${isMine ? 'bg-primary/10 border-primary/20 flex-row-reverse text-right' : 'bg-aura-bg-elevated border-white/5 shadow-lg text-left'} backdrop-blur-md cursor-default`}>
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 shadow-inner ${isMissed ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'}`}>
+            <span className="material-symbols-outlined text-[24px]">
+              {callType === 'video' ? (isMissed ? 'videocam_off' : 'videocam') : (isMissed ? 'phone_missed' : 'call')}
+            </span>
+          </div>
+          <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+            <span className="text-sm font-bold text-aura-text-primary tracking-wide">
+              {callType === 'video' ? 'Sanctuary Video' : 'Sanctuary Voice'}
+            </span>
+            <span className={`text-[11px] font-label uppercase tracking-widest mt-0.5 ${isMissed ? 'text-red-400' : 'text-emerald-400'}`}>
+              {isMissed ? (isMine ? 'Unanswered' : 'Missed Call') : `${formatDuration(duration)} duration`}
+            </span>
+          </div>
+          <div className={`flex flex-col justify-between h-full py-1 ${isMine ? 'mr-4 items-start' : 'ml-4 items-end'}`}>
+            <span className="text-[10px] font-label tracking-widest text-aura-text-secondary opacity-60">
+              {time}
+            </span>
+            {isMine && (
+              <span className={`material-symbols-outlined text-[14px] mt-1 ${message.is_read ? 'text-blue-400' : 'text-aura-text-primary/30'}`}>
+                {message.is_read ? 'done_all' : (message.is_delivered ? 'done_all' : 'check')}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       ref={bubbleRef}

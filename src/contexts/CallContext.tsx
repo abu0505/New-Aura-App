@@ -6,6 +6,8 @@ import type { CallState } from '../lib/webrtcManager';
 import { deriveCallSessionKey } from '../lib/callEncryption';
 import { useAuth } from './AuthContext';
 import { usePartner } from '../hooks/usePartner';
+import { supabase } from '../lib/supabase';
+import { getStoredKeyPair, encryptMessage, decodeBase64, encodeBase64 } from '../lib/encryption';
 
 interface CallContextType {
   callState: CallState;
@@ -38,6 +40,56 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
 
   const webrtcManagerRef = useRef<WebRTCManager | null>(null);
+  const [callStartTime, setCallStartTime] = useState<number | null>(null);
+  const [amICaller, setAmICaller] = useState(false);
+  const prevCallStateRef = useRef<CallState>('idle');
+  const isVideoRef = useRef<boolean>(true);
+
+  // Monitor callState changes to log call history
+  useEffect(() => {
+    if (callState === 'connected' && prevCallStateRef.current !== 'connected') {
+      setCallStartTime(Date.now());
+    }
+
+    if (callState === 'idle' && prevCallStateRef.current !== 'idle') {
+      if (amICaller) {
+        let status = 'missed';
+        let duration = 0;
+        
+        if (prevCallStateRef.current === 'connected' && callStartTime) {
+          status = 'answered';
+          duration = Math.floor((Date.now() - callStartTime) / 1000);
+        } else {
+          status = 'missed';
+        }
+
+        const logHistory = async () => {
+          if (!user || !partner?.public_key) return;
+          const myKeyPair = getStoredKeyPair();
+          if (!myKeyPair) return;
+
+          const text = `[CALL:${isVideoRef.current ? 'video' : 'audio'}:${status}:${duration}]`;
+          const encrypted = encryptMessage(text, decodeBase64(partner.public_key), myKeyPair.secretKey);
+          
+          await supabase.from('messages').insert({
+            id: crypto.randomUUID(),
+            sender_id: user.id,
+            receiver_id: partner.id,
+            encrypted_content: encrypted.ciphertext,
+            nonce: encrypted.nonce,
+            type: 'text',
+            sender_public_key: encodeBase64(myKeyPair.publicKey),
+          });
+        };
+        logHistory();
+      }
+      
+      setCallStartTime(null);
+      setAmICaller(false);
+    }
+
+    prevCallStateRef.current = callState;
+  }, [callState, amICaller, callStartTime]);
 
   useEffect(() => {
     if (!user || !partner) return;
@@ -157,6 +209,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     setIsVideoEnabled(video);
     setIsAudioEnabled(true);
+    setAmICaller(true);
+    isVideoRef.current = video;
     
     // Acquire stream immediately to preserve user gesture context for iOS Safari
     let stream: MediaStream | undefined;

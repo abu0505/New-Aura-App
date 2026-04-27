@@ -25,17 +25,85 @@ export default function CallOverlay() {
 
   // Auto-play local stream
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
+    if (localVideoRef.current && localStream && localVideoRef.current.srcObject !== localStream) {
       localVideoRef.current.srcObject = localStream;
     }
-  }, [localStream]);
+  }, [localStream, callState]);
 
   // Auto-play remote stream
   useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
+    if (remoteVideoRef.current && remoteStream && remoteVideoRef.current.srcObject !== remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
     }
-  }, [remoteStream]);
+  }, [remoteStream, callState]);
+
+  // Handle Ringtone and Vibration for incoming calls
+  useEffect(() => {
+    let audioCtx: AudioContext | null = null;
+    let vibrateInterval: number | ReturnType<typeof setInterval> | null = null;
+    let ringInterval: number | ReturnType<typeof setInterval> | null = null;
+
+    if (incomingCall && callState === 'idle') {
+      // Vibrate if supported and online (PWA/Android only typically)
+      if ('vibrate' in navigator) {
+        navigator.vibrate([400, 200, 400, 1000]);
+        vibrateInterval = setInterval(() => {
+          navigator.vibrate([400, 200, 400, 1000]);
+        }, 2000);
+      }
+
+      // Play Synthetic Ringtone
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+          
+          const playRingPattern = () => {
+            if (!audioCtx || audioCtx.state === 'closed') return;
+            const t = audioCtx.currentTime;
+            
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            // A pleasant double-tone ringing sound
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc1.frequency.setValueAtTime(440, t); 
+            osc2.frequency.setValueAtTime(480, t); 
+            
+            gainNode.gain.setValueAtTime(0, t);
+            gainNode.gain.linearRampToValueAtTime(0.15, t + 0.1);
+            gainNode.gain.setValueAtTime(0.15, t + 0.8);
+            gainNode.gain.linearRampToValueAtTime(0, t + 1.0);
+            
+            osc1.connect(gainNode);
+            osc2.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            osc1.start(t);
+            osc2.start(t);
+            osc1.stop(t + 1.0);
+            osc2.stop(t + 1.0);
+          };
+
+          playRingPattern();
+          ringInterval = setInterval(playRingPattern, 2000);
+        }
+      } catch (e) {
+        console.warn('Web Audio API not supported or autoplay blocked');
+      }
+    }
+
+    return () => {
+      if (vibrateInterval) clearInterval(vibrateInterval);
+      if (ringInterval) clearInterval(ringInterval);
+      if ('vibrate' in navigator) navigator.vibrate(0);
+      if (audioCtx && audioCtx.state !== 'closed') {
+        audioCtx.close().catch(() => {});
+      }
+    };
+  }, [incomingCall, callState]);
 
   if (!partner) return null;
 
@@ -52,20 +120,29 @@ export default function CallOverlay() {
             />
         </div>
         <div className="relative z-10 flex flex-col items-center animate-in fade-in zoom-in duration-500">
-          <div className="w-32 h-32 rounded-full border-4 border-[var(--gold)] overflow-hidden shadow-[0_0_50px_rgba(201,169,110,0.5)] mb-6 animate-pulse">
-             <EncryptedImage
-              url={partner.avatar_url}
-              encryptionKey={partner.avatar_key}
-              nonce={partner.avatar_nonce}
-              alt="Partner Avatar"
-              className="w-full h-full object-cover"
-              placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=000000`}
-            />
+          <div className="relative mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-primary/30 animate-ping shadow-[0_0_50px_rgba(201,169,110,0.5)]"></div>
+            <div className="w-32 h-32 rounded-full border-4 border-[var(--gold)] overflow-hidden relative z-10">
+               <EncryptedImage
+                url={partner.avatar_url}
+                encryptionKey={partner.avatar_key}
+                nonce={partner.avatar_nonce}
+                alt="Partner Avatar"
+                className="w-full h-full object-cover"
+                placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=000000`}
+              />
+            </div>
           </div>
-          <h2 className="text-3xl font-serif text-white mb-2">{partner.display_name || 'Your Partner'}</h2>
-          <p className="text-[var(--gold)] font-label tracking-[0.2em] uppercase text-sm mb-12">
-            Incoming {incomingCall.video ? 'Video' : 'Voice'} Call...
-          </p>
+          <h2 className="text-3xl font-serif text-white mb-3">{partner.display_name || 'Your Partner'}</h2>
+          
+          <div className="flex items-center gap-3 mb-12 bg-black/40 px-6 py-2.5 rounded-full border border-white/10 backdrop-blur-md">
+            <span className={`material-symbols-outlined text-2xl ${incomingCall.video ? 'text-primary' : 'text-emerald-400'} animate-pulse`}>
+              {incomingCall.video ? 'videocam' : 'call'}
+            </span>
+            <p className={`font-label tracking-[0.2em] uppercase text-xs font-bold ${incomingCall.video ? 'text-primary' : 'text-emerald-400'}`}>
+              Sanctuary {incomingCall.video ? 'Video' : 'Voice'} Call...
+            </p>
+          </div>
           
           <div className="flex gap-8">
             <button 

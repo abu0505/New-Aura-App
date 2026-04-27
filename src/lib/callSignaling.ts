@@ -24,6 +24,7 @@ class CallSignaling {
   private handlers: Set<CallMessageHandler> = new Set();
   private isConnected = false;
   private myUserId: string | null = null;
+  private messageQueue: CallMessage[] = [];
 
   start(userId: string) {
     if (this.isConnected && this.channel) return;
@@ -49,10 +50,29 @@ class CallSignaling {
     this.channel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         this.isConnected = true;
+        this.flushQueue();
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
         this.isConnected = false;
       }
     });
+  }
+
+  private async flushQueue() {
+    if (!this.channel || !this.isConnected) return;
+    while (this.messageQueue.length > 0) {
+      const msg = this.messageQueue.shift();
+      if (msg) {
+        try {
+          await this.channel.send({
+            type: 'broadcast',
+            event: 'call-message',
+            payload: msg,
+          });
+        } catch (e) {
+          console.error('Failed to flush message', e);
+        }
+      }
+    }
   }
 
   stop() {
@@ -73,7 +93,13 @@ class CallSignaling {
 
   async sendMessage(message: CallMessage) {
     if (!this.channel || !this.isConnected) {
-      console.warn('CallSignaling is not connected. Cannot send message.');
+      console.warn('CallSignaling is not connected. Queuing message.');
+      this.messageQueue.push(message);
+      
+      // Attempt reconnection if we dropped completely
+      if (!this.channel && this.myUserId) {
+        this.start(this.myUserId);
+      }
       return;
     }
 
