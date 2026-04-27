@@ -1,8 +1,6 @@
 /// <reference lib="webworker" />
 
 let cryptoKey: CryptoKey | null = null;
-let isEncrypting = false;
-let isDecrypting = false;
 
 // We need a counter for IV/Nonce to prevent replay attacks
 let sendCounter = 0;
@@ -33,7 +31,6 @@ self.onmessage = async (event: MessageEvent) => {
 
         try {
           if (operation === 'encrypt') {
-            isEncrypting = true;
             // Create IV from counter
             const iv = new Uint8Array(12);
             new DataView(iv.buffer).setUint32(8, ++sendCounter, false);
@@ -53,7 +50,6 @@ self.onmessage = async (event: MessageEvent) => {
             chunk.data = payload.buffer;
             controller.enqueue(chunk);
           } else if (operation === 'decrypt') {
-            isDecrypting = true;
             const data = new Uint8Array(chunk.data);
             
             // Minimum size: 12 bytes IV + 16 bytes auth tag
