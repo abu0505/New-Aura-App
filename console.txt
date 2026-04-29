@@ -1,6 +1,13 @@
+------ this is from my side -------
+
+sw.js:12 [Service Worker] Push event received with data: Object
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Starting signaling for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868. Current status: connected=false
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Channel status changed to: SUBSCRIBED
+sw.js:12 [Service Worker] Push event received with data: Object
+sw.js:12 [Service Worker] Push event received with data: {messageId: '9fd16a43-9dc8-491c-9d08-dee0b0502313', senderId: '8bb51234-4a86-470f-9f7d-96a95f551952', senderName: 'Testinggg', body: 'Love is calling you back 📱', url: '/'}
+sw.js:12 [Service Worker] Push event received with data: {messageId: 'b67dd6ee-3970-41e3-be02-2c853cd225f9', senderId: '8bb51234-4a86-470f-9f7d-96a95f551952', senderName: 'Testinggg', body: 'A gentle knock on your heart 💛', url: '/'}
+sw.js:12 [Service Worker] Push event received with data: {messageId: 'e059b09b-9967-4b54-965d-720d3039cb32', senderId: '8bb51234-4a86-470f-9f7d-96a95f551952', senderName: 'Testinggg', body: 'Your world just got a little brighter ☀️', url: '/'}
 index-3uRsL2MT.js:40 [WEBRTC Context] initiateCall(video=true) requested
 index-3uRsL2MT.js:40 [WEBRTC Context] Requesting getUserMedia
 index-3uRsL2MT.js:40 [WEBRTC Context] getUserMedia success
@@ -15,6 +22,10 @@ index-3uRsL2MT.js:40 [WEBRTC Manager] handleAccept()
 index-3uRsL2MT.js:40 [WEBRTC Manager] Creating offer...
 index-3uRsL2MT.js:40 [WEBRTC Manager] Sending sdp_offer...
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: sdp_offer to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
@@ -33,24 +44,52 @@ index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partne
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+ [WEBRTC Manager] Generated ICE candidate, sending to partner
+ [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: call_accept
+index-3uRsL2MT.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleAccept()
+index-3uRsL2MT.js:40 [WEBRTC Manager] Ignoring handleAccept because signalingState is have-local-offer
+handleAccept @ index-3uRsL2MT.js:40
+(anonymous) @ index-3uRsL2MT.js:40
+(anonymous) @ index-3uRsL2MT.js:40
+(anonymous) @ index-3uRsL2MT.js:40
+trigger @ encryption-C835slEB.js:3
+(anonymous) @ encryption-C835slEB.js:4
+decode @ encryption-C835slEB.js:3
+onConnMessage @ encryption-C835slEB.js:4
+conn.onmessage @ encryption-C835slEB.js:4
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: call_accept
+index-3uRsL2MT.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleAccept()
+index-3uRsL2MT.js:40 [WEBRTC Manager] Ignoring handleAccept because signalingState is have-local-offer
+handleAccept @ index-3uRsL2MT.js:40
+(anonymous) @ index-3uRsL2MT.js:40
+(anonymous) @ index-3uRsL2MT.js:40
+(anonymous) @ index-3uRsL2MT.js:40
+trigger @ encryption-C835slEB.js:3
+(anonymous) @ encryption-C835slEB.js:4
+decode @ encryption-C835slEB.js:3
+onConnMessage @ encryption-C835slEB.js:4
+conn.onmessage @ encryption-C835slEB.js:4
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
 index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
 index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
@@ -63,24 +102,195 @@ index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f
 index-3uRsL2MT.js:40 [WEBRTC Context] Received message: sdp_answer
 index-3uRsL2MT.js:40 [WEBRTC Context] Received SDP answer.
 index-3uRsL2MT.js:40 [WEBRTC Manager] handleAnswer() received
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
 index-3uRsL2MT.js:40 [WEBRTC Manager] Received remote track: audio
 index-3uRsL2MT.js:40 [WEBRTC Manager] Received remote track: video
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
 index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: connecting
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: failed
+index-3uRsL2MT.js:40 [WEBRTC Manager] endCall(notifyPartner=false)
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_reject
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: call_reject
+index-3uRsL2MT.js:40 [WEBRTC Context] Ignoring message call_reject because manager is null
+
+
+------ this is from my wife side ---------
+
+(index):1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+(index):1 Error while trying to use the following icon from the Manifest: https://new-aura-app.vercel.app/icon-192.png (Download error or resource isn't a valid image)
+ [WEBRTC Signaling] Starting signaling for user: 8bb51234-4a86-470f-9f7d-96a95f551952. Current status: connected=false
+ [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
+ [WEBRTC Signaling] Channel status changed to: SUBSCRIBED
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: call_request
+ [WEBRTC Context] Received message: call_request
+ [WEBRTC Context] Handling incoming call request from 2dfb823f-bb93-4e46-86cd-a520c5be7868
+ [WEBRTC Context] acceptCall() requested
+ [WEBRTC Context] Requesting getUserMedia for answer
+ [WEBRTC Context] acceptCall() requested
+ [WEBRTC Context] Requesting getUserMedia for answer
+ [WEBRTC Context] acceptCall() requested
+ [WEBRTC Context] Requesting getUserMedia for answer
+ [WEBRTC Context] getUserMedia success for answer
+ [WEBRTC Context] Manager initialized, calling acceptCall on manager
+ [WEBRTC Manager] acceptCall(video=true)
+ [WEBRTC Manager] Sending call_accept...
+ [WEBRTC Signaling] Sending message: call_accept to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+ [WEBRTC Context] getUserMedia success for answer
+ [WEBRTC Context] Manager initialized, calling acceptCall on manager
+ [WEBRTC Manager] acceptCall(video=true)
+ [WEBRTC Manager] Sending call_accept...
+ [WEBRTC Signaling] Sending message: call_accept to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+ [WEBRTC Context] getUserMedia success for answer
+ [WEBRTC Context] Manager initialized, calling acceptCall on manager
+ [WEBRTC Manager] acceptCall(video=true)
+ [WEBRTC Manager] Sending call_accept...
+ [WEBRTC Signaling] Sending message: call_accept to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: sdp_offer
+ [WEBRTC Context] Received message: sdp_offer
+ [WEBRTC Context] Received SDP offer.
+ [WEBRTC Manager] handleOffer() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Manager] Received remote track: audio
+ [WEBRTC Manager] Received remote track: video
+ [WEBRTC Manager] Creating answer...
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Manager] Sending sdp_answer...
+ [WEBRTC Signaling] Sending message: sdp_answer to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+ [WEBRTC Context] Received ICE candidate.
+ [WEBRTC Manager] handleIceCandidate() received
+ [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+ [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
 index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
 index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
 index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
 index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
 index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
 index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: connected
-index-3uRsL2MT.js:40 [WEBRTC Context] endCall() requested
-index-3uRsL2MT.js:40 [WEBRTC Manager] endCall(notifyPartner=true)
-index-3uRsL2MT.js:40 [WEBRTC Manager] Sending call_end...
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: call_end to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Clearing message queue. Had 0 messages.
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 2dfb823f-bb93-4e46-86cd-a520c5be7868: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
+index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
+index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: connecting
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
+index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 2dfb823f-bb93-4e46-86cd-a520c5be7868
+index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: failed
+index-3uRsL2MT.js:40 [WEBRTC Manager] endCall(notifyPartner=false)
+Node cannot be found in the current page.

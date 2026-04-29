@@ -46,6 +46,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const currentStateRef = useRef<CallState>('idle');
   currentStateRef.current = callState;
   const isVideoRef = useRef<boolean>(true);
+  const isAcceptingRef = useRef<boolean>(false); // Guard against double-accept
 
   // Monitor callState changes to log call history
   useEffect(() => {
@@ -261,6 +262,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn(`[WEBRTC Context] No incoming call to accept!`);
       return;
     }
+    // Guard: prevent double-accept from multiple clicks or re-renders
+    if (isAcceptingRef.current) {
+      console.warn(`[WEBRTC Context] acceptCall already in progress, ignoring duplicate call`);
+      return;
+    }
+    isAcceptingRef.current = true;
     setError(null);
     setIsVideoEnabled(incomingCall.video);
     setIsAudioEnabled(true);
@@ -281,6 +288,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error(`[WEBRTC Context] getUserMedia failed:`, err);
       setError(err?.message || 'Camera access denied');
+      isAcceptingRef.current = false; // Reset guard on error
       rejectCall();
       return;
     }
@@ -291,6 +299,7 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await mgr.acceptCall(incomingCall.video, stream);
     }
     setIncomingCall(null);
+    isAcceptingRef.current = false; // Reset guard after done
   };
 
   const rejectCall = () => {
