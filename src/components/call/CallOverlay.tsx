@@ -27,13 +27,28 @@ export default function CallOverlay() {
   useEffect(() => {
     if (localVideoRef.current && localStream && localVideoRef.current.srcObject !== localStream) {
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(e => console.warn('[CallOverlay] Local video play blocked:', e));
     }
   }, [localStream, callState]);
 
   // Auto-play remote stream
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream && remoteVideoRef.current.srcObject !== remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
+      const videoEl = remoteVideoRef.current;
+      videoEl.srcObject = remoteStream;
+      
+      // Explicit play with promise handling to bypass iOS Safari autoplay restrictions
+      videoEl.play().catch(e => {
+        console.warn("[CallOverlay] Remote video play failed, trying muted fallback:", e);
+        videoEl.muted = true;
+        videoEl.play().then(() => {
+          console.log("[CallOverlay] Muted fallback succeeded, attempting to unmute");
+          // Try unmuting after a short delay once it's playing
+          setTimeout(() => { 
+            if (videoEl) videoEl.muted = false; 
+          }, 500);
+        }).catch(err => console.error("[CallOverlay] Muted fallback play also failed:", err));
+      });
     }
   }, [remoteStream, callState]);
 

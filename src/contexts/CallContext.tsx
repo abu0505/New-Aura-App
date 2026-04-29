@@ -15,7 +15,7 @@ interface CallContextType {
   remoteStream: MediaStream | null;
   isVideoEnabled: boolean;
   isAudioEnabled: boolean;
-  incomingCall: { partnerId: string; video: boolean } | null;
+  incomingCall: { partnerId: string; video: boolean; offerSdp: RTCSessionDescriptionInit } | null;
   initiateCall: (video?: boolean) => void;
   acceptCall: () => void;
   rejectCall: () => void;
@@ -34,7 +34,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [callState, setCallState] = useState<CallState>('idle');
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ partnerId: string; video: boolean } | null>(null);
+  // incomingCall now carries the offerSdp received in the call_request
+  const [incomingCall, setIncomingCall] = useState<{
+    partnerId: string;
+    video: boolean;
+    offerSdp: RTCSessionDescriptionInit;
+  } | null>(null);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,9 +51,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const currentStateRef = useRef<CallState>('idle');
   currentStateRef.current = callState;
   const isVideoRef = useRef<boolean>(true);
-  const isAcceptingRef = useRef<boolean>(false); // Guard against double-accept
+  // Guard against double-accept (e.g. double tap on accept button)
+  const isAcceptingRef = useRef<boolean>(false);
 
-  // Monitor callState changes to log call history
+  // ─── Call History Logging ─────────────────────────────────────────────────
   useEffect(() => {
     if (callState === 'connected' && prevCallStateRef.current !== 'connected') {
       setCallStartTime(Date.now());
@@ -94,72 +100,93 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     prevCallStateRef.current = callState;
   }, [callState, amICaller, callStartTime]);
 
+  // ─── Signaling Setup ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!user || !partner) return;
 
-    callSignaling.start(user.id);
+    // Per-pair channel — pass both IDs so the channel name is deterministic
+    callSignaling.start(user.id, partner.id);
 
     const handleMessage = async (msg: CallMessage) => {
       console.log(`[WEBRTC Context] Received message: ${msg.type}`);
-      // Re-initialize manager if it doesn't exist and we got a message
-      if (!webrtcManagerRef.current) {
-        if (msg.type === 'call_request') {
-          console.log(`[WEBRTC Context] Handling incoming call request from ${msg.sender_id}`);
-          setIncomingCall({ partnerId: msg.sender_id, video: msg.payload?.video ?? true });
-        } else {
-          console.log(`[WEBRTC Context] Ignoring message ${msg.type} because manager is null`);
+
+      // ── INCOMING CALL REQUEST ────────────────────────────────────────────
+      if (msg.type === 'call_request') {
+        if (currentStateRef.current !== 'idle') {
+          // Already busy — auto-reject
+          console.log(`[WEBRTC Context] Busy (${currentStateRef.current}), auto-rejecting incoming call`);
+          callSignaling.sendMessage({
+            type: 'call_reject',
+            sender_id: user.id,
+            target_id: msg.sender_id,
+          });
+          return;
         }
+        const offerSdp = msg.payload?.offer;
+        if (!offerSdp) {
+          console.error('[WEBRTC Context] call_request missing offer SDP — ignoring');
+          return;
+        }
+        console.log(`[WEBRTC Context] Incoming call from ${msg.sender_id} — storing offer SDP`);
+        setIncomingCall({
+          partnerId: msg.sender_id,
+          video: msg.payload?.video ?? true,
+          offerSdp,
+        });
         return;
       }
 
+      // All other messages require a manager
+      if (!webrtcManagerRef.current) {
+        console.warn(`[WEBRTC Context] Ignoring message ${msg.type} — no active manager`);
+        return;
+      }
       const mgr = webrtcManagerRef.current;
 
       switch (msg.type) {
-        case 'call_request':
-          if (currentStateRef.current === 'idle') {
-            console.log(`[WEBRTC Context] Handling incoming call request from ${msg.sender_id}`);
-            setIncomingCall({ partnerId: msg.sender_id, video: msg.payload?.video ?? true });
+
+        // CALLER receives this: contains the answer SDP
+        case 'call_accept':
+          console.log(`[WEBRTC Context] Partner accepted — setting remote answer`);
+          if (msg.payload?.answer) {
+            await mgr.handleAccept(msg.payload.answer);
           } else {
-            console.log(`[WEBRTC Context] Rejecting incoming call request because we are busy. state=${currentStateRef.current}`);
-            // Already busy
-            callSignaling.sendMessage({
-              type: 'call_reject',
-              sender_id: user.id,
-              target_id: partner.id
-            });
+            console.error('[WEBRTC Context] call_accept missing answer SDP');
           }
           break;
-        case 'call_accept':
-          console.log(`[WEBRTC Context] Partner accepted call. Forwarding to manager.`);
-          await mgr.handleAccept();
-          break;
+
         case 'call_reject':
-          console.log(`[WEBRTC Context] Partner rejected call. Setting idle.`);
-          setCallState('idle');
+          console.log(`[WEBRTC Context] Partner rejected call`);
           mgr.endCall(false);
           webrtcManagerRef.current = null;
+          setCallState('idle');
           setError('Call was declined');
           setTimeout(() => setError(null), 3000);
           callSignaling.clearQueue();
           break;
+
         case 'call_end':
-          console.log(`[WEBRTC Context] Partner ended call. Setting idle.`);
+          console.log(`[WEBRTC Context] Partner ended call`);
           mgr.endCall(false);
           webrtcManagerRef.current = null;
           setCallState('idle');
           setIncomingCall(null);
           callSignaling.clearQueue();
           break;
+
+        // sdp_offer / sdp_answer — only used for ICE restart re-negotiation now
         case 'sdp_offer':
-          console.log(`[WEBRTC Context] Received SDP offer.`);
+          console.log(`[WEBRTC Context] Received SDP offer (ICE restart)`);
           await mgr.handleOffer(msg.payload);
           break;
+
         case 'sdp_answer':
-          console.log(`[WEBRTC Context] Received SDP answer.`);
+          console.log(`[WEBRTC Context] Received SDP answer (ICE restart)`);
           await mgr.handleAnswer(msg.payload);
           break;
+
         case 'ice_candidate':
-          console.log(`[WEBRTC Context] Received ICE candidate.`);
+          // Manager queues this internally if remote description isn't set yet
           await mgr.handleIceCandidate(msg.payload);
           break;
       }
@@ -173,12 +200,16 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user?.id, partner?.id]);
 
+  // ─── Manager Factory ─────────────────────────────────────────────────────
   const initManager = async () => {
     if (!user || !partner) return null;
     
     const mgr = new WebRTCManager(user.id, partner.id, {
       onLocalStream: setLocalStream,
-      onRemoteStream: setRemoteStream,
+      onRemoteStream: (stream) => {
+        // Use a new MediaStream reference on each call to force React re-render
+        setRemoteStream(new MediaStream(stream.getTracks()));
+      },
       onCallStateChange: setCallState,
       onCallEnd: () => {
         setLocalStream(null);
@@ -188,24 +219,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       onError: (err) => {
         setError(err);
         setTimeout(() => setError(null), 5000);
-      }
+      },
     });
 
-    // Derive and set encryption key
-    // We get key history from partner, assuming the primary key is public_key
-    if (partner.public_key && encryptionStatus === 'ready') {
-      try {
-        // AppKeyLocked corresponds to our secret key (Wait, the user's secret key is in AuthContext or IndexedDB)
-        // Let's get mySecretKey. We need to export it from encryption or AuthContext.
-        // For simplicity and since AuthContext manages keys, we might need a way to get the secret key.
-        // Wait, encryption.ts has getPrivateKey() which gets it from IndexedDB/memory.
-      } catch (e) {
-        console.error("Encryption derivation skipped due to error", e);
-      }
-    }
-
-    // ACTUALLY: Let's fetch the key asynchronously inside initManager.
-    const { getStoredKeyPair, decodeBase64 } = await import('../lib/encryption');
+    // Derive and set the E2E session key (kept for Phase 2 activation)
     const keyPair = getStoredKeyPair();
     const mySec = keyPair?.secretKey;
     if (mySec && partner.public_key) {
@@ -214,13 +231,15 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const sessionKey = await deriveCallSessionKey(partnerPub, mySec);
         mgr.setSessionKey(sessionKey);
       } catch (e) {
-        console.warn('Could not derive session key for call', e);
+        console.warn('[WEBRTC Context] Could not derive session key', e);
       }
     }
 
     webrtcManagerRef.current = mgr;
     return mgr;
   };
+
+  // ─── Actions ─────────────────────────────────────────────────────────────
 
   const initiateCall = async (video: boolean = true) => {
     console.log(`[WEBRTC Context] initiateCall(video=${video}) requested`);
@@ -230,10 +249,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAmICaller(true);
     isVideoRef.current = video;
     
-    // Acquire stream immediately to preserve user gesture context for iOS Safari
+    // Acquire stream with user gesture context intact (important for iOS Safari)
     let stream: MediaStream | undefined;
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('Camera access requires HTTPS or localhost');
       }
       console.log(`[WEBRTC Context] Requesting getUserMedia`);
@@ -246,12 +265,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error(`[WEBRTC Context] getUserMedia failed:`, err);
       setError(err?.message || 'Camera access denied');
-      return; // Stop if we can't get media
+      return;
     }
 
     const mgr = await initManager();
     if (mgr) {
-      console.log(`[WEBRTC Context] Manager initialized, calling initiateCall on manager`);
+      // Manager will create offer and send call_request{offer} in one step
       await mgr.initiateCall(video, stream);
     }
   };
@@ -262,9 +281,9 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn(`[WEBRTC Context] No incoming call to accept!`);
       return;
     }
-    // Guard: prevent double-accept from multiple clicks or re-renders
+    // Guard against double-tap / re-render triggering acceptCall twice
     if (isAcceptingRef.current) {
-      console.warn(`[WEBRTC Context] acceptCall already in progress, ignoring duplicate call`);
+      console.warn(`[WEBRTC Context] acceptCall already in progress, ignoring duplicate`);
       return;
     }
     isAcceptingRef.current = true;
@@ -272,10 +291,10 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsVideoEnabled(incomingCall.video);
     setIsAudioEnabled(true);
     
-    // Acquire stream immediately to preserve user gesture context for iOS Safari
+    // Acquire stream with user gesture context
     let stream: MediaStream | undefined;
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('Camera access requires HTTPS or localhost');
       }
       console.log(`[WEBRTC Context] Requesting getUserMedia for answer`);
@@ -288,28 +307,28 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: any) {
       console.error(`[WEBRTC Context] getUserMedia failed:`, err);
       setError(err?.message || 'Camera access denied');
-      isAcceptingRef.current = false; // Reset guard on error
+      isAcceptingRef.current = false;
       rejectCall();
       return;
     }
 
     const mgr = await initManager();
     if (mgr) {
-      console.log(`[WEBRTC Context] Manager initialized, calling acceptCall on manager`);
-      await mgr.acceptCall(incomingCall.video, stream);
+      // Manager sets remote description from the stored offer, creates answer,
+      // and sends call_accept{answer} in one step
+      await mgr.acceptCall(incomingCall.video, incomingCall.offerSdp, stream);
     }
     setIncomingCall(null);
-    isAcceptingRef.current = false; // Reset guard after done
+    isAcceptingRef.current = false;
   };
 
   const rejectCall = () => {
     console.log(`[WEBRTC Context] rejectCall() requested`);
     if (user && incomingCall) {
-      console.log(`[WEBRTC Context] Sending call_reject manually`);
       callSignaling.sendMessage({
         type: 'call_reject',
         sender_id: user.id,
-        target_id: incomingCall.partnerId
+        target_id: incomingCall.partnerId,
       });
     }
     setIncomingCall(null);
@@ -322,15 +341,16 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
       webrtcManagerRef.current.endCall();
     } else {
       if (user && partner) {
-        console.log(`[WEBRTC Context] Sending call_end manually since manager is null`);
         callSignaling.sendMessage({
           type: 'call_end',
           sender_id: user.id,
-          target_id: partner.id
+          target_id: partner.id,
         });
       }
     }
     setCallState('idle');
+    setLocalStream(null);
+    setRemoteStream(null);
     setIncomingCall(null);
     callSignaling.clearQueue();
   };

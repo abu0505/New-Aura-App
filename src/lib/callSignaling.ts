@@ -19,25 +19,50 @@ export interface CallMessage {
 
 type CallMessageHandler = (message: CallMessage) => void;
 
+/**
+ * Generates a deterministic, per-pair channel name so only the two
+ * participants share a channel — eliminating global broadcast leakage.
+ * IDs are sorted so both sides always generate the same channel name.
+ */
+function getPairChannelName(userId: string, partnerId: string): string {
+  const sorted = [userId, partnerId].sort();
+  return `call-${sorted[0]}-${sorted[1]}`;
+}
+
 class CallSignaling {
   private channel: RealtimeChannel | null = null;
   private handlers: Set<CallMessageHandler> = new Set();
   private isConnected = false;
   private myUserId: string | null = null;
+  private partnerId: string | null = null;
   private messageQueue: CallMessage[] = [];
 
-  start(userId: string) {
-    console.log(`[WEBRTC Signaling] Starting signaling for user: ${userId}. Current status: connected=${this.isConnected}`);
-    if (this.isConnected && this.channel) {
-      console.log(`[WEBRTC Signaling] Already connected. Skipping start.`);
+  start(userId: string, partnerId: string) {
+    const channelName = getPairChannelName(userId, partnerId);
+    console.log(`[WEBRTC Signaling] Starting signaling for user: ${userId} on channel: ${channelName}. Current status: connected=${this.isConnected}`);
+    
+    // If already connected to the correct channel, skip
+    if (this.isConnected && this.channel && this.myUserId === userId && this.partnerId === partnerId) {
+      console.log(`[WEBRTC Signaling] Already connected to correct channel. Skipping start.`);
       return;
     }
-    this.myUserId = userId;
 
-    console.log(`[WEBRTC Signaling] Initializing Supabase channel 'call-signaling'`);
-    this.channel = supabase.channel('call-signaling', {
+    // Clean up any previous channel before starting a new one
+    if (this.channel) {
+      console.log(`[WEBRTC Signaling] Cleaning up old channel before starting new one.`);
+      supabase.removeChannel(this.channel);
+      this.channel = null;
+      this.isConnected = false;
+    }
+
+    this.myUserId = userId;
+    this.partnerId = partnerId;
+
+    console.log(`[WEBRTC Signaling] Initializing Supabase channel '${channelName}'`);
+    this.channel = supabase.channel(channelName, {
       config: {
-        broadcast: { ack: false },
+        // ack: true ensures reliable delivery — message is confirmed by server
+        broadcast: { ack: true },
       },
     });
 
@@ -45,13 +70,9 @@ class CallSignaling {
       'broadcast',
       { event: 'call-message' },
       ({ payload }: { payload: CallMessage }) => {
-        // Only process messages intended for this user
-        if (payload.target_id === this.myUserId) {
-          console.log(`[WEBRTC Signaling] Received message from ${payload.sender_id}:`, payload.type);
-          this.handlers.forEach((handler) => handler(payload));
-        } else {
-          // This is normal in a global channel, we just ignore messages for others
-        }
+        // On a per-pair channel, all messages are for us — no client-side filtering needed
+        console.log(`[WEBRTC Signaling] Received message from ${payload.sender_id}:`, payload.type);
+        this.handlers.forEach((handler) => handler(payload));
       }
     );
 
@@ -102,6 +123,7 @@ class CallSignaling {
     }
     this.isConnected = false;
     this.myUserId = null;
+    this.partnerId = null;
     this.clearQueue();
   }
 
@@ -118,9 +140,9 @@ class CallSignaling {
       this.messageQueue.push(message);
       
       // Attempt reconnection if we dropped completely
-      if (!this.channel && this.myUserId) {
+      if (!this.channel && this.myUserId && this.partnerId) {
         console.log(`[WEBRTC Signaling] Channel is null. Attempting to restart for ${this.myUserId}`);
-        this.start(this.myUserId);
+        this.start(this.myUserId, this.partnerId);
       }
       return;
     }
