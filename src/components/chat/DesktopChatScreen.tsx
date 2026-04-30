@@ -533,7 +533,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
             <div className="flex items-center gap-8 text-aura-text-secondary">
               {!isOnline && (
                 <div className="flex items-center gap-2 bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Sanctuary</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Mode</span>
                 </div>
               )}
               <span 
@@ -702,7 +702,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                       {viewMode === 'chat' && firstUnreadId === firstMsg.id && (
                         <div className="flex items-center gap-6 py-10">
                           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-                          <span className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-bold whitespace-nowrap">New Sanctuary Messages</span>
+                          <span className="text-[10px] uppercase tracking-[0.3em] text-primary/60 font-bold whitespace-nowrap">New Messages</span>
                           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                         </div>
                       )}

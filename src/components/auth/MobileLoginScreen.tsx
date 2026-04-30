@@ -35,7 +35,7 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
           password,
         });
         if (error) throw error;
-        toast.success('Welcome back to your Sanctuary.');
+        toast.success('Welcome back to Aura.');
         onLogin();
       }
     } catch (error: any) {
@@ -86,7 +86,7 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
               <p className="text-sm leading-relaxed max-w-[280px] mx-auto font-light" style={{ color: '#8C94A3' }}>
                 {isSignUp 
                   ? 'Establish your identity to begin your shared journey.' 
-                  : 'Enter your credentials to return to your shared sanctuary.'}
+                  : 'Enter your credentials to return to your shared space.'}
               </p>
             </div>
           </header>
@@ -165,10 +165,10 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
           {/* Footer */}
           <footer className="mt-auto pb-8 pt-6 text-center">
             <p className="text-[10px] tracking-wider uppercase leading-relaxed" style={{ color: '#8C94A3' }}>
-              By entering, you agree to our <a href="#" className="text-[#c8a36d] hover:text-white transition-colors">Privacy<br/>Protocol</a> & <a href="#" className="text-[#c8a36d] hover:text-white transition-colors">Terms of Presence</a>
+              By entering, you agree to our <a href="#" className="text-[#c8a36d] hover:text-white transition-colors">Privacy<br/>Policy</a> & <a href="#" className="text-[#c8a36d] hover:text-white transition-colors">Terms of Service</a>
             </p>
             <p className="text-[10px] tracking-wider mt-3 uppercase" style={{ color: '#8C94A3' }}>
-              © 2024 Aura. The Digital Sanctuary.
+              © 2024 Aura. The Shared Space.
             </p>
           </footer>
         </main>

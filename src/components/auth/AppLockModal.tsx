@@ -38,7 +38,7 @@ export default function AppLockModal() {
     try {
       const success = await unlockApp(pin);
       if (!success) {
-        setError('Incorrect PIN. Sanctuary remains locked.');
+        setError('Incorrect PIN. App remains locked.');
         setPin(''); // clear pin on failure
       }
     } catch (err) {
@@ -65,7 +65,7 @@ export default function AppLockModal() {
 
           <div className="space-y-3 lg:px-4">
             <h2 className="font-serif italic text-3xl text-[var(--gold)] tracking-wide">
-              Sanctuary Locked
+              App Locked
             </h2>
             <p className="text-xs text-[#998f81]/70 leading-relaxed font-label uppercase tracking-widest">
               Enter the shared PIN to access your private connection.

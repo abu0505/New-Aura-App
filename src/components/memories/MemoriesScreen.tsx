@@ -685,7 +685,7 @@ export default function MemoriesScreen() {
                   <span className="material-symbols-outlined text-xl">arrow_back</span>
                 </button>
                 <div>
-                  <h1 className="font-serif italic text-2xl text-[var(--gold)]">Sanctuary Gallery</h1>
+                  <h1 className="font-serif italic text-2xl text-[var(--gold)]">Memories Gallery</h1>
                   <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">A visual archive of our shared journey</p>
                 </div>
               </div>

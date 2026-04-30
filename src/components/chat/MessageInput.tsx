@@ -418,19 +418,6 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     if (type === 'audio') {
       // Short delay to let sheet unmount before showing recorder
       setTimeout(() => setIsRecording(true), 150);
-    } else if (type === 'location') {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-             // Send as a structured location payload for mini-map rendering
-             onSend(`${pos.coords.latitude},${pos.coords.longitude}`, { url: '', media_key: '', media_nonce: '', type: 'location' }, replyingTo?.id);
-              if (onCancelReply) onCancelReply();
-          },
-          () => toast.error('Location permission denied.')
-        );
-      } else {
-        toast.error('Geolocation is not supported by your browser.');
-      }
     } else if (type === 'sticker') {
       setIsStickerPickerOpen(true);
     } else if (type === 'gif') {

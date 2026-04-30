@@ -116,7 +116,7 @@ export default function ProfileSection() {
       }
     } catch (err: any) {
       
-      toast.error('Sanctuary storage error', {
+      toast.error('App storage error', {
         description: err.message,
       });
     } finally {
@@ -184,7 +184,7 @@ export default function ProfileSection() {
               className="font-serif italic text-4xl lg:text-6xl text-[var(--gold)] mb-4 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setEditingName(true)}
             >
-              {user?.user_metadata?.display_name || 'Sanctuary Keeper'}
+              {user?.user_metadata?.display_name || 'Aura User'}
             </h1>
           )}
           

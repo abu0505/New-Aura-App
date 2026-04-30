@@ -94,15 +94,15 @@ export default function AppLockSetupModal({ onClose, isRemoving }: AppLockSetupM
   };
 
   const getTitle = () => {
-    if (isRemoving) return "Remove Sanctuary Lock";
+    if (isRemoving) return "Remove App Lock";
     if (step === 'current') return "Verify Identity";
-    if (step === 'new') return hasAppPin ? "Change Lock PIN" : "Setup Sanctuary Lock";
+    if (step === 'new') return hasAppPin ? "Change Lock PIN" : "Setup App Lock";
     return "Confirm New PIN";
   };
 
   const getSubtitle = () => {
     if (isRemoving) return "Enter your current PIN to remove the lock.";
-    if (step === 'current') return "Enter your current Sanctuary PIN.";
+    if (step === 'current') return "Enter your current App PIN.";
     if (step === 'new') return "Enter a 4-6 digit shared PIN.";
     return "Re-enter the new PIN to confirm.";
   };

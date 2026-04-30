@@ -673,7 +673,7 @@ function ChatBubble({
         >
           <div className="flex items-center gap-2 mb-3 text-primary px-1">
              <span className="material-symbols-outlined text-sm">edit_note</span>
-             <span className="text-[10px] uppercase tracking-widest font-label font-bold">Edit Sanctuary Note</span>
+             <span className="text-[10px] uppercase tracking-widest font-label font-bold">Edit Note</span>
           </div>
           <textarea
             ref={editInputRef}
@@ -724,7 +724,7 @@ function ChatBubble({
           </div>
           <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
             <span className="text-sm font-bold text-aura-text-primary tracking-wide">
-              {callType === 'video' ? 'Sanctuary Video' : 'Sanctuary Voice'}
+              {callType === 'video' ? 'Video Call' : 'Voice Call'}
             </span>
             <span className={`text-[11px] font-label uppercase tracking-widest mt-0.5 ${isMissed ? 'text-red-400' : 'text-emerald-400'}`}>
               {isMissed ? (isMine ? 'Unanswered' : 'Missed Call') : `${formatDuration(duration)} duration`}
@@ -785,7 +785,7 @@ function ChatBubble({
           <div className="bg-aura-bg-elevated px-3 py-2 flex items-center justify-between border-t border-white/5">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-sm">location_on</span>
-              <span className="text-[10px] text-aura-text-primary font-label uppercase tracking-widest">Sanctuary Live</span>
+              <span className="text-[10px] text-aura-text-primary font-label uppercase tracking-widest">Live</span>
             </div>
             <div className="flex items-center gap-1.5 pt-1">
                <span className="text-[9px] uppercase tracking-tighter text-aura-text-primary/40 font-bold">{time}</span>

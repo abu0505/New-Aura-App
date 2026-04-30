@@ -58,7 +58,7 @@ export default function KeySetupModal() {
 
           <div className="space-y-2">
             <h2 className="font-serif italic text-2xl text-[var(--gold)]">
-              {isSetup ? 'Secure Your Sanctuary' : 'Unlock Your Aura'}
+              {isSetup ? 'Secure Your Space' : 'Unlock Your Aura'}
             </h2>
             <p className="text-sm text-[#998f81]/60 leading-relaxed">
               {isSetup 
@@ -95,7 +95,7 @@ export default function KeySetupModal() {
               ) : (
                 <>
                   <span className="uppercase tracking-[0.2em] text-[11px]">
-                    {isSetup ? 'Establish Connection' : 'Enter Sanctuary'}
+                    {isSetup ? 'Establish Connection' : 'Enter App'}
                   </span>
                 </>
               )}

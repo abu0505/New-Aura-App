@@ -59,7 +59,7 @@ export default function StreakCelebration({ streakCount, isOpen, onClose }: Stre
             className="max-w-xs"
           >
             <p className="text-white/60 font-serif italic text-lg leading-relaxed">
-              "Every single day is a new verse in our shared poem. Thank you for staying consistent in our sanctuary."
+              "Every single day is a new verse in our shared poem. Thank you for staying consistent in our chat."
             </p>
           </motion.div>
 

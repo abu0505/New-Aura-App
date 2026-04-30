@@ -61,7 +61,7 @@ export default function QualityChoiceModal({
           className="bg-aura-bg-elevated border border-white/5 rounded-[2.5rem] w-full max-w-sm overflow-hidden flex flex-col shadow-3xl p-8"
         >
           <h2 className="font-serif italic text-2xl text-primary mb-2">Preserve the Moment?</h2>
-          <p className="text-aura-text-secondary text-xs mb-8 leading-relaxed">Choose how much detail you wish to carry into our sanctuary.</p>
+          <p className="text-aura-text-secondary text-xs mb-8 leading-relaxed">Choose how much detail you wish to carry into our chat.</p>
 
           <div className="flex flex-col gap-4 mb-8">
             {/* Optimized Option */}

@@ -2,7 +2,7 @@ import { useChatSettings } from '../../hooks/useChatSettings';
 import QuickEmojiSettings from './QuickEmojiSettings';
 
 const COLORS = [
-  { id: 'gold', hex: '#e6c487', label: 'Sanctuary Gold' },
+  { id: 'gold', hex: '#e6c487', label: 'Aura Gold' },
   { id: 'emerald', hex: '#6ECB8A', label: 'Emerald' },
   { id: 'sapphire', hex: '#7C9AF2', label: 'Sapphire Blue' },
   { id: 'rose', hex: '#D4A0A0', label: 'Rose' },
@@ -32,7 +32,7 @@ export default function AppearanceSettings() {
         <span className="material-symbols-outlined text-[var(--gold)] group-hover:scale-110 transition-transform">palette</span>
         <div>
           <h3 className="font-serif italic text-xl text-white">Appearance</h3>
-          <p className="font-label text-[10px] uppercase tracking-widest text-white/50">Theme & Ambience</p>
+          <p className="font-label text-[10px] uppercase tracking-widest text-white/50">Theme & Background</p>
         </div>
       </div>
 

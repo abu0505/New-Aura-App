@@ -4,7 +4,7 @@ import LoginScreen from './components/auth/LoginScreen';
 import type { Tab } from './types';
 const ChatScreen = lazy(() => import('./components/chat/ChatScreen'));
 const StoriesScreen = lazy(() => import('./components/stories/StoriesScreen'));
-const LiveLocationScreen = lazy(() => import('./components/location/LiveLocationScreen'));
+// const LiveLocationScreen = lazy(() => import('./components/location/LiveLocationScreen'));
 const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen'));
@@ -191,7 +191,7 @@ function InnerApp({
           >
             AURA
           </h1>
-          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40 animate-pulse">Securing sanctuary...</p>
+          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40 animate-pulse">Securing app...</p>
         </div>
       </div>
     );
@@ -237,9 +237,7 @@ function InnerApp({
           <div className={activeTab === 'memories' ? 'h-full w-full' : 'hidden'}>
             <MemoriesScreen />
           </div>
-          <div className={activeTab === 'location' ? 'h-full w-full' : 'hidden'}>
-            <LiveLocationScreen partner={partnerWithPresence} isActive={activeTab === 'location' && !isLocked} />
-          </div>
+
           <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>
             <SettingsScreen />
           </div>
@@ -293,7 +291,7 @@ export default function App() {
           >
             AURA
           </h1>
-          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40">Your Sanctuary Awaits</p>
+          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40">Welcome to Aura</p>
         </div>
       </div>
     );

@@ -273,7 +273,7 @@ export default function LiveLocationScreen({ partner, isActive }: LiveLocationSc
           {/* Left pill: title + status */}
           <div className="bg-[rgba(16,16,28,0.82)] backdrop-blur-xl px-4 py-2 rounded-2xl border border-white/6 shadow-xl pointer-events-auto flex items-center gap-3 min-w-0">
             <div className="min-w-0">
-              <p className="font-serif italic text-[var(--gold)] text-base leading-none tracking-tight">Our Sanctuary</p>
+              <p className="font-serif italic text-[var(--gold)] text-base leading-none tracking-tight">Our Location</p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 {isSharing && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />}
                 <p className="text-white/40 text-[9px] uppercase tracking-widest font-bold">{statusText}</p>

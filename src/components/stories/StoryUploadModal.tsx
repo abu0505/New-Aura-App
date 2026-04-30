@@ -138,7 +138,7 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
               onClick={handleUploadClick}
               className="w-full bg-[var(--gold)] text-[var(--on-accent)] py-4 rounded-full font-label font-bold tracking-widest uppercase text-xs hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100 shadow-xl shadow-[rgba(var(--primary-rgb),_0.1)]"
             >
-              {isUploading ? 'Securing with Encryption...' : 'Share to Sanctuary'}
+              {isUploading ? 'Securing with Encryption...' : 'Share Story'}
             </button>
           </div>
         </motion.div>

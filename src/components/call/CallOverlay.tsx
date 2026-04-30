@@ -155,7 +155,7 @@ export default function CallOverlay() {
               {incomingCall.video ? 'videocam' : 'call'}
             </span>
             <p className={`font-label tracking-[0.2em] uppercase text-xs font-bold ${incomingCall.video ? 'text-primary' : 'text-emerald-400'}`}>
-              Sanctuary {incomingCall.video ? 'Video' : 'Voice'} Call...
+              {incomingCall.video ? 'Video' : 'Voice'} Call...
             </p>
           </div>
 

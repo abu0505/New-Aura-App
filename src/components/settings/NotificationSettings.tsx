@@ -5,14 +5,14 @@ import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifica
 
 const DEFAULT_BODIES = [
   'Someone is thinking of you 💭',
-  'A whisper has arrived for you 🤫',
-  'Your sanctuary has a new message ✨',
+  'A new message has arrived for you 🤫',
+  'Your app has a new message ✨',
   'Something special is waiting for you 💌',
   'A secret message has arrived 🔐',
-  'You have been summoned to the sanctuary 🕯️',
+  'You have a new message waiting 🕯️',
   'A gentle knock on your heart 💛',
   'Love is calling you back 📱',
-  'The universe sent you a signal 🌙',
+  'The universe sent you a notification 🌙',
   'Your world just got a little brighter ☀️',
 ];
 
@@ -77,9 +77,9 @@ export default function NotificationSettings() {
         if (result === 'granted') {
           setPushEnabled(true);
         } else if (result === 'denied') {
-          showStatus('Signal permission denied by browser.', 'error');
+          showStatus('Notification permission denied by browser.', 'error');
         } else {
-          showStatus('Failed to connect to signal.', 'error');
+          showStatus('Failed to connect to notifications.', 'error');
         }
       }
     } catch (_err) {
@@ -96,7 +96,7 @@ export default function NotificationSettings() {
     setEditingAlias(false);
     await updateSettings({ notification_alias: aliasValue.trim() || null });
     setSavingAlias(false);
-    showStatus('Signal name updated!', 'success');
+    showStatus('Notification name updated!', 'success');
   };
 
   // ── Bodies CRUD ──
@@ -155,7 +155,7 @@ export default function NotificationSettings() {
   };
 
   const handleForceReset = async () => {
-    if (!confirm('This will reset your signal connection and refresh the app. Use this if you are not receiving notifications. Continue?')) return;
+    if (!confirm('This will reset your notification connection and refresh the app. Use this if you are not receiving notifications. Continue?')) return;
     await forceResetPushNotifications();
   };
 
@@ -181,7 +181,7 @@ export default function NotificationSettings() {
       <div className="flex items-center gap-4 mb-8">
         <span className="material-symbols-outlined text-[var(--gold)] group-hover:scale-110 transition-transform">notifications</span>
         <div>
-          <h3 className="font-serif italic text-xl text-white">Sanctuary Signals</h3>
+          <h3 className="font-serif italic text-xl text-white">App Notifications</h3>
           <p className="font-label text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">Notification Management</p>
         </div>
       </div>
@@ -195,8 +195,8 @@ export default function NotificationSettings() {
           } ${isTogglingPush ? 'animate-pulse' : ''}`}
         >
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Signal Reception</span>
-            <span className="text-[9px] text-[var(--text-secondary)] italic">Allow the sanctuary to reach you</span>
+            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Notification Reception</span>
+            <span className="text-[9px] text-[var(--text-secondary)] italic">Allow the app to reach you</span>
           </div>
           <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
             <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
@@ -214,7 +214,7 @@ export default function NotificationSettings() {
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-[var(--gold)] text-[18px]">tune</span>
                 <div className="flex flex-col items-start">
-                  <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] font-bold">Signal Personalization</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[var(--gold)] font-bold">Notification Personalization</span>
                   <span className="text-[9px] text-[var(--text-secondary)] italic">Custom name & rotating message bodies</span>
                 </div>
               </div>
@@ -231,7 +231,7 @@ export default function NotificationSettings() {
                 <div className="rounded-3xl bg-white/[0.02] border border-white/5 p-5 space-y-4">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="material-symbols-outlined text-[var(--gold)] text-[16px]">badge</span>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--gold)] font-bold">Your Signal Name</span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--gold)] font-bold">Your Notification Name</span>
                   </div>
                   <p className="text-[9px] text-[var(--text-secondary)] leading-relaxed">
                     This name appears as the sender in push notifications. Leave blank to use your display name.
@@ -288,7 +288,7 @@ export default function NotificationSettings() {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <span className="material-symbols-outlined text-[var(--gold)] text-[16px]">format_list_bulleted</span>
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--gold)] font-bold">Rotating Signal Bodies</span>
+                      <span className="text-[10px] uppercase tracking-[0.2em] text-[var(--gold)] font-bold">Rotating Notification Bodies</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {savingBodies && (
@@ -408,7 +408,7 @@ export default function NotificationSettings() {
             className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-[10px] uppercase tracking-widest font-bold"
           >
             <span className="material-symbols-outlined text-[16px]">build_circle</span>
-            Fix Signal Issues
+            Fix Notification Issues
           </button>
           <p className="text-[8px] text-center text-white/20 mt-2 leading-relaxed">
             If you're not receiving notifications or saw a "Spam" warning, tap "Fix" to reset your connection.

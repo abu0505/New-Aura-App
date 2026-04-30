@@ -32,7 +32,7 @@ export default function SecuritySection() {
       <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-[2.5rem] p-6 shadow-2xl hover:border-[var(--gold)]/20 transition-all duration-500 group">
         <div className="flex items-center gap-4 mb-10">
           <span className="material-symbols-outlined text-[var(--gold)] group-hover:rotate-12 transition-transform">lock</span>
-          <h3 className="font-serif italic text-xl text-white">Privacy Protocol</h3>
+          <h3 className="font-serif italic text-xl text-white">Privacy Policy</h3>
         </div>
         
         <div className="space-y-4">
@@ -47,7 +47,7 @@ export default function SecuritySection() {
           {!hasAppPin ? (
             <div className="flex justify-between items-center p-4 rounded-xl border border-white/5 hover:border-[var(--gold)]/20 transition-all cursor-pointer" onClick={() => { setAppLockSetupMode('setup'); setShowAppLockSetup(true); }}>
               <div className="flex flex-col gap-1">
-                <span className="text-xs uppercase tracking-widest text-white/60 font-label">Sanctuary Lock</span>
+                <span className="text-xs uppercase tracking-widest text-white/60 font-label">App Lock</span>
                 <span className="text-[10px] text-[var(--gold)]/60 italic">Require a PIN to access the app</span>
               </div>
               <span className="material-symbols-outlined text-white/30 text-lg">lock_open</span>
@@ -78,7 +78,7 @@ export default function SecuritySection() {
           <div className="bg-[var(--bg-secondary)] border border-[var(--gold)]/20 w-full max-w-md rounded-[2.5rem] p-10 shadow-3xl overflow-hidden relative">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--gold)]/50 to-transparent" />
             
-            <h2 className="font-serif italic text-3xl text-[var(--gold)] mb-8 text-center uppercase tracking-widest">Protocol Trust</h2>
+            <h2 className="font-serif italic text-3xl text-[var(--gold)] mb-8 text-center uppercase tracking-widest">Security Settings</h2>
             
             <div className="space-y-12 mb-12">
               <div className="text-center">
@@ -93,8 +93,7 @@ export default function SecuritySection() {
             </div>
 
             <p className="text-[10px] text-white/30 text-center leading-relaxed italic mb-10">
-              For absolute security, confirm these sequences match what your partner sees in their own Sanctuary. 
-              The fingerprint is a cryptographic summary of your Secure Vault's unique DNA.
+              The fingerprint is a cryptographic summary of your app's unique security key.
             </p>
 
             <button 

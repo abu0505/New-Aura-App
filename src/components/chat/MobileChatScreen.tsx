@@ -584,7 +584,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
             {!partner.public_key && (
               <div className="text-center p-6 bg-primary/5 border border-primary/20 text-primary rounded-[2rem] text-[10px] font-label uppercase tracking-widest leading-loose shadow-xl">
-                Establishing Sanctuary Connection...<br/>Generating Encryption Keys.
+                Establishing Secure Connection...<br/>Generating Encryption Keys.
               </div>
             )}
 

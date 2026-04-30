@@ -38,11 +38,11 @@ export default function BackgroundPicker() {
 
     if (error) {
       setOptimisticBg(undefined);
-      showToast('Failed to set ambience: ' + error.message, true);
+      showToast('Failed to set background: ' + error.message, true);
     } else {
       await refreshSettings();
       setOptimisticBg(undefined);
-      showToast(`Sanctuary ambience changed to: ${PRESETS.find(p => p.id === presetId)?.name}.`);
+      showToast(`Background changed to: ${PRESETS.find(p => p.id === presetId)?.name}.`);
     }
   };
 
@@ -82,7 +82,7 @@ export default function BackgroundPicker() {
     } catch (err: any) {
       
       setOptimisticBg(undefined);
-      showToast('Sanctuary storage error: ' + err.message, true);
+      showToast('App storage error: ' + err.message, true);
     } finally {
       setUploading(false);
     }
@@ -95,7 +95,7 @@ export default function BackgroundPicker() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <span className="material-symbols-outlined text-[var(--gold)] group-hover:rotate-12 transition-transform">wallpaper</span>
-          <h3 className="font-serif italic text-xl text-white">Chat Ambience</h3>
+          <h3 className="font-serif italic text-xl text-white">Chat Background</h3>
         </div>
       </div>
 
@@ -131,7 +131,7 @@ export default function BackgroundPicker() {
       </div>
 
       <p className="text-[10px] text-white/30 italic leading-relaxed">
-        Custom backgrounds are end-to-end encrypted. Your partner's sanctuary will automatically mirror your chosen theme.
+        Custom backgrounds are end-to-end encrypted. Your partner's app will automatically mirror your chosen theme.
       </p>
 
       {toast && (

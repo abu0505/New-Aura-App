@@ -117,7 +117,7 @@ export default function StorageDashboard() {
         <div>
           <h3 className="font-serif italic text-xl text-[var(--gold)]">Storage</h3>
           <p className="font-label text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mt-1">
-            Data secured in the sanctuary
+            Data stored in the app
           </p>
         </div>
         <div className="text-right">
@@ -159,7 +159,7 @@ export default function StorageDashboard() {
         ))}
         {segments.length === 0 && (
           <p className="col-span-full text-center text-[10px] text-white/20 uppercase tracking-widest py-4">
-            Sanctuary is empty
+            Storage is empty
           </p>
         )}
       </div>

@@ -29,7 +29,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success('Welcome back to your Sanctuary.');
+        toast.success('Welcome back to Aura.');
         onLogin();
       }
     } catch (error: any) {
@@ -98,10 +98,10 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
           <div className="w-full max-w-md flex flex-col gap-12 pt-28">
             <header className="flex flex-col gap-3">
               <h2 className="font-headline text-4xl text-on-surface tracking-tight">
-                {isSignUp ? 'Create Sanctuary' : 'Welcome Back'}
+                {isSignUp ? 'Create Account' : 'Welcome Back'}
               </h2>
               <p className="text-on-surface-variant/70 text-sm leading-relaxed">
-                {isSignUp ? 'Forge a secure space for you and your partner.' : 'Enter your credentials to return to your shared sanctuary.'}
+                {isSignUp ? 'Forge a secure space for you and your partner.' : 'Enter your credentials to return to your shared space.'}
               </p>
             </header>
             
@@ -176,7 +176,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
             <footer className="flex justify-center mt-8">
               <p className="text-[10px] text-outline/40 tracking-widest uppercase text-center max-w-xs leading-loose">
                   By entering, you agree to our <br/>
-                  <a className="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Privacy Protocol</a> &amp; <a className="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Terms of Presence</a>
+                  <a className="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Privacy Policy</a> &amp; <a className="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Terms of Service</a>
               </p>
             </footer>
           </div>
@@ -191,7 +191,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
               <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Concierge</a>
             </div>
             <div className="text-[#4D463A] font-body text-[10px] tracking-[0.2em] uppercase">
-                © 2024 AURA. THE DIGITAL SANCTUARY.
+                © 2024 AURA. THE SHARED SPACE.
             </div>
           </div>
         </footer>

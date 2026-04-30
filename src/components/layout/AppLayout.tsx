@@ -72,13 +72,7 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
               <span className="material-symbols-outlined text-2xl">auto_stories</span>
               <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Stories</span>
             </button>
-            <button
-              onClick={() => onTabChange('location')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'location' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-            >
-              <span className="material-symbols-outlined text-2xl">location_on</span>
-              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Location</span>
-            </button>
+
             <button
               onClick={() => onTabChange('memories')}
               className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'memories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
@@ -146,14 +140,7 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
           <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Stories</span>
         </button>
 
-        {/* Location */}
-        <button
-          onClick={() => changeTab('location')}
-          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'location' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-        >
-          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'location' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'location' ? "'FILL' 1" : "" }}>location_on</span>
-          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Location</span>
-        </button>
+
 
         {/* Memories */}
         <button
