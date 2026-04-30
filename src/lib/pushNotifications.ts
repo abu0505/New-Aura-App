@@ -180,3 +180,35 @@ export async function unsubscribeFromPushNotifications(userId: string): Promise<
     return false;
   }
 }
+
+/**
+ * Forcefully clears all push subscriptions and unregisters service workers.
+ * Use this to fix "Spam detected" or "Blocked" states.
+ */
+export async function forceResetPushNotifications(): Promise<void> {
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    // 1. Unsubscribe from all push registrations
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    for (const registration of registrations) {
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+      }
+      // 2. Unregister the service worker itself
+      await registration.unregister();
+    }
+    
+    // 3. Clear all caches (optional but helpful)
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    }
+    
+    // Reload is usually needed to re-register fresh
+    window.location.reload();
+  } catch (err) {
+    // silent
+  }
+}

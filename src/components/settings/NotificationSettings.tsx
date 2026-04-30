@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useChatSettings } from '../../hooks/useChatSettings';
-import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifications } from '../../lib/pushNotifications';
+import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifications, forceResetPushNotifications } from '../../lib/pushNotifications';
 
 const DEFAULT_BODIES = [
   'Someone is thinking of you 💭',
@@ -152,6 +152,11 @@ export default function NotificationSettings() {
   const handleResetBodies = async () => {
     setBodies(DEFAULT_BODIES);
     await saveBodies(DEFAULT_BODIES);
+  };
+
+  const handleForceReset = async () => {
+    if (!confirm('This will reset your signal connection and refresh the app. Use this if you are not receiving notifications. Continue?')) return;
+    await forceResetPushNotifications();
   };
 
   const currentAlias = settings?.notification_alias || '';
@@ -395,6 +400,20 @@ export default function NotificationSettings() {
             )}
           </div>
         )}
+
+        {/* ── Troubleshooting ── */}
+        <div className="pt-4 mt-2 border-t border-white/5">
+          <button
+            onClick={handleForceReset}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-[10px] uppercase tracking-widest font-bold"
+          >
+            <span className="material-symbols-outlined text-[16px]">build_circle</span>
+            Fix Signal Issues
+          </button>
+          <p className="text-[8px] text-center text-white/20 mt-2 leading-relaxed">
+            If you're not receiving notifications or saw a "Spam" warning, tap "Fix" to reset your connection.
+          </p>
+        </div>
       </div>
     </div>
   );
