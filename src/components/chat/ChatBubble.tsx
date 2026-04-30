@@ -71,7 +71,7 @@ function ChatBubble({
   const hapticTriggered = useRef(false);
   
   const isMine = isPinnedView ? true : message.is_mine;
-  const time = new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(':', ' : ');
+  const time = new Date(message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
   // Extract URLs
   const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|in|me|app|dev|to)(?:\/[^\s]*)?)/gi;

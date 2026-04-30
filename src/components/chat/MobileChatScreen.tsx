@@ -15,6 +15,7 @@ import { SeenIndicator } from './SeenIndicator';
 import { LastSeenStatus } from './LastSeenStatus';
 import EncryptedImage from '../common/EncryptedImage';
 import { useCall } from '../../contexts/CallContext';
+import ChatSearch from './ChatSearch';
 
 
 
@@ -32,6 +33,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const [showPinDropdown, setShowPinDropdown] = useState(false);
   const pinDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const messageInputRef = useRef<any>(null); // Type imported from MessageInput if needed, using any for now to avoid circular deps if missing
 
   // Click outside listener for the pin dropdown
@@ -249,6 +251,13 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
   handleJumpToMessageRef.current = handleJumpToMessage;
 
+  const handleSearchJump = useCallback((messageId: string) => {
+    setViewMode('chat');
+    setTimeout(() => {
+      handleJumpToMessageRef.current?.(messageId);
+    }, 50);
+  }, []);
+
   // ── Stable callback refs ──────────────────────────────────────────────────
   // messagesRef always holds the latest messages without causing handlers to
   // be recreated. This is the key fix for mobile: React.memo(ChatBubble) was
@@ -415,7 +424,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       `}</style>
       
       <div 
-        className="flex flex-col h-[100dvh] w-full relative overflow-hidden text-aura-text-primary font-sans transition-all duration-700"
+        className={`flex flex-col h-[100dvh] w-full relative overflow-hidden text-aura-text-primary font-sans transition-all duration-700 ${isSearchOpen ? 'blur-sm pointer-events-none' : ''}`}
       >
         {/* Background Layer */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
@@ -494,6 +503,14 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
               {showPinDropdown && (
                 <>
                   <div className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-xl glass-panel z-50 overflow-hidden py-1">
+                    {/* Search — always first */}
+                    <button
+                      onClick={() => { setIsSearchOpen(true); setShowPinDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5 border-b border-white/5"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">search</span>
+                      Search Messages
+                    </button>
                     {viewMode === 'pinned' && (
                       <button 
                         onClick={() => { setViewMode('chat'); setShowPinDropdown(false); }}
@@ -727,6 +744,18 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           )}
         </main>
       </div>
+
+      {/* Chat Search Overlay */}
+      <ChatSearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onJumpToMessage={handleSearchJump}
+        userId={user?.id}
+        partnerId={partner.id}
+        partnerPublicKey={partner.public_key}
+        partnerKeyHistory={partner.key_history?.map(h => h.public_key)}
+        cachedMessages={messages}
+      />
     </>
   );
 }

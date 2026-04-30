@@ -51,7 +51,7 @@ function MediaGridBubble({
   const replyScale = useTransform(springX, (v) => 0.8 + Math.min(Math.abs(v) / 45, 1) * 0.3);
   const iconTranslate = useTransform(springX, (v) => -v / 2);
 
-  const time = new Date(messages[messages.length - 1].created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(':', ' : ');
+  const time = new Date(messages[messages.length - 1].created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;

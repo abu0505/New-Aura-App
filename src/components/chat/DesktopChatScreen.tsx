@@ -19,6 +19,7 @@ import DesktopCameraStudio from './DesktopCameraStudio';
 import { LastSeenStatus } from './LastSeenStatus';
 import { useTabNotification } from '../../hooks/useTabNotification';
 import { useCall } from '../../contexts/CallContext';
+import ChatSearch from './ChatSearch';
 
 
 
@@ -37,6 +38,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const pinDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isDesktopCameraOpen, setIsDesktopCameraOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const messageInputRef = useRef<MessageInputHandle>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -425,6 +427,15 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   }, [filteredPinnedMessages, messages, pinnedMessageDetails, viewMode]);
 
+  const handleSearchJump = useCallback(async (messageId: string) => {
+    // Switch back to chat view then jump
+    setViewMode('chat');
+    // Try in-DOM first, else load the window
+    setTimeout(() => {
+      handleJumpToMessageRef.current?.(messageId);
+    }, 50);
+  }, []);
+
   return (
     <>
       <style>{`
@@ -464,7 +475,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
         </AnimatePresence>
 
         <div
-          className="flex-1 grid grid-rows-[auto_auto_1fr_auto] overflow-hidden transition-all duration-700 relative z-10"
+          className={`flex-1 grid grid-rows-[auto_auto_1fr_auto] overflow-hidden transition-all duration-700 relative z-10 ${isSearchOpen ? 'blur-sm pointer-events-none' : ''}`}
           onDragEnter={handleDragEnter}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -558,6 +569,14 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                 {showPinDropdown && (
                   <>
                     <div className="absolute right-0 top-full mt-4 w-56 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-2xl glass-panel z-50 overflow-hidden py-1">
+                      {/* Search — always first */}
+                      <button
+                        onClick={() => { setIsSearchOpen(true); setShowPinDropdown(false); }}
+                        className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5 border-b border-white/5"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">search</span>
+                        Search Messages
+                      </button>
                       {viewMode === 'pinned' && (
                         <button
                           onClick={() => { setViewMode('chat'); setShowPinDropdown(false); }}
@@ -795,6 +814,18 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
           <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10 bg-background" />
         </div>
       </div>
+
+      {/* Chat Search Overlay */}
+      <ChatSearch
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        onJumpToMessage={handleSearchJump}
+        userId={user?.id}
+        partnerId={partner.id}
+        partnerPublicKey={partner.public_key}
+        partnerKeyHistory={partner.key_history?.map(h => h.public_key)}
+        cachedMessages={messages}
+      />
     </>
   );
 }
