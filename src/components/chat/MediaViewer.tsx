@@ -3,6 +3,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ChunkedVideoPlayer from './ChunkedVideoPlayer';
+import { toast } from 'sonner';
 
 interface MediaItem {
   id: string;
@@ -126,6 +127,58 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
             >
               <span className="material-symbols-outlined text-2xl">forum</span>
+            </button>
+          )}
+          {(currentMedia.type === 'image' || currentMedia.type === 'gif') && (
+            <button
+              title="Copy Image"
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const response = await fetch(currentMedia.url);
+                  let blob = await response.blob();
+
+                  if (blob.type !== 'image/png') {
+                    const image = new Image();
+                    image.crossOrigin = 'anonymous';
+                    const objectUrl = URL.createObjectURL(blob);
+                    
+                    await new Promise((resolve, reject) => {
+                      image.onload = resolve;
+                      image.onerror = reject;
+                      image.src = objectUrl;
+                    });
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(image, 0, 0);
+
+                    blob = await new Promise<Blob>((resolve, reject) => {
+                      canvas.toBlob((b) => {
+                        if (b) resolve(b);
+                        else reject(new Error('Canvas to Blob failed'));
+                      }, 'image/png');
+                    });
+                    
+                    URL.revokeObjectURL(objectUrl);
+                  }
+
+                  await navigator.clipboard.write([
+                    new ClipboardItem({
+                      [blob.type]: blob
+                    })
+                  ]);
+                  toast.success("Image copied to clipboard");
+                } catch (err) {
+                  console.error('Failed to copy image', err);
+                  toast.error("Failed to copy image");
+                }
+              }}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-2xl">content_copy</span>
             </button>
           )}
           <a
