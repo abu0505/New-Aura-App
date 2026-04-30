@@ -51,9 +51,9 @@ interface FolderPickerPopupProps {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 14;       // How many items to fetch at once from DB
-const PRELOAD_AHEAD = 10;   // Prefetch next N items before user scrolls there
-const VISIBLE_TRIGGER = 4;  // How many items from the end should trigger next load
+const PAGE_SIZE = 24;       // How many items to fetch at once from DB
+const PRELOAD_AHEAD = 20;   // Prefetch next N items before user scrolls there
+const VISIBLE_TRIGGER = 8;  // How many items from the end should trigger next load
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -185,8 +185,7 @@ export default function FolderPickerPopup({
         return [...prev, ...newRows];
       });
 
-      const multiplier = isTwoRow ? 2 : 1;
-      const effectivePageSize = PAGE_SIZE * multiplier;
+      setLoadedCount(prev => Math.max(prev, fromIndex + slice.length));
 
       // Decrypt visible window (first PAGE_SIZE) eagerly, rest lazily
       rows.slice(0, effectivePageSize).forEach(item => decryptItem(item));

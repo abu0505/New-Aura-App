@@ -1,14 +1,12 @@
 import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-export type CallMessageType = 
-  | 'call_request' 
-  | 'call_accept' 
-  | 'call_reject' 
-  | 'call_end' 
-  | 'sdp_offer' 
-  | 'sdp_answer' 
-  | 'ice_candidate';
+export type CallMessageType =
+  | 'call_request'   // carries { video: boolean, sdp: RTCSessionDescriptionInit, salt: string }
+  | 'call_accept'    // carries { sdp: RTCSessionDescriptionInit }
+  | 'call_reject'
+  | 'call_end'
+  | 'ice_candidate'; // carries RTCIceCandidateInit
 
 export interface CallMessage {
   type: CallMessageType;
@@ -19,14 +17,12 @@ export interface CallMessage {
 
 type CallMessageHandler = (message: CallMessage) => void;
 
-/**
- * Generates a deterministic, per-pair channel name so only the two
- * participants share a channel — eliminating global broadcast leakage.
- * IDs are sorted so both sides always generate the same channel name.
- */
-function getPairChannelName(userId: string, partnerId: string): string {
-  const sorted = [userId, partnerId].sort();
-  return `call-${sorted[0]}-${sorted[1]}`;
+// Build a deterministic channel name for a pair of users so that ONLY the two
+// participants are on the same Supabase Realtime channel. This prevents metadata
+// leakage to every other online user.
+function pairChannelName(userA: string, userB: string): string {
+  const [a, b] = [userA, userB].sort();
+  return `call-${a}-${b}`;
 }
 
 class CallSignaling {
@@ -36,92 +32,98 @@ class CallSignaling {
   private myUserId: string | null = null;
   private partnerId: string | null = null;
   private messageQueue: CallMessage[] = [];
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   start(userId: string, partnerId: string) {
-    const channelName = getPairChannelName(userId, partnerId);
-    console.log(`[WEBRTC Signaling] Starting signaling for user: ${userId} on channel: ${channelName}. Current status: connected=${this.isConnected}`);
-    
-    // If already connected to the correct channel, skip
+    const channelName = pairChannelName(userId, partnerId);
+    console.log(`[Signaling] Starting — channel: ${channelName}`);
+
+    // Already on the correct channel → skip
     if (this.isConnected && this.channel && this.myUserId === userId && this.partnerId === partnerId) {
-      console.log(`[WEBRTC Signaling] Already connected to correct channel. Skipping start.`);
+      console.log('[Signaling] Already connected to correct channel. Skipping start.');
       return;
     }
 
-    // Clean up any previous channel before starting a new one
-    if (this.channel) {
-      console.log(`[WEBRTC Signaling] Cleaning up old channel before starting new one.`);
-      supabase.removeChannel(this.channel);
-      this.channel = null;
-      this.isConnected = false;
-    }
+    // Tear down any existing channel first
+    this._teardown();
 
     this.myUserId = userId;
     this.partnerId = partnerId;
 
-    console.log(`[WEBRTC Signaling] Initializing Supabase channel '${channelName}'`);
     this.channel = supabase.channel(channelName, {
-      config: {
-        // ack: true ensures reliable delivery — message is confirmed by server
-        broadcast: { ack: true },
-      },
+      config: { broadcast: { ack: true } }, // ack=true → Supabase confirms delivery
     });
 
     this.channel.on(
       'broadcast',
       { event: 'call-message' },
       ({ payload }: { payload: CallMessage }) => {
-        // On a per-pair channel, all messages are for us — no client-side filtering needed
-        console.log(`[WEBRTC Signaling] Received message from ${payload.sender_id}:`, payload.type);
-        this.handlers.forEach((handler) => handler(payload));
+        if (payload.target_id === this.myUserId) {
+          console.log(`[Signaling] ← ${payload.type} from ${payload.sender_id}`);
+          this.handlers.forEach((h) => h(payload));
+        }
       }
     );
 
     this.channel.subscribe((status) => {
-      console.log(`[WEBRTC Signaling] Channel status changed to: ${status}`);
+      console.log(`[Signaling] Channel status: ${status}`);
       if (status === 'SUBSCRIBED') {
         this.isConnected = true;
-        this.flushQueue();
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer);
+          this.reconnectTimer = null;
+        }
+        this._flushQueue();
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
         this.isConnected = false;
-        console.warn(`[WEBRTC Signaling] Disconnected due to ${status}`);
+        console.warn(`[Signaling] Channel dropped (${status}). Will reconnect in 2s.`);
+        this._scheduleReconnect();
       }
     });
   }
 
-  clearQueue() {
-    console.log(`[WEBRTC Signaling] Clearing message queue. Had ${this.messageQueue.length} messages.`);
-    this.messageQueue = [];
-  }
-
-  private async flushQueue() {
-    if (!this.channel || !this.isConnected) return;
-    if (this.messageQueue.length > 0) {
-      console.log(`[WEBRTC Signaling] Flushing ${this.messageQueue.length} queued messages.`);
-    }
-    while (this.messageQueue.length > 0) {
-      const msg = this.messageQueue.shift();
-      if (msg) {
-        try {
-          console.log(`[WEBRTC Signaling] Sending queued message: ${msg.type}`);
-          await this.channel.send({
-            type: 'broadcast',
-            event: 'call-message',
-            payload: msg,
-          });
-        } catch (e) {
-          console.error('[WEBRTC Signaling] Failed to flush message', e);
-        }
+  private _scheduleReconnect() {
+    if (this.reconnectTimer) return;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (this.myUserId && this.partnerId) {
+        console.log('[Signaling] Reconnecting...');
+        this.start(this.myUserId, this.partnerId);
       }
-    }
+    }, 2000);
   }
 
-  stop() {
-    console.log(`[WEBRTC Signaling] Stopping signaling and removing channel.`);
+  private _teardown() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (this.channel) {
       supabase.removeChannel(this.channel);
       this.channel = null;
     }
     this.isConnected = false;
+  }
+
+  clearQueue() {
+    console.log(`[Signaling] Clearing queue (${this.messageQueue.length} messages).`);
+    this.messageQueue = [];
+  }
+
+  private async _flushQueue() {
+    if (!this.channel || !this.isConnected) return;
+    if (this.messageQueue.length > 0) {
+      console.log(`[Signaling] Flushing ${this.messageQueue.length} queued messages.`);
+    }
+    while (this.messageQueue.length > 0) {
+      const msg = this.messageQueue.shift();
+      if (msg) await this._send(msg);
+    }
+  }
+
+  stop() {
+    console.log('[Signaling] Stopping.');
+    this._teardown();
     this.myUserId = null;
     this.partnerId = null;
     this.clearQueue();
@@ -129,33 +131,29 @@ class CallSignaling {
 
   onMessage(handler: CallMessageHandler) {
     this.handlers.add(handler);
-    return () => {
-      this.handlers.delete(handler);
-    };
+    return () => this.handlers.delete(handler);
   }
 
   async sendMessage(message: CallMessage) {
     if (!this.channel || !this.isConnected) {
-      console.warn(`[WEBRTC Signaling] Not connected. Queuing message: ${message.type}. Current queue size: ${this.messageQueue.length}`);
+      console.warn(`[Signaling] Not connected — queuing: ${message.type}`);
       this.messageQueue.push(message);
-      
-      // Attempt reconnection if we dropped completely
-      if (!this.channel && this.myUserId && this.partnerId) {
-        console.log(`[WEBRTC Signaling] Channel is null. Attempting to restart for ${this.myUserId}`);
-        this.start(this.myUserId, this.partnerId);
-      }
       return;
     }
+    await this._send(message);
+  }
 
+  private async _send(message: CallMessage) {
+    if (!this.channel) return;
     try {
-      console.log(`[WEBRTC Signaling] Sending message: ${message.type} to ${message.target_id}`);
+      console.log(`[Signaling] → ${message.type} to ${message.target_id}`);
       await this.channel.send({
         type: 'broadcast',
         event: 'call-message',
         payload: message,
       });
     } catch (e) {
-      console.error('[WEBRTC Signaling] Failed to send call signaling message', e);
+      console.error('[Signaling] Send failed:', e);
     }
   }
 }

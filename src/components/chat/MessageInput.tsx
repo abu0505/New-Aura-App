@@ -860,7 +860,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
               return (
                 <div 
                   ref={mirrorRef}
-                  className="absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm py-1 pl-3 leading-normal"
+                  className="absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm py-1 px-1 leading-normal"
                   style={{ 
                     fontFamily: 'inherit',
                     color: 'var(--text-primary)'
