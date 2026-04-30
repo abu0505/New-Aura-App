@@ -67,7 +67,12 @@ export function EmojiText({ text, size = 18, className = "" }: { text: string; s
         if (part && testRegex.test(part)) {
           // Re-test with a state-less regex to be sure it's an emoji match 
           // (split with capture group keeps the dividers)
-          return <PremiumEmoji key={i} emoji={part} size={size} className="mx-[0.05em] align-[-0.2em]" />;
+          return (
+            <span key={i}>
+              <PremiumEmoji emoji={part} size={size} className="mx-[0.05em] align-[-0.2em]" />
+              <wbr />
+            </span>
+          );
         }
         return <span key={i}>{part}</span>;
       })}

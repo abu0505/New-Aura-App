@@ -1001,7 +1001,7 @@ function ChatBubble({
             
             {message.media_url ? (
               <div className="flex flex-col">
-                <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words">
+                <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words line-clamp-2">
                   {renderContent(message.decrypted_content)}
                 </div>
                 <div className="flex items-center justify-end gap-1 mt-0.5">
@@ -1028,7 +1028,7 @@ function ChatBubble({
               </div>
             ) : (
               <div className="flex flex-col relative z-20">
-                <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words">
+                <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words line-clamp-2">
                   {renderContent(message.decrypted_content)}
                 </div>
                 {firstUrl && <LinkPreview url={firstUrl} />}
