@@ -18,6 +18,7 @@ import type { SelectedMemoryMedia } from './FolderPickerPopup';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmojiText } from '../common/PremiumEmoji';
+import { useAutocompletePhrases } from '../../hooks/useAutocompletePhrases';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
@@ -61,6 +62,9 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, _setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
+  
+  const { phrases } = useAutocompletePhrases();
+  const [suggestion, setSuggestion] = useState<string | null>(null);
   
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   const maxHeight = isMobile ? 72 : 120;
@@ -145,6 +149,50 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       return () => clearTimeout(timer);
     }
   }, [isActive]);
+
+  // Autocomplete suggestion effect
+  useEffect(() => {
+    if (!text || activeFolderChip) {
+      setSuggestion(null);
+      return;
+    }
+    
+    const lowerText = text.toLowerCase();
+    let bestSuggestion = null;
+    let longestMatchLen = 0;
+
+    for (const phrase of phrases) {
+      const lowerPhrase = phrase.toLowerCase();
+      
+      for (let i = 0; i < lowerText.length; i++) {
+        // Check if `i` is the start of a word (start of string or preceded by non-alphanumeric)
+        const isWordBoundary = i === 0 || /\W/.test(lowerText[i - 1]);
+        if (isWordBoundary) {
+          const suffix = lowerText.slice(i);
+          if (suffix.length > 0 && lowerPhrase.startsWith(suffix)) {
+            if (lowerPhrase.length > suffix.length) {
+              if (suffix.length > longestMatchLen) {
+                longestMatchLen = suffix.length;
+                bestSuggestion = phrase.slice(suffix.length);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    setSuggestion(bestSuggestion);
+  }, [text, phrases, activeFolderChip]);
+
+  const handleAutoComplete = () => {
+    if (suggestion) {
+      setText(text + suggestion);
+      setSuggestion(null);
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }
+  };
 
   // Auto-focus when replying to a message
   useEffect(() => {
@@ -285,6 +333,11 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab' && suggestion) {
+      e.preventDefault();
+      handleAutoComplete();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -853,6 +906,18 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         {/* Input Area */}
         <div className="flex-1 min-h-[40px] flex items-center">
           <div className="relative w-full">
+            {/* Auto-complete Suggestion Layer */}
+            {suggestion && !activeFolderChip && (
+              <div 
+                className="absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm py-1 px-1 leading-normal z-0"
+                style={{ fontFamily: 'inherit' }}
+                aria-hidden="true"
+              >
+                <span className="opacity-0">{text}</span>
+                <span className="text-aura-text-secondary opacity-50">{suggestion}</span>
+              </div>
+            )}
+
             {/* Mirror Div for styling the prefix while keeping it part of the text */}
             {activeFolderChip && (() => {
               const chipStr = `/${activeFolderChip}`;
@@ -950,7 +1015,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             onPaste={handlePaste}
             placeholder={isUploading ? "Securing media..." : "I love you..."}
             disabled={disabled || isUploading}
-            className={`w-full border-none text-sm resize-none focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal px-1 ${
+            className={`w-full border-none text-sm resize-none focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal px-1 relative z-10 ${
               activeFolderChip 
                 ? 'text-transparent caret-white bg-transparent' 
                 : 'text-aura-text-primary bg-transparent'
@@ -965,6 +1030,20 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
         {/* Toggleable Buttons */}
         <div className="flex items-center">
+          <AnimatePresence>
+            {suggestion && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8, x: 10 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.8, x: 10 }}
+                onClick={handleAutoComplete}
+                className="mr-2 w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-all active:scale-90"
+                title="Auto Complete (Tab)"
+              >
+                <span className="material-symbols-outlined text-[18px]">keyboard_tab</span>
+              </motion.button>
+            )}
+          </AnimatePresence>
           <AnimatePresence mode="wait">
             {!text.trim() && !isUploading ? (
               <motion.div 
