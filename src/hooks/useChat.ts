@@ -514,6 +514,19 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       }
     });
 
+    // ═══ Feedback Loop: Listen for notification delivery receipts ═══
+    const unsubNotifs = realtimeHub.on('notifications', (payload) => {
+      if (payload.eventType === 'UPDATE') {
+        const row = payload.new as any;
+        const oldRow = payload.old as any;
+        
+        // If 'seen_push' just changed from false to true, it means the Service Worker received it!
+        if (row.seen_push && !oldRow?.seen_push && row.sender_id === user.id) {
+          console.log(`[🔔 NOTIF-SEND] ✅ CONFIRMED: Partner's device received the notification for msg ${row.data?.message_id?.substring(0, 8)}...`);
+        }
+      }
+    });
+
     // Gap-fill on visibility/online change (no channel management needed — hub handles it)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -535,6 +548,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       unsubMessages();
       unsubPins(); // Fix 2.3: cleanup pinned_messages subscription
+      unsubNotifs();
     };
   // ══ CRITICAL: encryptionStatus was REMOVED from deps ══
   // Having it here caused the entire effect (fetchMessages + channel subscribe)
@@ -554,9 +568,9 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     
     const currentMessages = messagesRef.current;
     // Find message IDs that are NOT currently loaded AND NOT already fetched
-    const missingIds = pinnedMessages
-      .map(p => p.message_id)
-      .filter(id => !currentMessages.find(m => m.id === id) && !pinnedMessageDetailsRef.current[id]);
+    const missingIds = (pinnedMessages as any[])
+      .map((p: any) => p.message_id)
+      .filter((id: string) => !currentMessages.find(m => m.id === id) && !pinnedMessageDetailsRef.current[id]);
 
     if (missingIds.length === 0) return;
 
@@ -583,7 +597,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           setPinnedMessageDetails(prev => ({ ...prev, ...decryptedDetails }));
         }
       } catch (err) {
-        
+        // Error fetching details
       }
     };
 

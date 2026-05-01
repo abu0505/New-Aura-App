@@ -23,6 +23,7 @@ import { MediaFoldersProvider } from './contexts/MediaFoldersContext';
 import { Toaster } from 'sonner';
 import { CallProvider } from './contexts/CallContext';
 import CallOverlay from './components/call/CallOverlay';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 function InnerApp({ 
   session, 
@@ -312,13 +313,15 @@ export default function App() {
     <AppLockProvider>
       <MediaFoldersProvider>
         <CallProvider>
-          <InnerApp 
-            session={session} 
-            partner={partner} 
-            streakCount={streakCount} 
-            showCelebration={showCelebration}
-            setShowCelebration={setShowCelebration}
-          />
+          <NotificationProvider>
+            <InnerApp 
+              session={session} 
+              partner={partner} 
+              streakCount={streakCount} 
+              showCelebration={showCelebration}
+              setShowCelebration={setShowCelebration}
+            />
+          </NotificationProvider>
         </CallProvider>
       </MediaFoldersProvider>
     </AppLockProvider>

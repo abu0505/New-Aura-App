@@ -216,7 +216,6 @@ Deno.serve(async (req) => {
     console.log("[send-push] Received request body:", JSON.stringify(body));
     const message = body.record || body;
 
-
     if (!message || !message.receiver_id) {
       console.warn("[send-push] No receiver_id found in payload.");
       return new Response(JSON.stringify({ error: "No receiver_id in payload" }), { status: 400, headers });
@@ -238,13 +237,7 @@ Deno.serve(async (req) => {
     const fallbackSenderName = senderProfileRes.data?.display_name || "Your partner";
     const receiverSettings = settingsRes.data;
 
-    console.log(`[send-push] Fetched data for receiver ${receiverId}:`);
-    console.log(`[send-push] - Profile is_online: ${receiverProfile?.is_online}, last_seen: ${receiverProfile?.last_seen}`);
-    console.log(`[send-push] - Active push subscriptions count: ${subscriptions?.length || 0}`);
-    console.log(`[send-push] - Receiver settings: alias='${receiverSettings?.notification_alias}', custom_bodies_count=${receiverSettings?.notification_bodies?.length || 0}`);
-
     // ── PERSONALISED SENDER NAME ──
-    // Use receiver's custom alias if set, else fallback to sender's display name
     const senderName = receiverSettings?.notification_alias?.trim() || fallbackSenderName;
 
     // ── RANDOM NOTIFICATION BODY ──
@@ -265,22 +258,36 @@ Deno.serve(async (req) => {
       : DEFAULT_BODIES;
     const randomBody = bodyPool[Math.floor(Math.random() * bodyPool.length)];
 
-    // SMART SKIP: Check if user is actively online
-    if (receiverProfile?.is_online) {
-      const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
-      const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
-      
-      console.log(`[send-push] Smart skip evaluation: user is marked online. Seconds since last seen: ${secondsSinceLastSeen}s (Threshold is 20s)`);
-      
-      // If user is marked is_online=true AND pinged within the last 20 seconds, they are actively online.
-      if (secondsSinceLastSeen < 20) {
-        console.log(`[send-push] 🛑 Skipping push notification because receiver is actively online (${secondsSinceLastSeen}s < 20s)`);
-        return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
-      } else {
-        console.log(`[send-push] ✅ Proceeding with push notification despite is_online=true, because last_seen is stale (${secondsSinceLastSeen}s >= 20s)`);
-      }
-    } else {
-      console.log("[send-push] ✅ Proceeding with push notification because receiver is offline (is_online=false).");
+    // LAYER 1: Notification Creation (if DB trigger didn't catch it, fallback)
+    // Actually, we'll just insert it here directly to avoid relying on DB triggers that the user has to run manually!
+    const { data: notification, error: notifError } = await supabase
+      .from("notifications")
+      .insert({
+        recipient_id: receiverId,
+        sender_id: senderId,
+        type: "message",
+        title: senderName,
+        body: randomBody,
+        data: { message_id: message.id, chat_id: message.chat_id }
+      })
+      .select("*")
+      .single();
+
+    if (notifError) {
+      console.warn("[send-push] Could not insert notification (schema might be missing or trigger handled it).", notifError);
+    }
+    
+    // Let's get the notification ID either from our insert or from the DB trigger
+    let notificationId = notification?.id;
+    if (!notificationId) {
+       // Try to fetch it if the trigger created it
+       const { data: existingNotif } = await supabase
+         .from("notifications")
+         .select("id")
+         .eq("recipient_id", receiverId)
+         .contains("data", { message_id: message.id })
+         .single();
+       notificationId = existingNotif?.id;
     }
 
     if (subsRes.error || !subscriptions || subscriptions.length === 0) {
@@ -288,14 +295,42 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: false, message: "No subscriptions" }), { headers });
     }
 
+    // LAYER 2: Grace period + Deduplication Check
+    // Wait 2.5 seconds to see if the frontend picks up the Realtime event and marks it as seen_realtime
+    console.log(`[send-push] Waiting 2.5s for frontend to receive Realtime event...`);
+    await new Promise(r => setTimeout(r, 2500));
 
+    if (notificationId) {
+      const { data: recheckNotif } = await supabase
+        .from("notifications")
+        .select("seen_realtime")
+        .eq("id", notificationId)
+        .single();
 
-    // Send personalized payload so the service worker can display meaningful content
+      if (recheckNotif?.seen_realtime) {
+        console.log(`[send-push] 🛑 Skipped Push: Notification was delivered via Realtime.`);
+        return new Response(JSON.stringify({ success: true, message: "Skipped - Delivered via Realtime" }), { headers });
+      } else {
+         console.log(`[send-push] ⚠️ Notification NOT seen via Realtime. Proceeding with Web Push.`);
+      }
+    }
+
+    // Fallback: Smart skip if user is actively online (legacy check, just in case realtime delivery failed but user is online)
+    if (receiverProfile?.is_online) {
+      const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
+      const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
+      if (secondsSinceLastSeen < 10) {
+        console.log(`[send-push] 🛑 Skipping push: Receiver is actively online (${secondsSinceLastSeen}s < 10s)`);
+        return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
+      }
+    }
+
     const pushPayload = JSON.stringify({
       messageId: message.id,
       senderId: senderId,
       senderName: senderName,
       body: randomBody,
+      notificationId: notificationId, // Pass this to service worker to mark as seen_push
       url: "/",
     });
 
@@ -311,8 +346,6 @@ Deno.serve(async (req) => {
           vapidSubject
         );
 
-
-
         if (response.status === 201 || response.status === 200) {
           console.log(`[send-push] ✅ Push successfully delivered to endpoint: ${sub.endpoint}`);
           successCount++;
@@ -325,11 +358,18 @@ Deno.serve(async (req) => {
         }
       } catch (err: any) {
         console.error(`[send-push] ❌ Exception while sending to endpoint: ${sub.endpoint}:`, err.message);
-        // failed silently
       }
     });
 
     await Promise.all(sendPromises);
+    
+    // Mark as push sent
+    if (notificationId && successCount > 0) {
+      await supabase
+        .from("notifications")
+        .update({ seen_push: true })
+        .eq("id", notificationId);
+    }
 
     console.log(`[send-push] 🎉 Notification delivery completed. Successfully sent to ${successCount}/${subscriptions.length} devices.`);
     return new Response(JSON.stringify({ success: true, sentTo: successCount }), { headers });

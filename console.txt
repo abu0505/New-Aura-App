@@ -1,112 +1,96 @@
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Starting signaling for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868. Current status: connected=false
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Initializing Supabase channel 'call-signaling'
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Channel status changed to: SUBSCRIBED
-index-3uRsL2MT.js:40 [WEBRTC Context] initiateCall(video=true) requested
-index-3uRsL2MT.js:40 [WEBRTC Context] Requesting getUserMedia
-index-3uRsL2MT.js:40 [WEBRTC Context] getUserMedia success
-index-3uRsL2MT.js:40 [WEBRTC Context] Manager initialized, calling initiateCall on manager
-index-3uRsL2MT.js:40 [WEBRTC Manager] initiateCall(video=true)
-index-3uRsL2MT.js:40 [WEBRTC Manager] Sending call_request...
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: call_request to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: call_accept
-index-3uRsL2MT.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleAccept()
-index-3uRsL2MT.js:40 [WEBRTC Manager] Creating offer...
- [WEBRTC Manager] Sending sdp_offer...
- [WEBRTC Signaling] Sending message: sdp_offer to 8bb51234-4a86-470f-9f7d-96a95f551952
- [WEBRTC Manager] Generated ICE candidate, sending to partner
- [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
- [WEBRTC Manager] Generated ICE candidate, sending to partner
- [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
- [WEBRTC Manager] Generated ICE candidate, sending to partner
- [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
- [WEBRTC Manager] Generated ICE candidate, sending to partner
- [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Manager] Generated ICE candidate, sending to partner
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: ice_candidate to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: sdp_answer
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: sdp_answer
-index-3uRsL2MT.js:40 [WEBRTC Context] Received SDP answer.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleAnswer() received
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: call_accept
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: call_accept
-index-3uRsL2MT.js:40 [WEBRTC Context] Partner accepted call. Forwarding to manager.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleAccept()
-index-3uRsL2MT.js:40 [WEBRTC Manager] Ignoring handleAccept because signalingState is have-local-offer
-handleAccept @ index-3uRsL2MT.js:40
-(anonymous) @ index-3uRsL2MT.js:40
-(anonymous) @ index-3uRsL2MT.js:40
-(anonymous) @ index-3uRsL2MT.js:40
-trigger @ encryption-C835slEB.js:3
-(anonymous) @ encryption-C835slEB.js:4
-decode @ encryption-C835slEB.js:3
-onConnMessage @ encryption-C835slEB.js:4
-conn.onmessage @ encryption-C835slEB.js:4
-index-3uRsL2MT.js:40 [WEBRTC Manager] Received remote track: audio
-index-3uRsL2MT.js:40 [WEBRTC Manager] Received remote track: video
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: connecting
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Received message from 8bb51234-4a86-470f-9f7d-96a95f551952: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received message: ice_candidate
-index-3uRsL2MT.js:40 [WEBRTC Context] Received ICE candidate.
-index-3uRsL2MT.js:40 [WEBRTC Manager] handleIceCandidate() received
-index-3uRsL2MT.js:40 [WEBRTC Manager] Connection state changed to: connected
-index-3uRsL2MT.js:40 [WEBRTC Context] endCall() requested
-index-3uRsL2MT.js:40 [WEBRTC Manager] endCall(notifyPartner=true)
-index-3uRsL2MT.js:40 [WEBRTC Manager] Sending call_end...
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Sending message: call_end to 8bb51234-4a86-470f-9f7d-96a95f551952
-index-3uRsL2MT.js:40 [WEBRTC Signaling] Clearing message queue. Had 0 messages.
+content.js:22 [SmartLens Content] Initializing...
+content.js:438 [SmartLens] Content script loaded
+index-cn-uhbz2.js:40 [🔔 NOTIF] Registering service worker: /sw.js
+index-cn-uhbz2.js:40 [🔔 NOTIF] ✅ Service Worker registered successfully
+index-cn-uhbz2.js:40 [🔔 NOTIF]   scope: https://new-aura-app.vercel.app/
+index-cn-uhbz2.js:40 [🔔 NOTIF]   active: activated
+index-cn-uhbz2.js:40 [🔔 NOTIF]   waiting: none
+(index):1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+(index):1 Error while trying to use the following icon from the Manifest: https://new-aura-app.vercel.app/icon-192.png (Download error or resource isn't a valid image)
+index-cn-uhbz2.js:40 [🔔 NOTIF] 🔍 Existing push subscription: NO ❌
+index-cn-uhbz2.js:40 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
+index-cn-uhbz2.js:40 [🔔 NOTIF]   user: 2dfb823f...
+index-cn-uhbz2.js:40 [🔔 NOTIF]   Notification.permission: default
+index-cn-uhbz2.js:40 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
+index-cn-uhbz2.js:40 [🔔 NOTIF] 🔑 Notification.permission = "default"
+index-cn-uhbz2.js:40 [🔔 NOTIF] ⚠️ Permission is NOT granted (default) — cannot auto-subscribe. User must manually enable from Settings.
+me @ index-cn-uhbz2.js:40
+t @ index-cn-uhbz2.js:40
+(anonymous) @ index-cn-uhbz2.js:40
+setTimeout
+(anonymous) @ index-cn-uhbz2.js:40
+Wc @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Dl @ index-cn-uhbz2.js:9
+Ol @ index-cn-uhbz2.js:9
+Uu @ index-cn-uhbz2.js:9
+(anonymous) @ index-cn-uhbz2.js:9
+re @ index-cn-uhbz2.js:2
+postMessage
+w @ index-cn-uhbz2.js:2
+re @ index-cn-uhbz2.js:2
+postMessage
+w @ index-cn-uhbz2.js:2
+e.unstable_scheduleCallback @ index-cn-uhbz2.js:2
+sd @ index-cn-uhbz2.js:9
+od @ index-cn-uhbz2.js:9
+(anonymous) @ index-cn-uhbz2.js:9
+index-cn-uhbz2.js:40 [🔔 NOTIF] 📋 Push setup result: FAILED ❌
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg a98f2c87... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 78c93ed1... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg 582a37b3...)
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg c2e3b9f5...)
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 25c86102... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg f743d862... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg b40aa5db... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 24ec30d9... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg e7b08172... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 801aa821... to partner 8bb51234...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
+preload-helper-lG0EuFZ9.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push

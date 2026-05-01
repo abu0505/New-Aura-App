@@ -93,6 +93,7 @@ function start(userId?: string, partnerId?: string) {
     { table: 'video_chunks' },    // Progressive chunked video streaming
     { table: 'profiles', filter: partnerId ? `id=eq.${partnerId}` : undefined },
     { table: 'chat_settings', filter: userId ? `user_id=eq.${userId}` : undefined },
+    { table: 'notifications', filter: userId ? `recipient_id=eq.${userId}` : undefined },
   ];
 
   for (const { table, filter } of tables) {

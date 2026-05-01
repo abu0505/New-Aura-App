@@ -50,7 +50,8 @@ self.addEventListener('push', function(event) {
       badge: '/favicon.svg',
       data: {
         url: pushData.url || '/',
-        messageId: pushData.messageId
+        messageId: pushData.messageId,
+        notificationId: pushData.notificationId
       },
       vibrate: [200, 100, 200],
       requireInteraction: false,
@@ -61,6 +62,30 @@ self.addEventListener('push', function(event) {
       renotify: true,
       silent: false
     };
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 📨 FEEDBACK LOOP: Notify the server that the push was actually received
+    // ═══════════════════════════════════════════════════════════════════════════════
+    if (pushData.notificationId) {
+      console.log('[🔔 SW] 🔄 Sending delivery receipt to server for notif: ' + pushData.notificationId);
+      
+      // We use a simple fetch to update the notification status in Supabase.
+      // We don't want to block the notification display, so we fire-and-forget.
+      // This allows the sender to see "[🔔 NOTIF-SEND] ✅ CONFIRMED" in their console.
+      fetch('https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?id=eq.' + pushData.notificationId, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ seen_push: true })
+      }).then(function(resp) {
+        console.log('[🔔 SW] ✅ Delivery receipt sent (Status: ' + resp.status + ')');
+      }).catch(function(err) {
+        console.error('[🔔 SW] ❌ Failed to send delivery receipt:', err.message);
+      });
+    }
 
     event.waitUntil(
       self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(windowClients) {
@@ -108,6 +133,13 @@ self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
   var urlToOpen = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/';
+  var notificationId = event.notification.data && event.notification.data.notificationId;
+  
+  if (notificationId && !urlToOpen.includes('notif_id')) {
+    var separator = urlToOpen.includes('?') ? '&' : '?';
+    urlToOpen += separator + 'notif_id=' + notificationId;
+  }
+
   var absoluteUrl = new URL(urlToOpen, self.location.origin).href;
 
   event.waitUntil(
@@ -115,8 +147,9 @@ self.addEventListener('notificationclick', function(event) {
       // Focus existing window if open
       for (var i = 0; i < windowClients.length; i++) {
         var client = windowClients[i];
-        if (client.url === absoluteUrl && 'focus' in client) {
+        if (client.url.split('?')[0] === absoluteUrl.split('?')[0] && 'focus' in client) {
           console.log('[🔔 SW]   Focusing existing window:', client.url);
+          client.postMessage({ type: 'NOTIFICATION_CLICKED', notificationId: notificationId });
           return client.focus();
         }
       }
@@ -125,6 +158,7 @@ self.addEventListener('notificationclick', function(event) {
         var c = windowClients[j];
         if ('focus' in c) {
           console.log('[🔔 SW]   Focusing any open window');
+          c.postMessage({ type: 'NOTIFICATION_CLICKED', notificationId: notificationId });
           return c.focus();
         }
       }

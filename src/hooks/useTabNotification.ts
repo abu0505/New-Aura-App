@@ -1,35 +1,32 @@
 import { useEffect, useRef } from 'react';
-import type { ChatMessage } from './useChat';
+import { useNotifications } from '../contexts/NotificationContext';
 
 const BASE_TITLE = 'AURA';
 
 /**
  * useTabNotification
  *
- * Updates the browser tab title with an unread message badge.
- * - "(3) AURA" when 3 unread partner messages
+ * Updates the browser tab title with an unread global notification badge.
+ * - "(3) AURA" when 3 unread notifications
  * - "(9+) AURA" when 9+ unread
- * - "AURA" when all read or tab is focused
+ * - "AURA" when all read
  *
- * Only runs on desktop — call this hook inside DesktopChatScreen.
+ * Runs globally on desktop inside AppLayout or similar.
  */
-export function useTabNotification(messages: ChatMessage[]): void {
-  // Keep a stable ref to the original title so we can restore it on unmount
+export function useTabNotification(): void {
   const originalTitleRef = useRef(document.title);
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
-    // Count unread messages from partner (not mine, not read)
-    const unreadCount = messages.filter(m => !m.is_mine && !m.is_read).length;
-
     if (unreadCount === 0) {
       document.title = BASE_TITLE;
     } else {
       const badge = unreadCount > 9 ? '9+' : String(unreadCount);
       document.title = `(${badge}) ${BASE_TITLE}`;
     }
-  }, [messages]);
+  }, [unreadCount]);
 
-  // Reset title when the component unmounts (e.g. user logs out)
+  // Reset title when the component unmounts
   useEffect(() => {
     return () => {
       document.title = originalTitleRef.current || BASE_TITLE;
