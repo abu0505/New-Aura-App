@@ -5,6 +5,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 
+import { DimProvider } from './contexts/DimContext'
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(
@@ -26,7 +28,9 @@ if ('serviceWorker' in navigator) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
-      <App />
+      <DimProvider>
+        <App />
+      </DimProvider>
     </AuthProvider>
   </StrictMode>,
 )

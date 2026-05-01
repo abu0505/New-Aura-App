@@ -1,5 +1,6 @@
 import { useChatSettings } from '../../hooks/useChatSettings';
 import QuickEmojiSettings from './QuickEmojiSettings';
+import { useDim } from '../../contexts/DimContext';
 
 const COLORS = [
   { id: 'gold', hex: '#e6c487', label: 'Aura Gold' },
@@ -12,6 +13,7 @@ const COLORS = [
 
 export default function AppearanceSettings() {
   const { settings, updateSettings } = useChatSettings();
+  const { dimLevel, setDimLevel } = useDim();
 
   const currentAccent = settings?.accent_color || '#e6c487';
   const isTrueDark = settings?.true_dark_mode || false;
@@ -79,6 +81,29 @@ export default function AppearanceSettings() {
           </div>
           <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${isTrueDark ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
             <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${isTrueDark ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
+          </div>
+        </div>
+
+        {/* Extra Dim Mode Slider */}
+        <div className="p-4 rounded-3xl border bg-white/5 border-transparent">
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-[14px]">nightlight</span>
+                Extra Dim
+              </span>
+              <span className="text-[10px] text-white/50">{Math.round(dimLevel * 100)}%</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="0.8" 
+              step="0.05"
+              value={dimLevel}
+              onChange={(e) => setDimLevel(parseFloat(e.target.value))}
+              className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--gold)]"
+            />
+            <span className="text-[9px] text-white/50 italic">Dim the screen further for very dark environments</span>
           </div>
         </div>
 

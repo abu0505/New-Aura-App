@@ -957,34 +957,34 @@ function ChatBubble({
         {repliedMessage && !isOnlyMedia && !isSticker && (
           <div 
             onClick={(e) => { e.stopPropagation(); onJumpToMessage?.(repliedMessage.id); }}
-            className={`mb-2 pl-3 py-1.5 pr-2 rounded-lg cursor-pointer transition-colors border-l-2 active:scale-95 ${isMine ? 'bg-black/10 border-l-background/30 hover:bg-black/20 text-background/80' : 'bg-white/5 border-l-primary/50 hover:bg-white/10 text-aura-text-primary/80'}`}
+            className={`mb-2 pl-3 py-1.5 pr-2 rounded-lg cursor-pointer transition-colors border-l-2 active:scale-95 w-0 min-w-full overflow-hidden ${isMine ? 'bg-black/10 border-l-background/30 hover:bg-black/20 text-background/80' : 'bg-white/5 border-l-primary/50 hover:bg-white/10 text-aura-text-primary/80'}`}
           >
-            <div className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1 ${isMine ? 'text-background' : 'text-primary'}`}>
-              <span className="material-symbols-outlined text-[10px]">reply</span>
-              {repliedMessage.is_mine ? 'You' : 'Partner'}
+            <div className={`text-[10px] font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1 truncate ${isMine ? 'text-background' : 'text-primary'}`}>
+              <span className="material-symbols-outlined text-[10px] shrink-0">reply</span>
+              <span className="truncate">{repliedMessage.is_mine ? 'You' : 'Partner'}</span>
             </div>
-            <div className="text-xs truncate max-w-[200px] flex items-center gap-2">
+            <div className="text-xs flex items-center gap-2 overflow-hidden w-full">
               {repliedMessage.type === 'image' ? (
                 repliedMediaUrl ? (
-                  <img src={repliedMediaUrl} alt="media preview" className="w-20 h-20 rounded shadow-sm object-cover flex-shrink-0" />
+                  <img src={repliedMediaUrl} alt="media preview" className="w-10 h-10 rounded shadow-sm object-cover flex-shrink-0" />
                 ) : (
-                  <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">image</span>
+                  <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse shrink-0">image</span>
                 )
               ) : repliedMessage.type === 'video' ? (
                 repliedMediaUrl ? (
-                  <div className="relative w-20 h-20 flex-shrink-0">
+                  <div className="relative w-10 h-10 flex-shrink-0">
                     <video src={repliedMediaUrl} className="w-full h-full rounded shadow-sm object-cover" />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
-                      <span className="material-symbols-outlined text-white text-[16px]">play_circle</span>
+                      <span className="material-symbols-outlined text-white text-[14px]">play_circle</span>
                     </div>
                   </div>
                 ) : (
-                  <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse">videocam</span>
+                  <span className="material-symbols-outlined text-[18px] opacity-70 animate-pulse shrink-0">videocam</span>
                 )
               ) : null}
-              <span className="truncate">
+              <span className="truncate block flex-1 min-w-0 whitespace-nowrap">
                 {repliedMessage.decrypted_content ? (
-                  <EmojiText text={repliedMessage.decrypted_content} size={12} />
+                  <EmojiText text={repliedMessage.decrypted_content} size={12} className="whitespace-nowrap" />
                 ) : (
                   repliedMessage.type !== 'text' ? (repliedMessage.type === 'audio' ? 'Voice Message' : '') : 'Message'
                 )}
