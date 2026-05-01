@@ -783,9 +783,11 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const isThrottled = pushDebounceTimers.has(partnerId);
       
       if (!isThrottled) {
+        console.log(`[🔔 NOTIF-SEND] 📤 Triggering push for msg ${optimisticMsg.id.substring(0, 8)}... to partner ${partnerId.substring(0, 8)}...`);
         // Set a 5s lock to prevent spamming
         const lockTimer = setTimeout(() => {
           pushDebounceTimers.delete(partnerId);
+          console.log(`[🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push`);
         }, 5000);
         pushDebounceTimers.set(partnerId, lockTimer);
         
@@ -795,13 +797,17 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           const stillValid = messagesRef.current.find(
             m => m.id === optimisticMsg.id && !m.is_send_failed
           );
-          if (!stillValid) return;
+          if (!stillValid) {
+            console.warn(`[🔔 NOTIF-SEND] ⚠️ Message ${optimisticMsg.id.substring(0, 8)}... no longer valid — skipping push`);
+            return;
+          }
           
           try {
             // Ensure session is fresh — prevents 401 on expired JWT
             const { data: { session: freshSession } } = await supabase.auth.getSession();
             if (freshSession) {
-              await supabase.functions.invoke('send-push', {
+              console.log(`[🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...`);
+              const { data, error: invokeError } = await supabase.functions.invoke('send-push', {
                 body: { 
                   record: { 
                     id: optimisticMsg.id,
@@ -810,11 +816,20 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
                   } 
                 }
               });
+              if (invokeError) {
+                console.error(`[🔔 NOTIF-SEND] ❌ Edge function error:`, invokeError.message);
+              } else {
+                console.log(`[🔔 NOTIF-SEND] ✅ Edge function response:`, JSON.stringify(data));
+              }
+            } else {
+              console.warn(`[🔔 NOTIF-SEND] ⚠️ No fresh session — cannot invoke edge function`);
             }
-          } catch (err) {
-            // Push notifications are best-effort — silently ignore failures
+          } catch (err: any) {
+            console.error(`[🔔 NOTIF-SEND] ❌ Push invoke exception:`, err.message);
           }
         }, 500); // slight 500ms delay to let the DB insert finish first
+      } else {
+        console.log(`[🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg ${optimisticMsg.id.substring(0, 8)}...)`);
       }
     }
   };
@@ -933,18 +948,32 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         setMessages(prev => prev.map(m => m.id === tempId ? { ...m, is_pending: false, is_send_failed: true } : m));
       }
     } else {
+      console.log(`[🔔 NOTIF-SEND] 📤 Scheduling push for media msg ${tempId.substring(0, 8)}... (5s debounce)`);
       const existingTimer = pushDebounceTimers.get(partnerId);
       if (existingTimer) clearTimeout(existingTimer);
       
       const newTimer = setTimeout(async () => {
         const stillValid = messagesRef.current.find(m => m.id === tempId && !m.is_send_failed && !m.is_pending);
-        if (!stillValid) return;
+        if (!stillValid) {
+          console.warn(`[🔔 NOTIF-SEND] ⚠️ Media msg ${tempId.substring(0, 8)}... no longer valid — skipping push`);
+          return;
+        }
         try {
           const { data: { session: freshSession } } = await supabase.auth.getSession();
           if (freshSession) {
-             await supabase.functions.invoke('send-push', { body: { record: { id: tempId, sender_id: user.id, receiver_id: partnerId } } });
+            console.log(`[🔔 NOTIF-SEND] 🌐 Invoking send-push for media msg...`);
+            const { data, error: invokeError } = await supabase.functions.invoke('send-push', { body: { record: { id: tempId, sender_id: user.id, receiver_id: partnerId } } });
+            if (invokeError) {
+              console.error(`[🔔 NOTIF-SEND] ❌ Edge function error (media):`, invokeError.message);
+            } else {
+              console.log(`[🔔 NOTIF-SEND] ✅ Edge function response (media):`, JSON.stringify(data));
+            }
+          } else {
+            console.warn(`[🔔 NOTIF-SEND] ⚠️ No fresh session for media push`);
           }
-        } catch {}
+        } catch (err: any) {
+          console.error(`[🔔 NOTIF-SEND] ❌ Media push exception:`, err.message);
+        }
       }, 5000);
       pushDebounceTimers.set(partnerId, newTimer);
     }

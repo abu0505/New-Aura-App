@@ -36,11 +36,9 @@ class CallSignaling {
 
   start(userId: string, partnerId: string) {
     const channelName = pairChannelName(userId, partnerId);
-    console.log(`[Signaling] Starting — channel: ${channelName}`);
 
     // Already on the correct channel → skip
     if (this.isConnected && this.channel && this.myUserId === userId && this.partnerId === partnerId) {
-      console.log('[Signaling] Already connected to correct channel. Skipping start.');
       return;
     }
 
@@ -59,14 +57,12 @@ class CallSignaling {
       { event: 'call-message' },
       ({ payload }: { payload: CallMessage }) => {
         if (payload.target_id === this.myUserId) {
-          console.log(`[Signaling] ← ${payload.type} from ${payload.sender_id}`);
           this.handlers.forEach((h) => h(payload));
         }
       }
     );
 
     this.channel.subscribe((status) => {
-      console.log(`[Signaling] Channel status: ${status}`);
       if (status === 'SUBSCRIBED') {
         this.isConnected = true;
         if (this.reconnectTimer) {
@@ -76,7 +72,6 @@ class CallSignaling {
         this._flushQueue();
       } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
         this.isConnected = false;
-        console.warn(`[Signaling] Channel dropped (${status}). Will reconnect in 2s.`);
         this._scheduleReconnect();
       }
     });
@@ -87,7 +82,6 @@ class CallSignaling {
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       if (this.myUserId && this.partnerId) {
-        console.log('[Signaling] Reconnecting...');
         this.start(this.myUserId, this.partnerId);
       }
     }, 2000);
@@ -106,15 +100,11 @@ class CallSignaling {
   }
 
   clearQueue() {
-    console.log(`[Signaling] Clearing queue (${this.messageQueue.length} messages).`);
     this.messageQueue = [];
   }
 
   private async _flushQueue() {
     if (!this.channel || !this.isConnected) return;
-    if (this.messageQueue.length > 0) {
-      console.log(`[Signaling] Flushing ${this.messageQueue.length} queued messages.`);
-    }
     while (this.messageQueue.length > 0) {
       const msg = this.messageQueue.shift();
       if (msg) await this._send(msg);
@@ -122,7 +112,6 @@ class CallSignaling {
   }
 
   stop() {
-    console.log('[Signaling] Stopping.');
     this._teardown();
     this.myUserId = null;
     this.partnerId = null;
@@ -136,7 +125,6 @@ class CallSignaling {
 
   async sendMessage(message: CallMessage) {
     if (!this.channel || !this.isConnected) {
-      console.warn(`[Signaling] Not connected — queuing: ${message.type}`);
       this.messageQueue.push(message);
       return;
     }
@@ -146,14 +134,13 @@ class CallSignaling {
   private async _send(message: CallMessage) {
     if (!this.channel) return;
     try {
-      console.log(`[Signaling] → ${message.type} to ${message.target_id}`);
       await this.channel.send({
         type: 'broadcast',
         event: 'call-message',
         payload: message,
       });
     } catch (e) {
-      console.error('[Signaling] Send failed:', e);
+      // Send failed
     }
   }
 }

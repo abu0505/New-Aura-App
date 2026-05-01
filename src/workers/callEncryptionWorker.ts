@@ -27,7 +27,6 @@ self.onmessage = async (event: MessageEvent) => {
       false,
       ['encrypt', 'decrypt']
     );
-    console.log('[E2EE Worker] AES-GCM-256 key imported ✓');
     return;
   }
 
@@ -115,7 +114,6 @@ function _buildTransform(operation: 'encrypt' | 'decrypt'): TransformStream {
           }
         }
       } catch (e) {
-        console.error('[E2EE Worker] Transform error:', e);
         controller.enqueue(chunk); // Always enqueue to avoid stream stall
       }
     },

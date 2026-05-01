@@ -86,7 +86,6 @@ export class WebRTCManager {
     // ── ICE candidates ──────────────────────────────────────────────────────
     pc.onicecandidate = ({ candidate }) => {
       if (candidate) {
-        console.log('[WebRTC] Generated ICE candidate → sending');
         callSignaling.sendMessage({
           type: 'ice_candidate',
           sender_id: this.myUserId,
@@ -99,16 +98,13 @@ export class WebRTCManager {
     // ── ICE connection state ────────────────────────────────────────────────
     pc.oniceconnectionstatechange = () => {
       const s = pc.iceConnectionState;
-      console.log(`[WebRTC] ICE connection state: ${s}`);
       if (s === 'failed') {
-        console.warn('[WebRTC] ICE failed — attempting ICE restart');
         this._restartICE();
       }
       if (s === 'disconnected') {
         // Give it 3 s to recover on its own before restarting
         setTimeout(() => {
           if (pc.iceConnectionState === 'disconnected') {
-            console.warn('[WebRTC] ICE still disconnected after 3s — restarting');
             this._restartICE();
           }
         }, 3000);
@@ -118,14 +114,12 @@ export class WebRTCManager {
     // ── Connection state ────────────────────────────────────────────────────
     pc.onconnectionstatechange = () => {
       const s = pc.connectionState;
-      console.log(`[WebRTC] Connection state: ${s}`);
       switch (s) {
         case 'connected':
           this.setCallState('connected');
           this._startHealthMonitor();
           break;
         case 'failed':
-          console.error('[WebRTC] Connection failed — ending call');
           this.endCall(false);
           break;
         case 'closed':
@@ -137,7 +131,6 @@ export class WebRTCManager {
     // IMPORTANT: Create the MediaStream once and reuse it. Adding tracks to an
     // already-assigned srcObject causes blank screens on iOS Safari.
     pc.ontrack = ({ track, streams }) => {
-      console.log(`[WebRTC] Received remote track: ${track.kind}`);
 
       if (!this.remoteStream) {
         // Use the stream that WebRTC provides if available, otherwise create our own
@@ -159,7 +152,6 @@ export class WebRTCManager {
   private _initWorker() {
     if (!this.sessionKey) return;
     if (!('RTCRtpScriptTransform' in window) && !this._hasInsertableStreams()) {
-      console.warn('[WebRTC] E2EE not supported on this browser — proceeding without frame encryption');
       return;
     }
     try {
@@ -168,9 +160,8 @@ export class WebRTCManager {
         { type: 'module' }
       );
       this.worker.postMessage({ operation: 'setKey', keyData: this.sessionKey });
-      console.log('[WebRTC] E2EE worker initialized ✓');
     } catch (e) {
-      console.warn('[WebRTC] Could not start encryption worker:', e);
+      // E2EE worker failed to initialize
     }
   }
 
@@ -193,7 +184,7 @@ export class WebRTCManager {
         );
         return;
       } catch (e) {
-        console.warn('[WebRTC] RTCRtpScriptTransform failed, trying legacy API:', e);
+        // Fallback to legacy API
       }
     }
 
@@ -203,7 +194,7 @@ export class WebRTCManager {
         const { readable, writable } = (senderOrReceiver as any).createEncodedStreams();
         this.worker.postMessage({ operation, readable, writable }, [readable, writable]);
       } catch (e) {
-        console.warn('[WebRTC] Insertable Streams failed:', e);
+        // Insertable Streams not available
       }
     }
   }
@@ -226,7 +217,6 @@ export class WebRTCManager {
       return true;
     } catch (err: any) {
       this.options.onError(err?.message || 'Failed to access camera/microphone');
-      console.error('[WebRTC] getUserMedia failed:', err);
       return false;
     }
   }
@@ -245,20 +235,18 @@ export class WebRTCManager {
     if (!this.peerConnection) return;
     await this.peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
     this.remoteDescSet = true;
-    console.log('[WebRTC] Remote description set — flushing pending candidates');
     await this._flushPendingCandidates();
   }
 
   private async _flushPendingCandidates() {
     if (!this.peerConnection || this.pendingCandidates.length === 0) return;
-    console.log(`[WebRTC] Flushing ${this.pendingCandidates.length} queued candidates`);
     const toFlush = [...this.pendingCandidates];
     this.pendingCandidates = [];
     for (const c of toFlush) {
       try {
         await this.peerConnection.addIceCandidate(new RTCIceCandidate(c));
       } catch (e) {
-        console.warn('[WebRTC] Failed to add queued ICE candidate:', e);
+        // Failed to add queued ICE candidate
       }
     }
   }
@@ -268,7 +256,6 @@ export class WebRTCManager {
     if (!this.peerConnection) return;
     if (this.peerConnection.signalingState !== 'stable') return;
     try {
-      console.log('[WebRTC] Creating ICE restart offer...');
       const offer = await this.peerConnection.createOffer({ iceRestart: true });
       await this.peerConnection.setLocalDescription(offer);
       callSignaling.sendMessage({
@@ -278,7 +265,7 @@ export class WebRTCManager {
         payload: { iceRestart: true, sdp: offer },
       });
     } catch (e) {
-      console.error('[WebRTC] ICE restart failed:', e);
+      // ICE restart failed
     }
   }
 
@@ -300,9 +287,7 @@ export class WebRTCManager {
         });
         if (totalBytesReceived === this.lastBytesReceived) {
           this.stalledSeconds += 2;
-          console.warn(`[WebRTC] Health: no new bytes for ${this.stalledSeconds}s`);
           if (this.stalledSeconds >= this.STALL_THRESHOLD_S) {
-            console.error('[WebRTC] Stream stalled — triggering ICE restart');
             this.stalledSeconds = 0;
             this._restartICE();
           }
@@ -339,9 +324,7 @@ export class WebRTCManager {
    *                      Sent to receiver so both sides derive the same session key.
    */
   async initiateCall(video: boolean, encodedSalt: string, stream?: MediaStream) {
-    console.log(`[WebRTC] initiateCall(video=${video})`);
     if (this.callState !== 'idle') {
-      console.warn(`[WebRTC] initiateCall ignored — state=${this.callState}`);
       return;
     }
 
@@ -357,7 +340,6 @@ export class WebRTCManager {
     const offer = await this.peerConnection!.createOffer();
     await this.peerConnection!.setLocalDescription(offer);
 
-    console.log('[WebRTC] → call_request (bundled SDP + salt)');
     callSignaling.sendMessage({
       type: 'call_request',
       sender_id: this.myUserId,
@@ -375,7 +357,6 @@ export class WebRTCManager {
    * The CALLER side handles the rest via handleAccept().
    */
   async acceptCall(video: boolean, offerSdp: RTCSessionDescriptionInit, stream?: MediaStream) {
-    console.log(`[WebRTC] acceptCall(video=${video})`);
     const ok = await this.startLocalStream(video, stream);
     if (!ok) {
       this.rejectCall();
@@ -393,7 +374,6 @@ export class WebRTCManager {
     const answer = await this.peerConnection!.createAnswer();
     await this.peerConnection!.setLocalDescription(answer);
 
-    console.log('[WebRTC] → call_accept (with bundled SDP answer)');
     callSignaling.sendMessage({
       type: 'call_accept',
       sender_id: this.myUserId,
@@ -407,10 +387,8 @@ export class WebRTCManager {
    * This replaces the old separate sdp_offer / sdp_answer messages.
    */
   async handleAccept(answerSdp: RTCSessionDescriptionInit) {
-    console.log('[WebRTC] handleAccept — setting remote answer');
     if (!this.peerConnection) return;
     if (this.peerConnection.signalingState !== 'have-local-offer') {
-      console.warn(`[WebRTC] handleAccept ignored — signalingState=${this.peerConnection.signalingState}`);
       return;
     }
     this.setCallState('connecting');
@@ -422,24 +400,21 @@ export class WebRTCManager {
    */
   async handleIceCandidate(candidate: RTCIceCandidateInit) {
     if (!this.peerConnection) {
-      console.warn('[WebRTC] handleIceCandidate — no PC yet, queuing');
       this.pendingCandidates.push(candidate);
       return;
     }
     if (!this.remoteDescSet) {
-      console.log('[WebRTC] handleIceCandidate — remote desc not set yet, queuing');
       this.pendingCandidates.push(candidate);
       return;
     }
     try {
       await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
     } catch (e) {
-      console.warn('[WebRTC] addIceCandidate failed:', e);
+      // Failed to add ICE candidate
     }
   }
 
   rejectCall() {
-    console.log('[WebRTC] rejectCall');
     callSignaling.sendMessage({
       type: 'call_reject',
       sender_id: this.myUserId,
@@ -459,7 +434,6 @@ export class WebRTCManager {
 
   // ─── End Call ─────────────────────────────────────────────────────────────
   endCall(notifyPartner = true) {
-    console.log(`[WebRTC] endCall(notifyPartner=${notifyPartner})`);
     this._stopHealthMonitor();
 
     if (notifyPartner) {

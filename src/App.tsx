@@ -123,16 +123,21 @@ function InnerApp({
   // Handle push notification setup silently
   useEffect(() => {
     if (session?.user?.id && encryptionStatus === 'ready') {
-      const setupPush = async () => {
-        await initPushNotifications(session.user.id);
+      const setupPush = async (reason: string) => {
+        console.log(`[🔔 NOTIF] 🚀 Push setup triggered — reason: ${reason}`);
+        console.log(`[🔔 NOTIF]   user: ${session.user.id.substring(0, 8)}...`);
+        console.log(`[🔔 NOTIF]   Notification.permission: ${typeof Notification !== 'undefined' ? Notification.permission : 'N/A'}`);
+        const result = await initPushNotifications(session.user.id);
+        console.log(`[🔔 NOTIF] 📋 Push setup result: ${result ? 'SUCCESS ✅' : 'FAILED ❌'}`);
       };
       
-      // Auto-setup initially
-      const timer = setTimeout(setupPush, 2000);
+      // Auto-setup initially (2s delay to let SW register first)
+      const timer = setTimeout(() => setupPush('app-load (2s delay)'), 2000);
       
-      // Listen for rotation events from main.tsx
+      // Listen for rotation events from main.tsx (SW subscription changed)
       const handleResubscribe = () => {
-        setupPush();
+        console.log('[🔔 NOTIF] 🔄 Re-subscribe event received from SW');
+        setupPush('push-resubscribe event');
       };
       window.addEventListener('push-resubscribe', handleResubscribe);
       

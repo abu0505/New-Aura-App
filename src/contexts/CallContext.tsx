@@ -125,14 +125,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     callSignaling.start(user.id, partner.id);
 
     const handleMessage = async (msg: CallMessage) => {
-      console.log(`[Call Context] ← ${msg.type}`);
 
       // ── No manager yet: only call_request is valid ─────────────────────────
       if (!webrtcManagerRef.current) {
         if (msg.type === 'call_request') {
           const { video, sdp, salt } = msg.payload ?? {};
           if (!sdp || !salt) {
-            console.warn('[Call Context] call_request missing SDP or salt — ignoring');
             return;
           }
           if (currentStateRef.current !== 'idle') {
@@ -165,14 +163,12 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         case 'call_accept':
           // Caller receives answer SDP from receiver (WhatsApp 2-step pattern)
-          console.log('[Call Context] Partner accepted — setting remote answer');
           if (msg.payload?.sdp) {
             await mgr.handleAccept(msg.payload.sdp);
           }
           break;
 
         case 'call_reject':
-          console.log('[Call Context] Partner rejected call');
           mgr.endCall(false);
           webrtcManagerRef.current = null;
           setCallState('idle');
@@ -181,7 +177,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           break;
 
         case 'call_end':
-          console.log('[Call Context] Partner ended call');
           mgr.endCall(false);
           webrtcManagerRef.current = null;
           setCallState('idle');
@@ -231,9 +226,8 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Generate emoji fingerprint for display in UI
           const fingerprint = await generateCallFingerprint(sessionKey);
           setCallFingerprint(fingerprint);
-          console.log('[Call Context] Session key derived ✓ Fingerprint:', fingerprint.join(' '));
         } catch (e) {
-          console.warn('[Call Context] Could not derive session key:', e);
+          // Could not derive session key
         }
       }
     }
@@ -245,7 +239,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ─── Initiate call (CALLER side) ──────────────────────────────────────────
   const initiateCall = useCallback(async (video = true) => {
     if (!user || !partner) return;
-    console.log(`[Call Context] initiateCall(video=${video})`);
     setError(null);
     setIsVideoEnabled(video);
     setIsAudioEnabled(true);
@@ -283,7 +276,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isAcceptingRef.current) return;
     isAcceptingRef.current = true;
 
-    console.log('[Call Context] acceptCall()');
     setError(null);
     setIsVideoEnabled(incomingCall.video);
     setIsAudioEnabled(true);
@@ -327,7 +319,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ─── Reject call ──────────────────────────────────────────────────────────
   const rejectCall = useCallback(() => {
-    console.log('[Call Context] rejectCall()');
     if (user && incomingCall) {
       callSignaling.sendMessage({
         type: 'call_reject',
@@ -341,7 +332,6 @@ export const CallProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ─── End call ─────────────────────────────────────────────────────────────
   const endCall = useCallback(() => {
-    console.log('[Call Context] endCall()');
     if (webrtcManagerRef.current) {
       webrtcManagerRef.current.endCall();
     } else if (user && partner) {
