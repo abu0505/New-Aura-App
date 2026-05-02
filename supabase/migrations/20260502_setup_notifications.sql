@@ -17,14 +17,17 @@ CREATE TABLE IF NOT EXISTS notifications (
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Recipients can read their own notifications
+DROP POLICY IF EXISTS "recipient_read" ON notifications;
 CREATE POLICY "recipient_read" ON notifications
   FOR SELECT USING (auth.uid() = recipient_id);
 
 -- Recipients can update their own notifications (to mark as read/seen)
+DROP POLICY IF EXISTS "recipient_update" ON notifications;
 CREATE POLICY "recipient_update" ON notifications
   FOR UPDATE USING (auth.uid() = recipient_id);
 
 -- Allow inserting for testing or from authenticated users
+DROP POLICY IF EXISTS "auth_insert" ON notifications;
 CREATE POLICY "auth_insert" ON notifications
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
@@ -39,8 +42,8 @@ BEGIN
     NEW.sender_id,
     'message',
     'New Message', -- This will be replaced by Edge Function logic anyway, or we can use it directly
-    NEW.content,
-    jsonb_build_object('message_id', NEW.id, 'chat_id', NEW.chat_id)
+    NEW.encrypted_content,
+    jsonb_build_object('message_id', NEW.id)
   );
   RETURN NEW;
 END;
