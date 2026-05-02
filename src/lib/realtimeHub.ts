@@ -91,9 +91,13 @@ function start(userId?: string, partnerId?: string) {
     { table: 'stories' },
     { table: 'pinned_messages' }, // Fix 2.2: Now in realtime publication
     { table: 'video_chunks' },    // Progressive chunked video streaming
-    { table: 'profiles', filter: partnerId ? `id=eq.${partnerId}` : undefined },
+    // NOTE: No filter on profiles — we need both our own and partner's profile updates
+    { table: 'profiles' },
     { table: 'chat_settings', filter: userId ? `user_id=eq.${userId}` : undefined },
-    { table: 'notifications', filter: userId ? `recipient_id=eq.${userId}` : undefined },
+    // NOTE: No filter on notifications — sender needs to see seen_push UPDATEs on
+    // their partner's notification row (delivery receipt). Client-side filtering
+    // in NotificationContext and useChat handles scoping.
+    { table: 'notifications' },
   ];
 
   for (const { table, filter } of tables) {

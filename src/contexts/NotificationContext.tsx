@@ -71,7 +71,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (payload.eventType === 'INSERT') {
         const newNotif = payload.new as Notification;
         
-        // Ensure it's for us (realtimeHub already filters, but just in case)
+        // Client-side filter: only process notifications for this user
+        // (Server-side filter was removed to allow sender to see seen_push updates)
         if (newNotif.recipient_id !== userId) return;
 
         // Add to state
@@ -93,6 +94,8 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
       } else if (payload.eventType === 'UPDATE') {
         const updated = payload.new as Notification;
+        // Only update our own notifications in state
+        if (updated.recipient_id !== userId) return;
         setNotifications(prev => prev.map(n => n.id === updated.id ? updated : n));
       }
     });
