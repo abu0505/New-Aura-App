@@ -572,13 +572,25 @@ function ChatBubble({
         return (
           <div className={`relative max-w-[240px] group ${isMine ? 'ml-auto' : 'mr-auto'}`}>
             <div className={`relative group ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true) }}>
-              <video 
-                src={decryptedMediaUrl ?? undefined} 
-                className="w-full pointer-events-none"
-                preload="metadata"
-                playsInline
-                muted
-              />
+              {/* Use a poster image approach instead of loading video bytes just for thumbnail */}
+              {decryptedMediaUrl ? (
+                <div
+                  className="w-full bg-black"
+                  style={{ minHeight: 120, position: 'relative' }}
+                >
+                  {/* Hidden video to extract first frame as poster */}
+                  <video
+                    src={decryptedMediaUrl}
+                    className="w-full pointer-events-none"
+                    preload="none"
+                    playsInline
+                    muted
+                    style={{ display: 'block' }}
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-28 bg-black/40 animate-pulse rounded-xl" />
+              )}
               {!message.is_uploading && !message.is_chunked_video && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
                   <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>

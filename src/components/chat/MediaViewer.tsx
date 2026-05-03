@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import ChunkedVideoPlayer from './ChunkedVideoPlayer';
 import { toast } from 'sonner';
@@ -28,9 +28,64 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  // ── Inline video player state ─────────────────────────────────────────────
+  const [videoLoading, setVideoLoading] = useState(true);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [videoBuffered, setVideoBuffered] = useState(0); // 0-100 percent
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const retryCountRef = useRef(0);
   
   const currentMedia = allMedia ? allMedia[currentIndex] : { id: messageId, url: initialUrl, type: initialType };
 
+  // Reset video state whenever the current media changes
+  useEffect(() => {
+    setVideoLoading(true);
+    setVideoError(null);
+    setVideoBuffered(0);
+    retryCountRef.current = 0;
+  }, [currentMedia.url]);
+
+  const handleVideoProgress = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !v.buffered.length) return;
+    const bufferedEnd = v.buffered.end(v.buffered.length - 1);
+    const total = v.duration || 1;
+    setVideoBuffered(Math.round((bufferedEnd / total) * 100));
+  }, []);
+
+  const handleVideoCanPlay = useCallback(() => {
+    setVideoLoading(false);
+    setVideoError(null);
+  }, []);
+
+  const handleVideoError = useCallback(() => {
+    // Try once more silently before showing the error UI
+    if (retryCountRef.current < 1 && videoRef.current) {
+      retryCountRef.current += 1;
+      const src = videoRef.current.src;
+      videoRef.current.src = '';
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.src = src;
+          videoRef.current.load();
+        }
+      }, 400);
+      return;
+    }
+    setVideoLoading(false);
+    setVideoError('Could not play this video. The format may not be supported by your browser.');
+  }, []);
+
+  const retryVideo = useCallback(() => {
+    if (!videoRef.current) return;
+    retryCountRef.current = 0;
+    setVideoError(null);
+    setVideoLoading(true);
+    videoRef.current.load();
+  }, []);
+
+  // Lock body scroll while viewer is open
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -220,19 +275,20 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
         )}
 
         {/* Viewer Content */}
-        <motion.div
-          key={currentMedia.url}
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-          style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={(e) => e.stopPropagation()}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-        >
+        <AnimatePresence initial={false} mode="wait">
+          <motion.div
+            key={currentMedia.url}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
           {currentMedia.type === 'image' || currentMedia.type === 'gif' ? (
             <TransformWrapper
               initialScale={1}
@@ -271,22 +327,100 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               />
             </div>
           ) : (
-            <video
-              src={currentMedia.url}
-              controls
-              autoPlay
-              playsInline
-              style={{ 
-                maxWidth: '99%', 
-                maxHeight: '99%', 
-                objectFit: 'contain', 
-                borderRadius: '.5rem', 
-                background: 'black', 
-                boxShadow: '0 25px 60px rgba(0,0,0,0.8)' 
-              }}
-            />
+            /* ── Smart video player with loading + error states ── */
+            <div
+              className="relative flex items-center justify-center"
+              style={{ maxWidth: '99%', maxHeight: '99%' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Actual video element */}
+              <video
+                ref={videoRef}
+                src={currentMedia.url}
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                onCanPlay={handleVideoCanPlay}
+                onProgress={handleVideoProgress}
+                onError={handleVideoError}
+                style={{
+                  maxWidth: '99vw',
+                  maxHeight: '90vh',
+                  objectFit: 'contain',
+                  borderRadius: '.5rem',
+                  background: 'black',
+                  boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+                  // Keep element in DOM even during loading so it buffers
+                  opacity: videoError ? 0 : 1,
+                  display: 'block',
+                }}
+              />
+
+              {/* Loading overlay — shown while buffering, disappears once canplay fires */}
+              <AnimatePresence>
+                {videoLoading && !videoError && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg"
+                    style={{ background: 'rgba(0,0,0,0.85)', minWidth: 220, minHeight: 140 }}
+                  >
+                    {/* Spinner */}
+                    <div
+                      className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin"
+                      style={{ borderColor: 'var(--gold, #e4b45a)', borderTopColor: 'transparent' }}
+                    />
+                    {/* Buffer progress bar */}
+                    {videoBuffered > 0 && (
+                      <div className="w-36 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                        <motion.div
+                          className="h-full rounded-full"
+                          style={{ background: 'var(--gold, #e4b45a)' }}
+                          animate={{ width: `${videoBuffered}%` }}
+                          transition={{ ease: 'linear', duration: 0.3 }}
+                        />
+                      </div>
+                    )}
+                    <span className="text-[11px] font-semibold" style={{ color: 'var(--gold-light, #f5d48a)' }}>
+                      {videoBuffered > 0 ? `Buffering ${videoBuffered}%…` : 'Loading video…'}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Error overlay */}
+              <AnimatePresence>
+                {videoError && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg p-6 text-center"
+                    style={{ background: 'rgba(0,0,0,0.92)', minWidth: 220, minHeight: 140 }}
+                  >
+                    <span className="material-symbols-outlined text-red-400 text-4xl">videocam_off</span>
+                    <p className="text-white/80 text-sm font-medium leading-snug max-w-[240px]">
+                      Video could not be played.
+                    </p>
+                    <p className="text-white/40 text-xs max-w-[240px]">
+                      {videoError}
+                    </p>
+                    <button
+                      onClick={retryVideo}
+                      className="mt-1 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all active:scale-95"
+                      style={{ background: 'var(--gold, #e4b45a)', color: '#000' }}
+                    >
+                      Retry
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
-        </motion.div>
+          </motion.div>
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   );

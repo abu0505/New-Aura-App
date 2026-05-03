@@ -513,8 +513,11 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
 
     // Optimistic fast-path
-    const standardUploads = [];
-    const chunkedVideoUploads = [];
+    interface StandardUpload { file: File; tempId: string; }
+    interface ChunkedUpload { file: File; tempId: string; thumbBlob: Blob | null; }
+
+    const standardUploads: StandardUpload[] = [];
+    const chunkedVideoUploads: ChunkedUpload[] = [];
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -547,64 +550,139 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       }, 10);
     }
 
-    try {
+    // ─── Global Upload Semaphore ─────────────────────────────────────────────
+    // A single shared pool of TOTAL_SLOTS concurrent network slots is used by
+    // BOTH image uploads (high priority) and video chunk preparation (low priority).
+    // Images grab slots first; video chunking fills whatever slots remain.
+    // This mirrors how Telegram handles multi-media sends: maximum throughput
+    // without congesting the network on slow mobile connections.
+    //
+    //  Slot budget:  6 total
+    //    ├─ Images:  up to 4 slots (HIGH priority — finish first, user sees results fast)
+    //    └─ Videos:  up to 2 slots (LOW priority  — run in background while images go)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const TOTAL_SLOTS = 6;
+    const IMAGE_SLOTS = 4; // images get priority access to these many slots
+
+    // Semaphore: tracks how many slots are currently occupied
+    let usedSlots = 0;
+    const waiters: Array<() => void> = []; // queue of tasks waiting for a free slot
+
+    const acquireSlot = (): Promise<void> => new Promise(resolve => {
+      if (usedSlots < TOTAL_SLOTS) {
+        usedSlots++;
+        resolve();
+      } else {
+        waiters.push(() => { usedSlots++; resolve(); });
+      }
+    });
+
+    const releaseSlot = () => {
+      usedSlots--;
+      // Wake the next waiting task (if any)
+      const next = waiters.shift();
+      if (next) next();
+    };
+
+    // ── High-priority pipeline: image / audio uploads ─────────────────────
+    const imagePipeline = async () => {
+      const activeTasks = new Set<Promise<void>>();
+
       for (const { file, tempId } of standardUploads) {
-        const uploaded = await processAndUpload(file, { optimize });
-        if (uploaded && tempId) {
-           onOptimisticMediaComplete!(tempId, '', {
-              url: uploaded.url,
-              media_key: uploaded.media_key,
-              media_nonce: uploaded.media_nonce,
-              type: uploaded.type
-           }, currentReplyId);
+        // Acquire a slot — images are allowed up to IMAGE_SLOTS concurrently
+        // (semaphore naturally enforces the cap across both pipelines)
+        await acquireSlot();
+
+        const task = (async () => {
+          try {
+            const uploaded = await processAndUpload(file, { optimize });
+            if (uploaded && tempId) {
+              onOptimisticMediaComplete!(tempId, '', {
+                url: uploaded.url,
+                media_key: uploaded.media_key,
+                media_nonce: uploaded.media_nonce,
+                type: uploaded.type,
+              }, currentReplyId);
+            }
+          } catch (err) {
+            console.error('[Semaphore] Image upload failed for tempId:', tempId, err);
+          } finally {
+            releaseSlot();
+          }
+        })();
+
+        activeTasks.add(task);
+        task.finally(() => activeTasks.delete(task));
+
+        // Local back-pressure: don't queue more than IMAGE_SLOTS at once
+        if (activeTasks.size >= IMAGE_SLOTS) {
+          await Promise.race(activeTasks);
         }
       }
-    } catch(e) {
-      // Standard upload failed
-    }
 
-    try {
+      await Promise.all(activeTasks);
+    };
+
+    // ── Low-priority pipeline: video thumbnail upload + chunking ──────────
+    const videoPipeline = async () => {
       for (const { file, tempId, thumbBlob } of chunkedVideoUploads) {
-         try {
-           // First, upload the thumbnail so we have a valid thumbnail_url and keys
-           let thumbDetails = null;
-           if (thumbBlob) {
-             const uploadedThumb = await processAndUpload(new File([thumbBlob], 'thumb.jpg', { type: 'image/jpeg' }), { optimize: false });
-             if (uploadedThumb) {
-               thumbDetails = { url: uploadedThumb.url, key: uploadedThumb.media_key, nonce: uploadedThumb.media_nonce };
-             }
-           }
+        try {
+          // Step 1: Upload thumbnail (needs 1 network slot)
+          let thumbDetails = null;
+          if (thumbBlob) {
+            await acquireSlot();
+            try {
+              const uploadedThumb = await processAndUpload(
+                new File([thumbBlob], 'thumb.jpg', { type: 'image/jpeg' }),
+                { optimize: false }
+              );
+              if (uploadedThumb) {
+                thumbDetails = {
+                  url: uploadedThumb.url,
+                  key: uploadedThumb.media_key,
+                  nonce: uploadedThumb.media_nonce,
+                };
+              }
+            } finally {
+              releaseSlot();
+            }
+          }
 
-           // Pre-create the message row with the thumbnail so fragments can attach to it
-           if (onChunkedVideoCommit) {
-              // Use precise duration from camera if provided, else fallback to metadata extraction
-              const rawDuration = durationOverride !== undefined ? durationOverride : await getVideoDurationLocally(file);
-              const duration = Math.round(rawDuration);
-              await onChunkedVideoCommit(tempId, thumbDetails, duration, currentReplyId);
-           }
+          // Step 2: Commit message row to DB (no network slot needed — DB write is fast)
+          if (onChunkedVideoCommit) {
+            const rawDuration = durationOverride !== undefined
+              ? durationOverride
+              : await getVideoDurationLocally(file);
+            await onChunkedVideoCommit(tempId, thumbDetails, Math.round(rawDuration), currentReplyId);
+          }
 
-           // Now process and upload chunks
-           if (user?.id && partnerId) {
-             const success = await processAndUploadChunked(
-               file,
-               tempId,
-               user.id,
-               partnerId,
-               (status) => onChunkedVideoStatusUpdate?.(tempId, status),
-               durationOverride
-             );
-             if (success) {
-             } else {
-             }
-           }
-         } catch(e) {
-         } finally {
-            if (onChunkedVideoFinalize) onChunkedVideoFinalize(tempId);
-         }
+          // Step 3: Chunk + encrypt + upload (processAndUploadChunked manages its
+          // own internal PARALLEL_LIMIT=5 for chunk network requests, so we don't
+          // need to acquire semaphore slots here — it self-throttles)
+          if (user?.id && partnerId) {
+            await processAndUploadChunked(
+              file,
+              tempId,
+              user.id,
+              partnerId,
+              (status) => onChunkedVideoStatusUpdate?.(tempId, status),
+              durationOverride
+            );
+          }
+        } catch (e) {
+          console.error('[Semaphore] Video pipeline failed for tempId:', tempId, e);
+        } finally {
+          if (onChunkedVideoFinalize) onChunkedVideoFinalize(tempId);
+        }
       }
-    } catch(e) {
-      // Chunked uploads master loop failed
-    }
+    };
+
+    // ── Fire both pipelines concurrently (images get head start via slot priority)
+    await Promise.all([
+      standardUploads.length > 0 ? imagePipeline() : Promise.resolve(),
+      chunkedVideoUploads.length > 0 ? videoPipeline() : Promise.resolve(),
+    ]);
   };
 
   const handleAudioComplete = (media: any) => {

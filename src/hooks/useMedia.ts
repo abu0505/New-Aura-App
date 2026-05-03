@@ -479,33 +479,57 @@ export function useMedia() {
         const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
         if (!decrypted) return null;
 
-        // Determine MIME type: prefer the explicit mediaType param (from message.type)
-        // Cloudinary raw upload URLs don't have file extensions, so URL-sniffing is unreliable
-        let mimeType = 'application/octet-stream';
-        if (mediaType === 'audio') {
-          mimeType = 'audio/webm';
-        } else if (mediaType === 'video') {
-          mimeType = 'video/mp4';
-        } else if (mediaType === 'image') {
-          // WebP images won't have extension in Cloudinary raw URLs — default to webp
-          if (url.includes('.png')) mimeType = 'image/png';
-          else if (url.includes('.gif')) mimeType = 'image/gif';
-          else if (url.includes('.webp')) mimeType = 'image/webp';
-          else mimeType = 'image/webp'; // Default to WebP since we now compress to WebP
-        } else if (mediaType === 'gif') {
-          mimeType = 'image/gif';
-        } else {
-          // Fallback: sniff from URL when no type provided
-          if (url.includes('.webm')) mimeType = 'audio/webm';
-          else if (url.includes('.mp4')) mimeType = 'video/mp4';
-          else if (url.includes('.jpg') || url.includes('.jpeg')) mimeType = 'image/jpeg';
-          else if (url.includes('.png')) mimeType = 'image/png';
-          else if (url.includes('.gif')) mimeType = 'image/gif';
-          else if (url.includes('.mp3')) mimeType = 'audio/mpeg';
-          else if (url.includes('.ogg')) mimeType = 'audio/ogg';
-          else mimeType = 'image/webp'; // Default for unknown image types
-        }
+        // ── Magic-byte sniffing for reliable MIME detection ─────────────────────
+        // Mobile cameras (iOS QuickTime, Android WebM) produce containers that
+        // differ from the simple 'video/mp4' assumption. Sniffing the actual bytes
+        // is the ONLY reliable way to get the correct MIME type.
+        const sniffMime = (bytes: Uint8Array, hintType?: string | null): string => {
+          // WebM / MKV: starts with 0x1A 0x45 0xDF 0xA3
+          if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) {
+            return hintType === 'audio' ? 'audio/webm' : 'video/webm';
+          }
+          // MP4 / QuickTime / MOV — check 'ftyp' box at offset 4 (bytes 4-7)
+          // Signature: bytes[4..7] === 'ftyp'
+          if (
+            bytes.length >= 12 &&
+            bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+          ) {
+            // Major brand at bytes 8-11
+            const brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
+            // QuickTime brands: 'qt  ', 'mqt '
+            if (brand.startsWith('qt') || brand.startsWith('mqt')) return 'video/quicktime';
+            // Common MP4 brands: 'isom', 'mp42', 'mp41', 'avc1', 'iso2', 'M4V ', 'f4v '
+            return 'video/mp4';
+          }
+          // RIFF/AVI: starts with 'RIFF'
+          if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+            return 'video/avi';
+          }
+          // OGG: starts with 'OggS'
+          if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) {
+            return hintType === 'audio' ? 'audio/ogg' : 'video/ogg';
+          }
+          // PNG: 0x89 'PNG'
+          if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) return 'image/png';
+          // JPEG: 0xFF 0xD8
+          if (bytes[0] === 0xFF && bytes[1] === 0xD8) return 'image/jpeg';
+          // GIF: 'GIF8'
+          if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return 'image/gif';
+          // WebP: 'RIFF' + 'WEBP'
+          if (
+            bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+            bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50
+          ) return 'image/webp';
 
+          // ── Fallback: use hintType ─────────────────────────────────────────────
+          if (hintType === 'audio') return 'audio/webm';
+          if (hintType === 'video') return 'video/mp4';
+          if (hintType === 'image') return 'image/webp';
+          if (hintType === 'gif')   return 'image/gif';
+          return 'application/octet-stream';
+        };
+
+        const mimeType = sniffMime(decrypted, mediaType);
         const blob = new Blob([decrypted as any], { type: mimeType });
 
         // Cache management (simple LRU by Map insertion order)

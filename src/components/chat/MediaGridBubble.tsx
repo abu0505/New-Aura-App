@@ -21,12 +21,12 @@ interface MediaGridBubbleProps {
   quickEmojis?: string[];
 }
 
-function MediaGridBubble({ 
-  messages, 
-  partnerPublicKey, 
+function MediaGridBubble({
+  messages,
+  partnerPublicKey,
   onReact,
-  isMine, 
-  isFirst = true, 
+  isMine,
+  isFirst = true,
   isLast = true,
   onReply,
   onDelete,
@@ -40,13 +40,13 @@ function MediaGridBubble({
   const [showAllEmojis, setShowAllEmojis] = useState(false);
   const pressTimer = useRef<number | null>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
-  
+
   const blobUrlsRef = useRef<Record<string, string>>({});
   const touchStartX = useRef<number | null>(null);
   const hapticTriggered = useRef(false);
   const swipeX = useMotionValue(0);
   const springX = useSpring(swipeX, { stiffness: 800, damping: 35 });
-  
+
   const replyOpacity = useTransform(springX, (v) => Math.min(Math.abs(v) / 45, 1));
   const replyScale = useTransform(springX, (v) => 0.8 + Math.min(Math.abs(v) / 45, 1) * 0.3);
   const iconTranslate = useTransform(springX, (v) => -v / 2);
@@ -64,14 +64,14 @@ function MediaGridBubble({
     if (touchStartX.current === null) return;
     const currentX = e.touches[0].clientX;
     const diff = currentX - touchStartX.current;
-    
+
     let newOffset = 0;
     if (!isMine && diff > 0) {
-      newOffset = Math.min(diff, 70); 
+      newOffset = Math.min(diff, 70);
     } else if (isMine && diff < 0) {
       newOffset = Math.max(diff, -70);
     }
-    
+
     swipeX.set(newOffset);
 
     if (Math.abs(newOffset) >= 45) {
@@ -125,13 +125,15 @@ function MediaGridBubble({
     let mounted = true;
     const fetchMedia = async () => {
       if (!partnerPublicKey) return;
-      
+
       // Fire all decryptions concurrently
       const promises = messages.map(async (msg) => {
+        if (blobUrlsRef.current[msg.id]) return;
+
         if (msg.decrypted_media_url && !msg.media_key) {
-           blobUrlsRef.current[msg.id] = msg.decrypted_media_url;
-           setDecryptedUrls(prev => ({ ...prev, [msg.id]: msg.decrypted_media_url as string }));
-           return;
+          blobUrlsRef.current[msg.id] = msg.decrypted_media_url;
+          setDecryptedUrls(prev => ({ ...prev, [msg.id]: msg.decrypted_media_url as string }));
+          return;
         }
 
         if (!msg.media_url || !msg.media_key || !msg.media_nonce) return;
@@ -143,14 +145,14 @@ function MediaGridBubble({
             undefined,
             msg.type
           );
-          
+
           if (blob && mounted) {
             const url = URL.createObjectURL(blob);
             blobUrlsRef.current[msg.id] = url;
             setDecryptedUrls(prev => ({ ...prev, [msg.id]: url }));
           }
         } catch (e) {
-          
+
         }
       });
 
@@ -193,8 +195,8 @@ function MediaGridBubble({
     const isUploading = msg.is_uploading;
 
     return (
-      <div 
-        key={msg.id} 
+      <div
+        key={msg.id}
         className={`relative ${!isUploading ? 'cursor-pointer' : ''} group h-full w-full overflow-hidden`}
         onClick={() => { if (!isUploading) setSelectedMediaIndex(index) }}
         onContextMenu={(e) => {
@@ -205,7 +207,8 @@ function MediaGridBubble({
       >
         {msg.type === 'video' ? (
           <div className="w-full h-full relative">
-            <video src={url} className={`w-full h-full object-cover ${isUploading ? 'opacity-60 blur-[2px] grayscale-[20%]' : ''}`} preload="metadata" playsInline muted />
+            {/* preload="none": blob is already in memory, "metadata" causes blank frames on mobile */}
+            <video src={url} className={`w-full h-full object-cover ${isUploading ? 'opacity-60 blur-[2px] grayscale-[20%]' : ''}`} preload="none" playsInline muted />
             {!isUploading && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
                 <span className="material-symbols-outlined text-white text-3xl opacity-80">play_circle</span>
@@ -219,7 +222,7 @@ function MediaGridBubble({
         {isUploading && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
             <div className="w-8 h-8 flex items-center justify-center bg-black/50 rounded-full backdrop-blur-md border border-white/20 shadow-2xl shadow-black/50">
-               <span className="material-symbols-outlined text-primary text-xl animate-spin">data_usage</span>
+              <span className="material-symbols-outlined text-primary text-xl animate-spin">data_usage</span>
             </div>
           </div>
         )}
@@ -242,7 +245,7 @@ function MediaGridBubble({
   };
 
   return (
-    <div 
+    <div
       ref={bubbleRef}
       className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group z-10 overflow-visible`}
       onTouchStart={handleTouchStart}
@@ -250,9 +253,9 @@ function MediaGridBubble({
       onTouchEnd={handleTouchEnd}
     >
       {/* Reply Icon Indicator for Swipe (Mobile) */}
-      <motion.div 
-        style={{ 
-          [isMine ? 'right' : 'left']: '-45px', 
+      <motion.div
+        style={{
+          [isMine ? 'right' : 'left']: '-45px',
           opacity: replyOpacity,
           scale: replyScale,
           x: iconTranslate
@@ -287,7 +290,7 @@ function MediaGridBubble({
                         <PremiumEmoji emoji={emoji} size={24} />
                       </button>
                     ))}
-                    <button 
+                    <button
                       onClick={() => setShowAllEmojis(true)}
                       className="w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition-all text-aura-text-secondary hover:text-aura-text-primary"
                     >
@@ -296,7 +299,7 @@ function MediaGridBubble({
                   </div>
                 ) : (
                   <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
-                    <EmojiPicker 
+                    <EmojiPicker
                       theme={Theme.DARK}
                       emojiStyle={EmojiStyle.APPLE}
                       onEmojiClick={(emojiData) => {
@@ -319,15 +322,15 @@ function MediaGridBubble({
             )}
 
             {interactionType === 'menu' && !showAllEmojis && (
-              <MessageContextMenu 
+              <MessageContextMenu
                 isMine={isMine}
                 onPin={() => { onPin?.(messages[0].id); setInteractionType('none'); }}
-                onDeleteForMe={() => { 
-                  messages.forEach(msg => onDelete?.(msg.id, false)); 
+                onDeleteForMe={() => {
+                  messages.forEach(msg => onDelete?.(msg.id, false));
                   setInteractionType('none');
                 }}
-                onDeleteForEveryone={messages.some(msg => !msg.is_deleted_for_everyone) ? () => { 
-                  messages.forEach(msg => onDelete?.(msg.id, true)); 
+                onDeleteForEveryone={messages.some(msg => !msg.is_deleted_for_everyone) ? () => {
+                  messages.forEach(msg => onDelete?.(msg.id, true));
                   setInteractionType('none');
                 } : undefined}
               />
@@ -339,20 +342,20 @@ function MediaGridBubble({
       <div className={`flex items-center gap-2 w-full ${isMine ? 'justify-end' : 'justify-start'} relative z-10`}>
         {isMine && (
           <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button 
-              onClick={() => setInteractionType('reactions')} 
+            <button
+              onClick={() => setInteractionType('reactions')}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">add_reaction</span>
             </button>
-            <button 
-              onClick={() => onReply?.(messages[0].id)} 
+            <button
+              onClick={() => onReply?.(messages[0].id)}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">reply</span>
             </button>
-            <button 
-              onClick={() => setInteractionType('menu')} 
+            <button
+              onClick={() => setInteractionType('menu')}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">more_vert</span>
@@ -360,7 +363,7 @@ function MediaGridBubble({
           </div>
         )}
 
-        <motion.div 
+        <motion.div
           style={{ x: springX }}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -370,10 +373,10 @@ function MediaGridBubble({
             {displayItems.map((msg, idx) => {
               const isFirstItem = idx === 0;
               const isThreeItems = displayItems.length === 3;
-              
+
               return (
-                <div 
-                  key={msg.id} 
+                <div
+                  key={msg.id}
                   className={`relative ${isThreeItems && isFirstItem ? 'row-span-2' : ''}`}
                 >
                   {renderItem(msg, idx)}
@@ -384,7 +387,7 @@ function MediaGridBubble({
 
           {/* Reaction Badge */}
           {messages[0].reaction && (
-            <button 
+            <button
               onClick={(e) => { e.stopPropagation(); onReact?.(messages[0].id, null); }}
               className={`absolute -bottom-[14px] ${isMine ? 'left-2' : 'right-2'} bg-aura-bg-elevated/90 backdrop-blur-xl border border-primary rounded-full px-2 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.6)] z-30 transition-all hover:scale-110 active:scale-95 flex items-center justify-center gap-1`}
               title="Remove reaction"
@@ -397,13 +400,12 @@ function MediaGridBubble({
           <div className="absolute bottom-2 right-2 px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md shadow-lg flex items-center gap-1.5 pointer-events-none">
             <span className="text-[10px] font-bold text-white/90 tracking-tighter uppercase">{time}</span>
             {isMine && (
-               <span 
-                className={`material-symbols-outlined text-[13px] ${
-                  messages[messages.length-1].is_read ? 'text-blue-400' : 'text-white/60'
-                }`} 
+              <span
+                className={`material-symbols-outlined text-[13px] ${messages[messages.length - 1].is_read ? 'text-blue-400' : 'text-white/60'
+                  }`}
                 style={{ fontVariationSettings: "'wght' 700" }}
               >
-                {messages[messages.length-1].is_read ? 'done_all' : (messages[messages.length-1].is_delivered ? 'done_all' : 'check')}
+                {messages[messages.length - 1].is_read ? 'done_all' : (messages[messages.length - 1].is_delivered ? 'done_all' : 'check')}
               </span>
             )}
           </div>
@@ -411,20 +413,20 @@ function MediaGridBubble({
 
         {!isMine && (
           <div className="hidden md:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button 
-              onClick={() => setInteractionType('reactions')} 
+            <button
+              onClick={() => setInteractionType('reactions')}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">add_reaction</span>
             </button>
-            <button 
-              onClick={() => onReply?.(messages[0].id)} 
+            <button
+              onClick={() => onReply?.(messages[0].id)}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">reply</span>
             </button>
-            <button 
-              onClick={() => setInteractionType('menu')} 
+            <button
+              onClick={() => setInteractionType('menu')}
               className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-aura-text-secondary hover:text-aura-text-primary transition-colors"
             >
               <span className="material-symbols-outlined text-[18px]">more_vert</span>
@@ -434,7 +436,7 @@ function MediaGridBubble({
       </div>
 
       {selectedMediaIndex !== null && (
-        <MediaViewer 
+        <MediaViewer
           url={decryptedUrls[messages[selectedMediaIndex]?.id] || ''}
           type={messages[selectedMediaIndex]?.type as 'image' | 'video' | 'gif'}
           onClose={() => setSelectedMediaIndex(null)}
