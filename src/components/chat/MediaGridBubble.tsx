@@ -128,6 +128,8 @@ function MediaGridBubble({
 
       // Fire all decryptions concurrently
       const promises = messages.map(async (msg) => {
+        // Skip if already decrypted (use state as source of truth, not ref,
+        // because ref resets on remount but state from parent may still be fresh)
         if (blobUrlsRef.current[msg.id]) return;
 
         if (msg.decrypted_media_url && !msg.media_key) {
@@ -152,7 +154,8 @@ function MediaGridBubble({
             setDecryptedUrls(prev => ({ ...prev, [msg.id]: url }));
           }
         } catch (e) {
-
+          // Log so we can debug which message failed and why
+          console.error('[MediaGridBubble] Decryption failed for msg:', msg.id, e);
         }
       });
 
@@ -163,15 +166,12 @@ function MediaGridBubble({
 
     return () => {
       mounted = false;
-      Object.values(blobUrlsRef.current).forEach((url) => {
-        // Only revoke if it was a createObjectURL and not a data URI maybe. Oh wait, URL.revokeObjectURL ignores failure.
-        // It's safe to run on blob URLs.
-        if (url.startsWith('blob:')) {
-          URL.revokeObjectURL(url);
-        }
-      });
+      // ✋ Do NOT revoke blob URLs on unmount.
+      // Revoking here causes broken thumbnails when the user scrolls up/down
+      // and the component remounts — the URL is dead but the state still holds it.
+      // Blob URLs are automatically GC'd by the browser when the page unloads.
     };
-  }, [messages, partnerPublicKey]);
+  }, [messages, partnerPublicKey, getDecryptedBlob]);
 
   const displayItems = messages.slice(0, 4);
   const remainingCount = messages.length - 4;

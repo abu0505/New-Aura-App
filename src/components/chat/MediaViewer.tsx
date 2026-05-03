@@ -32,18 +32,26 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   // ── Inline video player state ─────────────────────────────────────────────
   const [videoLoading, setVideoLoading] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
-  const [videoBuffered, setVideoBuffered] = useState(0); // 0-100 percent
+  const [videoBuffered, setVideoBuffered] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const retryCountRef = useRef(0);
+
+  // ── Inline image state ────────────────────────────────────────────────────
+  const [imgLoading, setImgLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
+  const imgRetryRef = useRef(0);
   
   const currentMedia = allMedia ? allMedia[currentIndex] : { id: messageId, url: initialUrl, type: initialType };
 
-  // Reset video state whenever the current media changes
+  // Reset ALL media states whenever the current item changes
   useEffect(() => {
     setVideoLoading(true);
     setVideoError(null);
     setVideoBuffered(0);
     retryCountRef.current = 0;
+    setImgLoading(true);
+    setImgError(false);
+    imgRetryRef.current = 0;
   }, [currentMedia.url]);
 
   const handleVideoProgress = useCallback(() => {
@@ -274,10 +282,10 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
           </div>
         )}
 
-        {/* Viewer Content */}
+        {/* Viewer Content — key on ID not URL to avoid jitter when URL populates */}
         <AnimatePresence initial={false} mode="wait">
           <motion.div
-            key={currentMedia.url}
+            key={currentMedia.id ?? currentMedia.url}
             custom={direction}
             variants={slideVariants}
             initial="enter"
@@ -290,32 +298,100 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
             onTouchEnd={handleTouchEnd}
           >
           {currentMedia.type === 'image' || currentMedia.type === 'gif' ? (
-            <TransformWrapper
-              initialScale={1}
-              minScale={0.5}
-              maxScale={6}
-              centerOnInit
-              centerZoomedOut
+            // ── Smart image with loading + error states ────────────────────
+            <div
+              className="relative flex items-center justify-center"
+              style={{ maxWidth: '99%', maxHeight: '99%', minWidth: 200, minHeight: 140 }}
+              onClick={(e) => e.stopPropagation()}
             >
-              <TransformComponent
-                wrapperStyle={{ width: '100%', height: '100%' }}
-                contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <img
-                  src={currentMedia.url}
-                  alt="Secure Media"
-                  style={{ 
-                    maxWidth: '99%', 
-                    maxHeight: '99%', 
-                    objectFit: 'contain', 
-                    userSelect: 'none',
-                    borderRadius: '.5rem',
-                    boxShadow: '0 25px 60px rgba(0,0,0,0.8)'
-                  }}
-                  draggable={false}
-                />
-              </TransformComponent>
-            </TransformWrapper>
+              {/* Show loading spinner while URL is empty or image is loading */}
+              <AnimatePresence>
+                {(imgLoading || !currentMedia.url) && !imgError && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg"
+                    style={{ background: 'rgba(0,0,0,0.7)', minWidth: 220, minHeight: 140 }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-full border-[3px] animate-spin"
+                      style={{ borderColor: 'var(--gold, #e4b45a)', borderTopColor: 'transparent' }}
+                    />
+                    <span className="text-[11px] font-semibold" style={{ color: 'var(--gold-light, #f5d48a)' }}>
+                      Decrypting image…
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Error state */}
+              <AnimatePresence>
+                {imgError && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-lg p-6 text-center"
+                    style={{ background: 'rgba(0,0,0,0.9)', minWidth: 220, minHeight: 140 }}
+                  >
+                    <span className="material-symbols-outlined text-red-400 text-4xl">broken_image</span>
+                    <p className="text-white/70 text-sm font-medium">Image could not be loaded.</p>
+                    <button
+                      onClick={() => { imgRetryRef.current = 0; setImgError(false); setImgLoading(true); }}
+                      className="mt-1 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
+                      style={{ background: 'var(--gold, #e4b45a)', color: '#000' }}
+                    >
+                      Retry
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Actual image — only render when URL is ready */}
+              {currentMedia.url && (
+                <TransformWrapper
+                  initialScale={1}
+                  minScale={0.5}
+                  maxScale={6}
+                  centerOnInit
+                  centerZoomedOut
+                >
+                  <TransformComponent
+                    wrapperStyle={{ width: '100%', height: '100%' }}
+                    contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <img
+                      src={currentMedia.url}
+                      alt=""
+                      onLoad={() => { setImgLoading(false); setImgError(false); }}
+                      onError={() => {
+                        if (imgRetryRef.current < 1) {
+                          imgRetryRef.current++;
+                          // Force reload by appending a dummy param
+                          setImgLoading(true);
+                          setImgError(false);
+                        } else {
+                          setImgLoading(false);
+                          setImgError(true);
+                        }
+                      }}
+                      style={{
+                        maxWidth: '99%',
+                        maxHeight: '99%',
+                        objectFit: 'contain',
+                        userSelect: 'none',
+                        borderRadius: '.5rem',
+                        boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+                        opacity: imgLoading ? 0 : 1,
+                        transition: 'opacity 0.3s ease',
+                      }}
+                      draggable={false}
+                    />
+                  </TransformComponent>
+                </TransformWrapper>
+              )}
+            </div>
           ) : currentMedia.type === 'chunked_video' ? (
             <div className="w-full h-full flex items-center justify-center p-1">
               <ChunkedVideoPlayer 
