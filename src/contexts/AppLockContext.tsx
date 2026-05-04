@@ -23,7 +23,7 @@ export async function hashPin(pin: string): Promise<string> {
 }
 
 export function AppLockProvider({ children }: { children: ReactNode }) {
-  const { settings, setSharedPin, loading: settingsLoading } = useChatSettings();
+  const { settings, setSharedPin, loading: settingsLoading, error: settingsError } = useChatSettings();
   
   // By default, if settings are loading, we assume unlocked until we know otherwise
   // But we defer mounting the app in the App.tsx until loading is done anyway
@@ -32,6 +32,9 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   // If a shared pin is present but we haven't unlocked it locally, it's locked.
   const hasAppPin = !!settings?.shared_pin;
   const isLocked = hasAppPin && !isUnlockedLocally;
+
+  // Distinguish between 'no settings' (new user) and 'settings failed to load' (error)
+  const isLoading = settingsLoading || (settingsError && !settings);
 
   // Listen for tab close/refresh to ensure it locks again automatically.
   // We keep `isUnlockedLocally` purely in React state, meaning a reload naturally destroys it.
@@ -67,13 +70,13 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
 
   // If the partner removes the pin remotely, we should unlock the app
   useEffect(() => {
-    if (!settingsLoading && !hasAppPin && !isUnlockedLocally) {
+    if (!isLoading && !hasAppPin && !isUnlockedLocally) {
       setIsUnlockedLocally(true);
     }
-  }, [hasAppPin, isUnlockedLocally, settingsLoading]);
+  }, [hasAppPin, isUnlockedLocally, isLoading]);
 
   return (
-    <AppLockContext.Provider value={{ isLocked, hasAppPin, isLoading: settingsLoading, unlockApp, setAppPin, lockApp }}>
+    <AppLockContext.Provider value={{ isLocked, hasAppPin, isLoading, unlockApp, setAppPin, lockApp }}>
       {children}
     </AppLockContext.Provider>
   );

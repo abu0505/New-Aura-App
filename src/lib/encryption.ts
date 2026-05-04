@@ -264,11 +264,16 @@ export async function checkEncryptionStatus(userId: string): Promise<EncryptionS
       }
 
       // 2. Compare local public key with Supabase's latest public key
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('public_key, backup_secret_key')
         .eq('id', userId)
         .single();
+      
+      if (profileError) {
+        console.error('[ENCRYPTION] Failed to fetch profile status:', profileError);
+        return 'error';
+      }
       
       const localPublicKey = encodeBase64(localKeys.publicKey);
       

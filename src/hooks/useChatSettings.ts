@@ -25,6 +25,7 @@ export function useChatSettings() {
   const { user } = useAuth();
   const [settings, setSettings] = useState<ChatSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<any>(null);
 
   const refreshSettings = async () => {
     if (!user) return;
@@ -46,15 +47,20 @@ export function useChatSettings() {
         .eq('user_id', user.id)
         .single();
 
-      if (error && error.code === 'PGRST116') {
-        const { data: newData, error: insertError } = await supabase
-          .from('chat_settings')
-          .insert({ user_id: user.id })
-          .select()
-          .single();
-        
-        if (!insertError) setSettings(newData);
-      } else if (!error) {
+      if (error) {
+        if (error.code === 'PGRST116') {
+          const { data: newData, error: insertError } = await supabase
+            .from('chat_settings')
+            .insert({ user_id: user.id })
+            .select()
+            .single();
+          
+          if (!insertError) setSettings(newData);
+        } else {
+          console.error('[SETTINGS] Failed to fetch settings:', error);
+          setError(error);
+        }
+      } else {
         setSettings(data);
       }
       setLoading(false);
@@ -122,5 +128,5 @@ export function useChatSettings() {
     return { error };
   };
 
-  return { settings, loading, updateSettings, setSharedPin, refreshSettings };
+  return { settings, loading, error, updateSettings, setSharedPin, refreshSettings };
 }

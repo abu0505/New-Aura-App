@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session);
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      await handleSession(session);
       setLoading(false);
     });
 
