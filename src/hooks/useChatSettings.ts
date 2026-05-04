@@ -10,6 +10,8 @@ export interface ChatSettings {
   background_key: string | null;
   background_nonce: string | null;
   notification_enabled: boolean;
+  tab_badge_enabled: boolean;
+  push_notifications_enabled: boolean;
   updated_at: string;
   shared_pin: string | null;
   accent_color: string | null;
@@ -28,7 +30,7 @@ export function useChatSettings() {
     if (!user) return;
     const { data } = await supabase
       .from('chat_settings')
-      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies')
+      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,tab_badge_enabled,push_notifications_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies')
       .eq('user_id', user.id)
       .single();
     if (data) setSettings(data);
@@ -40,7 +42,7 @@ export function useChatSettings() {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('chat_settings')
-        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies')
+        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,tab_badge_enabled,push_notifications_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies')
         .eq('user_id', user.id)
         .single();
 

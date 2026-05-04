@@ -2,14 +2,16 @@ import { motion } from 'framer-motion';
 
 interface MessageContextMenuProps {
   isMine: boolean;
+  hasMedia?: boolean;
   onEdit?: () => void;
   onDeleteForMe: () => void;
   onDeleteForEveryone?: () => void;
   onPin: () => void;
+  onMoveToGarbage?: () => void;
 }
 
 export default function MessageContextMenu({
-  isMine, onEdit, onDeleteForMe, onDeleteForEveryone, onPin
+  isMine, hasMedia, onEdit, onDeleteForMe, onDeleteForEveryone, onPin, onMoveToGarbage
 }: MessageContextMenuProps) {
   return (
     <motion.div 
@@ -33,6 +35,17 @@ export default function MessageContextMenu({
         >
           <span className="material-symbols-outlined text-[18px]">edit</span>
           Edit
+        </button>
+      )}
+
+      {/* Move to Garbage — only visible for media messages */}
+      {hasMedia && onMoveToGarbage && (
+        <button 
+          onClick={onMoveToGarbage}
+          className="flex items-center gap-3 px-4 py-3 hover:bg-amber-500/10 text-amber-400 transition-colors text-sm text-left font-body border-t border-white/5"
+        >
+          <span className="material-symbols-outlined text-[18px]">delete_outline</span>
+          Move to Garbage
         </button>
       )}
 

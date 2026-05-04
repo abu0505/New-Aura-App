@@ -300,8 +300,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
           {currentMedia.type === 'image' || currentMedia.type === 'gif' ? (
             // ── Smart image with loading + error states ────────────────────
             <div
-              className="relative flex items-center justify-center"
-              style={{ maxWidth: '99%', maxHeight: '99%', minWidth: 200, minHeight: 140 }}
+              className="relative flex items-center justify-center w-full h-full"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Show loading spinner while URL is empty or image is loading */}
@@ -358,8 +357,8 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                   centerZoomedOut
                 >
                   <TransformComponent
-                    wrapperStyle={{ width: '100%', height: '100%' }}
-                    contentStyle={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    wrapperStyle={{ width: '100vw', height: '100vh' }}
+                    contentStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   >
                     <img
                       src={currentMedia.url}
@@ -377,8 +376,10 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                         }
                       }}
                       style={{
-                        maxWidth: '99%',
-                        maxHeight: '99%',
+                        maxWidth: '100vw',
+                        maxHeight: '100vh',
+                        width: 'auto',
+                        height: 'auto',
                         objectFit: 'contain',
                         userSelect: 'none',
                         borderRadius: '.5rem',

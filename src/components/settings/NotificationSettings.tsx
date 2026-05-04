@@ -187,7 +187,40 @@ export default function NotificationSettings() {
       </div>
 
       <div className="space-y-5">
-        {/* ── Master Toggle ── */}
+        {/* ── Granular Toggles ── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            onClick={() => updateSettings({ push_notifications_enabled: !settings?.push_notifications_enabled })}
+            className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+              settings?.push_notifications_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
+            }`}
+          >
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Normal Notifications</span>
+              <span className="text-[9px] text-[var(--text-secondary)] italic">Toasts & Push messages</span>
+            </div>
+            <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.push_notifications_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.push_notifications_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
+            </div>
+          </div>
+
+          <div
+            onClick={() => updateSettings({ tab_badge_enabled: !settings?.tab_badge_enabled })}
+            className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+              settings?.tab_badge_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
+            }`}
+          >
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Tab Badge</span>
+              <span className="text-[9px] text-[var(--text-secondary)] italic">Counter in browser tab</span>
+            </div>
+            <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.tab_badge_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.tab_badge_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Browser/Master Toggle ── */}
         <div
           onClick={togglePush}
           className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
@@ -195,8 +228,8 @@ export default function NotificationSettings() {
           } ${isTogglingPush ? 'animate-pulse' : ''}`}
         >
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Notification Reception</span>
-            <span className="text-[9px] text-[var(--text-secondary)] italic">Allow the app to reach you</span>
+            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Push Device Link</span>
+            <span className="text-[9px] text-[var(--text-secondary)] italic">{pushEnabled ? 'Device is registered for push' : 'Register this browser for notifications'}</span>
           </div>
           <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
             <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />

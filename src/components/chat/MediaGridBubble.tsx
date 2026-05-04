@@ -7,6 +7,15 @@ import MessageContextMenu from './MessageContextMenu';
 import { AnimatePresence } from 'framer-motion';
 import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import PremiumEmoji from '../common/PremiumEmoji';
+import { useGarbage } from '../../hooks/useGarbage';
+import { toast } from 'sonner';
+
+/** Extract cloud_name and public_id from a Cloudinary URL */
+function parseCloudinaryUrl(url: string): { cloudName: string; publicId: string } | null {
+  const match = url.match(/res\.cloudinary\.com\/([^/]+)\/[^/]+\/upload\/(?:v\d+\/)?(.+)/);
+  if (!match) return null;
+  return { cloudName: match[1], publicId: match[2] };
+}
 
 interface MediaGridBubbleProps {
   messages: ChatMessage[];
@@ -34,6 +43,7 @@ function MediaGridBubble({
   quickEmojis
 }: MediaGridBubbleProps) {
   const { getDecryptedBlob } = useMedia();
+  const { moveToGarbage } = useGarbage();
   const [decryptedUrls, setDecryptedUrls] = useState<Record<string, string>>({});
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');
@@ -175,6 +185,36 @@ function MediaGridBubble({
 
   const displayItems = messages.slice(0, 4);
   const remainingCount = messages.length - 4;
+
+  const hasCloudinaryMedia = messages.some(m => m.media_url?.includes('res.cloudinary.com'));
+
+  const handleMoveToGarbage = async () => {
+    setInteractionType('none');
+    
+    let successCount = 0;
+    for (const msg of messages) {
+      if (!msg.media_url) continue;
+      const parsed = parseCloudinaryUrl(msg.media_url);
+      if (!parsed) continue;
+
+      const ok = await moveToGarbage(
+        msg.id,
+        parsed.publicId,
+        parsed.cloudName,
+        msg.type || 'image',
+        msg.file_size ?? null
+      );
+      if (ok) successCount++;
+    }
+
+    if (successCount > 0) {
+      toast.success(`Moved ${successCount} items to Garbage 🗑️`, {
+        description: 'Go to Settings → Garbage Can to delete from Cloudinary.',
+      });
+    } else {
+      toast.error('Failed to move items to garbage');
+    }
+  };
 
 
 
@@ -324,7 +364,9 @@ function MediaGridBubble({
             {interactionType === 'menu' && !showAllEmojis && (
               <MessageContextMenu
                 isMine={isMine}
+                hasMedia={hasCloudinaryMedia}
                 onPin={() => { onPin?.(messages[0].id); setInteractionType('none'); }}
+                onMoveToGarbage={hasCloudinaryMedia && !messages[0].is_deleted_for_everyone ? handleMoveToGarbage : undefined}
                 onDeleteForMe={() => {
                   messages.forEach(msg => onDelete?.(msg.id, false));
                   setInteractionType('none');

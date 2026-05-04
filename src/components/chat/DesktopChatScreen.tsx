@@ -19,6 +19,7 @@ import DesktopCameraStudio from './DesktopCameraStudio';
 import { LastSeenStatus } from './LastSeenStatus';
 import { useTabNotification } from '../../hooks/useTabNotification';
 import { useCall } from '../../contexts/CallContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import ChatSearch from './ChatSearch';
 
 
@@ -32,6 +33,7 @@ interface DesktopChatScreenProps {
 
 export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, sendTypingEvent }: DesktopChatScreenProps) {
   const { user } = useAuth();
+  const { markReadBySenderId } = useNotifications();
   const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
   const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
   const [showPinDropdown, setShowPinDropdown] = useState(false);
@@ -349,6 +351,8 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
     const flushReads = () => {
       if (unreadMessages.size > 0) {
         markAsRead(Array.from(unreadMessages));
+        // Also dismiss the notification badge/inbox for this partner
+        markReadBySenderId(partner.id);
         unreadMessages.clear();
       }
     };

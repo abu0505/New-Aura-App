@@ -2,6 +2,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import { useMedia } from '../../hooks/useMedia';
 import StorageDashboard from './StorageDashboard';
+import GarbageCanSection from './GarbageCanSection';
 
 export default function StorageSection() {
   const { signOut } = useAuth();
@@ -27,6 +28,11 @@ export default function StorageSection() {
     <div className="md:col-span-2 space-y-8">
       {/* Visual Storage Dashboard */}
       <StorageDashboard />
+
+      {/* Garbage Can */}
+      <div className="bg-[var(--bg-secondary)] rounded-3xl p-6 border border-white/5">
+        <GarbageCanSection />
+      </div>
 
       {/* Cache Management */}
       <div className="flex flex-col md:flex-row gap-4">

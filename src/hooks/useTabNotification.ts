@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNotifications } from '../contexts/NotificationContext';
+import { useChatSettings } from './useChatSettings';
 
 const BASE_TITLE = 'AURA';
 
@@ -15,16 +16,17 @@ const BASE_TITLE = 'AURA';
  */
 export function useTabNotification(): void {
   const originalTitleRef = useRef(document.title);
+  const { settings } = useChatSettings();
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
-    if (unreadCount === 0) {
+    if (!settings?.tab_badge_enabled || unreadCount === 0) {
       document.title = BASE_TITLE;
     } else {
       const badge = unreadCount > 9 ? '9+' : String(unreadCount);
       document.title = `(${badge}) ${BASE_TITLE}`;
     }
-  }, [unreadCount]);
+  }, [unreadCount, settings?.tab_badge_enabled]);
 
   // Reset title when the component unmounts
   useEffect(() => {

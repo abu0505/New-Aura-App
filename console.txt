@@ -1,115 +1,39 @@
-index-RJqiIKkS.js:40 [🔔 NOTIF] Registering service worker: /sw.js
-index-RJqiIKkS.js:40 [🔔 NOTIF] ✅ Service Worker registered successfully
-index-RJqiIKkS.js:40 [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
-index-RJqiIKkS.js:40 [🔔 NOTIF]   active: activated
-index-RJqiIKkS.js:40 [🔔 NOTIF]   waiting: none
-preload-helper-DE1dU2_p.js:4 WebSocket connection to 'wss://ugfxjjakpsngfdrjlsdr.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo&eventsPerSecond=5&heartbeatIntervalMs=60000&vsn=2.0.0' failed: WebSocket is closed before the connection is established.
-(anonymous) @ preload-helper-DE1dU2_p.js:4
-preload-helper-DE1dU2_p.js:4 WebSocket connection to 'wss://ugfxjjakpsngfdrjlsdr.supabase.co/realtime/v1/websocket?apikey=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo&eventsPerSecond=5&heartbeatIntervalMs=60000&vsn=2.0.0' failed: WebSocket is closed before the connection is established.
-(anonymous) @ preload-helper-DE1dU2_p.js:4
-index-RJqiIKkS.js:9 [Intervention] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://fonts.gstatic.com/s/materialsymbolsoutlined/v332/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2
-Node cannot be found in the current page.
-index-RJqiIKkS.js:40 [🔔 NOTIF] 🔍 Existing push subscription: NO ❌
-index-RJqiIKkS.js:40 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
-index-RJqiIKkS.js:40 [🔔 NOTIF]   user: 2dfb823f...
-index-RJqiIKkS.js:40 [🔔 NOTIF]   Notification.permission: default
-index-RJqiIKkS.js:40 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
-index-RJqiIKkS.js:40 [🔔 NOTIF] 🔑 Notification.permission = "default"
-index-RJqiIKkS.js:40 [🔔 NOTIF] ⚠️ Permission is NOT granted (default) — cannot auto-subscribe. User must manually enable from Settings.
-me @ index-RJqiIKkS.js:40
-t @ index-RJqiIKkS.js:40
-(anonymous) @ index-RJqiIKkS.js:40
-setTimeout
-(anonymous) @ index-RJqiIKkS.js:40
-Wc @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Dl @ index-RJqiIKkS.js:9
-Ol @ index-RJqiIKkS.js:9
-Uu @ index-RJqiIKkS.js:9
-(anonymous) @ index-RJqiIKkS.js:9
-re @ index-RJqiIKkS.js:2
-index-RJqiIKkS.js:40 [🔔 NOTIF] 📋 Push setup result: FAILED ❌
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 36900014... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 97ca8a7f... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg dda736f3...)
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 9d52d6c4... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg a52897ad... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg cc8f7caf...)
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 95c7d6c8... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 0498567c... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg b9476169...)
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 0b9bb49d... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 68f373a4... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg f2c5c801... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 3121a280... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg fe38789c...)
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 36d4a4c6... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 217ef0f3... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - User is active"}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Triggering push for msg 87078879... to partner 8bb51234...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
-preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+content.js:22 [SmartLens Content] Initializing...
+content.js:438 [SmartLens] Content script loaded
+index-DFAHwguW.js:40 [🔔 NOTIF] Registering service worker: /sw.js
+index-DFAHwguW.js:40 [🔔 NOTIF] ✅ Service Worker registered successfully
+index-DFAHwguW.js:40 [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
+index-DFAHwguW.js:40 [🔔 NOTIF]   active: activated
+index-DFAHwguW.js:40 [🔔 NOTIF]   waiting: none
+(index):1 <meta name="apple-mobile-web-app-capable" content="yes"> is deprecated. Please include <meta name="mobile-web-app-capable" content="yes">
+(index):1 Error while trying to use the following icon from the Manifest: https://new-aura-v2.vercel.app/icon-192.png (Download error or resource isn't a valid image)
+index-DFAHwguW.js:40 [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
+index-DFAHwguW.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/cN-_p3y56pY:APA91bFX5jPh3K02qg8r6v-JRwhqVkXp...
+index-DFAHwguW.js:40 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
+index-DFAHwguW.js:40 [🔔 NOTIF]   user: 2dfb823f...
+index-DFAHwguW.js:40 [🔔 NOTIF]   Notification.permission: granted
+index-DFAHwguW.js:40 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
+index-DFAHwguW.js:40 [🔔 NOTIF] 🔑 Notification.permission = "granted"
+index-DFAHwguW.js:40 [🔔 NOTIF] ⏳ Waiting for ServiceWorker to be ready...
+index-DFAHwguW.js:40 [🔔 NOTIF] ✅ ServiceWorker is ready. Scope: https://new-aura-v2.vercel.app/
+index-DFAHwguW.js:40 [🔔 NOTIF]   SW state: activated
+index-DFAHwguW.js:40 [🔔 NOTIF] 📬 Found existing subscription
+index-DFAHwguW.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/cN-_p3y56pY:APA91bFX5jPh3K02qg8r6v-JRwhqVkXp...
+index-DFAHwguW.js:40 [🔔 NOTIF] 💾 Saving subscription to DB...
+index-DFAHwguW.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/cN-_p3y56pY:APA91bFX5jPh3K02qg8r6v-JRwhqVkXp...
+index-DFAHwguW.js:40 [🔔 NOTIF] ✅ Subscription saved to DB successfully
+index-DFAHwguW.js:40 [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
+index-DFAHwguW.js:40 [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Scheduling push for media msg 4b13cd02... (5s debounce)
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Scheduling push for media msg cf343f19... (5s debounce)
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Scheduling push for media msg d4554a9e... (5s debounce)
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Scheduling push for media msg 575f521e... (5s debounce)
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 📤 Scheduling push for media msg 5dd14583... (5s debounce)
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] 🌐 Invoking send-push for media msg...
+preload-helper-DE1dU2_p.js:24 [🔔 NOTIF-SEND] ✅ Edge function response (media): {"success":true,"sentTo":1}
+blob:https://new-aura-v2.vercel.app/1e10803e-fbe0-4f7f-b984-1139ee683a99:1  Failed to load resource: net::ERR_FILE_NOT_FOUND
+api.cloudinary.com/v1_1/del5o1vnd/raw/upload:1  Failed to load resource: the server responded with a status of 400 (Bad Request)
+useMedia-CTfwVzWF.js:21 Uncaught (in promise) Error: Cloudinary upload failed (HTTP 400): {"error":{"message":"File size too large. Got 12520408. Maximum is 10485760."}}
+    at e (useMedia-CTfwVzWF.js:21:6506)
+    at async g (useMedia-CTfwVzWF.js:21:6941)
+    at async E (useMedia-CTfwVzWF.js:21:8203)

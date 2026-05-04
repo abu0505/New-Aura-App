@@ -12,6 +12,17 @@ import LinkPreview from './LinkPreview';
 import PremiumEmoji, { EmojiText } from '../common/PremiumEmoji';
 import { useMediaFolders } from '../../hooks/useMediaFolders';
 import { supabase } from '../../lib/supabase';
+import { useGarbage } from '../../hooks/useGarbage';
+import { toast } from 'sonner';
+
+/** Extract cloud_name and public_id from a Cloudinary URL */
+function parseCloudinaryUrl(url: string): { cloudName: string; publicId: string } | null {
+  // Matches: https://res.cloudinary.com/{cloud_name}/{resource_type}/upload/v{ver}/{public_id}
+  // or without version:   .../upload/{public_id}
+  const match = url.match(/res\.cloudinary\.com\/([^/]+)\/[^/]+\/upload\/(?:v\d+\/)?(.+)/);
+  if (!match) return null;
+  return { cloudName: match[1], publicId: match[2] };
+}
 
 interface ChatBubbleProps {
   message: ChatMessage;
@@ -49,6 +60,7 @@ function ChatBubble({
   const { getDecryptedBlob } = useMedia();
   const { chunks: hookChunks, getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks(message.id);
   const { folders } = useMediaFolders();
+  const { moveToGarbage } = useGarbage();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
   const [hasUploadFailed, setHasUploadFailed] = useState(false);
   // For chunked video: we use hookChunks which is reactive
@@ -409,6 +421,37 @@ function ChatBubble({
       onEdit?.(message.id, editContent);
     }
     setIsEditing(false);
+  };
+
+  // Determine if this message has Cloudinary-hosted media (eligible for garbage)
+  const hasCloudinaryMedia = !!(message.media_url && message.media_url.includes('res.cloudinary.com') &&
+    (message.type === 'image' || message.type === 'video' || message.type === 'audio' || message.type === 'document'));
+
+  const handleMoveToGarbage = async () => {
+    setInteractionType('none');
+    if (!message.media_url) return;
+
+    const parsed = parseCloudinaryUrl(message.media_url);
+    if (!parsed) {
+      toast.error('Could not parse media URL');
+      return;
+    }
+
+    const ok = await moveToGarbage(
+      message.id,
+      parsed.publicId,
+      parsed.cloudName,
+      message.type || 'image',
+      message.file_size ?? null
+    );
+
+    if (ok) {
+      toast.success('Moved to Garbage 🗑️', {
+        description: 'Go to Settings → Garbage Can to delete it from Cloudinary.',
+      });
+    } else {
+      toast.error('Failed to move to garbage');
+    }
   };
 
   const isOnlyMedia = (message.type === 'image' || message.type === 'video' || message.type === 'gif') && !message.decrypted_content;
@@ -902,6 +945,7 @@ function ChatBubble({
               ) : (
                 <MessageContextMenu 
                   isMine={isMine}
+                  hasMedia={hasCloudinaryMedia}
                   onPin={() => { onPin?.(message.id); setInteractionType('none'); }}
                   onEdit={message.type === 'text' && !message.is_deleted_for_everyone && !message.decryption_error ? () => { 
                     setIsEditing(true);
@@ -909,6 +953,7 @@ function ChatBubble({
                     setInteractionType('none');
                     setTimeout(() => editInputRef.current?.focus(), 0);
                   } : undefined}
+                  onMoveToGarbage={hasCloudinaryMedia && !message.is_deleted_for_everyone ? handleMoveToGarbage : undefined}
                   onDeleteForMe={() => { onDelete?.(message.id, false); setInteractionType('none'); }}
                   onDeleteForEveryone={() => { onDelete?.(message.id, true); setInteractionType('none'); }}
                 />

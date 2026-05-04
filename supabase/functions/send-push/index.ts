@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
       supabase.from("profiles").select("is_online, last_seen").eq("id", receiverId).single(),
       supabase.from("push_subscriptions").select("endpoint, p256dh, auth").eq("user_id", receiverId),
       supabase.from("profiles").select("display_name").eq("id", senderId).single(),
-      supabase.from("chat_settings").select("notification_alias, notification_bodies").eq("user_id", receiverId).single()
+      supabase.from("chat_settings").select("notification_alias, notification_bodies, push_notifications_enabled").eq("user_id", receiverId).single()
     ]);
 
     const receiverProfile = profileRes.data;
@@ -239,6 +239,12 @@ Deno.serve(async (req) => {
 
     // ── PERSONALISED SENDER NAME ──
     const senderName = receiverSettings?.notification_alias?.trim() || fallbackSenderName;
+
+    // ── CHECK SETTINGS ──
+    if (receiverSettings?.push_notifications_enabled === false) {
+      console.log(`[send-push] 🛑 Skipped Push: Receiver ${receiverId} has push_notifications_enabled = false.`);
+      return new Response(JSON.stringify({ success: true, message: "Skipped - Notifications disabled in settings" }), { headers });
+    }
 
     // ── RANDOM NOTIFICATION BODY ──
     const DEFAULT_BODIES = [

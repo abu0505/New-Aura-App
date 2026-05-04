@@ -3,6 +3,7 @@ import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useChatSettings } from '../../hooks/useChatSettings';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import MessageInput from './MessageInput';
 import ChatBubble from './ChatBubble';
@@ -28,6 +29,7 @@ interface MobileChatScreenProps {
 
 export default function MobileChatScreen({ partner, isActive, partnerIsTyping, sendTypingEvent }: MobileChatScreenProps) {
   const { user } = useAuth();
+  const { markReadBySenderId } = useNotifications();
   const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
   const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
   const [showPinDropdown, setShowPinDropdown] = useState(false);
@@ -318,6 +320,8 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     const flushReads = () => {
       if (unreadMessages.size > 0) {
         markAsRead(Array.from(unreadMessages));
+        // Also dismiss the notification badge/inbox for this partner
+        markReadBySenderId(partner.id);
         unreadMessages.clear();
       }
     };

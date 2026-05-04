@@ -43,7 +43,7 @@ interface MessageInputProps {
   onChunkedVideoFinalize?: (tempId: string) => void;
 }
 
-const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({ 
+const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   onSend, onTyping, disabled, replyingTo, onCancelReply, isActive, partnerPublicKey, onDesktopCameraClick, onOptimisticMediaStart, onOptimisticMediaComplete, partnerId, onChunkedVideoStart, onChunkedVideoStatusUpdate, onChunkedVideoCommit, onChunkedVideoFinalize
 }, ref) => {
   const { user } = useAuth();
@@ -62,10 +62,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingCaption, _setPendingCaption] = useState('');
   const [replyMediaUrl, setReplyMediaUrl] = useState<string | null>(null);
-  
+
   const { phrases } = useAutocompletePhrases();
   const [suggestion, setSuggestion] = useState<string | null>(null);
-  
+
   const isMobile = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   const maxHeight = isMobile ? 72 : 120;
 
@@ -85,7 +85,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   // slashStartPos tracks the caret position where '/' was typed so we can replace that slice
   const slashStartPosRef = useRef<number>(-1);
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastCursorPosRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -124,7 +124,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     const raf = requestAnimationFrame(() => {
       el.style.height = 'auto';
       const scHeight = el.scrollHeight;
-      
+
       // Fix: If content fits within max-height, disable overflow to prevent 
       // the "grabbing placeholder scroll" bug, especially on mobile.
       if (scHeight <= maxHeight) {
@@ -156,14 +156,14 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       setSuggestion(null);
       return;
     }
-    
+
     const lowerText = text.toLowerCase();
     let bestSuggestion = null;
     let longestMatchLen = 0;
 
     for (const phrase of phrases) {
       const lowerPhrase = phrase.toLowerCase();
-      
+
       for (let i = 0; i < lowerText.length; i++) {
         // Check if `i` is the start of a word (start of string or preceded by non-alphanumeric)
         const isWordBoundary = i === 0 || /\W/.test(lowerText[i - 1]);
@@ -180,7 +180,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         }
       }
     }
-    
+
     setSuggestion(bestSuggestion);
   }, [text, phrases, activeFolderChip]);
 
@@ -205,12 +205,12 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       return () => clearTimeout(timer);
     }
   }, [replyingTo]);
-  
+
   // Decrypt media for reply preview
   useEffect(() => {
     if (replyingTo?.media_url && replyingTo?.media_key && replyingTo?.media_nonce && partnerPublicKey && !replyingTo?.is_deleted_for_everyone) {
       getDecryptedBlob(
-        replyingTo.media_url, replyingTo.media_key, replyingTo.media_nonce, 
+        replyingTo.media_url, replyingTo.media_key, replyingTo.media_nonce,
         partnerPublicKey,
         replyingTo.sender_public_key,
         undefined,
@@ -302,7 +302,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
       if (isUploading) return;
       clearTypingTimers();
       onTypingRef.current?.(false);
-      
+
       const currentReplyId = replyingTo?.id;
 
       // Send selected media first, without the text
@@ -350,7 +350,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         const chipEnd = chipIdx + chipStr.length;
         const caret = textareaRef.current?.selectionStart ?? 0;
         const caretEnd = textareaRef.current?.selectionEnd ?? 0;
-        
+
         // If cursor is within the chip or immediately after its trailing space
         if (caret === caretEnd && caret > chipIdx && caret <= chipEnd + 1) {
           e.preventDefault();
@@ -476,12 +476,12 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
 
     const hasOptimistic = !!onOptimisticMediaStart && !!onOptimisticMediaComplete;
-    
+
     if (!hasOptimistic) {
       setIsUploading(true);
     }
     setShowQualityModal(false);
-    
+
     // Quick UI reset so user can continue texting
     setPendingFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -522,14 +522,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const type = file.type.includes('video/') ? 'video' : (file.type.includes('audio/') ? 'audio' : 'image');
-      // A "direct recording" is a file produced by MobileCameraModal or DesktopCameraStudio.
-      // These use timestamp-based names: `video_<ms>.webm`, `video_<ms>.mp4`, `desktop_video_<ms>.webm`.
-      // We check for the exact timestamp pattern to avoid matching gallery files that might
-      // also start with "video_" (e.g., WhatsApp saves as video_2024-01-01.mp4).
-      const directRecordingPattern = /^(desktop_video_|video_)\d+\.(webm|mp4)$/;
-      const isDirectRecording = directRecordingPattern.test(file.name);
-      
-      if (type === 'video' && onChunkedVideoStart && !isDirectRecording) {
+      // Removed direct recording check to force all videos through chunked pipeline (as requested)
+      if (type === 'video' && onChunkedVideoStart) {
         // Generate a quick local thumbnail for the optimistic UI
         const thumbBlob = await generateVideoThumbnailFromFile(file);
         const thumbUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : '';
@@ -693,22 +687,22 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   const handleEmojiSelect = (emoji: string) => {
     setLastSelectedEmoji(emoji);
-    
+
     // Use functional update to ensure we don't lose emojis during fast spamming
     setText(prev => {
       const start = lastCursorPosRef.current;
       // If for some reason start is greater than text length, clamp it
       const safeStart = Math.min(start, prev.length);
-      
+
       const before = prev.substring(0, safeStart);
       const after = prev.substring(safeStart);
-      
+
       // Update the ref so the NEXT emoji (during spam) goes right after this one
       lastCursorPosRef.current = safeStart + emoji.length;
-      
+
       return before + emoji + after;
     });
-    
+
     // Focus stays on the picker for spamming
   };
 
@@ -716,7 +710,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     return (
       <div className="px-6 py-4 bg-background/80 backdrop-blur-3xl border-t border-white/5">
         <div className="max-w-4xl mx-auto">
-          <AudioRecorder 
+          <AudioRecorder
             onRecordingComplete={handleAudioComplete}
             onCancel={() => setIsRecording(false)}
           />
@@ -732,8 +726,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         {isEmojiPickerOpen && (
           <Fragment>
             {/* Click-outside backdrop (covers full screen reliably) */}
-            <div 
-              className="fixed inset-0 z-40 cursor-default pointer-events-auto bg-transparent" 
+            <div
+              className="fixed inset-0 z-40 cursor-default pointer-events-auto bg-transparent"
               onClick={() => setIsEmojiPickerOpen(false)}
             />
             <div className="absolute bottom-full -translate-x-1/2 z-50">
@@ -751,7 +745,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container pointer-events-auto"
                 style={{ width: 350, height: 400 }}
               >
-                <EmojiPicker 
+                <EmojiPicker
                   theme={Theme.DARK}
                   emojiStyle={EmojiStyle.APPLE}
                   onEmojiClick={(emojiData) => {
@@ -781,7 +775,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             onFolderSelect={(name) => {
               setActiveFolderChip(name);
               let newCursorPos = 0;
-              
+
               setText(prev => {
                 const start = slashStartPosRef.current !== -1 ? slashStartPosRef.current : prev.lastIndexOf('/');
                 if (start === -1) {
@@ -789,21 +783,21 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   newCursorPos = added.length;
                   return added + prev;
                 }
-                
+
                 // Find the end of the current slash command word
                 const afterSlash = prev.slice(start);
                 const match = afterSlash.match(/^\/\S*/);
                 const endIdx = match ? start + match[0].length : prev.length;
-                
+
                 const before = prev.slice(0, start);
                 const after = prev.slice(endIdx).trimStart();
-                
+
                 const inserted = `/${name} `;
                 newCursorPos = before.length + inserted.length;
-                
+
                 return `${before}${inserted}${after}`;
               });
-              
+
               // Focus the textarea and set cursor right after the newly inserted folder name
               setTimeout(() => {
                 if (textareaRef.current) {
@@ -830,10 +824,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
           />
         )}
       </AnimatePresence>
-      
+
       <AnimatePresence>
         {replyingTo && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -857,7 +851,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                       <div className="relative w-20 h-20 flex-shrink-0">
                         <video src={replyMediaUrl} className="w-full h-full rounded shadow-md object-cover" />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
-                           <span className="material-symbols-outlined text-white text-[16px]">play_circle</span>
+                          <span className="material-symbols-outlined text-white text-[16px]">play_circle</span>
                         </div>
                       </div>
                     ) : (
@@ -873,8 +867,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   </span>
                 </span>
               </div>
-              <button 
-                onClick={onCancelReply} 
+              <button
+                onClick={onCancelReply}
                 className="absolute top-1/2 -translate-y-1/2 right-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/5 text-aura-text-secondary hover:text-aura-text-primary hover:bg-white/10 transition-colors z-10"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
@@ -888,7 +882,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
       <AnimatePresence>
         {selectedFolderMedia.length > 0 && !showFolderPicker && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 10, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -896,8 +890,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
           >
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 pr-4">
               {selectedFolderMedia.map((item) => (
-                <div 
-                  key={item.messageId} 
+                <div
+                  key={item.messageId}
                   className="relative shrink-0 w-20 h-20 rounded-2xl overflow-hidden shadow-lg border border-primary/20 group"
                 >
                   {item.type === 'video' ? (
@@ -911,7 +905,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                     <img src={item.decryptedUrl} className="w-full h-full object-cover" alt="" />
                   )}
                   {/* Remove Button */}
-                  <button 
+                  <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedFolderMedia(prev => prev.filter(m => m.messageId !== item.messageId));
@@ -930,7 +924,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
         )}
       </AnimatePresence>
 
-      <motion.div 
+      <motion.div
         layout="position"
         className="w-full max-w-[720px] mx-auto flex items-center bg-aura-bg-elevated/80 backdrop-blur-xl rounded-full px-2 py-2 shadow-2xl relative border border-white/10 border-t-white/25">
         {/* Left Action Button (Camera or Emoji) */}
@@ -973,7 +967,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
           <div className="relative w-full">
             {/* Auto-complete Suggestion Layer */}
             {suggestion && !activeFolderChip && (
-              <div 
+              <div
                 className="absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm py-1 px-1 leading-normal z-0"
                 style={{ fontFamily: 'inherit' }}
                 aria-hidden="true"
@@ -988,10 +982,10 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
               const chipStr = `/${activeFolderChip}`;
               const parts = text.split(chipStr);
               return (
-                <div 
+                <div
                   ref={mirrorRef}
                   className="absolute inset-0 pointer-events-none overflow-hidden whitespace-pre-wrap break-words text-sm py-1 px-1 leading-normal"
-                  style={{ 
+                  style={{
                     fontFamily: 'inherit',
                     color: 'var(--text-primary)'
                   }}
@@ -1001,7 +995,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                     <Fragment key={i}>
                       <span className="opacity-100">{part}</span>
                       {i < parts.length - 1 && (
-                        <span 
+                        <span
                           className="text-white"
                           style={{ textShadow: '0.4px 0 0 white, -0.4px 0 0 white' }}
                         >
@@ -1014,82 +1008,81 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
               );
             })()}
 
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onScroll={(e) => {
-              if (mirrorRef.current) {
-                mirrorRef.current.scrollTop = e.currentTarget.scrollTop;
-              }
-            }}
-            onBlur={() => {
-              lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
-            }}
-            onSelect={(e) => {
-              lastCursorPosRef.current = e.currentTarget.selectionStart || 0;
-            }}
-            onClick={() => {
-              lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
-            }}
-            onChange={(e) => {
-              let val = e.target.value;
-              lastCursorPosRef.current = e.target.selectionStart || 0;
-              if (activeFolderChip) {
-                const prefix = `/${activeFolderChip}`;
-                if (!val.includes(prefix)) {
-                  setActiveFolderChip(null);
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onScroll={(e) => {
+                if (mirrorRef.current) {
+                  mirrorRef.current.scrollTop = e.currentTarget.scrollTop;
                 }
-              }
-              setText(val);
-              
-              // Close emoji picker if user starts typing
-              if (isEmojiPickerOpen) setIsEmojiPickerOpen(false);
+              }}
+              onBlur={() => {
+                lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
+              }}
+              onSelect={(e) => {
+                lastCursorPosRef.current = e.currentTarget.selectionStart || 0;
+              }}
+              onClick={() => {
+                lastCursorPosRef.current = textareaRef.current?.selectionStart || 0;
+              }}
+              onChange={(e) => {
+                let val = e.target.value;
+                lastCursorPosRef.current = e.target.selectionStart || 0;
+                if (activeFolderChip) {
+                  const prefix = `/${activeFolderChip}`;
+                  if (!val.includes(prefix)) {
+                    setActiveFolderChip(null);
+                  }
+                }
+                setText(val);
 
-              // Detect '/' at start or after whitespace to open folder picker
-              const caret = e.target.selectionStart ?? 0;
-              const lastSlashIdx = val.lastIndexOf('/', caret);
-              if (lastSlashIdx !== -1) {
-                const charBefore = lastSlashIdx === 0 ? '' : val[lastSlashIdx - 1];
-                const isValidTrigger = (lastSlashIdx === 0 || charBefore === ' ' || charBefore === '\n');
-                if (isValidTrigger) {
-                  const query = val.slice(lastSlashIdx + 1, caret);
-                  // Only show picker if no space yet in query (space = not a slash command)
-                  if (!query.includes(' ')) {
-                    slashStartPosRef.current = lastSlashIdx;
-                    setFolderSearch(query);
-                    setShowFolderPicker(true);
+                // Close emoji picker if user starts typing
+                if (isEmojiPickerOpen) setIsEmojiPickerOpen(false);
+
+                // Detect '/' at start or after whitespace to open folder picker
+                const caret = e.target.selectionStart ?? 0;
+                const lastSlashIdx = val.lastIndexOf('/', caret);
+                if (lastSlashIdx !== -1) {
+                  const charBefore = lastSlashIdx === 0 ? '' : val[lastSlashIdx - 1];
+                  const isValidTrigger = (lastSlashIdx === 0 || charBefore === ' ' || charBefore === '\n');
+                  if (isValidTrigger) {
+                    const query = val.slice(lastSlashIdx + 1, caret);
+                    // Only show picker if no space yet in query (space = not a slash command)
+                    if (!query.includes(' ')) {
+                      slashStartPosRef.current = lastSlashIdx;
+                      setFolderSearch(query);
+                      setShowFolderPicker(true);
+                    } else {
+                      setShowFolderPicker(false);
+                    }
                   } else {
                     setShowFolderPicker(false);
                   }
                 } else {
                   setShowFolderPicker(false);
                 }
-              } else {
-                setShowFolderPicker(false);
-              }
-            }}
-            onKeyDown={(e) => {
-              // Dismiss picker on Escape
-              if (e.key === 'Escape' && showFolderPicker) {
-                e.preventDefault();
-                setShowFolderPicker(false);
-                return;
-              }
-              handleKeyDown(e);
-            }}
-            onPaste={handlePaste}
-            placeholder={isUploading ? "Securing media..." : "I love you..."}
-            disabled={disabled || isUploading}
-            className={`w-full border-none text-sm resize-none focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal px-1 relative z-10 ${
-              activeFolderChip 
-                ? 'text-transparent caret-white bg-transparent' 
-                : 'text-aura-text-primary bg-transparent'
-            } placeholder:text-aura-text-secondary/50`}
-            style={{ 
-              maxHeight: `${maxHeight}px`
-            }}
-            rows={1}
-          />
+              }}
+              onKeyDown={(e) => {
+                // Dismiss picker on Escape
+                if (e.key === 'Escape' && showFolderPicker) {
+                  e.preventDefault();
+                  setShowFolderPicker(false);
+                  return;
+                }
+                handleKeyDown(e);
+              }}
+              onPaste={handlePaste}
+              placeholder={isUploading ? "Securing media..." : "I love you..."}
+              disabled={disabled || isUploading}
+              className={`w-full border-none text-sm resize-none focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal px-1 relative z-10 ${activeFolderChip
+                  ? 'text-transparent caret-white bg-transparent'
+                  : 'text-aura-text-primary bg-transparent'
+                } placeholder:text-aura-text-secondary/50`}
+              style={{
+                maxHeight: `${maxHeight}px`
+              }}
+              rows={1}
+            />
           </div>
         </div>
 
@@ -1111,7 +1104,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
           </AnimatePresence>
           <AnimatePresence mode="wait">
             {!text.trim() && !isUploading ? (
-              <motion.div 
+              <motion.div
                 key="media-actions"
                 initial={{ opacity: 0, scale: 0.8, x: 20 }}
                 animate={{ opacity: 1, scale: 1, x: 0 }}
@@ -1125,7 +1118,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 >
                   <span className="material-symbols-outlined text-[22px]">mic</span>
                 </button>
-                
+
                 <button
                   onClick={() => setIsMediaGalleryOpen(true)}
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
@@ -1175,20 +1168,20 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             )}
           </AnimatePresence>
         </div>
-        </motion.div>
+      </motion.div>
 
-        {/* Hidden File Input */}
-        <input 
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          multiple
-        />
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        multiple
+      />
 
       {typeof document !== 'undefined' ? createPortal(
         <>
-          <AttachmentSheet 
+          <AttachmentSheet
             isOpen={isAttachmentOpen}
             onClose={() => setIsAttachmentOpen(false)}
             onSelect={handleAttachmentSelect}
@@ -1207,7 +1200,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             onGallerySelect={handleMobileGallerySelect}
           />
 
-          <QualityChoiceModal 
+          <QualityChoiceModal
             isOpen={showQualityModal}
             onClose={() => setShowQualityModal(false)}
             onSelect={(opt) => pendingFiles.length > 0 && performUpload(pendingFiles, opt, pendingCaption)}
@@ -1222,7 +1215,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 exit={{ y: '100%' }}
                 className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
               >
-                <StickerPicker 
+                <StickerPicker
                   onSelect={(sticker) => {
                     onSend(sticker.emoji, { url: '', media_key: '', media_nonce: '', type: 'sticker' }, replyingTo?.id);
                     if (onCancelReply) onCancelReply();
@@ -1240,8 +1233,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 exit={{ y: '100%' }}
                 className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
               >
-                <GifPicker 
-                    onSelect={(gif) => {
+                <GifPicker
+                  onSelect={(gif) => {
                     // Send as a dedicated 'gif' type message. 
                     // No encryption needed for public Tenor URLs, but we keep the structure consistent.
                     onSend('', { url: gif.url, media_key: '', media_nonce: '', type: 'gif' }, replyingTo?.id);
@@ -1260,8 +1253,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 exit={{ y: '100%' }}
                 className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
               >
-                <GifPicker 
-                    onSelect={(gif) => {
+                <GifPicker
+                  onSelect={(gif) => {
                     // Send as a dedicated 'gif' type message. 
                     // No encryption needed for public Tenor URLs, but we keep the structure consistent.
                     onSend('', { url: gif.url, media_key: '', media_nonce: '', type: 'gif' }, replyingTo?.id);

@@ -23,6 +23,8 @@ interface NotificationContextType {
   unreadCount: number;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  /** Dismiss all unread notifications sent by a specific user (called when their chat messages are read). */
+  markReadBySenderId: (senderId: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType>({
@@ -30,6 +32,7 @@ const NotificationContext = createContext<NotificationContextType>({
   unreadCount: 0,
   markAsRead: async () => {},
   markAllAsRead: async () => {},
+  markReadBySenderId: async () => {},
 });
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
@@ -71,15 +74,20 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       if (payload.eventType === 'INSERT') {
         const newNotif = payload.new as Notification;
         
-        // Client-side filter: only process notifications for this user
-        // (Server-side filter was removed to allow sender to see seen_push updates)
         if (newNotif.recipient_id !== userId) return;
 
         // Add to state
         setNotifications(prev => [newNotif, ...prev]);
 
-        // Show Toast if the document is visible
-        if (document.visibilityState === 'visible') {
+        // Fetch settings to check if toasts are allowed
+        const { data: settings } = await supabase
+          .from('chat_settings')
+          .select('push_notifications_enabled')
+          .eq('user_id', userId)
+          .single();
+
+        // Show Toast if the document is visible AND enabled in settings
+        if (document.visibilityState === 'visible' && settings?.push_notifications_enabled !== false) {
           toast(newNotif.title, {
             description: newNotif.body,
             icon: '🔔',
@@ -127,6 +135,33 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       .in('id', unreadIds);
   };
 
+  /**
+   * markReadBySenderId
+   * Dismisses all unread notifications that were sent by `senderId`.
+   * Called by chat screens when the user reads messages from a specific partner,
+   * so the notification badge and inbox entry clear automatically.
+   */
+  const markReadBySenderId = async (senderId: string) => {
+    const unreadFromSender = notifications.filter(
+      n => n.sender_id === senderId && !n.read_at
+    );
+    if (unreadFromSender.length === 0) return;
+
+    const readAt = new Date().toISOString();
+
+    // Optimistic update
+    setNotifications(prev =>
+      prev.map(n =>
+        n.sender_id === senderId && !n.read_at ? { ...n, read_at: readAt } : n
+      )
+    );
+
+    await supabase
+      .from('notifications')
+      .update({ read_at: readAt })
+      .in('id', unreadFromSender.map(n => n.id));
+  };
+
   // 3. Listen to Service Worker postMessage
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
@@ -143,7 +178,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, markReadBySenderId }}>
       {children}
     </NotificationContext.Provider>
   );
