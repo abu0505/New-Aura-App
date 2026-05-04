@@ -12,6 +12,11 @@ CREATE TABLE IF NOT EXISTS profiles (
   display_name TEXT NOT NULL,
   avatar_url TEXT,
   public_key TEXT NOT NULL DEFAULT '',
+  current_device_token TEXT,
+  backup_secret_key TEXT,
+  key_derivation_salt TEXT,
+  key_history JSONB DEFAULT '[]',
+  status_message TEXT,
   is_online BOOLEAN DEFAULT false,
   last_seen TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -157,9 +162,39 @@ CREATE TABLE IF NOT EXISTS chat_settings (
   background_url TEXT,
   background_key TEXT,
   background_nonce TEXT,
-  notification_sound BOOLEAN DEFAULT true,
+  notification_enabled BOOLEAN DEFAULT true,
+  tab_badge_enabled BOOLEAN DEFAULT true,
+  push_notifications_enabled BOOLEAN DEFAULT true,
+  shared_pin TEXT,
+  accent_color TEXT,
+  true_dark_mode BOOLEAN DEFAULT false,
+  quick_emojis TEXT[] DEFAULT ARRAY['❤️', '😂', '😮', '😢', '😡', '👍'],
+  notification_alias TEXT,
+  notification_bodies TEXT[] DEFAULT ARRAY[
+    'Someone is thinking of you 💭',
+    'A whisper has arrived for you 🤫',
+    'Your sanctuary has a new message ✨',
+    'Something special is waiting for you 💌',
+    'A secret message has arrived 🔐',
+    'You have been summoned to the sanctuary 🕯️',
+    'A gentle knock on your heart 💛',
+    'Love is calling you back 📱',
+    'The universe sent you a signal 🌙',
+    'Your world just got a little brighter ☀️'
+  ],
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- ===== RPC FUNCTIONS =====
+CREATE OR REPLACE FUNCTION set_shared_app_pin(new_pin TEXT)
+RETURNS void AS $$
+BEGIN
+  UPDATE chat_settings
+  SET shared_pin = new_pin,
+      updated_at = NOW()
+  WHERE user_id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 ALTER TABLE chat_settings ENABLE ROW LEVEL SECURITY;
 
