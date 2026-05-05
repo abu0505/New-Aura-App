@@ -1,0 +1,24 @@
+This Logcat selection tracks the complete lifecycle of the com.newaura.app application, which is a Capacitor-based Android app. It records everything from pre-launch system checks to its eventual termination.
+Here is a breakdown of the key events:
+1. Pre-Launch & System Errors
+Before the app process even starts, the system_server and vendor-specific services (com.heytap.accessory, likely Oplus/OPPO/Realme) report errors:
+• Package Inconsistencies: The system tries to "fix up" user data and fails to find the APK path (NameNotFoundException). This often happens during an update or when the system is cleaning up after a previous crash.
+• Missing Metadata: Accessory services look for specific keys in the app's manifest (RegisterAgentType, AccessoryServicesLocation) and find nothing, indicating the app doesn't implement certain vendor-specific accessory features.
+2. App Startup & Runtime
+• Process Start: The app starts with Process ID (PID) 21650.
+• Capacitor Initialization: The log shows the BridgeActivity starting and registering several Capacitor plugins: Camera, PushNotifications, StatusBar, Http, etc.
+• Asset Loading: The app loads its web content from https://localhost/, including React chunks (index-4A9MR12z.js, react-DrZGHthW.js) and CSS.
+3. Service Worker & Push Notifications (FCM)
+• Service Worker: The app successfully registers, installs, and activates a Service Worker (sw.js).
+• FCM Token: The app successfully requests notification permissions, registers with Firebase Cloud Messaging (FCM), and receives a device token.
+• Database Error: A significant error occurs here: [FCM] ❌ Failed to save FCM token to Supabase. The error message indicates a backend database schema issue: * there is no unique constraint matching the ON CONFLICT specification.* This means the app tried to "upsert" the token, but the database wasn't configured to handle it.
+4. Critical Technical Issues
+• Autofill Crash: There is a NullPointerException in cr_AutofillHintsService. This is an internal WebView error related to Android's Autofill system failing to process form fields.
+• Graphics Driver Spam: The logs are flooded with hundreds of GPUAUX errors: [AUX]GuiExtAuxCheckAuxPath:682: Null anb. This is a vendor-specific driver issue (likely MediaTek) related to buffer management, though it doesn't always cause a visible crash.
+• Main Thread Jitter: The Choreographer reports skipping 86 frames, indicating the app was doing too much work on the main thread during startup, leading to a "janky" user experience.
+5. Termination
+• Focus Loss: The app loses focus (onFocusEvent false), likely because the user swiped it away or switched apps.
+• Process End: The process is terminated cleanly (PROCESS ENDED).
+Summary for Developers:
+• Fix Needed: Check your Supabase database schema for the table storing FCM tokens. You are missing a UNIQUE constraint on the column used in your "Upsert" logic.
+• Observation: The GPUAUX spam and Choreographer frame skips suggest startup performance could be improved, possibly by deferring some plugin initializations.

@@ -38,37 +38,58 @@ export async function initNativePushNotifications(userId: string): Promise<void>
       return;
     }
 
-    console.log('[FCM] ✅ Permission granted, registering with FCM...');
+    console.log('[FCM] ✅ Permission granted, setting up listeners...');
 
-    // 2. Register with FCM — triggers the 'registration' event below
-    await PushNotifications.register();
+    // ─────────────────────────────────────────────────────────────
+    // CRITICAL FIX: Attach ALL listeners BEFORE calling register().
+    //
+    // Bug (confirmed in Logcat line ~1190):
+    //   Capacitor fired the 'registration' event at 17:32:04.058
+    //   while our addListener() call happened at the same tick —
+    //   resulting in "No listeners found for event registration".
+    //   The token was received twice because the event re-fired
+    //   when the second listener was attached moments later.
+    //
+    // Fix: register listeners first, then call register() so the
+    //   token event is guaranteed to hit an active listener.
+    // ─────────────────────────────────────────────────────────────
 
-    // 3. Listen for FCM token
+    // Track whether we have already saved this token to avoid duplicates
+    let tokenSaved = false;
+
+    // 2. Listen for FCM token — MUST be before register()
     PushNotifications.addListener('registration', async (token) => {
+      if (tokenSaved) {
+        console.log('[FCM] ℹ️ Duplicate token event ignored (already saved)');
+        return;
+      }
+      tokenSaved = true;
       console.log('[FCM] 🔑 FCM Token received:', token.value.substring(0, 20) + '...');
       await saveFcmToken(userId, token.value);
     });
 
-    // 4. Handle registration errors
+    // 3. Handle registration errors — MUST be before register()
     PushNotifications.addListener('registrationError', (err) => {
       console.error('[FCM] ❌ Registration error:', err.error);
     });
 
-    // 5. Handle notifications received while app is IN FOREGROUND
+    // 4. Handle notifications received while app is IN FOREGROUND
     // (When app is in background/killed, FCM delivers directly to system tray)
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       console.log('[FCM] 📨 Foreground notification received:', notification.title);
-      // The realtime WebSocket should already have shown an in-app toast,
-      // so we don't need to do anything extra here.
-      // If you want a custom in-app banner, add it here.
+      // The realtime WebSocket handles in-app toasts.
+      // Add a custom in-app banner here if needed.
     });
 
-    // 6. Handle tap on a notification (when user taps the system tray notification)
+    // 5. Handle tap on a notification (when user taps the system tray notification)
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       console.log('[FCM] 👆 Notification tapped:', action.notification.title);
-      // App is already focused after tap. 
       // The realtime hub will handle loading the latest messages.
     });
+
+    // 6. NOW register with FCM — triggers the 'registration' event above
+    console.log('[FCM] 🚀 Registering with FCM...');
+    await PushNotifications.register();
 
   } catch (err: any) {
     console.error('[FCM] ❌ Failed to initialize push notifications:', err.message);
@@ -95,7 +116,7 @@ async function saveFcmToken(userId: string, fcmToken: string): Promise<void> {
           type: 'fcm',
           updated_at: new Date().toISOString(),
         },
-        { onConflict: 'endpoint' }
+        { onConflict: 'user_id' }
       );
 
     if (error) {

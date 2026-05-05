@@ -129,10 +129,14 @@ function InnerApp({
 
       if (Capacitor.isNativePlatform()) {
         // ── NATIVE ANDROID: Use FCM via Capacitor ──
-        // This gives us 100% reliable push delivery even when the app is killed.
-        console.log('[FCM] 🚀 Native platform detected — initializing FCM push notifications');
-        initNativePushNotifications(session.user.id);
+        // Delay by 3s so we don't add FCM init to the already-heavy startup
+        // render cycle (Logcat showed 86 skipped frames on startup).
+        const nativeTimer = setTimeout(() => {
+          console.log('[FCM] 🚀 Native platform detected — initializing FCM push notifications');
+          initNativePushNotifications(session.user.id);
+        }, 3000);
         return () => {
+          clearTimeout(nativeTimer);
           cleanupNativePushNotifications();
         };
       } else {
