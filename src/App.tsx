@@ -15,6 +15,8 @@ import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { usePresenceChannel } from './hooks/usePresenceChannel';
 import KeySetupModal from './components/auth/KeySetupModal'; 
 import { initPushNotifications } from './lib/pushNotifications';
+import { initNativePushNotifications, cleanupNativePushNotifications } from './lib/nativeNotifications';
+import { Capacitor } from '@capacitor/core';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
 import { realtimeHub } from './lib/realtimeHub';
@@ -124,30 +126,38 @@ function InnerApp({
   // Handle push notification setup silently
   useEffect(() => {
     if (session?.user?.id && encryptionStatus === 'ready') {
-      const setupPush = async (reason: string) => {
-        console.log(`[🔔 NOTIF] 🚀 Push setup triggered — reason: ${reason}`);
-        console.log(`[🔔 NOTIF]   user: ${session.user.id.substring(0, 8)}...`);
-        console.log(`[🔔 NOTIF]   Notification.permission: ${typeof Notification !== 'undefined' ? Notification.permission : 'N/A'}`);
-        const result = await initPushNotifications(session.user.id);
-        console.log(`[🔔 NOTIF] 📋 Push setup result: ${result ? 'SUCCESS ✅' : 'FAILED ❌'}`);
-      };
-      
-      // Auto-setup initially (2s delay to let SW register first)
-      const timer = setTimeout(() => setupPush('app-load (2s delay)'), 2000);
-      
-      // Listen for rotation events from main.tsx (SW subscription changed)
-      const handleResubscribe = () => {
-        console.log('[🔔 NOTIF] 🔄 Re-subscribe event received from SW');
-        setupPush('push-resubscribe event');
-      };
-      window.addEventListener('push-resubscribe', handleResubscribe);
-      
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('push-resubscribe', handleResubscribe);
-      };
+
+      if (Capacitor.isNativePlatform()) {
+        // ── NATIVE ANDROID: Use FCM via Capacitor ──
+        // This gives us 100% reliable push delivery even when the app is killed.
+        console.log('[FCM] 🚀 Native platform detected — initializing FCM push notifications');
+        initNativePushNotifications(session.user.id);
+        return () => {
+          cleanupNativePushNotifications();
+        };
+      } else {
+        // ── WEB BROWSER: Use existing VAPID / Service Worker system ──
+        const setupPush = async (reason: string) => {
+          console.log(`[🔔 NOTIF] 🚀 Push setup triggered — reason: ${reason}`);
+          const result = await initPushNotifications(session.user.id);
+          console.log(`[🔔 NOTIF] 📋 Push setup result: ${result ? 'SUCCESS ✅' : 'FAILED ❌'}`);
+        };
+
+        // Auto-setup initially (2s delay to let SW register first)
+        const timer = setTimeout(() => setupPush('app-load (2s delay)'), 2000);
+
+        // Listen for rotation events from main.tsx (SW subscription changed)
+        const handleResubscribe = () => setupPush('push-resubscribe event');
+        window.addEventListener('push-resubscribe', handleResubscribe);
+
+        return () => {
+          clearTimeout(timer);
+          window.removeEventListener('push-resubscribe', handleResubscribe);
+        };
+      }
     }
   }, [session?.user?.id, encryptionStatus]);
+
 
   // Handle global tab switching
   useEffect(() => {
@@ -280,6 +290,27 @@ export default function App() {
       realtimeHub.stop();
     };
   }, [user?.id, partner?.id]);
+
+  // ═══ Android WebView Fix: Restart hub when app comes back to foreground ═══
+  // On Android, WebSockets silently drop when the app is minimized/backgrounded.
+  // The Page Visibility API detects when we come back and forces a fresh reconnect.
+  //
+  // CRITICAL: Use `restart()` NOT `stop()` + `start()`.
+  // `stop()` wipes the listeners[] array, so all hooks (useChat, etc.) become deaf.
+  // `restart()` only tears down the channel, preserving all registered listeners.
+  useEffect(() => {
+    if (!user?.id || !partner?.id) return;
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Always attempt a restart on foreground — even if isConnected() says true,
+        // the socket may be stale/zombie on Android after backgrounding.
+        realtimeHub.restart(user.id, partner.id);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user?.id, partner?.id]);
+
 
   // Loading state
   if (loading) {

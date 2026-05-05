@@ -86,15 +86,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
           .eq('user_id', userId)
           .single();
 
-        // Show Toast if the document is visible AND enabled in settings
-        if (document.visibilityState === 'visible' && settings?.push_notifications_enabled !== false) {
-          toast(newNotif.title, {
-            description: newNotif.body,
-            icon: '🔔',
-          });
-          
-          // Deduplication mechanism: Mark as seen_realtime so the Edge Function
-          // skips sending a Push Notification
+        // Mark as seen_realtime if the document is visible so the Edge Function
+        // skips sending a redundant Push Notification to the system tray.
+        // We no longer show an in-app toast as it was found to be annoying during active chat.
+        if (document.visibilityState === 'visible') {
           await supabase
             .from('notifications')
             .update({ seen_realtime: true })

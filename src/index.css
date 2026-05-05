@@ -73,6 +73,8 @@
 
 html {
   height: 100%;
+  /* viewport-fit=cover allows content to render behind the notch/status bar on iOS and Android */
+  height: 100dvh;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -93,6 +95,19 @@ body {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+/* Capacitor Safe Area Utilities */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px) !important;
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+.safe-pt {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 1rem) !important;
 }
 
 /* ===== Scrollbar Styling ===== */

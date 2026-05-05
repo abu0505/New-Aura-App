@@ -2,6 +2,17 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { destroyDenoiser } from '../../utils/imageDenoiser';
+import {
+  setActiveVideoTrack,
+  detectNativeSensorCapabilities,
+  applyTapToFocus,
+  applyOpticalZoom,
+  applyTorch,
+  applyNightMode,
+  resetNativeCameraState,
+  type SensorCapabilities,
+  type CameraLens,
+} from '../../lib/nativeCameraService';
 
 interface MobileCameraModalProps {
   isOpen: boolean;
@@ -53,6 +64,15 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   // Hardware capability
   const [device4kSupported, setDevice4kSupported] = useState<boolean | null>(null);
   const [device60fpsSupported, setDevice60fpsSupported] = useState<boolean | null>(null);
+
+  // ── Native Sensor States ────────────────────────────────────────────────────
+  const [sensorCaps, setSensorCaps] = useState<SensorCapabilities | null>(null);
+  const [availableLenses, setAvailableLenses] = useState<CameraLens[]>([]);
+  const [activeLensId, setActiveLensId] = useState<CameraLens['id']>('main');
+  const [isNightMode, setIsNightMode] = useState(false);
+  // Focus ring — shown briefly at the tap point
+  const [focusRing, setFocusRing] = useState<{ x: number; y: number } | null>(null);
+  const focusRingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -173,6 +193,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       streamRef.current = null;
     }
     setIsFlashOn(false);
+    // Deregister track from native service
+    setActiveVideoTrack(null);
   }, []);
 
   // Start camera feed
@@ -231,6 +253,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setHasPermission(true);
 
       const track = stream.getVideoTracks()[0];
+
+      // ── Register track with native camera service ──────────────────────────
+      setActiveVideoTrack(track);
+
+      // Probe capabilities asynchronously (doesn't block viewfinder)
+      detectNativeSensorCapabilities().then(caps => {
+        setSensorCaps(caps);
+        setAvailableLenses(caps.lenses);
+      }).catch(() => {});
+
       const capabilities: any = track.getCapabilities();
       if (capabilities.zoom) {
         hasHardwareZoomRef.current = true;
@@ -288,7 +320,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       setDevice60fpsSupported(null);
     }
     // Release WebGL context and Web Worker when camera closes
-    return () => { destroyDenoiser(); };
+    return () => {
+      destroyDenoiser();
+      resetNativeCameraState();
+    };
   }, [isOpen, previewUrl]);
 
   // Flip Camera
@@ -296,33 +331,73 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     setFacingMode(prev => prev === 'user' ? 'environment' : 'user');
   };
 
-  // Toggle Torch/Flash
+  // Toggle Torch/Flash (now routed through native service)
   const toggleTorch = async () => {
     if (facingMode === 'user') {
+      // Front camera — soft flash (white overlay handled in JSX)
       setIsFlashOn(!isFlashOn);
       return;
     }
-
-    if (!streamRef.current) return;
-    const track = streamRef.current.getVideoTracks()[0];
-    if (track) {
-      try {
-        const capabilities: any = track.getCapabilities();
-        if (capabilities.torch) {
-          const newStatus = !isFlashOn;
-          await track.applyConstraints({
-            advanced: [{ torch: newStatus }] as any
-          });
-          setIsFlashOn(newStatus);
-        } else {
-          // Fallback if not supported nicely (it will just do nothing gracefully on most browsers)
-          
-        }
-      } catch (err) {
-        
-      }
-    }
+    const newStatus = !isFlashOn;
+    const applied = await applyTorch(newStatus);
+    // If native torch worked OR it's a fallback, still update UI state
+    setIsFlashOn(applied ? newStatus : newStatus);
   };
+
+  // Toggle Night Mode
+  const toggleNightMode = async () => {
+    const next = !isNightMode;
+    setIsNightMode(next);
+    await applyNightMode(next);
+  };
+
+  // Tap-to-focus handler
+  const handleTapToFocus = useCallback(async (e: React.MouseEvent<HTMLVideoElement>) => {
+    if (isRecording) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+
+    // Show focus ring at tap point
+    setFocusRing({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    if (focusRingTimerRef.current) clearTimeout(focusRingTimerRef.current);
+    focusRingTimerRef.current = setTimeout(() => setFocusRing(null), 1200);
+
+    await applyTapToFocus({ x, y });
+  }, [isRecording]);
+
+  // Switch physical lens
+  const switchLens = useCallback(async (lens: CameraLens) => {
+    if (lens.id === activeLensId) return;
+    setActiveLensId(lens.id);
+    // Restart camera with the selected deviceId / facingMode
+    stopCamera();
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: {
+          ...(lens.deviceId ? { deviceId: { exact: lens.deviceId } } : { facingMode: lens.facingMode }),
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 },
+        },
+        audio: { noiseSuppression: true, echoCancellation: true },
+      };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      setHasPermission(true);
+      const track = stream.getVideoTracks()[0];
+      setActiveVideoTrack(track);
+      detectNativeSensorCapabilities().then(caps => setSensorCaps(caps)).catch(() => {});
+      const caps: any = track.getCapabilities();
+      hasHardwareZoomRef.current = Boolean(caps.zoom);
+      zoomRef.current = caps.zoom
+        ? { current: caps.zoom.min ?? 1, min: caps.zoom.min ?? 1, max: caps.zoom.max ?? 5 }
+        : { current: 1, min: 1, max: 5 };
+    } catch {
+      setHasPermission(false);
+    }
+  }, [activeLensId, stopCamera]);
 
   // --- Photo Capture (Mobile-Optimized: ImageBitmap zero-copy pipeline) ---
   const takePhoto = useCallback(async () => {
@@ -718,16 +793,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       const { min, max } = zoomRef.current;
       const targetZoom = min + (max - min) * zoomProgress;
 
-      if (hasHardwareZoomRef.current && streamRef.current) {
-        const track = streamRef.current.getVideoTracks()[0];
-        track.applyConstraints({ advanced: [{ zoom: targetZoom }] } as any).catch(() => {});
-        zoomRef.current.current = targetZoom;
+      if (hasHardwareZoomRef.current) {
+        // Route through native service for proper optical zoom tracking
+        applyOpticalZoom({ level: targetZoom }).then(applied => {
+          zoomRef.current.current = applied;
+        }).catch(() => {});
       } else {
-        // BUG 4 FIX: Bypass React state (setDigitalZoom) entirely during gesture.
-        // setState triggers a full re-render on every pointer move = ~60 renders/sec = lag.
-        // Instead, directly update the video element's transform via DOM ref (zero re-render).
-        // zoomRef.current.current is read by the canvas drawLoop live, so recorded video
-        // also reflects the correct zoom without any state update overhead.
+        // Digital zoom via CSS transform (no quality, but zero re-render overhead)
         zoomRef.current.current = targetZoom;
         if (videoRef.current) {
           videoRef.current.style.transform = facingMode === 'user'
@@ -958,22 +1030,65 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                       <p>Camera access denied.<br />Please enable in browser settings.</p>
                     </div>
                   ) : (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover pointer-events-auto"
-                      style={{
-                        // Mirror front camera in viewfinder.
-                        // Zoom is applied via direct DOM update in handlePointerMove (no re-render).
-                        // digitalZoom state is only used to trigger a re-render when zoom resets to 1.
-                        transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
-                        transformOrigin: 'center'
-                      }}
-                      onDoubleClick={toggleCamera}
-                      onClick={(e) => { e.stopPropagation(); if (showSettings) setShowSettings(false); }}
-                    />
+                    <div className="relative w-full h-full">
+                      <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="w-full h-full object-cover pointer-events-auto"
+                        style={{
+                          transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+                          transformOrigin: 'center'
+                        }}
+                        onDoubleClick={toggleCamera}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (showSettings) { setShowSettings(false); return; }
+                          handleTapToFocus(e as any);
+                        }}
+                      />
+
+                      {/* ── Tap-to-Focus Ring ─────────────────────────────────── */}
+                      <AnimatePresence>
+                        {focusRing && (
+                          <motion.div
+                            key={`focus-${focusRing.x}-${focusRing.y}`}
+                            initial={{ opacity: 0, scale: 1.6 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
+                            className="absolute pointer-events-none"
+                            style={{
+                              left: focusRing.x - 28,
+                              top: focusRing.y - 28,
+                              width: 56,
+                              height: 56,
+                              border: '2px solid #FFD700',
+                              borderRadius: 6,
+                              boxShadow: '0 0 10px rgba(255,215,0,0.5)',
+                            }}
+                          />
+                        )}
+                      </AnimatePresence>
+
+                      {/* ── Night Mode warm-tint overlay ──────────────────────── */}
+                      {isNightMode && (
+                        <div
+                          className="absolute inset-0 pointer-events-none"
+                          style={{ background: 'rgba(255,120,0,0.04)', mixBlendMode: 'screen' }}
+                        />
+                      )}
+
+                      {/* ── Optical Zoom Badge ──────────────────────────────────── */}
+                      {sensorCaps?.hasHardwareZoomViaTrack && zoomRef.current.current > 1.05 && (
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-md px-2.5 py-0.5 rounded-full pointer-events-none">
+                          <span className="text-white text-xs font-bold font-mono">
+                            {zoomRef.current.current.toFixed(1)}×
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -1070,6 +1185,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 >
                   <span className="material-symbols-outlined text-[20px]">flip_camera_ios</span>
                 </button>
+
+                {/* Torch button */}
                 <button
                   onClick={toggleTorch}
                   className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-black text-white shadow-glow-gold' : (isFlashOn ? 'bg-white text-black shadow-glow-gold' : 'bg-black/30 text-white hover:bg-white/20')}`}
@@ -1078,10 +1195,53 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                     {isFlashOn ? 'flashlight_on' : 'flashlight_off'}
                   </span>
                 </button>
+
+                {/* Night Mode — only show if device supports exposure control */}
+                {(sensorCaps?.hasNightMode || sensorCaps?.hasAutoFocus) && facingMode === 'environment' && (
+                  <button
+                    onClick={toggleNightMode}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-500 ${
+                      isNightMode
+                        ? 'bg-indigo-500/80 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)]'
+                        : 'bg-black/30 text-white/60 hover:bg-white/20 hover:text-white'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">nightlight</span>
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="absolute top-20 right-4 z-40 pointer-events-none" />
+            {/* ── Lens Switcher ─────────────────────────────────────────────────────
+                Shows multi-lens pills when the device has more than 2 camera lenses.
+                Positioned just above the bottom controls row. */}
+            {availableLenses.length > 2 && !isRecording && (
+              <div className="absolute bottom-36 inset-x-0 flex justify-center z-[75] pointer-events-none">
+                <div className="flex gap-2 bg-black/30 backdrop-blur-xl rounded-full px-3 py-1.5 border border-white/10 pointer-events-auto">
+                  {availableLenses
+                    .filter(l => l.facingMode === facingMode)
+                    .map(lens => (
+                      <button
+                        key={lens.id}
+                        onClick={() => switchLens(lens)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+                          activeLensId === lens.id
+                            ? 'bg-white text-black shadow-md'
+                            : 'text-white/60 hover:text-white'
+                        }`}
+                      >
+                        {lens.focalMultiplier < 1
+                          ? `${lens.focalMultiplier}×`
+                          : lens.focalMultiplier === 1
+                            ? lens.facingMode === 'user' ? 'selfie' : '1×'
+                            : `${lens.focalMultiplier}×`
+                        }
+                      </button>
+                    ))
+                  }
+                </div>
+              </div>
+            )}
 
             {/* Lock Indicator */}
             <div className="absolute bottom-52 inset-x-0 flex flex-col items-center pointer-events-none z-20">

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "111680377383",
+    "project_id": "new-aura-app",
+    "storage_bucket": "new-aura-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:111680377383:android:3e7739adcc979657d07402",
+        "android_client_info": {
+          "package_name": "com.newaura.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQTeo3HxkDeEfuB9bO1BFAVxgHnIN2y-k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

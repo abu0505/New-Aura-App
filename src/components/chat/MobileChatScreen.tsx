@@ -446,7 +446,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           )}
         </div>
         {/* TopAppBar */}
-        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 py-4 border-b border-white/5 gap-2">
+        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 py-4 border-b border-white/5 gap-2 safe-top">
           <div className="flex items-center gap-3 min-w-0">
             <button 
               onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))} 

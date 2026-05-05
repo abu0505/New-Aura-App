@@ -129,19 +129,26 @@ function start(userId?: string, partnerId?: string) {
     if (status === 'SUBSCRIBED') {
       isSetup = true;
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
-      
       isSetup = false;
-      // Auto-reconnect after 5 seconds
+      // Auto-reconnect after 5 seconds.
+      // IMPORTANT: Capture userId & partnerId in closure so reconnect works on Android WebView
+      // where the hub may have lost context after being backgrounded.
+      const savedUserId = userId;
+      const savedPartnerId = partnerId;
       setTimeout(() => {
         registeredTables.clear();
-        start(userId, partnerId);
+        start(savedUserId, savedPartnerId);
       }, 5000);
     }
   });
 }
 
 /**
- * Tears down the shared channel. Call on app unmount / logout.
+ * Tears down the shared channel AND clears all listeners.
+ * Call ONLY on logout or full app unmount — NOT for reconnects.
+ * 
+ * If you want to reconnect after a network drop/foregrounding,
+ * use `restart()` instead, which preserves registered listeners.
  */
 function stop() {
   if (channel) {
@@ -150,7 +157,31 @@ function stop() {
   }
   isSetup = false;
   registeredTables.clear();
-  listeners.length = 0;
+  listeners.length = 0; // ← Only wipes listeners on FULL shutdown (logout)
+}
+
+/**
+ * Reconnects the realtime channel WITHOUT clearing listeners.
+ * 
+ * This is the correct function to call when:
+ *  - App comes back to foreground (visibilitychange)
+ *  - Network reconnects after a drop
+ *  - Android wakes from sleep/background
+ * 
+ * Preserving listeners means all hooks (useChat, NotificationContext, etc.)
+ * that registered via `realtimeHub.on()` will still receive events
+ * after the new channel connection is established.
+ */
+function restart(userId?: string, partnerId?: string) {
+  // Tear down the old channel only — do NOT touch listeners[]
+  if (channel) {
+    supabase.removeChannel(channel);
+    channel = null;
+  }
+  isSetup = false;
+  registeredTables.clear();
+  // Re-build and subscribe with existing listeners intact
+  start(userId, partnerId);
 }
 
 /**
@@ -160,4 +191,5 @@ function isConnected() {
   return isSetup;
 }
 
-export const realtimeHub = { on, start, stop, isConnected };
+export const realtimeHub = { on, start, stop, restart, isConnected };
+

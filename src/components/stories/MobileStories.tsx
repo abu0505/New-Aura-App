@@ -1,4 +1,4 @@
-﻿import { motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { usePartner } from '../../hooks/usePartner';
 
 import type { Story } from '../../hooks/useStories';
@@ -15,7 +15,7 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
   return (
     <div className="min-h-[100dvh] pb-32 font-sans bg-[var(--bg-primary)] text-[#e4e1ed] selection:bg-[rgba(var(--primary-rgb),_0.3)]">
       {/* Top App Bar */}
-      <header className="bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-40 border-b border-white/5 flex items-center justify-between px-6 py-4 w-full">
+      <header className="bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-40 border-b border-white/5 flex items-center justify-between px-6 py-4 w-full safe-top">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center overflow-hidden">
             <img 

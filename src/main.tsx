@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import 'maplibre-gl/dist/maplibre-gl.css';
 import App from './App'
+import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { AuthProvider } from './contexts/AuthContext'
 
 import { DimProvider } from './contexts/DimContext'
@@ -44,6 +46,16 @@ if ('serviceWorker' in navigator) {
   });
 } else {
   console.warn('[🔔 NOTIF] ⚠️ ServiceWorker is NOT supported in this browser');
+}
+
+// ═══ Native Android Setup ═══
+// Only runs on real native app, not in the browser.
+if (Capacitor.isNativePlatform()) {
+  // Make status bar transparent & overlay so our app controls the full screen.
+  // This is what causes the header-behind-statusbar issue — we fix it via CSS safe-area.
+  StatusBar.setOverlaysWebView({ overlay: true });
+  // Set status bar style to LIGHT (white icons) to match our dark theme.
+  StatusBar.setStyle({ style: Style.Dark });
 }
 
 createRoot(document.getElementById('root')!).render(
