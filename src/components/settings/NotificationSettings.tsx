@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useChatSettings } from '../../hooks/useChatSettings';
+import { usePlatform } from '../../hooks/usePlatform';
 import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifications, forceResetPushNotifications } from '../../lib/pushNotifications';
 
 const DEFAULT_BODIES = [
@@ -21,8 +22,10 @@ const MIN_BODIES = 4;
 export default function NotificationSettings() {
   const { user } = useAuth();
   const { settings, updateSettings } = useChatSettings();
+  const { isNative } = usePlatform();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isTogglingPush, setIsTogglingPush] = useState(false);
+  const [fcmStatus, setFcmStatus] = useState<'checking' | 'registered' | 'not-registered'>('checking');
 
   // ── Status Message State ──
   const [statusMsg, setStatusMsg] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
@@ -51,8 +54,24 @@ export default function NotificationSettings() {
   const newBodyInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    checkPushSubscription().then(setPushEnabled);
-  }, []);
+    if (isNative) {
+      // On native: check if an FCM token exists in Supabase for this user
+      import('../../lib/supabase').then(({ supabase }) => {
+        if (!user?.id) { setFcmStatus('not-registered'); return; }
+        supabase
+          .from('push_subscriptions')
+          .select('p256dh')
+          .eq('user_id', user.id)
+          .eq('type', 'fcm')
+          .maybeSingle()
+          .then(({ data }) => {
+            setFcmStatus(data?.p256dh ? 'registered' : 'not-registered');
+          });
+      });
+    } else {
+      checkPushSubscription().then(setPushEnabled);
+    }
+  }, [isNative, user?.id]);
 
   // Sync from settings
   useEffect(() => {
@@ -178,66 +197,155 @@ export default function NotificationSettings() {
       <div className="absolute -top-20 -right-20 w-48 h-48 rounded-full bg-[var(--gold)]/5 blur-3xl pointer-events-none" />
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4 mb-6">
         <span className="material-symbols-outlined text-[var(--gold)] group-hover:scale-110 transition-transform">notifications</span>
-        <div>
+        <div className="flex-1">
           <h3 className="font-serif italic text-xl text-white">App Notifications</h3>
           <p className="font-label text-[10px] uppercase tracking-widest text-[var(--text-secondary)]">Notification Management</p>
+        </div>
+        {/* Platform badge */}
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest border ${
+          isNative
+            ? 'bg-green-500/10 border-green-500/30 text-green-400'
+            : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+        }`}>
+          <span className="material-symbols-outlined text-[12px]">{isNative ? 'smartphone' : 'computer'}</span>
+          {isNative ? 'Android App' : 'Browser'}
         </div>
       </div>
 
       <div className="space-y-5">
-        {/* ── Granular Toggles ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div
-            onClick={() => updateSettings({ push_notifications_enabled: !settings?.push_notifications_enabled })}
-            className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-              settings?.push_notifications_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
-            }`}
-          >
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Normal Notifications</span>
-              <span className="text-[9px] text-[var(--text-secondary)] italic">Toasts & Push messages</span>
-            </div>
-            <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.push_notifications_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.push_notifications_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
-            </div>
-          </div>
 
-          <div
-            onClick={() => updateSettings({ tab_badge_enabled: !settings?.tab_badge_enabled })}
-            className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-              settings?.tab_badge_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
-            }`}
-          >
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Tab Badge</span>
-              <span className="text-[9px] text-[var(--text-secondary)] italic">Counter in browser tab</span>
-            </div>
-            <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.tab_badge_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.tab_badge_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
-            </div>
-          </div>
-        </div>
+        {/* ══════════════════════════════════════════════════════
+            NATIVE ANDROID SECTION
+            Shows only when running inside Capacitor native shell
+            ══════════════════════════════════════════════════════ */}
+        {isNative && (
+          <div className="space-y-4">
 
-        {/* ── Browser/Master Toggle ── */}
-        <div
-          onClick={togglePush}
-          className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-            pushEnabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
-          } ${isTogglingPush ? 'animate-pulse' : ''}`}
-        >
-          <div className="flex flex-col gap-1">
-            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Push Device Link</span>
-            <span className="text-[9px] text-[var(--text-secondary)] italic">{pushEnabled ? 'Device is registered for push' : 'Register this browser for notifications'}</span>
-          </div>
-          <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
-            <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
-          </div>
-        </div>
+            {/* FCM Registration Status Card */}
+            <div className={`flex items-center gap-4 p-4 rounded-3xl border ${
+              fcmStatus === 'registered'
+                ? 'bg-green-500/5 border-green-500/20'
+                : fcmStatus === 'checking'
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-orange-500/5 border-orange-500/20'
+            }`}>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                fcmStatus === 'registered' ? 'bg-green-500/15' : fcmStatus === 'checking' ? 'bg-white/10' : 'bg-orange-500/15'
+              }`}>
+                {fcmStatus === 'checking' ? (
+                  <span className="material-symbols-outlined text-[20px] text-white/40 animate-spin">progress_activity</span>
+                ) : fcmStatus === 'registered' ? (
+                  <span className="material-symbols-outlined text-[20px] text-green-400" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                ) : (
+                  <span className="material-symbols-outlined text-[20px] text-orange-400">warning</span>
+                )}
+              </div>
+              <div className="flex flex-col gap-0.5 flex-1">
+                <span className="text-[11px] uppercase tracking-[0.15em] text-white font-bold">
+                  {fcmStatus === 'checking' ? 'Checking FCM Status...' : fcmStatus === 'registered' ? 'FCM Push Active' : 'FCM Not Registered'}
+                </span>
+                <span className="text-[9px] text-[var(--text-secondary)] italic">
+                  {fcmStatus === 'registered'
+                    ? 'Native Android push notifications are working via Firebase'
+                    : fcmStatus === 'checking'
+                      ? 'Verifying Firebase Cloud Messaging registration...'
+                      : 'Open the app once — FCM registers automatically on launch'}
+                </span>
+              </div>
+            </div>
 
-        {/* ── Granular Toggles REMOVED ── */}
-        {pushEnabled && (
+            {/* Native: Notification Toggle (controls Edge Function routing) */}
+            <div
+              onClick={() => updateSettings({ push_notifications_enabled: !settings?.push_notifications_enabled })}
+              className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+                settings?.push_notifications_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
+              }`}
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Push Notifications</span>
+                <span className="text-[9px] text-[var(--text-secondary)] italic">Receive native system tray notifications</span>
+              </div>
+              <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.push_notifications_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.push_notifications_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
+              </div>
+            </div>
+
+            {/* Native info note — no VAPID/browser controls needed */}
+            <div className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/5">
+              <span className="material-symbols-outlined text-[16px] text-[var(--gold)]/60 mt-0.5 shrink-0">info</span>
+              <p className="text-[9px] text-[var(--text-secondary)] leading-relaxed">
+                Native Android notifications use <strong className="text-white/60">Firebase Cloud Messaging (FCM)</strong>.
+                No browser permission is needed — Android OS handles delivery directly to your notification tray,
+                even when the app is closed or killed.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════════════════════════════════════════════════
+            WEB BROWSER SECTION
+            Shows only in the regular browser — NOT on native app
+            ══════════════════════════════════════════════════════ */}
+        {!isNative && (
+          <div className="space-y-4">
+
+            {/* Browser: Normal Notifications + Tab Badge toggles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div
+                onClick={() => updateSettings({ push_notifications_enabled: !settings?.push_notifications_enabled })}
+                className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+                  settings?.push_notifications_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
+                }`}
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Push Notifications</span>
+                  <span className="text-[9px] text-[var(--text-secondary)] italic">Browser push messages</span>
+                </div>
+                <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.push_notifications_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.push_notifications_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
+                </div>
+              </div>
+
+              <div
+                onClick={() => updateSettings({ tab_badge_enabled: !settings?.tab_badge_enabled })}
+                className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+                  settings?.tab_badge_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
+                }`}
+              >
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Tab Badge</span>
+                  <span className="text-[9px] text-[var(--text-secondary)] italic">Unread counter in browser tab</span>
+                </div>
+                <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.tab_badge_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.tab_badge_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
+                </div>
+              </div>
+            </div>
+
+            {/* Browser: VAPID Device Link Master Toggle */}
+            <div
+              onClick={togglePush}
+              className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+                pushEnabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
+              } ${isTogglingPush ? 'animate-pulse' : ''}`}
+            >
+              <div className="flex flex-col gap-1">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Browser Push Link</span>
+                <span className="text-[9px] text-[var(--text-secondary)] italic">
+                  {pushEnabled ? 'This browser is registered for push' : 'Register this browser for push notifications'}
+                </span>
+              </div>
+              <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+                <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Personalization (both platforms) ── */}
+        {(!isNative ? pushEnabled : (fcmStatus === 'registered')) && (
           <div className="space-y-3 pt-1 animate-in fade-in slide-in-from-top-4 duration-500">
             {/* ── Personalization Expand Toggle ── */}
             <button
@@ -436,16 +544,29 @@ export default function NotificationSettings() {
 
         {/* ── Troubleshooting ── */}
         <div className="pt-4 mt-2 border-t border-white/5">
-          <button
-            onClick={handleForceReset}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-[10px] uppercase tracking-widest font-bold"
-          >
-            <span className="material-symbols-outlined text-[16px]">build_circle</span>
-            Fix Notification Issues
-          </button>
-          <p className="text-[8px] text-center text-white/20 mt-2 leading-relaxed">
-            If you're not receiving notifications or saw a "Spam" warning, tap "Fix" to reset your connection.
-          </p>
+          {!isNative ? (
+            // Web: full reset button
+            <>
+              <button
+                onClick={handleForceReset}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400/60 hover:text-red-400 hover:bg-red-500/10 hover:border-red-500/20 transition-all text-[10px] uppercase tracking-widest font-bold"
+              >
+                <span className="material-symbols-outlined text-[16px]">build_circle</span>
+                Fix Notification Issues
+              </button>
+              <p className="text-[8px] text-center text-white/20 mt-2 leading-relaxed">
+                If you're not receiving notifications or saw a &quot;Spam&quot; warning, tap &quot;Fix&quot; to reset your connection.
+              </p>
+            </>
+          ) : (
+            // Native: simpler instructions
+            <div className="flex items-start gap-3 px-4 py-3 rounded-2xl bg-white/[0.02] border border-white/5">
+              <span className="material-symbols-outlined text-[14px] text-[var(--gold)]/60 mt-0.5 shrink-0">tips_and_updates</span>
+              <p className="text-[9px] text-[var(--text-secondary)] leading-relaxed">
+                Not receiving notifications? Go to <strong className="text-white/60">Android Settings → Apps → Aura → Notifications</strong> and make sure they are enabled at the OS level.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

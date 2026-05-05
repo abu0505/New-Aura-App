@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { realtimeHub } from '../lib/realtimeHub';
-import { toast } from 'sonner';
 
 export type Notification = {
   id: string;
@@ -78,13 +77,6 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
         // Add to state
         setNotifications(prev => [newNotif, ...prev]);
-
-        // Fetch settings to check if toasts are allowed
-        const { data: settings } = await supabase
-          .from('chat_settings')
-          .select('push_notifications_enabled')
-          .eq('user_id', userId)
-          .single();
 
         // Mark as seen_realtime if the document is visible so the Edge Function
         // skips sending a redundant Push Notification to the system tray.
