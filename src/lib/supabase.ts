@@ -19,4 +19,19 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       heartbeatIntervalMs: 60000,
     },
   },
+  global: {
+    fetch: async (url, options) => {
+      console.log('[SUPABASE FETCH START] URL:', url, 'OPTIONS:', JSON.stringify(options));
+      try {
+        const response = await fetch(url, options);
+        console.log('[SUPABASE FETCH SUCCESS] Status:', response.status, response.statusText);
+        return response;
+      } catch (err: any) {
+        console.error('[SUPABASE FETCH ERROR] URL:', url);
+        console.error('[SUPABASE FETCH ERROR] Message:', err.message);
+        console.error('[SUPABASE FETCH ERROR] Stack:', err.stack);
+        throw err;
+      }
+    }
+  }
 });

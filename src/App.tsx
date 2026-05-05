@@ -338,9 +338,31 @@ export default function App() {
     );
   }
 
-  // Not authenticated — show login
   if (!session) {
-    return <LoginScreen onLogin={() => {}} />;
+    return (
+      <>
+        <Toaster 
+          position="bottom-right" 
+          expand={false} 
+          richColors 
+          toastOptions={{
+            style: {
+              background: 'rgba(28, 28, 46, 0.95)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid var(--border-medium)',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-body)',
+              borderRadius: '16px',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
+              marginBottom: '20px',
+              marginRight: '20px',
+            },
+            className: 'aura-toast',
+          }}
+        />
+        <LoginScreen onLogin={() => {}} />
+      </>
+    );
   }
 
   // Authenticated — show app wrapped in navigation layout
