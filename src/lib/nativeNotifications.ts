@@ -102,17 +102,23 @@ export async function initNativePushNotifications(userId: string): Promise<void>
  */
 async function saveFcmToken(userId: string, fcmToken: string): Promise<void> {
   try {
+    const endpointStr = `fcm:${userId}`;
+
+    // Clear any existing subscriptions for this specific FCM token/endpoint if it somehow belongs to someone else
+    await supabase
+      .from('push_subscriptions')
+      .delete()
+      .eq('endpoint', endpointStr)
+      .neq('user_id', userId);
+
     const { error } = await supabase
       .from('push_subscriptions')
       .upsert(
         {
           user_id: userId,
-          // Use the FCM token as the "endpoint" for upsert uniqueness
-          endpoint: `fcm:${userId}`,
-          // Store the actual FCM token in the p256dh field
-          // (we repurpose this for FCM tokens, type field differentiates)
+          endpoint: endpointStr,
           p256dh: fcmToken,
-          auth: 'fcm', // marker so Edge Function knows this is an FCM token
+          auth: 'fcm',
           type: 'fcm',
           updated_at: new Date().toISOString(),
         },

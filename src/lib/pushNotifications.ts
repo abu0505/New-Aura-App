@@ -39,6 +39,13 @@ async function saveSubscriptionToDatabase(userId: string, subscription: PushSubs
   console.log(`${TAG} 💾 Saving subscription to DB...`);
   console.log(`${TAG}   endpoint: ${subJson.endpoint?.substring(0, 80)}...`);
 
+  // First, clear this endpoint if it belongs to another user (fixes 409 unique constraint error)
+  await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('endpoint', subJson.endpoint)
+    .neq('user_id', userId);
+
   const { error } = await supabase
     .from('push_subscriptions')
     .upsert({

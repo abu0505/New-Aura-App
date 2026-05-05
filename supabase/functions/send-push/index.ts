@@ -147,6 +147,61 @@ async function createVapidAuthHeader(
   };
 }
 
+// ── FCM v1 Helper (Service Account OAuth2) ──────────────────────────
+async function getFcmAccessToken(clientEmail: string, privateKeyPem: string): Promise<string> {
+  const header = { alg: "RS256", typ: "JWT" };
+  const now = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: clientEmail,
+    scope: "https://www.googleapis.com/auth/firebase.messaging",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
+    iat: now
+  };
+
+  const encodedHeader = btoa(JSON.stringify(header)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const encodedPayload = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const dataToSign = `${encodedHeader}.${encodedPayload}`;
+
+  const pemHeader = "-----BEGIN PRIVATE KEY-----";
+  const pemFooter = "-----END PRIVATE KEY-----";
+  const pemContents = privateKeyPem.substring(
+    privateKeyPem.indexOf(pemHeader) + pemHeader.length,
+    privateKeyPem.indexOf(pemFooter)
+  ).replace(/\s/g, '');
+
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryDer.buffer,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    cryptoKey,
+    new TextEncoder().encode(dataToSign)
+  );
+
+  const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+  const jwt = `${dataToSign}.${encodedSignature}`;
+
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`
+  });
+
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Failed to get FCM token: ${JSON.stringify(data)}`);
+  return data.access_token;
+}
+
 async function sendWebPush(
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   payload: string,
@@ -202,6 +257,18 @@ Deno.serve(async (req) => {
     const vapidPublicKeyStr = Deno.env.get("VAPID_PUBLIC_KEY") || "";
     const vapidPrivateKeyStr = Deno.env.get("VAPID_PRIVATE_KEY") || "";
     const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:aura-app@example.com";
+    
+    // Parse the new Firebase Service Account JSON
+    const firebaseSaStr = Deno.env.get("FIREBASE_SERVICE_ACCOUNT") || "";
+    let fcmServiceAccount = null;
+    let fcmAccessToken = null;
+    if (firebaseSaStr) {
+      try {
+        fcmServiceAccount = JSON.parse(firebaseSaStr);
+      } catch (e) {
+        console.error("[send-push] Failed to parse FIREBASE_SERVICE_ACCOUNT json:", e.message);
+      }
+    }
 
     if (!vapidPublicKeyStr || !vapidPrivateKeyStr) {
       return new Response(JSON.stringify({ error: "VAPID keys not set" }), { status: 500, headers });
@@ -321,15 +388,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fallback: Smart skip if user is actively online (legacy check, just in case realtime delivery failed but user is online)
-    if (receiverProfile?.is_online) {
-      const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
-      const secondsSinceLastSeen = (Date.now() - lastSeen) / 1000;
-      if (secondsSinceLastSeen < 10) {
-        console.log(`[send-push] 🛑 Skipping push: Receiver is actively online (${secondsSinceLastSeen}s < 10s)`);
-        return new Response(JSON.stringify({ success: true, message: "Skipped - User is active" }), { headers });
-      }
-    }
+    // Removed legacy `is_online` smart skip.
+    // Relying solely on `seen_realtime` is more robust because Capacitor apps
+    // might stay "online" in the DB for 10-30s after being backgrounded.
 
     const pushPayload = JSON.stringify({
       messageId: message.id,
@@ -344,23 +405,81 @@ Deno.serve(async (req) => {
 
     const sendPromises = subscriptions.map(async (sub: any) => {
       try {
-        const response = await sendWebPush(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          pushPayload,
-          vapidPublicKey,
-          vapidPrivateKey,
-          vapidSubject
-        );
+        if (sub.type === 'fcm' || sub.auth === 'fcm') {
+          console.log(`[send-push] 📱 Detected Native FCM Token. Sending via FCM API v1...`);
+          
+          if (!fcmServiceAccount) {
+            console.error(`[send-push] ❌ FIREBASE_SERVICE_ACCOUNT is missing! Cannot send native push.`);
+            return;
+          }
 
-        if (response.status === 201 || response.status === 200) {
-          console.log(`[send-push] ✅ Push successfully delivered to endpoint: ${sub.endpoint}`);
-          successCount++;
-        } else if (response.status === 410 || response.status === 404 || response.status === 400) {
-          console.warn(`[send-push] ⚠️ Subscription invalid or expired (status ${response.status}) for endpoint: ${sub.endpoint}. Deleting from database.`);
-          await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
+          if (!fcmAccessToken) {
+            console.log(`[send-push] 🔑 Generating Google OAuth2 token for FCM...`);
+            fcmAccessToken = await getFcmAccessToken(fcmServiceAccount.client_email, fcmServiceAccount.private_key);
+          }
+
+          const response = await fetch(`https://fcm.googleapis.com/v1/projects/${fcmServiceAccount.project_id}/messages:send`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${fcmAccessToken}`
+            },
+            body: JSON.stringify({
+              message: {
+                token: sub.p256dh, // FCM token
+                notification: {
+                  title: senderName,
+                  body: randomBody,
+                },
+                data: {
+                  messageId: message.id,
+                  senderId: senderId,
+                  senderName: senderName,
+                  body: randomBody,
+                  notificationId: notificationId || "",
+                  url: "/",
+                },
+                android: {
+                  priority: "HIGH",
+                  notification: {
+                    sound: "default"
+                  }
+                }
+              }
+            })
+          });
+
+          if (response.status === 200) {
+            console.log(`[send-push] ✅ Native FCM Push successfully delivered!`);
+            successCount++;
+          } else if (response.status === 404 || response.status === 400) {
+            // Usually 404 UNREGISTERED for dead tokens in v1 API
+            console.warn(`[send-push] ⚠️ FCM Token invalid or unregistered (status ${response.status}). Deleting from DB.`);
+            await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
+          } else {
+            const respBody = await response.text();
+            console.error(`[send-push] ❌ FCM request failed. Status: ${response.status}, Response: ${respBody}`);
+          }
         } else {
-          const respBody = await response.text();
-          console.error(`[send-push] ❌ Failed to deliver push to endpoint: ${sub.endpoint}. Status: ${response.status}, Response: ${respBody}`);
+          // Web Push via VAPID
+          const response = await sendWebPush(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            pushPayload,
+            vapidPublicKey,
+            vapidPrivateKey,
+            vapidSubject
+          );
+
+          if (response.status === 201 || response.status === 200) {
+            console.log(`[send-push] ✅ Web Push successfully delivered to endpoint: ${sub.endpoint.substring(0, 50)}...`);
+            successCount++;
+          } else if (response.status === 410 || response.status === 404 || response.status === 400) {
+            console.warn(`[send-push] ⚠️ Subscription invalid or expired (status ${response.status}) for endpoint. Deleting from database.`);
+            await supabase.from("push_subscriptions").delete().eq("endpoint", sub.endpoint).eq("user_id", receiverId);
+          } else {
+            const respBody = await response.text();
+            console.error(`[send-push] ❌ Failed to deliver web push. Status: ${response.status}, Response: ${respBody}`);
+          }
         }
       } catch (err: any) {
         console.error(`[send-push] ❌ Exception while sending to endpoint: ${sub.endpoint}:`, err.message);

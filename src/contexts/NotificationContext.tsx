@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { realtimeHub } from '../lib/realtimeHub';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 export type Notification = {
   id: string;
@@ -81,7 +83,16 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         // Mark as seen_realtime if the document is visible so the Edge Function
         // skips sending a redundant Push Notification to the system tray.
         // We no longer show an in-app toast as it was found to be annoying during active chat.
-        if (document.visibilityState === 'visible') {
+        let isForeground = document.visibilityState === 'visible';
+        
+        // On native Android/iOS, document.visibilityState can sometimes incorrectly remain 'visible' 
+        // when the app is pushed to the background. Use Capacitor App state for an accurate check.
+        if (Capacitor.isNativePlatform()) {
+          const appState = await CapacitorApp.getState();
+          isForeground = appState.isActive;
+        }
+
+        if (isForeground) {
           await supabase
             .from('notifications')
             .update({ seen_realtime: true })
