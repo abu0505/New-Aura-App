@@ -373,8 +373,8 @@ export default function App() {
 
   // Authenticated — show app wrapped in navigation layout
   return (
-    <AppLockProvider>
-      <ChatSettingsProvider>
+    <ChatSettingsProvider>
+      <AppLockProvider>
         <GarbageProvider>
           <MediaFoldersProvider>
             <CallProvider>
@@ -390,7 +390,7 @@ export default function App() {
             </CallProvider>
           </MediaFoldersProvider>
         </GarbageProvider>
-      </ChatSettingsProvider>
-    </AppLockProvider>
+      </AppLockProvider>
+    </ChatSettingsProvider>
   );
 }
