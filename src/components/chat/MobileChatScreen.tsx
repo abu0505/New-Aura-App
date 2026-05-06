@@ -1,7 +1,7 @@
 import { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react'; 
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
-import { useChatSettings } from '../../hooks/useChatSettings';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import type { PartnerProfile } from '../../hooks/usePartner';
@@ -65,7 +65,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
-  const { settings } = useChatSettings();
+  const { settings } = useChatSettingsContext();
   const { initiateCall } = useCall();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);

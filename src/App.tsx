@@ -27,6 +27,8 @@ import { Toaster } from 'sonner';
 import { CallProvider } from './contexts/CallContext';
 import CallOverlay from './components/call/CallOverlay';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { GarbageProvider } from './contexts/GarbageContext';
+import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 
 function InnerApp({ 
   session, 
@@ -372,19 +374,23 @@ export default function App() {
   // Authenticated — show app wrapped in navigation layout
   return (
     <AppLockProvider>
-      <MediaFoldersProvider>
-        <CallProvider>
-          <NotificationProvider>
-            <InnerApp 
-              session={session} 
-              partner={partner} 
-              streakCount={streakCount} 
-              showCelebration={showCelebration}
-              setShowCelebration={setShowCelebration}
-            />
-          </NotificationProvider>
-        </CallProvider>
-      </MediaFoldersProvider>
+      <ChatSettingsProvider>
+        <GarbageProvider>
+          <MediaFoldersProvider>
+            <CallProvider>
+              <NotificationProvider>
+                <InnerApp 
+                  session={session} 
+                  partner={partner} 
+                  streakCount={streakCount} 
+                  showCelebration={showCelebration}
+                  setShowCelebration={setShowCelebration}
+                />
+              </NotificationProvider>
+            </CallProvider>
+          </MediaFoldersProvider>
+        </GarbageProvider>
+      </ChatSettingsProvider>
     </AppLockProvider>
   );
 }

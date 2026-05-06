@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useChatSettings } from '../../hooks/useChatSettings';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 import { usePlatform } from '../../hooks/usePlatform';
 import { checkPushSubscription, requestAndSubscribe, unsubscribeFromPushNotifications, forceResetPushNotifications } from '../../lib/pushNotifications';
 
@@ -21,7 +21,7 @@ const MIN_BODIES = 4;
 
 export default function NotificationSettings() {
   const { user } = useAuth();
-  const { settings, updateSettings } = useChatSettings();
+  const { settings, updateSettings } = useChatSettingsContext();
   const { isNative } = usePlatform();
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isTogglingPush, setIsTogglingPush] = useState(false);

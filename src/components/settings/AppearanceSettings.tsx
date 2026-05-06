@@ -1,4 +1,4 @@
-import { useChatSettings } from '../../hooks/useChatSettings';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 import QuickEmojiSettings from './QuickEmojiSettings';
 import { useDim } from '../../contexts/DimContext';
 
@@ -12,7 +12,7 @@ const COLORS = [
 ];
 
 export default function AppearanceSettings() {
-  const { settings, updateSettings } = useChatSettings();
+  const { settings, updateSettings } = useChatSettingsContext();
   const { dimLevel, setDimLevel } = useDim();
 
   const currentAccent = settings?.accent_color || '#e6c487';

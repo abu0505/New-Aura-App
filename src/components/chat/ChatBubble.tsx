@@ -12,7 +12,7 @@ import LinkPreview from './LinkPreview';
 import PremiumEmoji, { EmojiText } from '../common/PremiumEmoji';
 import { useMediaFolders } from '../../hooks/useMediaFolders';
 import { supabase } from '../../lib/supabase';
-import { useGarbage } from '../../hooks/useGarbage';
+import { useGarbageContext } from '../../contexts/GarbageContext';
 import { toast } from 'sonner';
 
 /** Extract cloud_name and public_id from a Cloudinary URL */
@@ -60,7 +60,7 @@ function ChatBubble({
   const { getDecryptedBlob } = useMedia();
   const { chunks: hookChunks, getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks(message.id);
   const { folders } = useMediaFolders();
-  const { moveToGarbage } = useGarbage();
+  const { moveToGarbage } = useGarbageContext();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
   const [hasUploadFailed, setHasUploadFailed] = useState(false);
   // For chunked video: we use hookChunks which is reactive

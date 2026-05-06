@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { useGarbage, type GarbageItem } from '../../hooks/useGarbage';
+import { useGarbageContext, type GarbageItem } from '../../contexts/GarbageContext';
 import { useMedia } from '../../hooks/useMedia';
 import { supabase } from '../../lib/supabase';
 
@@ -109,7 +109,7 @@ function GarbageItemCard({ item, onUndo }: { item: GarbageItem, onUndo: (id: str
 }
 
 export default function GarbageCanSection() {
-  const { items, loading, isEmptying, count, totalSize, removeFromGarbage, emptyGarbage } = useGarbage();
+  const { items, loading, isEmptying, count, totalSize, removeFromGarbage, emptyGarbage } = useGarbageContext();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const formatBytes = (bytes: number) => {

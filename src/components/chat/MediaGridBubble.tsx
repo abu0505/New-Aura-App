@@ -7,7 +7,7 @@ import MessageContextMenu from './MessageContextMenu';
 import { AnimatePresence } from 'framer-motion';
 import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
 import PremiumEmoji from '../common/PremiumEmoji';
-import { useGarbage } from '../../hooks/useGarbage';
+import { useGarbageContext } from '../../contexts/GarbageContext';
 import { toast } from 'sonner';
 
 /** Extract cloud_name and public_id from a Cloudinary URL */
@@ -43,7 +43,7 @@ function MediaGridBubble({
   quickEmojis
 }: MediaGridBubbleProps) {
   const { getDecryptedBlob } = useMedia();
-  const { moveToGarbage } = useGarbage();
+  const { moveToGarbage } = useGarbageContext();
   const [decryptedUrls, setDecryptedUrls] = useState<Record<string, string>>({});
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [interactionType, setInteractionType] = useState<'none' | 'reactions' | 'menu'>('none');

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
-import { useChatSettings } from '../hooks/useChatSettings';
+import { useChatSettingsContext } from './ChatSettingsContext';
 
 interface AppLockContextType {
   isLocked: boolean;
@@ -23,7 +23,7 @@ export async function hashPin(pin: string): Promise<string> {
 }
 
 export function AppLockProvider({ children }: { children: ReactNode }) {
-  const { settings, setSharedPin, loading: settingsLoading, error: settingsError } = useChatSettings();
+  const { settings, setSharedPin, loading: settingsLoading, error: settingsError } = useChatSettingsContext();
   
   // By default, if settings are loading, we assume unlocked until we know otherwise
   // But we defer mounting the app in the App.tsx until loading is done anyway

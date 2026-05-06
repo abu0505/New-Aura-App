@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useChatSettings } from '../../hooks/useChatSettings';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { encryptFile } from '../../lib/encryption';
 import { uploadToCloudinary } from '../../lib/cloudinary';
@@ -14,7 +14,7 @@ const PRESETS = [
 ];
 
 export default function BackgroundPicker() {
-  const { settings, refreshSettings } = useChatSettings();
+  const { settings, refreshSettings } = useChatSettingsContext();
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [optimisticBg, setOptimisticBg] = useState<string | undefined | null>(undefined);

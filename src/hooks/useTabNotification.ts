@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useChatSettings } from './useChatSettings';
+import { useChatSettingsContext } from '../contexts/ChatSettingsContext';
 import { usePlatform } from './usePlatform';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -8,7 +8,7 @@ import { realtimeHub } from '../lib/realtimeHub';
 const BASE_TITLE = 'AURA';
 
 export function useTabNotification(): void {
-  const { settings } = useChatSettings();
+  const { settings } = useChatSettingsContext();
   const { isNative } = usePlatform();
   const { user } = useAuth();
   const countRef = useRef(0);

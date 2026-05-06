@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 import type { EmojiClickData } from 'emoji-picker-react';
-import { useChatSettings } from '../../hooks/useChatSettings';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_EMOJIS = ['❤️', '😂', '😮', '😢', '🔥', '✨'];
 
 export default function QuickEmojiSettings() {
-  const { settings, updateSettings } = useChatSettings();
+  const { settings, updateSettings } = useChatSettingsContext();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 

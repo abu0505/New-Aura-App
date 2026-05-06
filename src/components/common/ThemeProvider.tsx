@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect } from 'react';
-import { useChatSettings } from '../../hooks/useChatSettings';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 
 function hexToRgba(hex: string, alpha: number) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -54,7 +54,7 @@ function getLuminance(hex: string): number {
 }
 
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { settings } = useChatSettings();
+  const { settings } = useChatSettingsContext();
 
   // Apply theme immediately from localStorage if available to prevent flash
   useEffect(() => {
