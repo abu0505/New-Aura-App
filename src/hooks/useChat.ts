@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { encryptMessage, decryptMessageWithFallback, getStoredKeyPair, decodeBase64, encodeBase64 } from '../lib/encryption';
 import { realtimeHub } from '../lib/realtimeHub';
 import type { Database } from '../integrations/supabase/types';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -491,14 +493,14 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           const isMyMessage = m.sender_id === user.id;
 
           if (!isMyMessage) {
-            // It's a partner message — we own the read update locally via markAsRead().
-            // Only apply non-read-status fields from the DB echo (e.g. edits, reactions).
-            const { is_read, read_at, ...nonReadFields } = row;
-            const safeRow = { ...m, ...nonReadFields } as MessageRow;
+            // It's a partner message. We used to strip `is_read` here to prevent double-updates,
+            // but that breaks multi-device synchronization (e.g. if the user reads the message on their phone,
+            // the desktop web app would ignore the read receipt and show the message as unread).
+            // We now accept the full DB echo so all devices sync the read state correctly.
             if (row.is_edited && row.encrypted_content) {
-              return decryptRow(safeRow, myKeyPair, currentPartnerKey, currentKeyHistory);
+              return decryptRow(mergedRow, myKeyPair, currentPartnerKey, currentKeyHistory);
             }
-            return safeRow;
+            return mergedRow;
           }
 
           // It's my own outgoing message — the DB echo carries partner's read receipt.
@@ -541,9 +543,21 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('online', handleOnlineEvent);
 
+    let appStateListener: any;
+    if (Capacitor.isNativePlatform()) {
+      CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          fetchMissedMessages();
+        }
+      }).then(listener => {
+        appStateListener = listener;
+      });
+    }
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnlineEvent);
+      if (appStateListener) appStateListener.remove();
       
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       unsubMessages();

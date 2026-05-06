@@ -22,6 +22,7 @@ import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
 import { realtimeHub } from './lib/realtimeHub';
 import ThemeProvider from './components/common/ThemeProvider';
+import { App as CapacitorApp } from '@capacitor/app';
 import { MediaFoldersProvider } from './contexts/MediaFoldersContext';
 import { Toaster } from 'sonner';
 import { CallProvider } from './contexts/CallContext';
@@ -318,7 +319,22 @@ export default function App() {
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+    let appStateListener: any;
+    if (Capacitor.isNativePlatform()) {
+      CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          realtimeHub.restart(user.id, partner.id);
+        }
+      }).then(listener => {
+        appStateListener = listener;
+      });
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (appStateListener) appStateListener.remove();
+    };
   }, [user?.id, partner?.id]);
 
 
