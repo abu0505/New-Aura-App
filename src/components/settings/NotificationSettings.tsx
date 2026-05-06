@@ -289,56 +289,127 @@ export default function NotificationSettings() {
             Shows only in the regular browser — NOT on native app
             ══════════════════════════════════════════════════════ */}
         {!isNative && (
-          <div className="space-y-4">
+          <div className="space-y-3">
 
-            {/* Browser: Normal Notifications + Tab Badge toggles */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div
-                onClick={() => updateSettings({ push_notifications_enabled: !settings?.push_notifications_enabled })}
-                className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-                  settings?.push_notifications_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
-                }`}
-              >
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Push Notifications</span>
-                  <span className="text-[9px] text-[var(--text-secondary)] italic">Browser push messages</span>
+            {/* ── Push Notifications ── */}
+            <div
+              onClick={() => updateSettings({ push_notifications_enabled: !settings?.push_notifications_enabled })}
+              className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-300 border ${
+                settings?.push_notifications_enabled
+                  ? 'bg-[var(--gold)]/8 border-[var(--gold)]/25 hover:bg-[var(--gold)]/12'
+                  : 'bg-white/[0.03] border-white/8 hover:bg-white/[0.06]'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                  settings?.push_notifications_enabled ? 'bg-[var(--gold)]/15' : 'bg-white/5'
+                }`}>
+                  <span className={`material-symbols-outlined text-[18px] transition-colors ${
+                    settings?.push_notifications_enabled ? 'text-[var(--gold)]' : 'text-white/30'
+                  }`} style={{ fontVariationSettings: settings?.push_notifications_enabled ? "'FILL' 1" : "'FILL' 0" }}>
+                    notifications
+                  </span>
                 </div>
-                <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.push_notifications_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.push_notifications_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
-                </div>
+                <span className="text-[12px] font-bold text-white tracking-wide">Push Notifications</span>
               </div>
-
-              <div
-                onClick={() => updateSettings({ tab_badge_enabled: !settings?.tab_badge_enabled })}
-                className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-                  settings?.tab_badge_enabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
-                }`}
-              >
-                <div className="flex flex-col gap-1">
-                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Tab Badge</span>
-                  <span className="text-[9px] text-[var(--text-secondary)] italic">Unread counter in browser tab</span>
-                </div>
-                <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${settings?.tab_badge_enabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 rounded-full transition-all duration-500 ${settings?.tab_badge_enabled ? 'right-0.5 bg-black' : 'left-0.5 bg-white/20'}`} />
-                </div>
+              <div className={`relative w-12 h-6 rounded-full transition-all duration-400 shrink-0 ${
+                settings?.push_notifications_enabled ? 'bg-[var(--gold)]' : 'bg-white/10'
+              }`}>
+                <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all duration-400 ${
+                  settings?.push_notifications_enabled
+                    ? 'translate-x-7 bg-black'
+                    : 'translate-x-1 bg-white/40'
+                }`} />
               </div>
             </div>
 
-            {/* Browser: VAPID Device Link Master Toggle */}
+            {/* ── Tab Badge ── */}
             <div
-              onClick={togglePush}
-              className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
-                pushEnabled ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60'
-              } ${isTogglingPush ? 'animate-pulse' : ''}`}
+              onClick={() => updateSettings({ tab_badge_enabled: !settings?.tab_badge_enabled })}
+              className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-300 border ${
+                settings?.tab_badge_enabled
+                  ? 'bg-[var(--gold)]/8 border-[var(--gold)]/25 hover:bg-[var(--gold)]/12'
+                  : 'bg-white/[0.03] border-white/8 hover:bg-white/[0.06]'
+              }`}
             >
-              <div className="flex flex-col gap-1">
-                <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Browser Push Link</span>
-                <span className="text-[9px] text-[var(--text-secondary)] italic">
-                  {pushEnabled ? 'This browser is registered for push' : 'Register this browser for push notifications'}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                  settings?.tab_badge_enabled ? 'bg-[var(--gold)]/15' : 'bg-white/5'
+                }`}>
+                  <span className={`material-symbols-outlined text-[18px] transition-colors ${
+                    settings?.tab_badge_enabled ? 'text-[var(--gold)]' : 'text-white/30'
+                  }`} style={{ fontVariationSettings: settings?.tab_badge_enabled ? "'FILL' 1" : "'FILL' 0" }}>
+                    tab
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[12px] font-bold text-white tracking-wide">Tab Badge</span>
+                  {settings?.tab_badge_enabled && !settings?.push_notifications_enabled && (
+                    <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-[var(--gold)]/15 text-[var(--gold)] border border-[var(--gold)]/20">
+                      Badge Only
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className={`w-12 h-6 rounded-full relative transition-all duration-500 ${pushEnabled ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
-                <div className={`absolute top-1 w-4 h-4 rounded-full transition-all duration-500 ${pushEnabled ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
+              <div className={`relative w-12 h-6 rounded-full transition-all duration-400 shrink-0 ${
+                settings?.tab_badge_enabled ? 'bg-[var(--gold)]' : 'bg-white/10'
+              }`}>
+                <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all duration-400 ${
+                  settings?.tab_badge_enabled
+                    ? 'translate-x-7 bg-black'
+                    : 'translate-x-1 bg-white/40'
+                }`} />
+              </div>
+            </div>
+
+            {/* ── Divider ── */}
+            <div className="border-t border-white/5 pt-1" />
+
+            {/* ── Browser Push Link ── */}
+            <div className="rounded-2xl border border-white/8 overflow-hidden">
+              <div
+                onClick={togglePush}
+                className={`flex items-center justify-between p-4 cursor-pointer transition-all duration-300 ${
+                  pushEnabled ? 'bg-blue-500/8 hover:bg-blue-500/12' : 'bg-white/[0.03] hover:bg-white/[0.06]'
+                } ${isTogglingPush ? 'opacity-60 pointer-events-none' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+                    pushEnabled ? 'bg-blue-500/15' : 'bg-white/5'
+                  }`}>
+                    {isTogglingPush ? (
+                      <span className="material-symbols-outlined text-[16px] text-white/40 animate-spin">progress_activity</span>
+                    ) : (
+                      <span className={`material-symbols-outlined text-[18px] transition-colors ${
+                        pushEnabled ? 'text-blue-400' : 'text-white/30'
+                      }`} style={{ fontVariationSettings: pushEnabled ? "'FILL' 1" : "'FILL' 0" }}>
+                        computer
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-bold text-white tracking-wide">Browser Push Link</span>
+                      {pushEnabled && (
+                        <span className="text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                          Registered
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[var(--text-secondary)] italic">
+                      {pushEnabled ? 'This browser is registered to receive push alerts' : 'Register this browser for push delivery'}
+                    </span>
+                  </div>
+                </div>
+                <div className={`relative w-12 h-6 rounded-full transition-all duration-400 shrink-0 ${
+                  pushEnabled ? 'bg-blue-500' : 'bg-white/10'
+                }`}>
+                  <div className={`absolute top-1 w-4 h-4 rounded-full shadow-md transition-all duration-400 ${
+                    pushEnabled
+                      ? 'translate-x-7 bg-white'
+                      : 'translate-x-1 bg-white/40'
+                  }`} />
+                </div>
               </div>
             </div>
           </div>

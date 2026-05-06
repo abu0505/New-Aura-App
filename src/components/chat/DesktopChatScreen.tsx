@@ -17,7 +17,6 @@ import EncryptedImage from '../common/EncryptedImage';
 import { AnimatePresence, motion } from 'framer-motion';
 import DesktopCameraStudio from './DesktopCameraStudio';
 import { LastSeenStatus } from './LastSeenStatus';
-import { useTabNotification } from '../../hooks/useTabNotification';
 import { useCall } from '../../contexts/CallContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import ChatSearch from './ChatSearch';
@@ -76,10 +75,6 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const { settings } = useChatSettings();
   const { initiateCall } = useCall();
 
-  // ── Browser Tab Notification Badge (Desktop only) ──
-  // Shows "(3) AURA" / "(9+) AURA" in the tab when there are unread messages.
-  // Resets to "AURA" as soon as messages are read via the IntersectionObserver below.
-  useTabNotification();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previousScrollHeightRef = useRef<number>(0);

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useTabNotification } from './hooks/useTabNotification';
 import { useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/auth/LoginScreen';
 import type { Tab } from './types';
@@ -49,6 +50,9 @@ function InnerApp({
   //   After presence syncs  → show whatever presence says
   // This eliminates the stale-DB "Online flash" on page reload.
   // ═══════════════════════════════════════════════════════════════════
+
+  // ── Global Tab Badge: runs on ALL pages, not just chat ──
+  useTabNotification();
 
   const { trackMyStatus, untrackMyStatus, partnerPresence } = usePresenceChannel(partner?.id || null);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);

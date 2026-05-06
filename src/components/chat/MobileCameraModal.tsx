@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { destroyDenoiser } from '../../utils/imageDenoiser';
+import { Capacitor } from '@capacitor/core';
+import { Camera } from '@capacitor/camera';
 import {
   setActiveVideoTrack,
   detectNativeSensorCapabilities,
@@ -10,6 +12,7 @@ import {
   applyTorch,
   applyNightMode,
   resetNativeCameraState,
+  captureNativePhoto,
   type SensorCapabilities,
   type CameraLens,
 } from '../../lib/nativeCameraService';
@@ -201,6 +204,17 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const startCamera = useCallback(async () => {
     stopCamera();
     try {
+      // ── NATIVE PERMISSION FIX ──────────────────────────────────────────────
+      // On Android, the WebView often fails to trigger the OS permission dialog
+      // for getUserMedia if the app hasn't explicitly requested it via the plugin.
+      if (Capacitor.isNativePlatform()) {
+        const status = await Camera.requestPermissions({ permissions: ['camera', 'photos'] });
+        if (status.camera !== 'granted') {
+          setHasPermission(false);
+          return;
+        }
+      }
+
       const tier = getDeviceTier();
       
       // LIGHTWEIGHT ARCHITECTURE FIX:
@@ -401,6 +415,36 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   // --- Photo Capture (Mobile-Optimized: ImageBitmap zero-copy pipeline) ---
   const takePhoto = useCallback(async () => {
+    // ── NATIVE SENSOR CAPTURE (PREMIUM QUALITY) ──────────────────────────────
+    // If we are on native Android/iOS, use the @capacitor/camera plugin to
+    // capture via the OS-level camera pipeline. This leverages:
+    // - HDR+ / Multi-frame processing
+    // - Optical Image Stabilisation (OIS)
+    // - Full sensor resolution (e.g. 50MP vs 1080p stream)
+    if (Capacitor.isNativePlatform()) {
+      const nativeFile = await captureNativePhoto({
+        quality: 100, // Maximize bit-depth and minimize compression
+        direction: facingMode === 'user' ? 'FRONT' : 'REAR',
+        saveToGallery: false,
+      });
+
+      if (nativeFile) {
+        // SFX & Flash UX (mimic the native feel)
+        playShutterSound();
+        setShowShutterFlash(true);
+        setTimeout(() => setShowShutterFlash(false), 100);
+        if (navigator.vibrate) navigator.vibrate(50);
+
+        const url = URL.createObjectURL(nativeFile);
+        setCapturedFile(nativeFile);
+        setPreviewUrl(url);
+        setViewMode('preview');
+        setEnhancementStatus('idle');
+        return;
+      }
+      // If native capture failed or was cancelled, we continue to the web fallback below
+    }
+
     if (!videoRef.current) return;
 
     // SFX & Flash UX
