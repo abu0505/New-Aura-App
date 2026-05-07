@@ -516,7 +516,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
             )}
           </div>
           {/* TOP APP BAR - Explicit Grid Row 1 */}
-          <header className="h-24 z-50 w-full glass-header flex items-center justify-between px-10 border-b border-white/5 relative shrink-0">
+          <header className="h-20 z-50 w-full glass-header flex items-center justify-between px-14 border-b border-white/5 relative shrink-0">
             <div className="flex items-center gap-5">
               <div className="relative">
                 <div className="w-12 h-12 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden">
@@ -648,11 +648,11 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
             onScroll={handleScroll}
             className="min-h-0 w-full overflow-y-auto custom-scrollbar relative z-10 anchor-auto"
             style={{
-              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 60px), transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
             }}
           >
-            <div className="max-w-[800px] mx-auto px-6 md:px-10 pt-10 pb-8 flex flex-col gap-1 min-h-full">
+            <div className="max-w-[800px] mx-auto px-6 md:px-14 pt-10 pb-6 flex flex-col gap-1 min-h-full">
               {!partner.public_key && (
                 <div className="text-center p-8 bg-primary/5 border border-primary/20 text-primary rounded-[3rem] text-xs font-label uppercase tracking-widest leading-loose">
                   Awaiting partner synchronization...
@@ -787,7 +787,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
 
           {/* INPUT AREA - Grid Row 4 */}
           {viewMode === 'chat' && (
-            <div className="w-full bg-background relative z-20">
+            <div className="shrink-0 w-full relative z-20">
               <MessageInput
                 ref={messageInputRef}
                 onSend={handleSend}

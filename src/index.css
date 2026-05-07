@@ -99,7 +99,7 @@ body {
 
 /* Capacitor Safe Area Utilities */
 .safe-top {
-  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 4px) !important;
 }
 
 .safe-bottom {
@@ -195,7 +195,7 @@ body {
   }
 
   .safe-top {
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 4px);
   }
 
   .anchor-none {

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react'; 
+import { usePlatform } from '../../hooks/usePlatform';
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
@@ -28,6 +29,7 @@ interface MobileChatScreenProps {
 }
 
 export default function MobileChatScreen({ partner, isActive, partnerIsTyping, sendTypingEvent }: MobileChatScreenProps) {
+  const { isNative } = usePlatform();
   const { user } = useAuth();
   const { markReadBySenderId } = useNotifications();
   const [pinFilter, setPinFilter] = useState<'all' | 'me' | 'partner'>('all');
@@ -446,7 +448,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           )}
         </div>
         {/* TopAppBar */}
-        <header className="shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 py-4 border-b border-white/5 gap-2 safe-top">
+        <header className={`shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 pb-4 border-b border-white/5 gap-2 ${isNative ? 'safe-top' : 'pt-5'}`}>
           <div className="flex items-center gap-3 min-w-0">
             <button 
               onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))} 
@@ -587,10 +589,10 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           <div 
             ref={scrollContainerRef} 
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-6 pb-24 flex flex-col gap-1 custom-scrollbar anchor-none"
+            className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-6 pb-6 flex flex-col gap-1 custom-scrollbar anchor-none"
             style={{
-              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 80px), transparent 100%)',
+              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
             }}
           >
             {hasMore && !loading && viewMode === 'chat' && (

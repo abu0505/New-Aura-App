@@ -720,7 +720,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   }
 
   return (
-    <footer className="shrink-0 w-full relative z-40 pt-2 pb-4 md:pb-6 px-2 md:px-8 flex flex-col items-center justify-end">
+    <footer className="shrink-0 w-full relative z-40 pb-4 md:pb-6 px-2 md:px-8 flex flex-col items-center justify-end">
       {/* Emoji Picker positioned directly above input */}
       <AnimatePresence>
         {isEmojiPickerOpen && (

@@ -59,20 +59,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isSigningOutRef = useRef(false);
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      await handleSession(session);
-      setLoading(false);
-    });
+    let isMounted = true;
+
+    const loadSession = async () => {
+      // Race getSession against a 3-second timeout
+      // This prevents the app from being stuck on the splash screen infinitely
+      // if Supabase is down or network fails (since gotrue-js retries with exponential backoff).
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      
+      try {
+        const result = await Promise.race([
+          supabase.auth.getSession().then(({ data }) => data.session),
+          timeout
+        ]);
+
+        if (!isMounted) return;
+
+        if (result) {
+          // getSession finished quickly
+          await handleSession(result);
+        } else {
+          // Timeout occurred! Network is probably down or project paused.
+          // Recover session from local storage manually to unblock UI.
+          const authKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
+          if (authKey) {
+            try {
+              const cached = JSON.parse(localStorage.getItem(authKey) || '');
+              if (cached && cached.user) {
+                setSession(cached);
+                setUser(cached.user);
+                // Optimistically check encryption status
+                const status = await checkEncryptionStatus(cached.user.id);
+                if (isMounted) setEncryptionStatus(status);
+              }
+            } catch (e) {
+              console.error('Failed to parse cached session', e);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading session:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadSession();
 
     // Listen for auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        handleSession(session);
+        if (isMounted) handleSession(session);
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   /** Subscribe to realtime profile changes to detect when another device logs in. */
