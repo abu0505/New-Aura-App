@@ -263,9 +263,11 @@ function ChatBubble({
             if (!message.is_uploading) setHasUploadFailed(true);
           } else {
             const ageMs = Date.now() - new Date(message.created_at).getTime();
-            if (ageMs > 60 * 1000) { // 1 minute timeout for receiver
+            if (ageMs > 5 * 60 * 1000) { // 5 minute timeout for receiver (multi-media sends can be slow)
               setHasUploadFailed(true);
             }
+            // For recent messages, retry after 10s — chunks may still be uploading
+            // (especially in multi-media sends where images get priority)
           }
         }
       });

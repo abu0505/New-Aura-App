@@ -19,7 +19,13 @@ export function groupMessages(messages: ChatMessage[]): MessageItem[] {
     const msg = messages[i];
     const prevMsg = i > 0 ? messages[i - 1] : null;
 
-    const isMedia = (msg.type === 'image' || msg.type === 'video' || msg.type === 'gif') && !msg.decrypted_content && !msg.is_deleted_for_everyone;
+    // Do not group chunked videos (where type is 'video' but media_url is null)
+    // because MediaGridBubble does not support the chunked streaming protocol.
+    const isChunkedVideo = (m: ChatMessage) => m.type === 'video' && !m.media_url;
+    const isMedia = (msg.type === 'image' || msg.type === 'video' || msg.type === 'gif') 
+      && !msg.decrypted_content 
+      && !msg.is_deleted_for_everyone
+      && !isChunkedVideo(msg);
     
     // Grouping conditions:
     // 1. Current is media
@@ -30,7 +36,10 @@ export function groupMessages(messages: ChatMessage[]): MessageItem[] {
       isMedia && 
       prevMsg && 
       prevMsg.sender_id === msg.sender_id && 
-      ((msg.type === 'image' || msg.type === 'video' || msg.type === 'gif') && !prevMsg.decrypted_content && !prevMsg.is_deleted_for_everyone) &&
+      ((prevMsg.type === 'image' || prevMsg.type === 'video' || prevMsg.type === 'gif') 
+        && !prevMsg.decrypted_content 
+        && !prevMsg.is_deleted_for_everyone
+        && !isChunkedVideo(prevMsg)) &&
       (new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime()) <= 120000;
 
     if (shouldGroup) {

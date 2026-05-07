@@ -12,7 +12,6 @@ import {
   applyTorch,
   applyNightMode,
   resetNativeCameraState,
-  captureNativePhoto,
   type SensorCapabilities,
   type CameraLens,
 } from '../../lib/nativeCameraService';
@@ -96,6 +95,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const startPosRef = useRef<{ x: number, y: number } | null>(null);
   const zoomRef = useRef<{ current: number, min: number, max: number }>({ current: 1, min: 1, max: 1 });
   const hasHardwareZoomRef = useRef(false);
+  // Pinch-to-zoom state
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef<number>(1);
 
   const shutterControls = useAnimation();
   const lockIconControls = useAnimation();
@@ -207,11 +209,34 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       // ── NATIVE PERMISSION FIX ──────────────────────────────────────────────
       // On Android, the WebView often fails to trigger the OS permission dialog
       // for getUserMedia if the app hasn't explicitly requested it via the plugin.
+      //
+      // CRITICAL: We ONLY request 'camera' permission — NOT 'photos'.
+      // Requesting 'photos' on Android 13+ triggers a separate system Activity
+      // (the media picker permission UI) which pauses MainActivity, eventually
+      // causing the WebView renderer to be OOM-killed and the process to restart.
+      // This wipes React state and forces the PIN lock screen back up.
+      //
+      // We also check if permission is already granted BEFORE calling
+      // requestPermissions, to avoid any unnecessary system dialog that could
+      // briefly background the app.
       if (Capacitor.isNativePlatform()) {
-        const status = await Camera.requestPermissions({ permissions: ['camera', 'photos'] });
-        if (status.camera !== 'granted') {
-          setHasPermission(false);
-          return;
+        let cameraStatus: string;
+        try {
+          const current = await Camera.checkPermissions();
+          cameraStatus = current.camera;
+        } catch {
+          // checkPermissions not available on older plugin versions — fall through to request
+          cameraStatus = 'prompt';
+        }
+
+        if (cameraStatus !== 'granted') {
+          // Only call requestPermissions if not yet granted.
+          // Only request 'camera' — 'photos' triggers a separate Activity on Android 13+.
+          const status = await Camera.requestPermissions({ permissions: ['camera'] });
+          if (status.camera !== 'granted') {
+            setHasPermission(false);
+            return;
+          }
         }
       }
 
@@ -239,12 +264,17 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           facingMode,
           width: { ideal: targetWidth },
           height: { ideal: targetHeight },
-          frameRate: { min: targetFps, ideal: targetFps, max: targetFps },
+          // Remove strict min/max to prevent OverconstrainedError on devices that don't support exact framerates
+          frameRate: { ideal: targetFps },
           // Disable software noise suppression on video to save CPU on mid/low tier
           noiseSuppression: tier === 'high',
           ...({ resizeMode: 'crop-and-scale' } as any),
         },
-        audio: { noiseSuppression: tier === 'high', echoCancellation: true }
+        // IMPORTANT: Do NOT request audio for the viewfinder/photo stream.
+        // Requesting audio triggers RECORD_AUDIO permission check in WebView
+        // which can fail and cause the entire getUserMedia to be denied.
+        // Audio is only added when starting video recording.
+        audio: false
       };
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -290,6 +320,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         zoomRef.current = { current: 1, min: 1, max: 5 };
       }
     } catch (error) {
+      console.error('[MobileCameraModal] getUserMedia failed:', error);
       setHasPermission(false);
     }
   }, [facingMode, stopCamera, resolution, getDeviceTier]);
@@ -394,7 +425,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           height: { ideal: 1080 },
           frameRate: { ideal: 30 },
         },
-        audio: { noiseSuppression: true, echoCancellation: true },
+        audio: false,
       };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
@@ -414,37 +445,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   }, [activeLensId, stopCamera]);
 
   // --- Photo Capture (Mobile-Optimized: ImageBitmap zero-copy pipeline) ---
+  // NOTE: We intentionally do NOT use Camera.getPhoto() / captureNativePhoto() here.
+  // Calling Camera.getPhoto() launches an external OS camera Activity, which puts
+  // the Capacitor app into the background. On Android, this causes the WebView
+  // renderer to crash (OOM) and the app to fully restart — wiping React state and
+  // forcing the PIN lock screen. The getUserMedia() + canvas path below works
+  // perfectly within the in-app WebRTC viewfinder on both web and native Android.
   const takePhoto = useCallback(async () => {
-    // ── NATIVE SENSOR CAPTURE (PREMIUM QUALITY) ──────────────────────────────
-    // If we are on native Android/iOS, use the @capacitor/camera plugin to
-    // capture via the OS-level camera pipeline. This leverages:
-    // - HDR+ / Multi-frame processing
-    // - Optical Image Stabilisation (OIS)
-    // - Full sensor resolution (e.g. 50MP vs 1080p stream)
-    if (Capacitor.isNativePlatform()) {
-      const nativeFile = await captureNativePhoto({
-        quality: 100, // Maximize bit-depth and minimize compression
-        direction: facingMode === 'user' ? 'FRONT' : 'REAR',
-        saveToGallery: false,
-      });
-
-      if (nativeFile) {
-        // SFX & Flash UX (mimic the native feel)
-        playShutterSound();
-        setShowShutterFlash(true);
-        setTimeout(() => setShowShutterFlash(false), 100);
-        if (navigator.vibrate) navigator.vibrate(50);
-
-        const url = URL.createObjectURL(nativeFile);
-        setCapturedFile(nativeFile);
-        setPreviewUrl(url);
-        setViewMode('preview');
-        setEnhancementStatus('idle');
-        return;
-      }
-      // If native capture failed or was cancelled, we continue to the web fallback below
-    }
-
     if (!videoRef.current) return;
 
     // SFX & Flash UX
@@ -612,8 +619,25 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   }, [isRecording, stopRecording]);
 
   // ── TELEGRAM-STYLE RECORDING: startRecording ───────────────────────────────
-  const startRecording = () => {
+  const startRecording = async () => {
     if (!streamRef.current || !videoRef.current || !cameraWorkerRef.current) return;
+
+    // Audio was NOT requested during getUserMedia (viewfinder doesn't need it).
+    // We add an audio track on-demand now to avoid triggering RECORD_AUDIO permission
+    // during initial camera open (which could fail and deny the entire getUserMedia).
+    if (streamRef.current.getAudioTracks().length === 0) {
+      try {
+        const audioStream = await navigator.mediaDevices.getUserMedia({
+          audio: { noiseSuppression: true, echoCancellation: true },
+          video: false,
+        });
+        for (const track of audioStream.getAudioTracks()) {
+          streamRef.current.addTrack(track);
+        }
+      } catch {
+        // Audio unavailable — record video-only silently
+      }
+    }
 
     const worker = cameraWorkerRef.current;
     const video = videoRef.current;
@@ -1071,7 +1095,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   {hasPermission === false ? (
                     <div className="text-white/50 text-center p-6 mt-1/2 pointer-events-auto">
                       <span className="material-symbols-outlined text-[48px] mb-2 opacity-50">videocam_off</span>
-                      <p>Camera access denied.<br />Please enable in browser settings.</p>
+                      <p>Camera access denied.<br />
+                        {Capacitor.isNativePlatform()
+                          ? 'Please grant camera permission in your device settings.'
+                          : 'Please enable in browser settings.'}
+                      </p>
                     </div>
                   ) : (
                     <div className="relative w-full h-full">
@@ -1091,6 +1119,36 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                           if (showSettings) { setShowSettings(false); return; }
                           handleTapToFocus(e as any);
                         }}
+                        onTouchStart={(e) => {
+                          if (e.touches.length === 2) {
+                            const dx = e.touches[0].clientX - e.touches[1].clientX;
+                            const dy = e.touches[0].clientY - e.touches[1].clientY;
+                            pinchStartDistRef.current = Math.sqrt(dx * dx + dy * dy);
+                            pinchStartZoomRef.current = zoomRef.current.current;
+                          }
+                        }}
+                        onTouchMove={(e) => {
+                          if (e.touches.length !== 2 || pinchStartDistRef.current === null) return;
+                          const dx = e.touches[0].clientX - e.touches[1].clientX;
+                          const dy = e.touches[0].clientY - e.touches[1].clientY;
+                          const dist = Math.sqrt(dx * dx + dy * dy);
+                          const scale = dist / pinchStartDistRef.current;
+                          const { min, max } = zoomRef.current;
+                          const targetZoom = Math.min(Math.max(pinchStartZoomRef.current * scale, min), max);
+                          if (hasHardwareZoomRef.current) {
+                            applyOpticalZoom({ level: targetZoom }).then(applied => {
+                              zoomRef.current.current = applied;
+                            }).catch(() => {});
+                          } else {
+                            zoomRef.current.current = targetZoom;
+                            if (videoRef.current) {
+                              videoRef.current.style.transform = facingMode === 'user'
+                                ? `scaleX(-1) scale(${targetZoom})`
+                                : `scale(${targetZoom})`;
+                            }
+                          }
+                        }}
+                        onTouchEnd={() => { pinchStartDistRef.current = null; }}
                       />
 
                       {/* ── Tap-to-Focus Ring ─────────────────────────────────── */}
@@ -1259,7 +1317,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             {/* ── Lens Switcher ─────────────────────────────────────────────────────
                 Shows multi-lens pills when the device has more than 2 camera lenses.
                 Positioned just above the bottom controls row. */}
-            {availableLenses.length > 2 && !isRecording && (
+            {availableLenses.filter(l => l.facingMode === facingMode).length >= 2 && !isRecording && (
               <div className="absolute bottom-36 inset-x-0 flex justify-center z-[75] pointer-events-none">
                 <div className="flex gap-2 bg-black/30 backdrop-blur-xl rounded-full px-3 py-1.5 border border-white/10 pointer-events-auto">
                   {availableLenses

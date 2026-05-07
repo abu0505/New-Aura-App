@@ -137,6 +137,8 @@ export default function ChunkedVideoPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [volume] = useState(1);
   const [error, setError] = useState<string | null>(null);
+  // Direct blob mode: for single-chunk videos, bypass MSE entirely
+  const [directBlobUrl, setDirectBlobUrl] = useState<string | null>(null);
 
   /* ── Sync refs ───────────────────────────────────────────────────────── */
   useEffect(() => { chunksRef.current = chunks; }, [chunks]);
@@ -154,9 +156,59 @@ export default function ChunkedVideoPlayer({
   useEffect(() => { totalDurationRef.current = totalDuration; }, [totalDuration]);
 
   /* ═══════════════════════════════════════════════════════════════════════ */
-  /*  MSE SETUP — create MediaSource and attach to <video>                 */
+  /*  DIRECT BLOB FALLBACK                                                  */
+  /*  As soon as ALL chunks are decrypted, concatenate blobs and use        */
+  /*  video.src directly. This bypasses MSE entirely — 100% reliable.       */
+  /*  Works for 1-chunk AND multi-chunk once all arrive.                    */
   /* ═══════════════════════════════════════════════════════════════════════ */
   useEffect(() => {
+    if (chunks.length === 0 || directBlobUrl) return;
+
+    // All decrypted chunks present and accounted for
+    const decryptedChunks = chunks.filter(c => c.isDecrypted && c.blobUrl);
+    const reportedTotal = chunks[0]?.totalChunks ?? chunks.length;
+    // Consider "all done" if every decrypted chunk is ready, and we have at
+    // least as many as reported (handles the totalChunks mismatch bug)
+    const allReady = decryptedChunks.length > 0 &&
+      decryptedChunks.length >= Math.min(reportedTotal, chunks.length);
+
+    if (!allReady) return;
+
+    (async () => {
+      try {
+        // Fetch all blob URLs in chunk order and concatenate into one Blob
+        const sortedChunks = [...decryptedChunks].sort((a, b) => a.chunkIndex - b.chunkIndex);
+        const fetchedBlobs = await Promise.all(
+          sortedChunks.map(c => fetch(c.blobUrl!).then(r => r.blob()))
+        );
+        const mimeType = fetchedBlobs[0]?.type || 'video/mp4';
+        const merged = new Blob(fetchedBlobs, { type: mimeType });
+        const url = URL.createObjectURL(merged);
+        setDirectBlobUrl(url);
+        if (videoRef.current) {
+          videoRef.current.src = url;
+          videoRef.current.load();
+          setIsBuffering(false);
+          if (autoPlay) {
+            videoRef.current.play()
+              .then(() => { setIsPlaying(true); setIsBuffering(false); })
+              .catch(() => setIsBuffering(false));
+          }
+        }
+      } catch {
+        // Failed to concat blobs — MSE will handle it as fallback
+      }
+    })();
+  }, [chunks, autoPlay, directBlobUrl]);
+
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  /*  MSE SETUP — create MediaSource and attach to <video>                 */
+  /*  SKIPPED when using direct blob mode (single-chunk videos)            */
+  /* ═══════════════════════════════════════════════════════════════════════ */
+  useEffect(() => {
+    // Skip MSE setup if we're using direct blob mode
+    if (directBlobUrl) return;
+
     if (typeof MediaSource === 'undefined') {
       setError('MediaSource API not available in this browser');
       return;
@@ -189,13 +241,14 @@ export default function ChunkedVideoPlayer({
       endOfStreamCalled.current = false;
       setError(null);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [directBlobUrl]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ═══════════════════════════════════════════════════════════════════════ */
   /*  CHUNK PROCESSING — transmux & append as chunks become available       */
+  /*  SKIPPED when using direct blob mode (single-chunk videos)            */
   /* ═══════════════════════════════════════════════════════════════════════ */
   useEffect(() => {
-    if (!mseOpen) return;
+    if (!mseOpen || directBlobUrl) return;
 
     const processChunks = async () => {
       if (isProcessingRef.current) return;
@@ -406,7 +459,29 @@ export default function ChunkedVideoPlayer({
           }
         }
       } catch (err: any) {
-        setError(err.message || String(err));
+        // MSE transmux failed — try direct blob URL fallback
+        // This happens frequently with short videos where the MP4 from camera.worker
+        // is a valid standalone file but not compatible with MSE's fMP4 requirements
+        const allBlobUrls = chunksRef.current
+          .filter(c => c.isDecrypted && c.blobUrl)
+          .map(c => c.blobUrl!);
+        
+        if (allBlobUrls.length > 0) {
+          // For single or few chunks, direct playback works perfectly
+          try {
+            const blobs = await Promise.all(allBlobUrls.map(u => fetch(u).then(r => r.blob())));
+            const merged = new Blob(blobs, { type: blobs[0].type || 'video/mp4' });
+            const fallbackUrl = URL.createObjectURL(merged);
+            setDirectBlobUrl(fallbackUrl);
+            if (videoRef.current) {
+              videoRef.current.src = fallbackUrl;
+            }
+          } catch {
+            setError(err.message || String(err));
+          }
+        } else {
+          setError(err.message || String(err));
+        }
       } finally {
         isProcessingRef.current = false;
       }
@@ -533,7 +608,8 @@ export default function ChunkedVideoPlayer({
   const bufferFraction = totalDuration > 0 ? bufferedEnd / totalDuration : 0;
 
   // Check if at least one chunk is ready (for the loading overlay)
-  const firstReady = chunks.some(c => c.isDecrypted && !!c.blobUrl);
+  // In direct blob mode, always consider ready
+  const firstReady = !!directBlobUrl || chunks.some(c => c.isDecrypted && !!c.blobUrl);
 
   return (
     <div

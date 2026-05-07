@@ -13,7 +13,10 @@ import AutocompleteSettings from './AutocompleteSettings';
  */
 export default function SettingsScreen() {
   return (
-    <div className="h-full w-full bg-[var(--background)] overflow-y-auto font-sans pb-32 lg:pb-12 custom-scrollbar">
+    <div
+      className="h-full w-full bg-[var(--background)] overflow-y-auto font-sans pb-32 lg:pb-12 custom-scrollbar"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       {/* 1. Identity & Hero */}
       <ProfileSection />
 
