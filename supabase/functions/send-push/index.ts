@@ -388,9 +388,21 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Removed legacy `is_online` smart skip.
-    // Relying solely on `seen_realtime` is more robust because Capacitor apps
-    // might stay "online" in the DB for 10-30s after being backgrounded.
+    // Re-enabled `is_online` smart skip.
+    // Checking `is_online` and `last_seen` ensures we skip notifications if the user is actively chatting,
+    // which prevents annoying notification popups while both users are in the app.
+    if (receiverProfile?.is_online) {
+      const lastSeen = receiverProfile.last_seen ? new Date(receiverProfile.last_seen).getTime() : 0;
+      const now = Date.now();
+      const isRecentlySeen = (now - lastSeen) < 45000; // 45 seconds freshness threshold
+
+      if (isRecentlySeen) {
+        console.log(`[send-push] 🛑 Skipped Push: Receiver ${receiverId} is ONLINE and active.`);
+        return new Response(JSON.stringify({ success: true, message: "Skipped - Receiver is online" }), { headers });
+      } else {
+        console.log(`[send-push] ⚠️ Receiver is ONLINE but last_seen is stale (>45s). Proceeding with Push.`);
+      }
+    }
 
     const pushPayload = JSON.stringify({
       messageId: message.id,

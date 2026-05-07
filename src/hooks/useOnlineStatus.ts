@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * Online Status Manager — WhatsApp Architecture
@@ -138,10 +140,34 @@ export function useOnlineStatus(
     window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('visibilitychange', handleVisibility);
 
+    let appStateListener: any = null;
+    if (Capacitor.isNativePlatform()) {
+      CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        const uid = userIdRef.current;
+        if (!uid) return;
+        clearTimeout(visTimer);
+
+        if (!isActive) {
+          untrackMyStatus();
+          visTimer = setTimeout(() => fireOfflineBeacon(uid), 1000);
+        } else {
+          visTimer = setTimeout(() => {
+            if (isUnlockedRef.current && userIdRef.current) {
+              trackMyStatus(userIdRef.current, currentPageRef.current);
+              setDbStatus(userIdRef.current, true);
+            }
+          }, 500);
+        }
+      }).then(listener => {
+        appStateListener = listener;
+      });
+    }
+
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibility);
+      if (appStateListener) appStateListener.remove();
       clearTimeout(visTimer);
       untrackMyStatus();
     };
