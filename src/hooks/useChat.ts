@@ -320,8 +320,22 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       }
     };
 
+    // ── Throttle ref: prevents rapid visibilitychange events from hammering the DB ──
+    // Root cause of the "messages stop arriving" bug:
+    // Chrome fires visibilitychange 4-5x in quick succession when switching tabs,
+    // opening DevTools, or any focus loss. Each fire triggers a DB fetch + mark-delivered
+    // PATCH. With 2 users active, this creates a cascade of concurrent PATCH requests
+    // that can cause DB row-locking (HTTP 500). The 2s throttle collapses all rapid
+    // fires into ONE fetch, eliminating the race condition entirely.
+    let gapFillThrottleTimer: ReturnType<typeof setTimeout> | null = null;
+    let gapFillPending = false;
+
     const fetchMissedMessages = async () => {
+      // Guard 1: lastMessageTimeRef must be set (messages must be loaded)
       if (!lastMessageTimeRef.current) return;
+      // Guard 2: partnerId must be a valid UUID (not undefined/null)
+      if (!partnerId || partnerId === 'undefined') return;
+
       const myKeyPair = getStoredKeyPair();
       const currentPartnerKey = partnerKeyRef.current;
       const currentKeyHistory = partnerKeyHistoryRef.current;
@@ -362,6 +376,24 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       } catch (err) {
         
       }
+    };
+
+    // Throttled wrapper — collapses multiple rapid calls into one fetch after 2s idle
+    const fetchMissedMessagesThrottled = () => {
+      if (gapFillThrottleTimer) {
+        // Already scheduled — mark as pending so it runs again after current one completes
+        gapFillPending = true;
+        return;
+      }
+      gapFillThrottleTimer = setTimeout(async () => {
+        gapFillThrottleTimer = null;
+        await fetchMissedMessages();
+        // If more calls came in while we were running, do one more pass
+        if (gapFillPending) {
+          gapFillPending = false;
+          fetchMissedMessagesThrottled();
+        }
+      }, 2000);
     };
 
     const fetchMessages = async () => {
@@ -529,15 +561,15 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       }
     });
 
-    // Gap-fill on visibility/online change (no channel management needed — hub handles it)
+    // Gap-fill on visibility/online change — use throttled version to prevent rapid-fire
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        fetchMissedMessages();
+        fetchMissedMessagesThrottled();
       }
     };
 
     const handleOnlineEvent = () => {
-      fetchMissedMessages();
+      fetchMissedMessagesThrottled();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -547,7 +579,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     if (Capacitor.isNativePlatform()) {
       CapacitorApp.addListener('appStateChange', ({ isActive }) => {
         if (isActive) {
-          fetchMissedMessages();
+          fetchMissedMessagesThrottled();
         }
       }).then(listener => {
         appStateListener = listener;
@@ -555,6 +587,11 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
 
     return () => {
+      // Clear throttle timer on cleanup
+      if (gapFillThrottleTimer) {
+        clearTimeout(gapFillThrottleTimer);
+        gapFillThrottleTimer = null;
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('online', handleOnlineEvent);
       if (appStateListener) appStateListener.remove();

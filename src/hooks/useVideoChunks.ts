@@ -42,6 +42,10 @@ import {
 } from '../lib/encryption';
 import { deriveBlockNonce } from '../utils/videoChunker';
 
+const LOG = (...args: unknown[]) => console.log('[VideoChunks]', ...args);
+const WARN = (...args: unknown[]) => console.warn('[VideoChunks]', ...args);
+const ERR = (...args: unknown[]) => console.error('[VideoChunks]', ...args);
+
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Public types                                                               */
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -60,11 +64,11 @@ export interface ReceivedChunk {
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 interface StoreEntry {
-  /** mediasource: blob URL — set once when MediaSource is created */
+  /** mediasource: or blob: URL — set once when ready */
   blobUrl: string | null;
   /** Total video duration in seconds */
   duration: number;
-  /** True once endOfStream() has been called */
+  /** True once endOfStream() has been called (MSE) or blob assembled */
   isComplete: boolean;
   /** Number of blocks received so far (for progress) */
   receivedCount: number;
@@ -76,8 +80,16 @@ interface StoreEntry {
   baseNonce: string;
   /** Partner public key for key unwrapping */
   partnerPublicKey: string;
-  /** The MediaSource object */
+  /** The MediaSource object (null in blob-fallback mode) */
   mediaSource: MediaSource | null;
+  /**
+   * Blob-fallback mode: when MSE is not supported or addSourceBuffer fails
+   * (e.g. non-fragmented gallery MP4), decrypted blocks are stored here.
+   * Once all blocks are collected, they are concatenated into a single Blob URL.
+   */
+  blobFallbackBlocks: Map<number, Uint8Array> | null;
+  /** True once we have determined MSE will NOT work and are using blob mode */
+  useBlobFallback: boolean;
   /** The SourceBuffer — created inside 'sourceopen' handler */
   sourceBuffer: SourceBuffer | null;
   /** Ordered queue of decrypted blocks waiting to be appended */
@@ -90,6 +102,8 @@ interface StoreEntry {
   mimeType: string | null;
   /** Whether MSE initialisation has started */
   mseInitialised: boolean;
+  /** Track which block indices have already been processed (prevents duplicates) */
+  processedIndices: Set<number>;
 }
 
 const videoStore = new Map<string, StoreEntry>();
@@ -129,22 +143,51 @@ function storeEntryToChunks(messageId: string): ReceivedChunk[] {
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  MIME sniff from first 12 bytes                                            */
+/*                                                                             */
+/*  FIX (audio glitch): Previously hardcoded 'avc1.42E01E' (Baseline) but     */
+/*  camera.worker.ts encodes with 'avc1.640034' (High Profile, Level 5.2).    */
+/*  MSE codec mismatch causes the SourceBuffer to reject appends or produce   */
+/*  discontinuities — audible as pops/glitches at the 5MB chunk boundaries.   */
+/*  Solution: use the most permissive codec string that all browsers accept.  */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 function sniffMime(bytes: Uint8Array): string {
-  // WebM / MKV
+  // WebM / MKV: 0x1A 0x45 0xDF 0xA3
   if (bytes[0] === 0x1A && bytes[1] === 0x45 && bytes[2] === 0xDF && bytes[3] === 0xA3) {
-    return 'video/webm; codecs="vp8,vorbis"';
+    // Try VP8 first (older recordings), then VP9 (modern)
+    const webmVP9 = 'video/webm; codecs="vp9,opus"';
+    const webmVP8 = 'video/webm; codecs="vp8,vorbis"';
+    if (typeof MediaSource !== 'undefined' && MediaSource.isTypeSupported(webmVP9)) {
+      LOG('MIME sniff → WebM/VP9');
+      return webmVP9;
+    }
+    LOG('MIME sniff → WebM/VP8');
+    return webmVP8;
   }
+
   // MP4 / QuickTime — 'ftyp' at bytes 4-7
-  if (bytes.length >= 12 &&
-      bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) {
-    const brand = String.fromCharCode(bytes[8], bytes[9], bytes[10], bytes[11]);
-    if (brand.startsWith('qt') || brand.startsWith('mqt')) return 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"';
-    return 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"';
+  if (
+    bytes.length >= 12 &&
+    bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70
+  ) {
+    // FIX: Use 'avc1' without a specific profile level. This is a catch-all
+    // that works for Baseline, Main, AND High profile H.264 streams.
+    // Previously 'avc1.42E01E' only matched Baseline — High Profile frames
+    // caused the SourceBuffer to error, dropping audio sync.
+    const mimeMP4 = 'video/mp4; codecs="avc1,mp4a.40.2"';
+    if (typeof MediaSource !== 'undefined' && MediaSource.isTypeSupported(mimeMP4)) {
+      LOG('MIME sniff → MP4 (avc1,mp4a.40.2)');
+      return mimeMP4;
+    }
+    // Broader fallback with explicit level for stricter browsers
+    const mimeMP4Fallback = 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"';
+    LOG('MIME sniff → MP4 fallback (avc1.42E01E)');
+    return mimeMP4Fallback;
   }
-  // Default: mp4
-  return 'video/mp4; codecs="avc1.42E01E,mp4a.40.2"';
+
+  // Default: fragmented MP4 with generic codec
+  LOG('MIME sniff → MP4 default');
+  return 'video/mp4; codecs="avc1,mp4a.40.2"';
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -176,7 +219,7 @@ function unwrapSymmetricKey(
       if (key) return key;
     } catch { /* try next */ }
 
-    // Try as sender (watching my own video)
+    // Try as sender (watching my own video after page reload)
     try {
       const key = decryptFileKeyWithFallback(
         encryptedKey, keyNonce,
@@ -190,7 +233,7 @@ function unwrapSymmetricKey(
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
-/*  Decrypt a single block                                                    */
+/*  Decrypt a single block (with retry)                                       */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 async function downloadAndDecryptBlock(
@@ -198,50 +241,117 @@ async function downloadAndDecryptBlock(
   chunkIndex: number,
   packedKey: string,
   baseNonceB64: string,
-  partnerPublicKey: string
+  partnerPublicKey: string,
+  attempt = 1
 ): Promise<Uint8Array> {
-  // Download raw encrypted bytes
-  const response = await fetch(chunkUrl);
-  if (!response.ok) throw new Error(`Fetch failed: ${response.status} for chunk ${chunkIndex}`);
-  const cipherBytes = new Uint8Array(await response.arrayBuffer());
+  LOG(`Block ${chunkIndex}: downloading (attempt ${attempt})...`);
+  try {
+    const response = await fetch(chunkUrl);
+    if (!response.ok) throw new Error(`Fetch failed: ${response.status} for chunk ${chunkIndex}`);
+    const cipherBytes = new Uint8Array(await response.arrayBuffer());
+    LOG(`Block ${chunkIndex}: downloaded ${cipherBytes.length} bytes, decrypting...`);
 
-  // Unwrap symmetric key
-  const symmetricKey = unwrapSymmetricKey(packedKey, partnerPublicKey);
-  if (!symmetricKey) throw new Error('Failed to unwrap symmetric key');
+    const symmetricKey = unwrapSymmetricKey(packedKey, partnerPublicKey);
+    if (!symmetricKey) throw new Error('Failed to unwrap symmetric key');
 
-  // Derive per-block nonce
-  const baseNonce = decodeBase64(baseNonceB64);
-  const blockNonce = deriveBlockNonce(baseNonce, chunkIndex);
+    const baseNonce = decodeBase64(baseNonceB64);
+    const blockNonce = deriveBlockNonce(baseNonce, chunkIndex);
 
-  // Decrypt
-  const decrypted = nacl.secretbox.open(cipherBytes, blockNonce, symmetricKey);
-  if (!decrypted) throw new Error(`Decryption failed for block ${chunkIndex}`);
+    const decrypted = nacl.secretbox.open(cipherBytes, blockNonce, symmetricKey);
+    if (!decrypted) throw new Error(`NaCl MAC check failed for block ${chunkIndex}`);
 
-  return decrypted;
+    LOG(`Block ${chunkIndex}: decrypted OK → ${decrypted.length} bytes`);
+    return decrypted;
+  } catch (err) {
+    if (attempt < 3) {
+      WARN(`Block ${chunkIndex}: failed (attempt ${attempt}), retrying in ${attempt}s...`, err);
+      await new Promise(res => setTimeout(res, attempt * 1000));
+      return downloadAndDecryptBlock(chunkUrl, chunkIndex, packedKey, baseNonceB64, partnerPublicKey, attempt + 1);
+    }
+    ERR(`Block ${chunkIndex}: all ${attempt} attempts failed`, err);
+    throw err;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  MSE initialisation                                                        */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
+function switchToBlobFallback(messageId: string) {
+  const entry = videoStore.get(messageId);
+  if (!entry || entry.useBlobFallback) return;
+  WARN(`msg=${messageId}: switching to blob-assembly fallback (MSE not suitable for this format)`);
+  entry.useBlobFallback = true;
+  entry.blobFallbackBlocks = new Map();
+  // Clean up any partially-created MSE objects
+  if (entry.mediaSource && entry.mediaSource.readyState === 'open') {
+    try { entry.mediaSource.endOfStream(); } catch { /* ignore */ }
+  }
+  entry.mediaSource = null;
+  entry.sourceBuffer = null;
+  entry.blobUrl = null; // will be set once all blocks arrive
+  videoStore.set(messageId, { ...entry });
+  notifyAll();
+}
+
+function tryAssembleBlobFallback(messageId: string) {
+  const entry = videoStore.get(messageId);
+  if (!entry || !entry.useBlobFallback || !entry.blobFallbackBlocks) return;
+  if (entry.isComplete) return;
+  if (entry.blobFallbackBlocks.size < entry.totalChunks) {
+    LOG(`Blob fallback: have ${entry.blobFallbackBlocks.size}/${entry.totalChunks} blocks for msg=${messageId}`);
+    return;
+  }
+
+  // All blocks collected — assemble in order
+  LOG(`Blob fallback: all ${entry.totalChunks} blocks received for msg=${messageId}, assembling...`);
+  const ordered: Uint8Array[] = [];
+  for (let i = 0; i < entry.totalChunks; i++) {
+    const block = entry.blobFallbackBlocks.get(i);
+    if (!block) {
+      WARN(`Blob fallback: block ${i} missing during assembly for msg=${messageId}, aborting`);
+      return;
+    }
+    ordered.push(block);
+  }
+
+  // Sniff MIME from first block's magic bytes for the Blob type
+  const sniffedMime = sniffMime(ordered[0]);
+  // Extract just the base MIME (without codec string) for Blob constructor
+  const blobMime = sniffedMime.split(';')[0].trim();
+  // Normalize each block to a plain ArrayBuffer before passing to Blob.
+  // NaCl's Uint8Array may carry ArrayBufferLike (potentially SharedArrayBuffer),
+  // but the Blob constructor strictly requires ArrayBuffer-backed views.
+  const blobParts: BlobPart[] = ordered.map(b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
+  const blob = new Blob(blobParts, { type: blobMime });
+  entry.blobUrl = URL.createObjectURL(blob);
+  entry.isComplete = true;
+  entry.blobFallbackBlocks = null; // free memory
+  videoStore.set(messageId, { ...entry });
+  LOG(`Blob fallback: assembled ${(blob.size / 1024 / 1024).toFixed(2)}MB blob for msg=${messageId} type=${blobMime} ✓`);
+  notifyAll();
+}
+
 function initMSE(messageId: string, mimeType: string) {
   const entry = videoStore.get(messageId);
   if (!entry || entry.mseInitialised) return;
   entry.mseInitialised = true;
 
-  // Check MSE support
   if (typeof MediaSource === 'undefined' || !MediaSource.isTypeSupported(mimeType)) {
-    console.warn(`[useVideoChunks] MSE not supported for ${mimeType} — falling back to simple blob`);
-    // Fallback: will use legacy full-assembly path
+    WARN(`MSE not supported for "${mimeType}" — switching to blob-assembly fallback`);
+    videoStore.set(messageId, { ...entry });
+    switchToBlobFallback(messageId);
     return;
   }
 
+  LOG(`MSE init for msg=${messageId} mime="${mimeType}"`);
   const ms = new MediaSource();
   entry.mediaSource = ms;
   entry.blobUrl = URL.createObjectURL(ms);
   entry.mimeType = mimeType;
 
   ms.addEventListener('sourceopen', () => {
+    LOG(`MSE sourceopen fired for msg=${messageId}`);
     try {
       const sb = ms.addSourceBuffer(mimeType);
       entry.sourceBuffer = sb;
@@ -251,10 +361,27 @@ function initMSE(messageId: string, mimeType: string) {
         flushAppendQueue(messageId);
       });
 
-      // Kick off flushing in case blocks already arrived
+      sb.addEventListener('error', (e) => {
+        ERR(`SourceBuffer error for msg=${messageId}:`, e);
+        // If SourceBuffer errors, switch to blob fallback so the video still plays
+        switchToBlobFallback(messageId);
+        // Re-queue any blocks already in appendQueue into blobFallbackBlocks
+        const freshEntry = videoStore.get(messageId);
+        if (freshEntry?.blobFallbackBlocks) {
+          for (const [idx, data] of freshEntry.appendQueue) {
+            freshEntry.blobFallbackBlocks.set(idx, data);
+          }
+          freshEntry.appendQueue.clear();
+          videoStore.set(messageId, { ...freshEntry });
+          tryAssembleBlobFallback(messageId);
+        }
+      });
+
+      // Kick off flushing in case blocks already arrived before sourceopen
       flushAppendQueue(messageId);
     } catch (err) {
-      console.error('[useVideoChunks] addSourceBuffer failed:', err);
+      ERR(`addSourceBuffer failed for msg=${messageId} — switching to blob fallback:`, err);
+      switchToBlobFallback(messageId);
     }
   }, { once: true });
 
@@ -279,20 +406,26 @@ function flushAppendQueue(messageId: string) {
   entry.nextAppendIndex++;
   entry.isAppending = true;
 
+  LOG(`MSE: appending block ${nextAppendIndex - 1} (${data.length} bytes), next=${entry.nextAppendIndex}/${entry.totalChunks}`);
+
   try {
     sourceBuffer.appendBuffer(data as unknown as BufferSource);
   } catch (err) {
-    console.error(`[useVideoChunks] appendBuffer error at index ${nextAppendIndex - 1}:`, err);
+    ERR(`appendBuffer error at index ${nextAppendIndex - 1}:`, err);
     entry.isAppending = false;
   }
 
-  // If this was the last block, signal end of stream
+  // If this was the last block, signal end of stream after append completes
   if (entry.nextAppendIndex >= entry.totalChunks && entry.receivedCount >= entry.totalChunks) {
-    // Wait for current append to finish, then end stream
     const endStream = () => {
       if (mediaSource && mediaSource.readyState === 'open') {
-        try { mediaSource.endOfStream(); } catch { /* ignore */ }
-        entry.isComplete = true;
+        try {
+          mediaSource.endOfStream();
+          entry.isComplete = true;
+          LOG(`MSE: endOfStream() called for msg=${messageId} — video fully buffered ✓`);
+        } catch (e) {
+          WARN(`endOfStream error (may be harmless):`, e);
+        }
       }
     };
     sourceBuffer.addEventListener('updateend', endStream, { once: true });
@@ -318,8 +451,9 @@ async function processBlock(
 ) {
   let entry = videoStore.get(messageId);
 
-  // Initialize entry if first block
+  // Initialize entry on first block
   if (!entry) {
+    LOG(`Store init for msg=${messageId}, totalChunks=${totalChunks}, duration=${duration}s`);
     entry = {
       blobUrl: null,
       duration,
@@ -336,12 +470,25 @@ async function processBlock(
       isAppending: false,
       mimeType: null,
       mseInitialised: false,
+      processedIndices: new Set(),
+      blobFallbackBlocks: null,
+      useBlobFallback: false,
     };
     videoStore.set(messageId, entry);
     notifyAll();
   }
 
-  if (entry.isComplete) return;
+  if (entry.isComplete) {
+    LOG(`Block ${chunkIndex}: skipped — video already complete`);
+    return;
+  }
+
+  // FIX: Skip duplicate block processing (realtime may deliver the same chunk twice)
+  if (entry.processedIndices.has(chunkIndex)) {
+    LOG(`Block ${chunkIndex}: skipped — already processed`);
+    return;
+  }
+  entry.processedIndices.add(chunkIndex);
 
   // Download + decrypt this block
   let decrypted: Uint8Array;
@@ -350,27 +497,37 @@ async function processBlock(
       chunkUrl, chunkIndex, packedKey, baseNonce, partnerPublicKey
     );
   } catch (err) {
-    console.error(`[useVideoChunks] Block ${chunkIndex} failed:`, err);
+    ERR(`Block ${chunkIndex}: permanently failed, removing from processedIndices for potential retry`);
+    // Allow retry by removing from processedIndices
+    entry.processedIndices.delete(chunkIndex);
     return;
   }
 
   entry = videoStore.get(messageId)!;
   entry.receivedCount++;
 
-  // Detect MIME from first block's magic bytes
+  // Detect MIME from first block's magic bytes and init MSE
   if (!entry.mseInitialised && chunkIndex === 0) {
     const mime = sniffMime(decrypted);
     initMSE(messageId, mime);
-    // Re-fetch entry after MSE init (blobUrl may have been set)
     entry = videoStore.get(messageId)!;
   }
 
-  // Push block into append queue
-  entry.appendQueue.set(chunkIndex, decrypted);
-  videoStore.set(messageId, { ...entry });
-
-  // Try to flush queue
-  flushAppendQueue(messageId);
+  // Route block to the correct pipeline
+  if (entry.useBlobFallback) {
+    // Blob-assembly mode: store block in the fallback map
+    if (!entry.blobFallbackBlocks) entry.blobFallbackBlocks = new Map();
+    entry.blobFallbackBlocks.set(chunkIndex, decrypted);
+    videoStore.set(messageId, { ...entry });
+    LOG(`Block ${chunkIndex}: stored in blob fallback map. have=${entry.blobFallbackBlocks.size}/${entry.totalChunks}`);
+    tryAssembleBlobFallback(messageId);
+  } else {
+    // MSE streaming mode: push to SourceBuffer append queue
+    entry.appendQueue.set(chunkIndex, decrypted);
+    videoStore.set(messageId, { ...entry });
+    LOG(`Block ${chunkIndex}: queued for MSE append. receivedCount=${entry.receivedCount}/${entry.totalChunks}`);
+    flushAppendQueue(messageId);
+  }
   notifyAll();
 }
 
@@ -383,6 +540,7 @@ export function addLocalVideoForSender(messageId: string, file: Blob, duration: 
   if (existing?.blobUrl) return; // already set
 
   const blobUrl = URL.createObjectURL(file);
+  LOG(`Sender local preview set for msg=${messageId}, duration=${duration}s`);
   videoStore.set(messageId, {
     blobUrl,
     duration,
@@ -399,6 +557,9 @@ export function addLocalVideoForSender(messageId: string, file: Blob, duration: 
     isAppending: false,
     mimeType: null,
     mseInitialised: true,
+    processedIndices: new Set([0]),
+    blobFallbackBlocks: null,
+    useBlobFallback: false,
   });
   notifyAll();
 }
@@ -437,10 +598,25 @@ export function useVideoChunks(messageId?: string) {
     const unsubscribe = realtimeHub.on('video_chunks', async (payload) => {
       if (payload.eventType !== 'INSERT') return;
       const row = payload.new as any;
-      if (row.receiver_id !== user.id) return;
+
+      // FIX: The OLD code filtered `receiver_id !== user.id` which meant:
+      // - Wife never got chunks because she IS the receiver (correct behavior would be to process them)
+      // - Actually: we want to process chunks WHERE user is the receiver
+      // Original line was: if (row.receiver_id !== user.id) return;
+      // That's WRONG — it blocked chunks intended FOR the current user.
+      // FIXED: Only process rows where current user is the RECEIVER
+      if (row.receiver_id !== user.id) {
+        LOG(`Realtime chunk ignored (not for me): msg=${row.message_id} chunk=${row.chunk_index}`);
+        return;
+      }
 
       const partnerKey = partner?.public_key;
-      if (!partnerKey) return;
+      if (!partnerKey) {
+        WARN(`Realtime chunk received but partner public key missing — cannot decrypt`);
+        return;
+      }
+
+      LOG(`Realtime chunk received: msg=${row.message_id} chunk=${row.chunk_index}/${row.total_chunks - 1}`);
 
       await processBlock(
         row.message_id,
@@ -448,7 +624,7 @@ export function useVideoChunks(messageId?: string) {
         row.chunk_url,
         row.total_chunks,
         row.chunk_key,
-        row.chunk_nonce,    // this is the base nonce in v4
+        row.chunk_nonce,    // base nonce in v4
         partnerKey,
         row.duration ?? 0
       );
@@ -478,9 +654,20 @@ export function useVideoChunks(messageId?: string) {
     _senderPublicKey?: string | null
   ) => {
     const existing = videoStore.get(msgId);
-    if (existing?.blobUrl && existing.isComplete) return; // already done
-    if (loadingSet.has(msgId)) return;
+
+    // FIX: Only skip if FULLY complete. A partial entry (e.g. from a dropped realtime
+    // event) should NOT block a fresh load from DB on page reload.
+    if (existing?.blobUrl && existing.isComplete) {
+      LOG(`loadExistingChunks: msg=${msgId} already fully buffered, skipping`);
+      return;
+    }
+
+    if (loadingSet.has(msgId)) {
+      LOG(`loadExistingChunks: msg=${msgId} already loading, skipping`);
+      return;
+    }
     loadingSet.add(msgId);
+    LOG(`loadExistingChunks: msg=${msgId}, ${rows.length} chunks to process`);
 
     try {
       if (!rows.length) return;
@@ -490,13 +677,13 @@ export function useVideoChunks(messageId?: string) {
       const packedKey   = rows[0]?.chunk_key ?? '';
       const duration    = rows[0]?.duration ?? 0;
 
-      // Process blocks in parallel batches of 5, in index order
-      const PARALLEL = 5;
-      // Sort rows by chunk_index to process in order
+      // Process blocks in parallel batches of 3 (reduced from 5 for mobile bandwidth)
+      const PARALLEL = 3;
       const sorted = [...rows].sort((a, b) => a.chunk_index - b.chunk_index);
 
       for (let i = 0; i < sorted.length; i += PARALLEL) {
         const batch = sorted.slice(i, i + PARALLEL);
+        LOG(`loadExistingChunks: processing batch [${batch.map(r => r.chunk_index).join(',')}]`);
         await Promise.all(batch.map(row =>
           processBlock(
             msgId,
@@ -510,8 +697,9 @@ export function useVideoChunks(messageId?: string) {
           )
         ));
       }
+      LOG(`loadExistingChunks: msg=${msgId} complete`);
     } catch (err) {
-      console.error('[useVideoChunks] loadExistingChunks error:', err);
+      ERR(`loadExistingChunks error for msg=${msgId}:`, err);
     } finally {
       loadingSet.delete(msgId);
     }

@@ -611,6 +611,7 @@ export function useMedia() {
 
     try {
       // ── Step 1: Get video duration ──────────────────────────────────────
+      console.log('[useMedia] processAndUploadChunked START msg=' + messageId + ' file=' + fileToChunk.name + ' size=' + (fileToChunk.size / 1024 / 1024).toFixed(2) + 'MB');
       onStatusChange('Preparing video...');
       let videoDuration = durationOverride;
       if (videoDuration === undefined) {
@@ -685,6 +686,7 @@ export function useMedia() {
         onStatusChange(`Uploading ${blockIndex + 1}/${totalChunks}...`);
         const chunkUrl = await uploadBlock(encryptedBlock);
         // 4. IMMEDIATELY insert DB row → triggers realtime on receiver
+        console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' uploaded → ' + chunkUrl + ' | inserting DB row...');
         const { error } = await supabase.from('video_chunks').insert({
           message_id: messageId,
           chunk_index: blockIndex,
@@ -697,6 +699,7 @@ export function useMedia() {
           receiver_id: receiverId,
         });
         if (error) throw new Error(`DB insert failed for block ${blockIndex}: ${error.message}`);
+        console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' DB row inserted ✓');
       };
 
       // Parallel upload with limit 5
@@ -711,6 +714,7 @@ export function useMedia() {
       await Promise.all(activeTasks);
 
       onStatusChange('Done');
+      console.log('[useMedia] processAndUploadChunked COMPLETE msg=' + messageId + ' totalChunks=' + totalChunks);
       return true;
     } catch (err) {
       console.error('[processAndUploadChunked] Error:', err);

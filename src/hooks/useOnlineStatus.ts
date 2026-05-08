@@ -123,16 +123,20 @@ export function useOnlineStatus(
       if (document.visibilityState === 'hidden') {
         // Immediately untrack from presence (instant for partner)
         untrackMyStatus();
-        // Fire DB beacon after 1s (allows quick tab-switch without DB write)
-        visTimer = setTimeout(() => fireOfflineBeacon(uid), 1000);
+        // Fire DB beacon after 3s — longer window prevents false "just seen"
+        // on brief tab switches (DevTools, quick Alt+Tab, form popups, etc.)
+        visTimer = setTimeout(() => fireOfflineBeacon(uid), 3000);
       } else if (document.visibilityState === 'visible') {
-        // Re-track after a short settle to avoid thrashing
+        // Re-track after a short settle to avoid thrashing from rapid events.
+        // 800ms debounce: if multiple visibility changes happen in quick succession
+        // (e.g. Chrome DevTools opening, focus loss then re-focus), only the LAST
+        // one actually fires the online update.
         visTimer = setTimeout(() => {
           if (isUnlockedRef.current && userIdRef.current) {
             trackMyStatus(userIdRef.current, currentPageRef.current);
             setDbStatus(userIdRef.current, true);
           }
-        }, 500);
+        }, 800);
       }
     };
 
@@ -149,14 +153,15 @@ export function useOnlineStatus(
 
         if (!isActive) {
           untrackMyStatus();
-          visTimer = setTimeout(() => fireOfflineBeacon(uid), 1000);
+          // 3s delay on native too — prevents false offline on brief foreground loss
+          visTimer = setTimeout(() => fireOfflineBeacon(uid), 3000);
         } else {
           visTimer = setTimeout(() => {
             if (isUnlockedRef.current && userIdRef.current) {
               trackMyStatus(userIdRef.current, currentPageRef.current);
               setDbStatus(userIdRef.current, true);
             }
-          }, 500);
+          }, 800);
         }
       }).then(listener => {
         appStateListener = listener;

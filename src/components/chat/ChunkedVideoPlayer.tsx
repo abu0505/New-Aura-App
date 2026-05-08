@@ -1,22 +1,16 @@
 /**
- * ChunkedVideoPlayer.tsx  —  v3: Single-Blob Architecture
+ * ChunkedVideoPlayer.tsx  —  v4: MSE Streaming Architecture
  *
  * ARCHITECTURE:
- *  Previously tried to merge multiple decrypted MP4/WebM chunks by naive
- *  byte-concatenation. This was fundamentally broken because each chunk
- *  was a standalone MP4 with its own ftyp+moov+mdat — the browser only
- *  played the first one.
+ *   The useVideoChunks hook handles all complexity:
+ *     1. Per-block encryption: each 5MB block has its own derived nonce
+ *     2. Receiver downloads + decrypts blocks as they arrive (realtime)
+ *     3. Blocks are appended to a SourceBuffer in strict order via MSE
+ *     4. A MediaSource blob URL is passed here for <video> playback
+ *     5. Video starts playing when first block(s) are buffered (YouTube-style)
  *
- *  NEW APPROACH (v3):
- *  The useVideoChunks hook now handles ALL the complexity:
- *    1. Downloads raw encrypted byte chunks
- *    2. Concatenates them (valid — it's just a byte stream)
- *    3. Decrypts the combined ciphertext once
- *    4. Provides a SINGLE blob URL for the complete original video
- *
- *  This player is now a simple video player that receives one chunk
- *  with the fully assembled video. No merging, no transmuxing, no MSE.
- *  Just native <video> playback of a perfect video file.
+ *   This player receives the MSE blobUrl from chunks[0].blobUrl and
+ *   manages play/pause/seek/fullscreen UI on top.
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -111,6 +105,7 @@ export default function ChunkedVideoPlayer({
     // Only update if the src actually changed
     if (video.src === videoUrl) return;
 
+    console.log('[ChunkedVideoPlayer] Setting video.src to MSE/blob URL');
     video.src = videoUrl;
     // Do NOT call video.load() for blob: URLs (both regular blobs and MSE mediasource
     // URLs are accessed via blob: scheme). Calling load() on an MSE src resets the
@@ -120,9 +115,10 @@ export default function ChunkedVideoPlayer({
 
     if (autoPlay) {
       const tryPlay = () => {
+        console.log('[ChunkedVideoPlayer] canplay fired — attempting autoplay');
         video.play()
-          .then(() => { setIsPlaying(true); setIsBuffering(false); })
-          .catch(() => setIsBuffering(false));
+          .then(() => { console.log('[ChunkedVideoPlayer] autoplay started ✓'); setIsPlaying(true); setIsBuffering(false); })
+          .catch((e) => { console.warn('[ChunkedVideoPlayer] autoplay blocked:', e); setIsBuffering(false); });
       };
       // canplay fires earlier than canplaythrough — good for streaming
       video.addEventListener('canplay', tryPlay, { once: true });
@@ -284,11 +280,24 @@ export default function ChunkedVideoPlayer({
           }
         }}
         onProgress={updateBuffered}
-        onWaiting={() => setIsBuffering(true)}
-        onPlaying={() => setIsBuffering(false)}
-        onEnded={() => setIsPlaying(false)}
+        onWaiting={() => {
+          console.log('[ChunkedVideoPlayer] buffering...');
+          setIsBuffering(true);
+        }}
+        onPlaying={() => {
+          console.log('[ChunkedVideoPlayer] playing ✓');
+          setIsBuffering(false);
+        }}
+        onEnded={() => {
+          console.log('[ChunkedVideoPlayer] ended');
+          setIsPlaying(false);
+        }}
         onError={() => {
-          if (videoRef.current?.src && videoRef.current.src !== window.location.href) {
+          const v = videoRef.current;
+          if (v?.src && v.src !== window.location.href) {
+            const code = v.error?.code;
+            const msg = v.error?.message;
+            console.error('[ChunkedVideoPlayer] video error code=' + code + ' msg=' + msg);
             setError('Video could not be played. The format may not be supported.');
           }
         }}

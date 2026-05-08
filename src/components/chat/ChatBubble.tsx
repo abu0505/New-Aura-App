@@ -224,53 +224,69 @@ function ChatBubble({
     message.decrypted_media_url
   ]);
 
-  // Chunked video: load existing chunks from DB.
-  // Runs for BOTH sender (after upload completes or page reload)
-  // and receiver (to recover chunks that arrived before this component mounted).
-  // Key fix: depends on is_uploading so it re-runs when upload finishes.
+  // Chunked video: load existing chunks from DB on mount / after upload completes.
+  // Polls the DB with exponential backoff (1s → 2s → 4s → … up to 30s total)
+  // before declaring upload failure — this prevents false "Upload Failed" on page
+  // reload when the sender's upload is still in progress.
   useEffect(() => {
     if (!isChunkedVideo(message)) return;
-    if (!partnerPublicKey) {
-      return;
-    }
-    if (message.is_uploading) {
-      return;
-    }
+    if (!partnerPublicKey) return;
+    if (message.is_uploading) return; // still uploading locally — wait
 
     const existingChunks = getChunksForMessage(message.id);
-    // Only skip if we already have usable (decrypted) chunks
     if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) {
+      console.log('[ChatBubble] msg=' + message.id + ' already has decrypted chunks in store, skipping DB fetch');
       return;
     }
 
-    supabase
-      .from('video_chunks')
-      .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
-      .eq('message_id', message.id)
-      .order('chunk_index', { ascending: true })
-      .then(({ data, error }) => {
-        if (error) {
-          // Error fetching chunks from DB
-        } else if (data && data.length > 0) {
-          setHasUploadFailed(false);
-          loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
-        } else {
-          // If no chunks are found and the sender has finished uploading (is_uploading is false),
-          // it means the sender's video upload failed.
-          // However, for the receiver, is_uploading is always undefined/false initially because it's local state.
-          // So we only assume immediate failure for the sender. For the receiver, we check if it's an old message.
-          if (message.is_mine) {
-            if (!message.is_uploading) setHasUploadFailed(true);
-          } else {
-            const ageMs = Date.now() - new Date(message.created_at).getTime();
-            if (ageMs > 5 * 60 * 1000) { // 5 minute timeout for receiver (multi-media sends can be slow)
-              setHasUploadFailed(true);
-            }
-            // For recent messages, retry after 10s — chunks may still be uploading
-            // (especially in multi-media sends where images get priority)
-          }
-        }
-      });
+    let cancelled = false;
+    let attempt = 0;
+    const MAX_WAIT_MS = 30_000;  // give up after 30s total
+    const startedAt = Date.now();
+
+    const tryFetch = async () => {
+      if (cancelled) return;
+      attempt++;
+      console.log('[ChatBubble] loadExistingChunks attempt', attempt, 'for msg=' + message.id);
+
+      const { data, error } = await supabase
+        .from('video_chunks')
+        .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+        .eq('message_id', message.id)
+        .order('chunk_index', { ascending: true });
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('[ChatBubble] DB error fetching chunks for msg=' + message.id, error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('[ChatBubble] Found', data.length, 'chunks in DB for msg=' + message.id + ', loading...');
+        setHasUploadFailed(false);
+        loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
+        return;
+      }
+
+      // No chunks yet — decide whether to retry or declare failure
+      const elapsedMs = Date.now() - startedAt;
+      const retryDelayMs = Math.min(1000 * Math.pow(2, attempt - 1), 8000); // 1s, 2s, 4s, 8s, 8s...
+
+      if (elapsedMs + retryDelayMs < MAX_WAIT_MS) {
+        console.log('[ChatBubble] No chunks yet for msg=' + message.id + ', retrying in ' + retryDelayMs + 'ms (elapsed=' + elapsedMs + 'ms)');
+        await new Promise(res => setTimeout(res, retryDelayMs));
+        tryFetch();
+      } else {
+        // Truly no chunks after MAX_WAIT_MS — upload failed
+        console.warn('[ChatBubble] Upload failed: no chunks after', elapsedMs, 'ms for msg=' + message.id);
+        if (!cancelled) setHasUploadFailed(true);
+      }
+    };
+
+    tryFetch();
+
+    return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message.id, partnerPublicKey, message.is_uploading]);
 
