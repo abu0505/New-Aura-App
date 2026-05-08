@@ -1,25 +1,22 @@
 /**
- * ChunkedVideoPlayer.tsx  —  Direct Blob Architecture (v2)
+ * ChunkedVideoPlayer.tsx  —  v3: Single-Blob Architecture
  *
  * ARCHITECTURE:
- *  Previously used MSE (MediaSource Extensions) + mp4box transmuxing.
- *  That caused an infinite loading bug: FFmpeg's segment muxer produces
- *  fMP4 chunks (movflags=empty_moov+default_base_moof+frag_keyframe),
- *  and feeding those to MP4Box caused onReady to never fire because fMP4
- *  chunks don't contain a complete moov box. The MSE cleanup also wiped
- *  video.src after the direct-blob path already set it — a race condition.
+ *  Previously tried to merge multiple decrypted MP4/WebM chunks by naive
+ *  byte-concatenation. This was fundamentally broken because each chunk
+ *  was a standalone MP4 with its own ftyp+moov+mdat — the browser only
+ *  played the first one.
  *
- *  NEW APPROACH:
- *  1. As soon as the FIRST chunk is decrypted, set video.src to that blob.
- *  2. When ALL chunks are decrypted, concatenate them into one big Blob
- *     and replace video.src with the merged blob for seekable full playback.
- *  3. No MSE, no transmuxing, no race conditions — just native <video> playback.
+ *  NEW APPROACH (v3):
+ *  The useVideoChunks hook now handles ALL the complexity:
+ *    1. Downloads raw encrypted byte chunks
+ *    2. Concatenates them (valid — it's just a byte stream)
+ *    3. Decrypts the combined ciphertext once
+ *    4. Provides a SINGLE blob URL for the complete original video
  *
- *  This works because:
- *  - Each FFmpeg segment chunk is a valid standalone MP4 file.
- *  - Concatenating valid MP4 files byte-for-byte produces a playable file
- *    when the codec/container is consistent (which FFmpeg guarantees with -c copy).
- *  - The browser handles the merged blob as a single seekable video.
+ *  This player is now a simple video player that receives one chunk
+ *  with the fully assembled video. No merging, no transmuxing, no MSE.
+ *  Just native <video> playback of a perfect video file.
  */
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
@@ -60,18 +57,8 @@ export default function ChunkedVideoPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
-
-  // Track blob URLs we own so we can revoke them on unmount
-  const ownedBlobUrls = useRef<string[]>([]);
-
-  // Stable value refs
   const isPlayingRef = useRef(false);
-  const totalDurationRef = useRef(0);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Track the last merged blob URL we set to avoid re-merging identical chunks
-  const lastMergedKeyRef = useRef<string>('');
-  const isMergingRef = useRef(false);
 
   /* ── State ───────────────────────────────────────────────────────────── */
   const [hasStarted, setHasStarted] = useState(autoPlay);
@@ -84,140 +71,65 @@ export default function ChunkedVideoPlayer({
   const [isMuted, setIsMuted] = useState(false);
   const [volume] = useState(1);
   const [error, setError] = useState<string | null>(null);
-  // Dynamic aspect ratio — updated from actual video metadata once loaded.
   const [videoAspect, setVideoAspect] = useState<number>(56.25);
+  const [videoDuration, setVideoDuration] = useState(0);
 
   /* ── Sync refs ───────────────────────────────────────────────────────── */
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
 
-  /* ── Total duration from chunk metadata ──────────────────────────────── */
-  const totalDuration = useMemo(
-    () => {
-      if (duration && duration > 0) return duration;
-      return chunks.reduce((sum, c) => sum + (c.duration ?? 5), 0);
-    },
-    [chunks, duration],
-  );
-  useEffect(() => { totalDurationRef.current = totalDuration; }, [totalDuration]);
+  /* ── Determine video URL + streaming progress ───────────────────────── */
+  const videoUrl = useMemo(() => {
+    const readyChunk = chunks.find(c => c.blobUrl);
+    return readyChunk?.blobUrl ?? null;
+  }, [chunks]);
 
-  /* ── Cleanup owned blob URLs on unmount ──────────────────────────────── */
+  const isReady = !!videoUrl;
+
+  /** 0-100: how much has been appended to the SourceBuffer */
+  const bufferedPercent = useMemo(() => {
+    return chunks[0]?.bufferedPercent ?? 0;
+  }, [chunks]);
+
+  /** True once all blocks have been appended (endOfStream called) */
+  const isFullyBuffered = bufferedPercent >= 100;
+
+  /* ── Total duration ──────────────────────────────────────────────────── */
+  const totalDuration = useMemo(() => {
+    if (duration && duration > 0) return duration;
+    // From video element (most accurate once loaded)
+    if (videoDuration > 0) return videoDuration;
+    // From chunk metadata
+    const chunkDur = chunks.find(c => c.duration)?.duration;
+    if (chunkDur && chunkDur > 0) return chunkDur;
+    return 0;
+  }, [duration, videoDuration, chunks]);
+
+  /* ── Set video source when URL becomes available ─────────────────────── */
   useEffect(() => {
-    return () => {
-      for (const url of ownedBlobUrls.current) {
-        URL.revokeObjectURL(url);
-      }
-      ownedBlobUrls.current = [];
-    };
-  }, []);
+    const video = videoRef.current;
+    if (!video || !videoUrl) return;
+    // Only update if the src actually changed
+    if (video.src === videoUrl) return;
 
-  /* ═══════════════════════════════════════════════════════════════════════ */
-  /*  DIRECT BLOB PIPELINE                                                  */
-  /*                                                                        */
-  /*  Strategy:                                                             */
-  /*  Phase 1 — As soon as the FIRST chunk decrypts, set video.src so      */
-  /*            the user sees something playing immediately.                */
-  /*  Phase 2 — When ALL chunks are ready, merge them into a single Blob   */
-  /*            for a fully seekable playback experience.                   */
-  /* ═══════════════════════════════════════════════════════════════════════ */
-  useEffect(() => {
-    if (chunks.length === 0) return;
+    video.src = videoUrl;
+    // Do NOT call video.load() for blob: URLs (both regular blobs and MSE mediasource
+    // URLs are accessed via blob: scheme). Calling load() on an MSE src resets the
+    // MediaSource state machine and breaks playback. For plain blobs, the browser
+    // also handles it correctly without an explicit load() call.
+    if (!videoUrl.startsWith('blob:')) video.load();
 
-    const decryptedChunks = chunks.filter(c => c.isDecrypted && c.blobUrl);
-    if (decryptedChunks.length === 0) return;
-
-    const reportedTotal = chunks[0]?.totalChunks ?? chunks.length;
-    const allReady = decryptedChunks.length >= Math.min(reportedTotal, chunks.length);
-
-    // Build a cache key from the set of ready chunk indices
-    const readyKey = decryptedChunks.map(c => c.chunkIndex).sort((a, b) => a - b).join(',');
-
-    // Don't re-merge if we already processed this exact set of chunks
-    if (readyKey === lastMergedKeyRef.current) return;
-    if (isMergingRef.current) return;
-
-    isMergingRef.current = true;
-    lastMergedKeyRef.current = readyKey;
-
-    (async () => {
-      try {
-        const sortedChunks = [...decryptedChunks].sort((a, b) => a.chunkIndex - b.chunkIndex);
-
-        // Fetch blob data for all ready chunks
-        const fetchedBlobs = await Promise.all(
-          sortedChunks.map(c => fetch(c.blobUrl!).then(r => r.blob()))
-        );
-
-        if (fetchedBlobs.length === 0) return;
-
-        // Determine MIME type by sniffing the first blob's magic bytes
-        const firstBuffer = await fetchedBlobs[0].arrayBuffer();
-        const firstBytes = new Uint8Array(firstBuffer);
-        let mimeType = 'video/mp4';
-        if (firstBytes[0] === 0x1A && firstBytes[1] === 0x45 && firstBytes[2] === 0xDF && firstBytes[3] === 0xA3) {
-          mimeType = 'video/webm';
-        }
-
-        // For WebM: only use first chunk (WebM segments can't be naively concatenated)
-        // For MP4:  concatenate all ready chunks
-        let mergedBlob: Blob;
-        if (mimeType === 'video/webm') {
-          // WebM: use all chunks — webm cluster segments CAN be concatenated
-          mergedBlob = new Blob(fetchedBlobs, { type: mimeType });
-        } else {
-          // MP4: concatenate all ready chunks byte-for-byte
-          // FFmpeg segment muxer with -c copy guarantees this is valid
-          // Reconstruct first blob from its buffer to include it
-          const firstBlob = new Blob([firstBuffer], { type: mimeType });
-          const restBlobs = fetchedBlobs.slice(1);
-          mergedBlob = new Blob([firstBlob, ...restBlobs], { type: mimeType });
-        }
-
-        const newUrl = URL.createObjectURL(mergedBlob);
-        ownedBlobUrls.current.push(newUrl);
-
-        const video = videoRef.current;
-        if (!video) return;
-
-        // Preserve current playback position if video was already playing
-        const wasPlaying = !video.paused && !video.ended;
-        const prevTime = video.currentTime;
-
-        video.src = newUrl;
-        video.load();
-
-        // If all chunks are ready, set duration directly (avoids metadata ping)
-        if (allReady && totalDurationRef.current > 0) {
-          // The browser will detect the correct duration from the merged blob
-        }
-
-        if (wasPlaying || (autoPlay && allReady)) {
-          // Restore position and resume playback
-          video.addEventListener('loadedmetadata', () => {
-            if (prevTime > 0 && prevTime < (video.duration || Infinity)) {
-              video.currentTime = prevTime;
-            }
-            video.play()
-              .then(() => { setIsPlaying(true); setIsBuffering(false); })
-              .catch(() => setIsBuffering(false));
-          }, { once: true });
-        } else if (autoPlay && decryptedChunks.length === 1) {
-          // Start playing immediately on the first chunk
-          video.addEventListener('canplay', () => {
-            video.play()
-              .then(() => { setIsPlaying(true); setIsBuffering(false); })
-              .catch(() => setIsBuffering(false));
-          }, { once: true });
-        } else {
-          setIsBuffering(false);
-        }
-      } catch (err: any) {
-        setError('Video could not be loaded. Please try again.');
-      } finally {
-        isMergingRef.current = false;
-      }
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chunks, autoPlay]);
+    if (autoPlay) {
+      const tryPlay = () => {
+        video.play()
+          .then(() => { setIsPlaying(true); setIsBuffering(false); })
+          .catch(() => setIsBuffering(false));
+      };
+      // canplay fires earlier than canplaythrough — good for streaming
+      video.addEventListener('canplay', tryPlay, { once: true });
+    } else {
+      setIsBuffering(false);
+    }
+  }, [videoUrl, autoPlay]);
 
   /* ── Volume sync ────────────────────────────────────────────────────── */
   useEffect(() => {
@@ -270,12 +182,12 @@ export default function ChunkedVideoPlayer({
   const seekTo = useCallback((fraction: number) => {
     const v = videoRef.current;
     if (!v) return;
-    const dur = v.duration || totalDurationRef.current;
+    const dur = v.duration || totalDuration;
     if (!isFinite(dur) || dur <= 0) return;
     const target = fraction * dur;
     v.currentTime = Math.max(0, Math.min(target, dur));
     setCurrentTime(v.currentTime);
-  }, []);
+  }, [totalDuration]);
 
   const getFraction = useCallback((clientX: number) => {
     const bar = progressRef.current;
@@ -331,18 +243,9 @@ export default function ChunkedVideoPlayer({
   /*                               RENDER                                   */
   /* ═══════════════════════════════════════════════════════════════════════ */
 
-  // Effective duration — prefer video element's own duration when available
-  const effectiveDuration = useMemo(() => {
-    const v = videoRef.current;
-    if (v && isFinite(v.duration) && v.duration > 0) return v.duration;
-    return totalDuration;
-  }, [totalDuration]);
-
+  const effectiveDuration = totalDuration;
   const progressFraction = effectiveDuration > 0 ? currentTime / effectiveDuration : 0;
   const bufferFraction = effectiveDuration > 0 ? bufferedEnd / effectiveDuration : 0;
-
-  // Check if at least one chunk is ready
-  const firstReady = chunks.some(c => c.isDecrypted && !!c.blobUrl);
 
   return (
     <div
@@ -352,10 +255,10 @@ export default function ChunkedVideoPlayer({
       onTouchStart={flashControls}
       style={{ cursor: 'pointer' }}
     >
-      {/* Aspect ratio spacer — computed dynamically from actual video dimensions */}
+      {/* Aspect ratio spacer */}
       <div style={{ paddingBottom: `${videoAspect}%` }} />
 
-      {/* ── Single video element ────────────────────────────────────────── */}
+      {/* ── Video element ────────────────────────────────────────────────── */}
       <video
         ref={videoRef}
         playsInline
@@ -370,13 +273,14 @@ export default function ChunkedVideoPlayer({
           if (v && v.videoWidth > 0 && v.videoHeight > 0) {
             setVideoAspect((v.videoHeight / v.videoWidth) * 100);
           }
+          if (v && isFinite(v.duration) && v.duration > 0) {
+            setVideoDuration(v.duration);
+          }
         }}
         onDurationChange={() => {
-          // Force a re-render to pick up the new duration from the video element
           const v = videoRef.current;
           if (v && isFinite(v.duration) && v.duration > 0) {
-            totalDurationRef.current = v.duration;
-            setCurrentTime(ct => ct); // trigger re-render
+            setVideoDuration(v.duration);
           }
         }}
         onProgress={updateBuffered}
@@ -384,7 +288,6 @@ export default function ChunkedVideoPlayer({
         onPlaying={() => setIsBuffering(false)}
         onEnded={() => setIsPlaying(false)}
         onError={() => {
-          // Only show error if we actually tried to load something
           if (videoRef.current?.src && videoRef.current.src !== window.location.href) {
             setError('Video could not be played. The format may not be supported.');
           }
@@ -401,21 +304,14 @@ export default function ChunkedVideoPlayer({
 
       {/* ── Error Overlay ────────────────────────────────────────────────── */}
       {error && (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-50 bg-black/90 backdrop-blur-md"
-        >
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-50 bg-black/90 backdrop-blur-md">
           <span className="material-symbols-outlined text-red-500 text-5xl mb-3">error</span>
-          <p className="text-white font-medium text-sm leading-relaxed mb-2">
-            Playback Error
-          </p>
+          <p className="text-white font-medium text-sm leading-relaxed mb-2">Playback Error</p>
           <p className="text-white/70 text-xs font-mono bg-black/50 p-3 rounded-lg overflow-y-auto max-h-[100px] max-w-[90%] whitespace-pre-wrap">
             {error}
           </p>
           <button
-            onClick={() => {
-              setError(null);
-              lastMergedKeyRef.current = ''; // Force re-merge on retry
-            }}
+            onClick={() => setError(null)}
             className="mt-3 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
             style={{ background: 'var(--gold, #e4b45a)', color: '#000' }}
           >
@@ -424,8 +320,32 @@ export default function ChunkedVideoPlayer({
         </div>
       )}
 
-      {/* ── Loading overlay (no chunks decrypted yet) ──────────────────── */}
-      {!firstReady && !error && (
+      {/* ── Streaming progress overlay (while blocks are still downloading) ── */}
+      {isReady && !isFullyBuffered && !error && (
+        <div
+          className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-full"
+          style={{
+            zIndex: 25,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(6px)',
+            pointerEvents: 'none',
+          }}
+        >
+          <div
+            className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
+            style={{ borderColor: 'var(--gold, #e4b45a)', borderTopColor: 'transparent' }}
+          />
+          <span
+            className="text-[10px] font-semibold tabular-nums"
+            style={{ color: 'var(--gold-light, #f5d48a)' }}
+          >
+            {bufferedPercent}%
+          </span>
+        </div>
+      )}
+
+      {/* ── Loading overlay (video URL not yet available) ─────────────────── */}
+      {!isReady && !error && (
         <div
           className="absolute inset-0 flex flex-col items-center justify-center gap-2"
           style={{ zIndex: 20, background: 'rgba(0,0,0,0.8)' }}
@@ -445,13 +365,13 @@ export default function ChunkedVideoPlayer({
             className="relative text-[10px] font-semibold"
             style={{ color: 'var(--gold-light)' }}
           >
-            Buffering…
+            Assembling video…
           </span>
         </div>
       )}
 
-      {/* ── Poster / play button (before first play, after chunks ready) ── */}
-      {firstReady && !hasStarted && !error && (
+      {/* ── Poster / play button (before first play) ─────────────────── */}
+      {isReady && !hasStarted && !error && (
         <div
           className="absolute inset-0 z-10 flex items-center justify-center"
           onClick={(e) => { e.stopPropagation(); togglePlay(); }}

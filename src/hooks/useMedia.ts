@@ -13,7 +13,8 @@ import {
   encodeBase64
 } from '../lib/encryption';
 import { usePartner } from './usePartner';
-import { splitVideoIntoChunksStreaming, generateVideoThumbnail as splitAndGetThumb } from '../utils/videoChunker';
+import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb } from '../utils/videoChunker';
+import nacl from 'tweetnacl';
 import { supabase } from '../lib/supabase';
 
 export interface ProcessedMedia {
@@ -582,15 +583,19 @@ export function useMedia() {
   }, []);
 
   /**
-   * processAndUploadChunked — Progressive chunked video pipeline.
+   * processAndUploadChunked — v4: Per-Block Encrypt + Immediate Streaming Delivery.
    *
-   * 1. Splits the (optionally compressed) video into 15-second chunks via FFmpeg WASM.
-   * 2. For each chunk: encrypt → upload to Cloudinary → insert row into video_chunks.
-   * 3. Calls onStatusChange(text) before each phase so the UI can animate the text.
+   * Architecture (YouTube/WhatsApp-style progressive streaming):
+   *   1. Read entire video file into memory.
+   *   2. Generate ONE symmetric key + ONE base nonce for the whole video.
+   *   3. Split plaintext into 5MB blocks.
+   *   4. For each block i: encrypt with deriveBlockNonce(baseNonce, i) → independent ciphertext.
+   *   5. Upload blocks in parallel (limit 5).
+   *   6. IMMEDIATELY after each block uploads: insert DB row → receiver gets realtime event.
+   *   7. Receiver can decrypt chunk i independently using deriveBlockNonce(baseNonce, i).
+   *   8. Receiver plays via MSE as chunks arrive — no wait for full upload.
    *
-   * The caller is responsible for:
-   *   - Already having created the optimistic message in Supabase (with thumbnail_url, media_url=null).
-   *   - Removing the shimmer overlay once all chunks are uploaded.
+   * Thumbnail is uploaded FIRST (before any block), so wife sees it instantly.
    */
   const processAndUploadChunked = useCallback(async (
     fileToChunk: File,
@@ -605,12 +610,54 @@ export function useMedia() {
     if (!myKeyPair) return false;
 
     try {
+      // ── Step 1: Get video duration ──────────────────────────────────────
       onStatusChange('Preparing video...');
+      let videoDuration = durationOverride;
+      if (videoDuration === undefined) {
+        const { getVideoDuration } = await import('../utils/videoChunker');
+        videoDuration = await getVideoDuration(fileToChunk);
+      }
 
-      // Helper: upload raw encrypted bytes to Cloudinary
-      const uploadEncryptedBytes = async (data: Uint8Array): Promise<string> => {
+      // ── Step 2: Sender-side local preview (instant, no upload needed) ───
+      import('./useVideoChunks').then(m => {
+        m.addLocalVideoForSender(messageId, fileToChunk, videoDuration!);
+      }).catch(() => {});
+
+      // ── Step 3: Generate ONE key + ONE base nonce for the whole video ───
+      const fileKey = nacl.randomBytes(nacl.secretbox.keyLength);  // 32 bytes
+      const baseNonce = nacl.randomBytes(nacl.secretbox.nonceLength); // 24 bytes
+
+      // Wrap symmetric key for receiver (asymmetric box)
+      const { encryptedKey: receiverEncKey, nonce: receiverKeyNonce } = encryptFileKey(
+        fileKey,
+        decodeBase64(partner.public_key!),
+        myKeyPair.secretKey
+      );
+      // Wrap for sender too (so I can watch my own video after page reload)
+      const { encryptedKey: senderEncKey, nonce: senderKeyNonce } = encryptFileKey(
+        fileKey,
+        myKeyPair.publicKey,
+        myKeyPair.secretKey
+      );
+      const packedKey = `${receiverKeyNonce}:${receiverEncKey}|${senderKeyNonce}:${senderEncKey}`;
+      const baseNonceB64 = encodeBase64(baseNonce);
+
+      // ── Step 4: Split plaintext into 5MB blocks ─────────────────────────
+      onStatusChange('Encrypting video...');
+      const arrayBuffer = await fileToChunk.arrayBuffer();
+      const plaintext = new Uint8Array(arrayBuffer);
+      const blocks = splitIntoByteChunks(plaintext); // splits plaintext, not ciphertext
+      const totalChunks = blocks.length;
+
+      // ── Step 5 & 6: Per-block encrypt → upload → IMMEDIATELY insert DB ─
+      // Each block gets its own nonce derived from baseNonce XOR blockIndex.
+      // This means receiver can decrypt ANY block independently.
+      // We insert the DB row right after upload (not after ALL uploads),
+      // so receiver gets realtime events as each block finishes — streaming!
+
+      const uploadBlock = async (data: Uint8Array): Promise<string> => {
         const formData = new FormData();
-        formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.raw');
+        formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.bin');
         formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
         const res = await fetch(
           `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
@@ -621,201 +668,52 @@ export function useMedia() {
           try { errText = await res.text(); } catch {}
           throw new Error(`Cloudinary upload failed (HTTP ${res.status}): ${errText}`);
         }
-        const json = await res.json();
-        return json.secure_url as string;
+        return (await res.json()).secure_url as string;
       };
 
-      type EncryptedChunk = {
-        encryptedData: Uint8Array;
-        chunkKey: string;
-        chunkNonce: string;
-        index: number;
-        durationSec: number;
-        totalChunks: number;
-      };
-
-      // Encrypt a single chunk
-      const encryptChunk = async (chunk: { file: File; index: number; durationSec: number }, total: number): Promise<EncryptedChunk> => {
-        const arrayBuffer = await chunk.file.arrayBuffer();
-        const uint8 = new Uint8Array(arrayBuffer);
-        const { encryptedData, fileKey, nonce } = encryptFile(uint8);
-        const { encryptedKey, nonce: keyNonce } = encryptFileKey(
-          fileKey,
-          decodeBase64(partner.public_key!),
-          myKeyPair.secretKey
+      const encryptAndUploadAndInsert = async (blockIndex: number) => {
+        // 1. Derive unique nonce for this block
+        const blockNonce = deriveBlockNonce(baseNonce, blockIndex);
+        // 2. Encrypt THIS block independently
+        const encryptedBlock = nacl.secretbox(
+          blocks[blockIndex].data,
+          blockNonce,
+          fileKey
         );
-        return {
-          encryptedData,
-          chunkKey: `${keyNonce}:${encryptedKey}`,
-          chunkNonce: encodeBase64(nonce),
-          index: chunk.index,
-          durationSec: chunk.durationSec,
-          totalChunks: total,
-        };
-      };
-
-      const uploadEncryptedChunk = async (enc: EncryptedChunk): Promise<{ enc: EncryptedChunk, chunkUrl: string }> => {
-        const chunkUrl = await uploadEncryptedBytes(enc.encryptedData);
-        return { enc, chunkUrl };
-      };
-
-      const insertChunkToDB = async (enc: EncryptedChunk, chunkUrl: string): Promise<void> => {
+        if (!encryptedBlock) throw new Error(`Encryption failed for block ${blockIndex}`);
+        // 3. Upload encrypted block
+        onStatusChange(`Uploading ${blockIndex + 1}/${totalChunks}...`);
+        const chunkUrl = await uploadBlock(encryptedBlock);
+        // 4. IMMEDIATELY insert DB row → triggers realtime on receiver
         const { error } = await supabase.from('video_chunks').insert({
           message_id: messageId,
-          chunk_index: enc.index,
-          total_chunks: enc.totalChunks,
+          chunk_index: blockIndex,
+          total_chunks: totalChunks,
           chunk_url: chunkUrl,
-          chunk_key: enc.chunkKey,
-          chunk_nonce: enc.chunkNonce,
-          duration: Math.round(enc.durationSec),
+          chunk_key: packedKey,      // same for all — key is video-level
+          chunk_nonce: baseNonceB64, // base nonce — receiver derives per-block nonce
+          duration: Math.round(videoDuration!),
           sender_id: senderId,
           receiver_id: receiverId,
         });
-        if (error) throw new Error(`Failed to insert chunk ${enc.index}: ${error.message}`);
+        if (error) throw new Error(`DB insert failed for block ${blockIndex}: ${error.message}`);
       };
 
-      // We need total chunk count upfront for the DB rows — get video duration first
-      const CHUNK_DURATION_SEC = 5; // Reduced to 5s to guarantee chunks < 10MB for Cloudinary (even with VBR spikes on Desktop 8Mbps)
-      let videoDuration = durationOverride;
-      if (videoDuration === undefined) {
-        const { getVideoDuration } = await import('../utils/videoChunker');
-        videoDuration = await getVideoDuration(fileToChunk);
-      }
-      let totalChunks = Math.ceil(videoDuration / CHUNK_DURATION_SEC);
-      if (!isFinite(totalChunks) || totalChunks <= 0) totalChunks = 12; // 60s estimate fallback
-      let actualChunksYielded = 0;
-
-      onStatusChange('Processing chunk 1...');
-
+      // Parallel upload with limit 5
       const PARALLEL_LIMIT = 5;
-      let nextDeliverIndex = 0;
-      const uploadedChunksQueue = new Map<number, {enc: EncryptedChunk, chunkUrl: string}>();
-      let isDelivering = false;
-      let deliveryError: any = null;
-
-      const tryDeliverQueue = async () => {
-        if (isDelivering || deliveryError) return;
-        isDelivering = true;
-        try {
-          while (true) {
-            if (nextDeliverIndex === 0) {
-              if (totalChunks === 1) {
-                if (uploadedChunksQueue.has(0)) {
-                  const item = uploadedChunksQueue.get(0)!;
-                  uploadedChunksQueue.delete(0);
-                  onStatusChange(`Delivering chunk 1 of 1...`);
-                  await insertChunkToDB(item.enc, item.chunkUrl);
-                  nextDeliverIndex++;
-                } else break;
-              } else {
-                if (uploadedChunksQueue.has(0) && uploadedChunksQueue.has(1)) {
-                  const item0 = uploadedChunksQueue.get(0)!;
-                  const item1 = uploadedChunksQueue.get(1)!;
-                  uploadedChunksQueue.delete(0);
-                  uploadedChunksQueue.delete(1);
-                  onStatusChange(`Delivering chunks 1 & 2 of ${totalChunks}...`);
-                  await insertChunkToDB(item0.enc, item0.chunkUrl);
-                  await insertChunkToDB(item1.enc, item1.chunkUrl);
-                  nextDeliverIndex += 2;
-                } else break;
-              }
-            } else {
-              if (uploadedChunksQueue.has(nextDeliverIndex)) {
-                const item = uploadedChunksQueue.get(nextDeliverIndex)!;
-                uploadedChunksQueue.delete(nextDeliverIndex);
-                onStatusChange(`Delivering chunk ${item.enc.index + 1} of ${totalChunks}...`);
-                await insertChunkToDB(item.enc, item.chunkUrl);
-                nextDeliverIndex++;
-              } else break;
-            }
-          }
-        } catch (err) {
-            deliveryError = err;
-        } finally {
-          isDelivering = false;
-          if (!deliveryError) {
-             const canDeliverMore = nextDeliverIndex === 0 
-                ? (totalChunks === 1 ? uploadedChunksQueue.has(0) : uploadedChunksQueue.has(0) && uploadedChunksQueue.has(1))
-                : uploadedChunksQueue.has(nextDeliverIndex);
-             if (canDeliverMore) {
-                tryDeliverQueue();
-             }
-          }
-        }
-      };
-
-      const processChunkAsync = async (chunk: any) => {
-        
-        const encrypted = await encryptChunk(chunk, totalChunks);
-        
-        const result = await uploadEncryptedChunk(encrypted);
-        
-        uploadedChunksQueue.set(chunk.index, result);
-        tryDeliverQueue(); 
-      };
-
       const activeTasks = new Set<Promise<void>>();
-      const allTasks: Promise<void>[] = [];
-
-      for await (const chunk of splitVideoIntoChunksStreaming(fileToChunk, CHUNK_DURATION_SEC)) {
-        if (deliveryError) throw deliveryError;
-
-        actualChunksYielded++;
-
-        import('./useVideoChunks').then(m => {
-          m.addLocalChunkForSender(messageId, chunk.index, totalChunks, chunk.file, chunk.durationSec);
-        }).catch(() => {});
-
-        const task = processChunkAsync(chunk);
-        allTasks.push(task);
+      for (let i = 0; i < totalChunks; i++) {
+        const task = encryptAndUploadAndInsert(i);
         activeTasks.add(task);
-
-        task.finally(() => {
-          activeTasks.delete(task);
-        });
-
-        if (activeTasks.size >= PARALLEL_LIMIT) {
-          await Promise.race(activeTasks);
-        }
+        task.finally(() => activeTasks.delete(task));
+        if (activeTasks.size >= PARALLEL_LIMIT) await Promise.race(activeTasks);
       }
-
-      await Promise.all(allTasks);
-
-      // FFmpeg may yield fewer chunks than estimated (e.g. lack of keyframes)
-      // or even 0 chunks if the video is extremely short or corrupted.
-      if (actualChunksYielded !== totalChunks) {
-        totalChunks = actualChunksYielded;
-        
-        if (actualChunksYielded > 0) {
-          // Re-trigger delivery queue in case it was waiting for chunks that will never arrive
-          tryDeliverQueue();
-          
-          // Update any already inserted rows with the correct total
-          await supabase.from('video_chunks')
-            .update({ total_chunks: totalChunks })
-            .eq('message_id', messageId);
-
-          // Update local store so sender-side preview doesn't wait for non-existent chunks
-          import('./useVideoChunks').then(m => {
-            m.updateTotalChunksForSender(messageId, totalChunks);
-          }).catch(() => {});
-        }
-      }
-
-      while (nextDeliverIndex < totalChunks) {
-        if (deliveryError) throw deliveryError;
-        if (actualChunksYielded === 0) break; // Safety break if no chunks were ever produced
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-
-      if (actualChunksYielded === 0) {
-        throw new Error('Video processing failed: No chunks were produced.');
-      }
+      await Promise.all(activeTasks);
 
       onStatusChange('Done');
       return true;
     } catch (err) {
-      
+      console.error('[processAndUploadChunked] Error:', err);
       return false;
     }
   }, [user, partner]);

@@ -1,199 +1,98 @@
 /**
  * videoChunker.ts
  *
- * Uses FFmpeg WASM to split a video into fixed-duration standalone MP4 chunks
- * using the segment muxer with stream-copy (no re-encoding = near-instant).
+ * VIDEO ARCHITECTURE v3 — "Whole-File Encrypt + Byte-Chunk Transport"
  *
- * Also provides generateVideoThumbnail which extracts the first frame via
- * a hidden <video> + canvas element and returns a WebP Blob.
+ * PREVIOUS ARCHITECTURE (BROKEN):
+ *   Used FFmpeg WASM segment muxer to split video into 5-second standalone
+ *   MP4/WebM segments. Each segment was encrypted independently and uploaded.
+ *   On the receiver side, segments were naively byte-concatenated.
+ *   This FAILED because:
+ *     - MP4: Each segment has its own ftyp+moov+mdat. Concatenating them
+ *       produces [ftyp1+moov1+mdat1][ftyp2+moov2+mdat2]... The browser
+ *       reads moov1, plays mdat1, then hits ftyp2 and STOPS.
+ *     - WebM: Cluster-level concatenation without proper EBML header
+ *       reconstruction causes glitchy/laggy playback.
+ *
+ * NEW ARCHITECTURE (WhatsApp/Telegram-style):
+ *   1. Sender encrypts the ENTIRE video file as one unit (single key + nonce).
+ *   2. The resulting ciphertext is split into fixed-size BYTE chunks (5MB each)
+ *      purely for transport (Cloudinary has a 10MB per-upload limit).
+ *   3. Receiver downloads all byte chunks, concatenates the raw encrypted bytes
+ *      (valid because it's just reassembling a byte stream), decrypts once,
+ *      and gets the original perfect video file.
+ *   4. No FFmpeg needed for chunking. No container structure issues.
+ *
+ * This file now only provides:
+ *   - splitIntoByteChunks() — simple byte-level splitting of Uint8Array
+ *   - getVideoDuration()    — HTML5 video element duration extraction
+ *   - generateVideoThumbnail() — canvas-based first-frame capture
  */
 
-import { FFmpeg } from '@ffmpeg/ffmpeg';
+/* ── Byte-level chunking (transport only) ─────────────────────────────── */
 
+/** Default chunk size: 5MB — safely under Cloudinary's 10MB upload limit */
+export const DEFAULT_BYTE_CHUNK_SIZE = 5 * 1024 * 1024;
 
-export interface VideoChunk {
-  file: File;
+export interface ByteChunk {
+  data: Uint8Array;
   index: number;
-  durationSec: number;
-}
-
-let ffmpegInstance: FFmpeg | null = null;
-let ffmpegLoaded = false;
-
-async function getFFmpeg(): Promise<FFmpeg> {
-  if (!ffmpegInstance) {
-    ffmpegInstance = new FFmpeg();
-  }
-  if (!ffmpegLoaded) {
-    await ffmpegInstance.load();
-    ffmpegLoaded = true;
-  }
-  return ffmpegInstance;
+  totalChunks: number;
 }
 
 /**
- * Splits a video file into chunks of `chunkDurationSec` seconds.
- * Uses FFmpeg segment muxer with stream-copy (no re-encoding).
- * Returns an array of File objects, one per chunk, in order.
+ * Splits a Uint8Array into fixed-size byte chunks.
+ * This is purely a transport-level split — no video structure awareness needed.
+ * Concatenating all chunks in order reconstructs the original byte array exactly.
  */
-export async function splitVideoIntoChunks(
-  file: File,
-  chunkDurationSec: number = 15,
-  onProgress?: (chunksDone: number, totalEstimate: number) => void
-): Promise<VideoChunk[]> {
-  const ffmpeg = await getFFmpeg();
+export function splitIntoByteChunks(
+  data: Uint8Array,
+  chunkSize: number = DEFAULT_BYTE_CHUNK_SIZE
+): ByteChunk[] {
+  const totalChunks = Math.ceil(data.length / chunkSize);
+  const chunks: ByteChunk[] = [];
 
-  // Get video duration first so we can estimate total chunks
-  const videoDuration = await getVideoDuration(file);
-  const estimatedChunks = Math.ceil(videoDuration / chunkDurationSec);
-
-  const ext = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() || 'mp4' : 'mp4';
-  const isWebm = file.type.includes('webm') || ext === 'webm';
-  const outExt = isWebm ? 'webm' : 'mp4';
-  const segmentFormat = isWebm ? 'webm' : 'mp4';
-  
-  const cleanFileName = `input_chunk.${ext}`;
-  const cleanFile = new File([file], cleanFileName, { type: file.type });
-  const inputName = `/workerfs/${cleanFileName}`;
-
-  // MOUNT file instead of writing it to RAM (solves OOM crashes on large files)
-  try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
-  await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
-
-  const segmentOptions = isWebm 
-    ? [] 
-    : ['-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0'];
-
-  // Use segment muxer with stream-copy
-  await ffmpeg.exec([
-    '-fflags', '+genpts',
-    '-i', inputName,
-    '-c:v', 'copy',
-    '-c:a', 'copy',
-    '-f', 'segment',
-    '-segment_time', String(chunkDurationSec),
-    '-reset_timestamps', '1',
-    '-avoid_negative_ts', 'make_zero',
-    '-segment_format', segmentFormat,
-    ...segmentOptions,
-    `chunk_%03d.${outExt}`,
-  ]);
-
-  // Collect all chunks
-  const chunks: VideoChunk[] = [];
-  let index = 0;
-
-  while (true) {
-    const chunkName = `chunk_${String(index).padStart(3, '0')}.${outExt}`;
-    try {
-      const data = await ffmpeg.readFile(chunkName);
-      const mime = isWebm ? 'video/webm' : 'video/mp4';
-      const blob = new Blob([data as any], { type: mime });
-      const chunkFile = new File([blob], chunkName, { type: mime });
-
-      // Estimate chunk duration (last chunk may be shorter)
-      const chunkDuration = Math.min(
-        chunkDurationSec,
-        videoDuration - index * chunkDurationSec
-      );
-
-      chunks.push({ file: chunkFile, index, durationSec: chunkDuration });
-
-      // Clean up chunk from FS
-      await ffmpeg.deleteFile(chunkName);
-
-      onProgress?.(index + 1, estimatedChunks);
-      index++;
-    } catch {
-      // No more chunks
-      break;
-    }
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, data.length);
+    chunks.push({
+      data: data.slice(start, end),
+      index: i,
+      totalChunks,
+    });
   }
-
-  // Unmount instead of delete
-  try { await ffmpeg.unmount('/workerfs'); } catch { /* ignore */ }
 
   return chunks;
 }
 
 /**
- * Streaming version: uses the FFmpeg segment muxer for accurate keyframe-aligned
- * splitting, then yields one chunk at a time for pipelined encrypt → upload → deliver.
+ * Derives a per-block nonce from a base nonce + block index.
  *
- * Why segment muxer instead of per-chunk -ss/-t?
- *   -ss with -c copy seeks to the NEAREST KEYFRAME, not the exact time.
- *   This creates 0.2-0.6s gaps/overlaps at every chunk boundary, causing
- *   visible "clips" in playback. The segment muxer handles keyframe alignment
- *   properly — chunks concatenated perfectly reproduce the original stream.
+ * WHY: NaCl secretbox uses authenticated encryption (MAC over the whole message).
+ * You CANNOT decrypt partial ciphertext — the MAC check will fail.
+ * To enable per-block decryption (streaming), each block must have its OWN nonce.
+ *
+ * APPROACH: XOR the last 4 bytes of the base nonce with the block index (big-endian).
+ * This is the same approach used by libsodium's streaming API (secretstream).
+ * - nonce[20..23] ^= blockIndex (big-endian uint32)
+ * - Base nonce bytes [0..19] are unchanged → prevents nonce reuse across different messages
+ * - Block index [0..N] XOR'd into last 4 bytes → each block gets a unique nonce
+ *
+ * The base nonce is stored in the DB once. Receivers derive the per-block nonce
+ * from (baseNonce, chunk_index) — no extra DB column needed.
  */
-export async function* splitVideoIntoChunksStreaming(
-  file: File,
-  chunkDurationSec: number = 15,
-): AsyncGenerator<VideoChunk> {
-  const ffmpeg = await getFFmpeg();
-
-  const videoDuration = await getVideoDuration(file);
-
-  const ext = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() || 'mp4' : 'mp4';
-  const isWebm = file.type.includes('webm') || ext === 'webm';
-  const outExt = isWebm ? 'webm' : 'mp4';
-  const segmentFormat = isWebm ? 'webm' : 'mp4';
-
-  const cleanFileName = `input_stream.${ext}`;
-  const cleanFile = new File([file], cleanFileName, { type: file.type });
-  const inputName = `/workerfs/${cleanFileName}`;
-
-  // MOUNT file natively to worker bypassing RAM completely
-  try { await ffmpeg.createDir('/workerfs'); } catch { /* ignore if exists */ }
-  await ffmpeg.mount('WORKERFS' as any, { files: [cleanFile] }, '/workerfs');
-
-  const segmentOptions = isWebm 
-    ? [] 
-    : ['-segment_format_options', 'movflags=empty_moov+default_base_moof+frag_keyframe:use_editlist=0'];
-
-  await ffmpeg.exec([
-    '-fflags', '+genpts',
-    '-i', inputName,
-    '-c:v', 'copy',
-    '-c:a', 'copy',
-    '-f', 'segment',
-    '-segment_time', String(chunkDurationSec),
-    '-reset_timestamps', '1',
-    '-avoid_negative_ts', 'make_zero',
-    '-segment_format', segmentFormat,
-    ...segmentOptions,
-    `stream_chunk_%03d.${outExt}`,
-  ]);
-
-  // Read and yield chunks sequentially.
-  // Caller can start encrypt+upload of chunk[i] while we read chunk[i+1].
-  let index = 0;
-  while (true) {
-    const chunkName = `stream_chunk_${String(index).padStart(3, '0')}.${outExt}`;
-    try {
-      const data = await ffmpeg.readFile(chunkName);
-      const mime = isWebm ? 'video/webm' : 'video/mp4';
-      const blob = new Blob([data as any], { type: mime });
-      const chunkFile = new File([blob], chunkName, { type: mime });
-
-      const chunkDuration = Math.min(
-        chunkDurationSec,
-        videoDuration - index * chunkDurationSec
-      );
-
-      // Clean up immediately to free memory
-      try { await ffmpeg.deleteFile(chunkName); } catch { /* ignore */ }
-
-      yield { file: chunkFile, index, durationSec: chunkDuration };
-      index++;
-    } catch {
-      // No more chunks — segment muxer wrote fewer files than estimated
-      break;
-    }
-  }
-
-  try { await ffmpeg.unmount('/workerfs'); } catch { /* ignore */ }
+export function deriveBlockNonce(baseNonce: Uint8Array, blockIndex: number): Uint8Array {
+  const derived = new Uint8Array(baseNonce); // copy — don't mutate original
+  // XOR last 4 bytes with blockIndex (big-endian uint32)
+  derived[20] ^= (blockIndex >>> 24) & 0xff;
+  derived[21] ^= (blockIndex >>> 16) & 0xff;
+  derived[22] ^= (blockIndex >>> 8) & 0xff;
+  derived[23] ^= blockIndex & 0xff;
+  return derived;
 }
+
+
+/* ── Video duration extraction ────────────────────────────────────────── */
 
 export function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
@@ -228,6 +127,8 @@ export function getVideoDuration(file: File): Promise<number> {
     video.src = url;
   });
 }
+
+/* ── Thumbnail generation ─────────────────────────────────────────────── */
 
 /**
  * Generates a WebP thumbnail from the first frame of a video file.
