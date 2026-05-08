@@ -628,7 +628,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             await acquireSlot();
             try {
               const uploadedThumb = await processAndUpload(
-                new File([thumbBlob], 'thumb.jpg', { type: 'image/jpeg' }),
+                // thumbBlob is always WebP (from canvas.toBlob 'image/webp') — match the file type
+                new File([thumbBlob], 'thumb.webp', { type: thumbBlob.type || 'image/webp' }),
                 { optimize: false }
               );
               if (uploadedThumb) {

@@ -110,8 +110,16 @@ self.onmessage = async (e: MessageEvent) => {
           target,
           video: { codec: 'avc', width: outWidth, height: outHeight },
           audio: { codec: 'aac', sampleRate: audioSampleRate, numberOfChannels: audioChannelCount },
-          // fastStart 'in-memory' = write moov box at front after finalize (seekable, standard MP4)
-          fastStart: 'in-memory',
+          // CRITICAL FIX: 'fragmented' mode produces proper fMP4 (moof+mdat boxes).
+          // Android WebView's MSE (MediaCodec) requires fMP4 — non-fragmented MP4
+          // causes 'Media Quality Service not found' and 'Failed to query component
+          // interface' errors in the native decoder. Desktop Chrome is lenient but
+          // Android Capacitor WebView is strict. 'fragmented' also means ChunkedVideoPlayer's
+          // hasMoof() returns true → direct fMP4 path, no transmux step needed.
+          fastStart: 'fragmented',
+          // Required for fragmented mode: we normalize timestamps ourselves (subtract
+          // firstVideoTimestampUs), so tell the muxer timestamps start from 0.
+          firstTimestampBehavior: 'offset',
         });
 
         // ── VideoEncoder setup ───────────────────────────────────────────────

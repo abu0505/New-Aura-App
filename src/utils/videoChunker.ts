@@ -260,25 +260,17 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
       safeResolve(null);
     }, 3000);
 
-    video.onloadedmetadata = () => {
-      // Seek to 0.1s to avoid all-black first frame on some codecs
-      // For WebMs without cues, this might hang, which is why we have the timeout
-      video.currentTime = 0.1;
-    };
-
-    video.onseeked = () => {
+    const captureFrame = () => {
       try {
         clearTimeout(timeout);
         const canvas = document.createElement('canvas');
-        // Cap thumbnail to 480x270 (16:9) for fast transfer
-        const MAX_W = 480;
-        const MAX_H = 270;
-        const ratio = Math.min(
-          MAX_W / (video.videoWidth || MAX_W),
-          MAX_H / (video.videoHeight || MAX_H)
-        );
-        canvas.width = Math.round((video.videoWidth || MAX_W) * ratio);
-        canvas.height = Math.round((video.videoHeight || MAX_H) * ratio);
+        // Preserve actual aspect ratio — do NOT force 16:9 (breaks portrait videos)
+        // Cap longest dimension to 480px for reasonable file sizes
+        const w = video.videoWidth || 480;
+        const h = video.videoHeight || 480;
+        const ratio = Math.min(480 / w, 480 / h, 1); // never upscale
+        canvas.width = Math.round(w * ratio);
+        canvas.height = Math.round(h * ratio);
 
         const ctx = canvas.getContext('2d');
         if (!ctx) { safeResolve(null); return; }
@@ -292,6 +284,24 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
       } catch {
         safeResolve(null);
       }
+    };
+
+    video.onloadedmetadata = () => {
+      // Try currentTime=0 first — most reliable for Android WebM recordings
+      // where seeking to 0.1s may hang if the media engine hasn't buffered enough.
+      video.currentTime = 0;
+    };
+
+    video.onseeked = () => {
+      if (video.videoWidth === 0 && video.currentTime < 0.05) {
+        // Not rendered yet — try 0.1s as one-time fallback
+        const prev = video.onseeked;
+        video.onseeked = captureFrame;
+        void prev; // suppress unused warning
+        video.currentTime = 0.1;
+        return;
+      }
+      captureFrame();
     };
 
     video.onerror = () => {
