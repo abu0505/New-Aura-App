@@ -636,23 +636,30 @@ function ChatBubble({
               {/* Use a poster image approach instead of loading video bytes just for thumbnail */}
               {decryptedMediaUrl ? (
                 <div
-                  className="w-full bg-black"
+                  className="w-full bg-black flex items-center justify-center"
                   style={{ minHeight: 120, position: 'relative' }}
                 >
-                  {/* Hidden video to extract first frame as poster */}
-                  <video
-                    src={decryptedMediaUrl}
-                    className="w-full pointer-events-none"
-                    preload="none"
-                    playsInline
-                    muted
-                    style={{ display: 'block' }}
-                  />
+                  {isChunkedVideo(message) ? (
+                    <img 
+                      src={decryptedMediaUrl} 
+                      className="w-full h-auto object-cover pointer-events-none" 
+                      alt="Video thumbnail"
+                    />
+                  ) : (
+                    <video
+                      src={decryptedMediaUrl}
+                      className="w-full pointer-events-none"
+                      preload="none"
+                      playsInline
+                      muted
+                      style={{ display: 'block' }}
+                    />
+                  )}
                 </div>
               ) : (
                 <div className="w-full h-28 bg-black/40 animate-pulse rounded-xl" />
               )}
-              {!message.is_uploading && !message.is_chunked_video && (
+              {!message.is_uploading && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
                   <span className="material-symbols-outlined text-white text-4xl shadow-xl">play_circle</span>
                 </div>
@@ -668,7 +675,11 @@ function ChatBubble({
             {isPreviewOpen && (
               <MediaViewer 
                 url={decryptedMediaUrl ?? ''} 
-                type="video" 
+                type={isChunkedVideo(message) ? "chunked_video" : "video"}
+                chunks={isChunkedVideo(message) ? hookChunks : undefined}
+                thumbnailUrl={isChunkedVideo(message) ? (decryptedMediaUrl ?? undefined) : undefined}
+                duration={message.duration || undefined}
+                messageId={message.id}
                 onClose={() => setIsPreviewOpen(false)} 
               />
             )}
