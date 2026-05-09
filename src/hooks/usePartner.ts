@@ -16,6 +16,9 @@ export interface PartnerProfile {
   key_history: { public_key: string; created_at: string }[] | null;
 }
 
+let cachedPartner: PartnerProfile | null = null;
+let fetchPromise: Promise<PartnerProfile | null> | null = null;
+
 /**
  * Fetches and subscribes to the partner's profile from the DB.
  * 
@@ -26,8 +29,8 @@ export interface PartnerProfile {
  */
 export function usePartner() {
   const { user } = useAuth();
-  const [partner, setPartner] = useState<PartnerProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [partner, setPartner] = useState<PartnerProfile | null>(cachedPartner);
+  const [loading, setLoading] = useState(!cachedPartner);
 
   useEffect(() => {
     if (!user) {
@@ -36,22 +39,36 @@ export function usePartner() {
     }
 
     const fetchPartner = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id,display_name,avatar_url,avatar_key,avatar_nonce,public_key,is_online,last_seen,status_message,key_history')
-          .neq('id', user.id)
-          .limit(1)
-          .single();
-
-        if (!error && data) {
-          setPartner(data as PartnerProfile);
-        }
-      } catch (err) {
-        
-      } finally {
+      if (cachedPartner) {
+        setPartner(cachedPartner);
         setLoading(false);
+        return;
       }
+      
+      if (!fetchPromise) {
+        fetchPromise = (async () => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('id,display_name,avatar_url,avatar_key,avatar_nonce,public_key,is_online,last_seen,status_message,key_history')
+              .neq('id', user.id)
+              .limit(1)
+              .single();
+              
+            if (!error && data) {
+              cachedPartner = data as PartnerProfile;
+              return cachedPartner;
+            }
+            return null;
+          } finally {
+            fetchPromise = null;
+          }
+        })();
+      }
+
+      const data = await fetchPromise;
+      if (data) setPartner(data);
+      setLoading(false);
     };
 
     fetchPartner();
@@ -63,6 +80,7 @@ export function usePartner() {
         const newProfile = payload.new as PartnerProfile;
         // Only update if it's not our own profile
         if (newProfile.id !== user.id) {
+          cachedPartner = newProfile;
           setPartner(newProfile);
         }
       }

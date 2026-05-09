@@ -1324,7 +1324,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     // Sender's messages are marked read by the partner (the receiver), not by us.
     const partnerMessageIds = messageIds.filter(id => {
       const msg = messagesRef.current.find(m => m.id === id);
-      return msg && msg.sender_id !== user.id;
+      return msg && msg.sender_id !== user.id && !msg.is_read;
     });
 
     if (partnerMessageIds.length === 0) return;
