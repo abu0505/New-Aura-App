@@ -1,0 +1,502 @@
+[
+  {
+    "event_message": "Config reloaded",
+    "id": "85fbdc89-df94-441e-aca1-f98d6989b81e",
+    "timestamp": 1778346157982467
+  },
+  {
+    "event_message": "Failed to query the role settings. {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "d7228662-c5ea-4484-8794-08764eb42caa",
+    "timestamp": 1778346154264741
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "7eda2d4e-5335-4c30-ba1b-a8c08508fb0c",
+    "timestamp": 1778346153935908
+  },
+  {
+    "event_message": "Connection Pool initialized with a maximum size of 10 connections",
+    "id": "8b9d1c91-2146-461d-bc32-b790004c7fa2",
+    "timestamp": 1778346114987937
+  },
+  {
+    "event_message": "Successfully connected to PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "id": "6696ba6a-1999-4c9a-b8a3-0373f2ed2cd4",
+    "timestamp": 1778346114393695
+  },
+  {
+    "event_message": "Attempting to reconnect to the database in 4 seconds...",
+    "id": "0836dafd-3ff0-4fd1-9d59-79b8197f7879",
+    "timestamp": 1778346108629282
+  },
+  {
+    "event_message": "Failed to load the schema cache using db-schemas=public,graphql_public and db-extra-search-path=public,extensions. {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "36fbea46-8c2a-4dad-bf57-87752d584cbc",
+    "timestamp": 1778346103801097
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "dae10aad-ea11-43b2-b9e0-b314285d8692",
+    "timestamp": 1778346099079502
+  },
+  {
+    "event_message": "Config reloaded",
+    "id": "90644912-122c-441f-bc0d-cdaf76af0175",
+    "timestamp": 1778346062525219
+  },
+  {
+    "event_message": "Connection Pool initialized with a maximum size of 10 connections",
+    "id": "3a78bdac-4104-48fb-be92-c275697fcd73",
+    "timestamp": 1778346009997722
+  },
+  {
+    "event_message": "Successfully connected to PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "id": "eaae91c4-fa42-465e-b637-9924aebdb853",
+    "timestamp": 1778346007890357
+  },
+  {
+    "event_message": "Attempting to reconnect to the database in 2 seconds...",
+    "id": "dd1b8fa2-ec2d-4676-b96d-d52488e8bdfa",
+    "timestamp": 1778345942803521
+  },
+  {
+    "event_message": "Failed to load the schema cache using db-schemas=public,graphql_public and db-extra-search-path=public,extensions. {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "5ee7b286-ba10-4b7b-983f-bc9eae33e63e",
+    "timestamp": 1778345935911659
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "cf8dac28-bf5a-4d72-9930-37ae20123c0a",
+    "timestamp": 1778345932707716
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:49 +0000] \"GET /messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A37%3A55.056309%2B00%3A00&order=created_at.asc HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "b9a017d0-1fb5-464e-b79e-e320d94d5f64",
+    "timestamp": 1778345931895676
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:49 +0000] \"GET /garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "d2ccf6d1-2b2f-4e0a-9507-26868b25a59b",
+    "timestamp": 1778345931037364
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:49 +0000] \"GET /messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "408bb505-e51d-4c52-b720-6b4aac65f282",
+    "timestamp": 1778345931037364
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:41 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "e5031b7a-4438-4577-aaf1-99108f7497d1",
+    "timestamp": 1778345930051526
+  },
+  {
+    "event_message": "{\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}",
+    "id": "67268d91-31be-4fe8-b510-f42fb9491aad",
+    "timestamp": 1778345929304533
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:26 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "915f87e9-7512-456c-bab7-13468f8d5d5b",
+    "timestamp": 1778345929055498
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:19 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "6f5f4f15-2bb7-4782-bdef-935f9af9661a",
+    "timestamp": 1778345929055498
+  },
+  {
+    "event_message": "{\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}",
+    "id": "ced46723-deab-4b90-a96d-a595da1d59cc",
+    "timestamp": 1778345929055498
+  },
+  {
+    "event_message": "{\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}",
+    "id": "19ae9875-07b5-4e46-9f71-e0d2e8c7e8e9",
+    "timestamp": 1778345929055498
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:58:19 +0000] \"PATCH /profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 HTTP/1.1\" 503 119 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "b605a178-b56d-4f37-8024-2ff81a955e80",
+    "timestamp": 1778345924398232
+  },
+  {
+    "event_message": "{\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}09/May/2026:16:57:47 +0000: {\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}",
+    "id": "5c0d1bca-6de5-4f00-a500-d89b4a145f94",
+    "timestamp": 1778345903194199
+  },
+  {
+    "event_message": "{\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}09/May/2026:16:57:47 +0000: {\"code\":\"PGRST002\",\"details\":null,\"hint\":null,\"message\":\"Could not query the database for the schema cache. Retrying.\"}",
+    "id": "1d6c4743-1e2e-40d3-a6b2-7685d2916295",
+    "timestamp": 1778345880302014
+  },
+  {
+    "event_message": "Config reloaded",
+    "id": "f74583e9-3888-477b-ab19-116fce09eda6",
+    "timestamp": 1778345811222074
+  },
+  {
+    "event_message": "Connection Pool initialized with a maximum size of 10 connections",
+    "id": "70ac64e4-62f1-49c1-8339-b1f1df61c85f",
+    "timestamp": 1778345802211734
+  },
+  {
+    "event_message": "Successfully connected to PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "id": "57c704f8-e1cc-4829-bfa6-997792dd7211",
+    "timestamp": 1778345802005793
+  },
+  {
+    "event_message": "Attempting to reconnect to the database in 1 seconds...",
+    "id": "8e5f1aec-a99f-4751-96c3-76b52b399aa2",
+    "timestamp": 1778345787212742
+  },
+  {
+    "event_message": "Failed to load the schema cache using db-schemas=public,graphql_public and db-extra-search-path=public,extensions. {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "5a8500d9-c86e-4a91-aa97-263a9c96622b",
+    "timestamp": 1778345784427879
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "672ca706-c7a6-46f9-a729-3aaa7cb067c6",
+    "timestamp": 1778345784020692
+  },
+  {
+    "event_message": "Config reloaded",
+    "id": "1da609ce-7d15-4b3a-80d6-f4b6e7bed04e",
+    "timestamp": 1778345738153177
+  },
+  {
+    "event_message": "Failed to query the role settings. {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "7d1968cb-9b98-4311-9167-5bb5ba032e67",
+    "timestamp": 1778345702129879
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "a45457c6-7606-4e54-97c2-a3cdc138d6be",
+    "timestamp": 1778345699038392
+  },
+  {
+    "event_message": "Successfully connected to PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "id": "30ce9ab2-4ead-4491-bd43-b4e9f83882c5",
+    "timestamp": 1778345661346440
+  },
+  {
+    "event_message": "Connection Pool initialized with a maximum size of 10 connections",
+    "id": "f2238f69-cd6f-4f02-bcad-fac7c2e53b9a",
+    "timestamp": 1778345661346440
+  },
+  {
+    "event_message": "Received a schema cache reload message on the \"pgrst\" channel",
+    "id": "49b51674-5573-4a06-ae3a-c71f6380caed",
+    "timestamp": 1778345637405450
+  },
+  {
+    "event_message": "Received a schema cache reload message on the \"pgrst\" channel",
+    "id": "7a2284b9-0bad-49ff-a999-c832d9a98666",
+    "timestamp": 1778345634166229
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:52:46 +0000] \"GET /messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%286b6ca136-da79-4670-866e-292cfbc3d9cb%29 HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "8eb814f1-8873-4fca-9105-186bd9891441",
+    "timestamp": 1778345569045678
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:52:46 +0000] \"GET /pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "2e83ecda-1551-41a1-9a73-a5123be0f94e",
+    "timestamp": 1778345567004366
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}09/May/2026:16:52:38 +0000: {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "9f63411c-aee7-4ec0-846c-60012f81c3fd",
+    "timestamp": 1778345564410354
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:50:56 +0000] \"GET /messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=25 HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "b14f021f-54d9-4c38-911a-6fe8bb3c8565",
+    "timestamp": 1778345458984575
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "430f9c40-0c33-4df8-b698-e6a18333c165",
+    "timestamp": 1778345456122230
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:49:22 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "33386f16-498b-4931-99c1-28abe9651106",
+    "timestamp": 1778345362650686
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "d09b7518-e433-4d84-9717-f15889589cb8",
+    "timestamp": 1778345362602061
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:49:20 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "1b79c953-9eef-4e1b-a2c9-4a52e5965f51",
+    "timestamp": 1778345361440328
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "e991105c-e80f-4186-bcf3-2540dbfe84fe",
+    "timestamp": 1778345360653012
+  },
+  {
+    "event_message": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}",
+    "id": "fba7874c-c421-4650-ab4c-5b018f3749cf",
+    "timestamp": 1778345352556932
+  },
+  {
+    "event_message": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}",
+    "id": "34a682a4-beb2-443c-a369-b4c3f9a055ab",
+    "timestamp": 1778345344916964
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:49:00 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.8bb51234-4a86-470f-9f7d-96a95f551952&limit=1 HTTP/1.1\" 504 111 \"http://localhost/\" \"Mozilla/5.0 (Linux; Android 12; CPH2095 Build/RKQ1.211119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.137 Mobile Safari/537.36\"",
+    "id": "f8a7aae9-1269-42d8-9bf3-91a0a112144f",
+    "timestamp": 1778345344058644
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:49:00 +0000] \"GET /garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "102a9cb4-3560-4552-8764-701d71c62c9c",
+    "timestamp": 1778345343862332
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:44:27 +0000] \"POST /messages HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "1e66d825-8675-4d40-9a25-b623cf4a23f8",
+    "timestamp": 1778345067391788
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "295ef0c3-b723-4e66-a196-4dd5d8e4e00f",
+    "timestamp": 1778345066970678
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:43:51 +0000] \"PATCH /notifications?id=in.%28e8b2aab8-8464-4145-af3f-e873ce66aaf5%2Cd26d6b3b-913c-4dff-9208-ba740450fce2%2C5853c057-e2d5-4522-b030-a4e7ed8901d3%29 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "e1a269cc-7413-49a8-9731-062f1d8e1802",
+    "timestamp": 1778345034375269
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "b3eb3d82-a1c0-47b5-a8e1-4515a570ea20",
+    "timestamp": 1778345030452962
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:43:23 +0000] \"PATCH /messages?id=in.%28d0db04f0-63c2-4837-af6c-ab6451fd1052%2Cf2913534-4e5e-4140-84d3-64fad7bc1e08%2Cd750ed59-3e51-4820-a925-32bf496e2488%2C66cd5cfc-1123-49c0-b543-0cde7c870221%2Cf9cb5017-0df3-4080-a4f6-a4bd98aaa28f%2C68ca543e-da69-4c13-8df2-b30b8a68e998%2Cf128f07b-abdb-4567-ba61-6aaedf449784%29 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "c3d90b1a-1628-48e6-88aa-61e966001300",
+    "timestamp": 1778345009416817
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "7b82bf8b-1806-4914-bae2-a737a09a45aa",
+    "timestamp": 1778344989799472
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:42:50 +0000] \"PATCH /profiles?id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "d146b03b-6a39-46ee-866d-9b668206acf5",
+    "timestamp": 1778344973672114
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:42:45 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "e7626547-04b7-481f-9d05-5f003592761c",
+    "timestamp": 1778344972380922
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "e6010fd0-bf4c-4b98-8cc8-0ae8eb885ffd",
+    "timestamp": 1778344970371384
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "5d91bd53-9e04-4e50-80e3-fef16c49f467",
+    "timestamp": 1778344956871021
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:42:12 +0000] \"PATCH /notifications?id=in.%28e8b2aab8-8464-4145-af3f-e873ce66aaf5%2Cd26d6b3b-913c-4dff-9208-ba740450fce2%2C5853c057-e2d5-4522-b030-a4e7ed8901d3%29 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "11b95123-f25b-4e95-86d7-b15156988210",
+    "timestamp": 1778344946026247
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "8a66cae3-092c-483a-b75d-d2817ea9b3f1",
+    "timestamp": 1778344930147579
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:42:05 +0000] \"PATCH /notifications?id=in.%28e8b2aab8-8464-4145-af3f-e873ce66aaf5%2Cd26d6b3b-913c-4dff-9208-ba740450fce2%2C5853c057-e2d5-4522-b030-a4e7ed8901d3%29 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "23f30d1a-d6b7-4df1-b35b-cc49a636b530",
+    "timestamp": 1778344929801362
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "f12c8158-6b18-4bec-bac3-36653143de1b",
+    "timestamp": 1778344921802233
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:41:24 +0000] \"GET /profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "07286787-2cf9-465c-ade6-1e0722b76e88",
+    "timestamp": 1778344893761292
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:41:24 +0000] \"PATCH /messages?id=in.%28f128f07b-abdb-4567-ba61-6aaedf449784%2C68ca543e-da69-4c13-8df2-b30b8a68e998%2Cf9cb5017-0df3-4080-a4f6-a4bd98aaa28f%29 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "dda87748-8b20-4396-92ab-d1b16d88a727",
+    "timestamp": 1778344893424041
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:41:24 +0000] \"GET /streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "fbc8f2f9-7e3c-4e1b-b79d-ee73d9ac6d61",
+    "timestamp": 1778344893029916
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "90b4f873-bbad-40cc-b1ed-b51d5f9ed0e0",
+    "timestamp": 1778344883483345
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}09/May/2026:16:41:13 +0000: {\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "31523a4c-6af6-401e-b32c-f62ecd342704",
+    "timestamp": 1778344882407346
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:39:11 +0000] \"PATCH /profiles?id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 HTTP/1.1\" 500 100 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "a1b82b84-5a3d-4c2f-ae70-329020b2acab",
+    "timestamp": 1778344771573235
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "9bffb6f4-8c24-47cb-8b4c-b9fe772da054",
+    "timestamp": 1778344748947701
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:38:27 +0000] \"PATCH /messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "a049627a-5a23-4cf7-a6fe-1cf70777f6cc",
+    "timestamp": 1778344717827153
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "6f160851-254a-4571-a37d-794cbfa19d65",
+    "timestamp": 1778344707410771
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:37:03 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "5df1c76a-c65a-4a3e-bc8e-56d71ff73a6c",
+    "timestamp": 1778344623174018
+  },
+  {
+    "event_message": "{\"code\":\"57014\",\"details\":null,\"hint\":null,\"message\":\"canceling statement due to statement timeout\"}",
+    "id": "2567f851-1aa8-4bc5-9146-8d009012c1dd",
+    "timestamp": 1778344623079068
+  },
+  {
+    "event_message": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}",
+    "id": "5ed66e1a-8b01-47f8-b988-a2e2cc030377",
+    "timestamp": 1778344529508164
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "6d26c03a-171b-4311-b3dd-a4e5d43d85fb",
+    "timestamp": 1778344524130565
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"PATCH /messages?id=in.%28d750ed59-3e51-4820-a925-32bf496e2488%29 HTTP/1.1\" 504 111 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "5ac8d038-eb53-41ae-a78b-7f396efb57bd",
+    "timestamp": 1778344524130565
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "44665206-1f80-41fa-b915-87b38abeb293",
+    "timestamp": 1778344524130474
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "ee3eda9e-5723-439e-afd8-0496aeab7352",
+    "timestamp": 1778344524130474
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"PATCH /notifications?id=in.%2824df96d0-0115-4097-a2e5-cce1bb7ab3bc%2C743e1655-023a-44ac-ab70-a5a41c95a84d%2C102e047a-45be-454c-851f-30daa349b9bc%2Cb965be9d-a067-4f93-ad7a-db0ab26bb212%2C89d76339-cd30-4e61-8916-044032886a62%2Cc1ec4777-962d-4738-812b-03c6ee570e56%29 HTTP/1.1\" 504 111 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "eae1c647-8f8c-499a-937f-8333a4d33154",
+    "timestamp": 1778344524130474
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "4592d42a-60e1-4218-a5fe-021cec31a883",
+    "timestamp": 1778344524130474
+  },
+  {
+    "event_message": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}",
+    "id": "b63bb85e-7672-423b-b727-344bf0052817",
+    "timestamp": 1778344524130303
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "88cacca6-4282-4dd1-8eeb-9c9a28433faf",
+    "timestamp": 1778344524130303
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "53ee3e8f-2e8a-4675-82dc-7984d8565c7e",
+    "timestamp": 1778344524130303
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"PATCH /notifications?id=in.%2824df96d0-0115-4097-a2e5-cce1bb7ab3bc%2C743e1655-023a-44ac-ab70-a5a41c95a84d%2C102e047a-45be-454c-851f-30daa349b9bc%2Cb965be9d-a067-4f93-ad7a-db0ab26bb212%2C89d76339-cd30-4e61-8916-044032886a62%2Cc1ec4777-962d-4738-812b-03c6ee570e56%29 HTTP/1.1\" 504 111 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "acf7563c-87ad-44fd-bb0c-4f25d3d4575f",
+    "timestamp": 1778344524130303
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"PATCH /notifications?id=in.%2824df96d0-0115-4097-a2e5-cce1bb7ab3bc%2C743e1655-023a-44ac-ab70-a5a41c95a84d%2C102e047a-45be-454c-851f-30daa349b9bc%2Cb965be9d-a067-4f93-ad7a-db0ab26bb212%2C89d76339-cd30-4e61-8916-044032886a62%2Cc1ec4777-962d-4738-812b-03c6ee570e56%29 HTTP/1.1\" 504 111 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "6e785532-b3d7-41d2-bbe0-f6fa7b7c0bc6",
+    "timestamp": 1778344524130303
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"PATCH /messages?id=in.%28296dff74-aec6-4bbe-8143-995191cf7d47%2C665f2862-8904-405c-ba26-270a1a4cdcb8%2C9708148e-6a16-48f7-8714-b37cb05808f9%2Caab6ffc0-941c-43d6-86ca-5606a544e0de%2C09d0fc9d-b441-4cbe-a1ca-8c74fb6f016f%2C86f318d3-a9b4-42f3-b152-96b36fb36140%2C07c3d4d5-0cb7-4b06-bd63-07858f22b3af%2Cd4556fc5-3bc4-4919-b30c-db61df8985cd%2Cb6debecc-1a83-4897-b231-90d344a44faf%2C0105c3fc-1287-4f3b-b0f7-563a325affd3%2C646c7ffd-9db6-4253-96d2-3e3702c38de9%2Ceaa4e59a-88b3-41f3-bc4b-8eee0a5b99c6%2C52761cfc-b461-465e-93f1-cb472c1e8b27%2C620d6841-8261-4ad5-8668-0002df6262f3%2Cf2840311-ffca-49d3-89a6-479076bc5c2b%2C2e5004be-2aaa-48e5-b1c9-91ae12f51e64%2Cbf3e062f-092f-4c10-954a-1a0cd8deafd2%2C66cd5cfc-1123-49c0-b543-0cde7c870221%2Cd750ed59-3e51-4820-a925-32bf496e2488%29 HTTP/1.1\" 504 111 \"\" \"Dalvik/2.1.0 (Linux; U; Android 12; CPH2095 Build/RKQ1.211119.001)\"",
+    "id": "464cb3dd-ee0e-41f1-9bbd-c4a9021b6102",
+    "timestamp": 1778344523417578
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:35:23 +0000] \"GET /profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36\"",
+    "id": "0903b565-0a00-4414-b9ea-3eedc500a02c",
+    "timestamp": 1778344523417578
+  },
+  {
+    "event_message": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}",
+    "id": "56d17136-f9d9-4111-ae48-bc9aeef784b9",
+    "timestamp": 1778343852958629
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:24:11 +0000] \"GET /profiles?select=public_key%2Cbackup_secret_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 HTTP/1.1\" 504 111 \"http://localhost/\" \"Mozilla/5.0 (Linux; Android 12; CPH2095 Build/RKQ1.211119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.137 Mobile Safari/537.36\"",
+    "id": "6f65ce15-be50-46aa-9a00-5e40198502e7",
+    "timestamp": 1778343851573822
+  },
+  {
+    "event_message": "{\"code\":\"PGRST003\",\"details\":null,\"hint\":null,\"message\":\"Timed out acquiring connection from connection pool.\"}",
+    "id": "971379ec-8490-4125-ac09-37f546c47fae",
+    "timestamp": 1778343847938856
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:24:02 +0000] \"PATCH /messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "b0c68158-2375-4670-9c83-6d3cfeb7578a",
+    "timestamp": 1778343847284740
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:23:59 +0000] \"GET /profiles?select=public_key%2Cbackup_secret_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 HTTP/1.1\" 504 111 \"http://localhost/\" \"Mozilla/5.0 (Linux; Android 12; CPH2095 Build/RKQ1.211119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.137 Mobile Safari/537.36\"",
+    "id": "55d47de4-6acf-43e0-84ca-bee0ec28d6e5",
+    "timestamp": 1778343846829045
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:23:59 +0000] \"GET /profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 HTTP/1.1\" 504 111 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "97f67bef-ce6f-45cf-8e3d-507f37d73c91",
+    "timestamp": 1778343846751870
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:24:01 +0000] \"HEAD /messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "90a73fdb-7c04-4570-849f-c1891e18f6a9",
+    "timestamp": 1778343846686170
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:24:01 +0000] \"PATCH /messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false HTTP/1.1\" 500 100 \"http://localhost:5173/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36\"",
+    "id": "691b6996-65ae-413f-82ef-527f8b4002ac",
+    "timestamp": 1778343846617796
+  },
+  {
+    "event_message": "127.0.0.1 - authenticated [09/May/2026:16:23:59 +0000] \"GET /profiles?select=public_key%2Cbackup_secret_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 HTTP/1.1\" 504 111 \"http://localhost/\" \"Mozilla/5.0 (Linux; Android 12; CPH2095 Build/RKQ1.211119.001; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/147.0.7727.137 Mobile Safari/537.36\"",
+    "id": "0a5989c0-f7cc-4e86-a862-af2f5862fb52",
+    "timestamp": 1778343846505413
+  }
+]

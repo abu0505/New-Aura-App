@@ -357,12 +357,14 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           const el = entry.target as HTMLElement;
-          const msgId = el.getAttribute('data-message-id');
+          const msgIds = el.getAttribute('data-message-id')?.split(',') || [];
           const isMine = el.getAttribute('data-is-mine') === 'true';
           const isRead = el.getAttribute('data-is-read') === 'true';
 
-          if (msgId && !isMine && !isRead) {
-            unreadMessages.add(msgId);
+          if (msgIds.length > 0 && !isMine && !isRead) {
+            msgIds.forEach(id => {
+              if (id) unreadMessages.add(id.trim());
+            });
 
             if (flushTimer) clearTimeout(flushTimer);
             flushTimer = setTimeout(flushReads, 1000);

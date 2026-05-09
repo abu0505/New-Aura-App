@@ -287,6 +287,9 @@ function MediaGridBubble({
   return (
     <div
       ref={bubbleRef}
+      data-message-id={messages.map(m => m.id).join(',')}
+      data-is-mine={isMine}
+      data-is-read={messages[messages.length - 1]?.is_read || false}
       className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group z-10 overflow-visible`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}

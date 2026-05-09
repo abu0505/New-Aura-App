@@ -1,0 +1,902 @@
+[
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "duration: 14202.963 ms  plan:\nQuery Text: SELECT wal->>'type' as type,\n       wal->>'schema' as schema,\n       wal->>'table' as table,\n       COALESCE(wal->>'columns', '[]') as columns,\n       COALESCE(wal->>'record', '{}') as record,\n       COALESCE(wal->>'old_record', '{}') as old_record,\n       wal->>'commit_timestamp' as commit_timestamp,\n       subscription_ids,\n       errors,\n       slot_changes_count\nFROM realtime.list_changes($1, $2, $3, $4)\n\nQuery Parameters: $1 = 'supabase_realtime', $2 = 'supabase_realtime_replication_slot_2_89_2_bed0269', $3 = '100', $4 = '1048576'\nFunction Scan on list_changes  (cost=0.25..27.75 rows=1000 width=296)",
+    "hint": null,
+    "id": "0501ee88-f1a0-422f-8a8e-803f2c4503d0",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345826582000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "b373dbb7-bd2a-49aa-a4ca-2154912ea81d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345793020000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "68aab702-a6b1-4d55-bdde-ded9857b5053",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345793002000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "54c6d598-ff78-4412-90c3-e55d719820bf",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345782250000
+  },
+  {
+    "detail": "There are no running transactions.",
+    "error_severity": "LOG",
+    "event_message": "logical decoding found consistent point at 1E/45000148",
+    "hint": null,
+    "id": "dc63aaa0-fb72-4f35-8509-6bd7ed9f8db9",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345777421000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to user request",
+    "hint": null,
+    "id": "de4b3466-8c0f-4b58-b062-ff491f9f5cbb",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345769164000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "duration: 17226.776 ms  plan:\nQuery Text: SELECT * FROM pgbouncer.get_auth($1)\nQuery Parameters: $1 = 'supabase_storage_admin'\nFunction Scan on get_auth  (cost=0.25..10.25 rows=1000 width=64)",
+    "hint": null,
+    "id": "b4fcf0a1-c802-4d87-895d-af96ff0cf206",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345766679000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=pgbouncer database=postgres SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "0ec3e872-cda7-443c-9f87-fcebdad21ea2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345765821000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"pgbouncer\" method=trust (/etc/postgresql/pg_hba.conf:84)",
+    "hint": null,
+    "id": "e1e49bbf-e406-48aa-b97a-1a63335ed1d7",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345765786000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "4e4d8812-d9c5-43b9-bf7d-b1bf1e471018",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345765544000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "5399f0a7-d6de-4990-88a5-3910b4dce65d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345764914000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"pgbouncer\" method=trust (/etc/postgresql/pg_hba.conf:84)",
+    "hint": null,
+    "id": "60079953-bbc1-4b70-9924-c8e602943a3c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345758520000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=pgbouncer database=postgres SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "792a7bba-1e8d-49a9-97d1-17980436cc09",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345758520000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "743621c6-010f-407b-9530-9a86e5dbd7ec",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345757950000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "a0d2f3b7-4822-48c2-94e1-c119803d1290",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345757950000
+  },
+  {
+    "detail": null,
+    "error_severity": "FATAL",
+    "event_message": "connection to client lost",
+    "hint": null,
+    "id": "d1ce06ba-bc3a-4364-8c5f-be235160ea20",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345757384000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not send data to client: Broken pipe",
+    "hint": null,
+    "id": "2683e380-365a-4c05-b911-d81d9379699b",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345757380000
+  },
+  {
+    "detail": null,
+    "error_severity": "FATAL",
+    "event_message": "connection to client lost",
+    "hint": null,
+    "id": "394d694c-1961-4d84-8a79-2f5d2c030e7d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345752872000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not send data to client: Broken pipe",
+    "hint": null,
+    "id": "6966e186-8f81-4e47-bde6-ff9dc8792d1c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345752860000
+  },
+  {
+    "detail": null,
+    "error_severity": "FATAL",
+    "event_message": "connection to client lost",
+    "hint": null,
+    "id": "0baa83de-e3b9-46ff-bf1e-4be3ff215712",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345750004000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not send data to client: Broken pipe",
+    "hint": null,
+    "id": "2e40b750-cd79-47fe-aed5-f9086ed02eae",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345749539000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "5ea36348-e586-480e-9a00-d3cd2f274f32",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345745995000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "duration: 10461.135 ms  plan:\nQuery Text: select\n    schemaname, tablename, format('%I.%I', schemaname, tablename)::regclass as oid\n    from pg_publication_tables where pubname = $1\nQuery Parameters: $1 = 'supabase_realtime'\nHash Join  (cost=47.09..79.40 rows=1000 width=132)\n  Hash Cond: (c.relnamespace = n.oid)\n  ->  Hash Join  (cost=42.43..67.03 rows=1000 width=68)\n        Hash Cond: (gpt.relid = c.oid)\n        ->  Nested Loop  (cost=0.01..21.97 rows=1000 width=4)\n              ->  Seq Scan on pg_publication p  (cost=0.00..1.96 rows=1 width=64)\n                    Filter: (pubname = 'supabase_realtime'::name)\n              ->  Function Scan on pg_get_publication_tables gpt  (cost=0.01..10.01 rows=1000 width=4)\n        ->  Hash  (cost=33.30..33.30 rows=730 width=72)\n              ->  Seq Scan on pg_class c  (cost=0.00..33.30 rows=730 width=72)\n  ->  Hash  (cost=3.18..3.18 rows=118 width=68)\n        ->  Seq Scan on pg_namespace n  (cost=0.00..3.18 rows=118 width=68)",
+    "hint": null,
+    "id": "866da89a-dc3c-4999-845c-6ede6936de4e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345744165000
+  },
+  {
+    "detail": null,
+    "error_severity": "FATAL",
+    "event_message": "connection to client lost",
+    "hint": null,
+    "id": "4d12b347-2653-4126-af71-331cae5401b2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345739909000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not send data to client: Broken pipe",
+    "hint": null,
+    "id": "03c01c59-3692-434b-8ebf-68e60d8e98f1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345739833000
+  },
+  {
+    "detail": null,
+    "error_severity": "FATAL",
+    "event_message": "connection to client lost",
+    "hint": null,
+    "id": "560754f4-07f3-4b34-840e-7028536fcb34",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345736306000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not send data to client: Broken pipe",
+    "hint": null,
+    "id": "07cfebd0-a1f5-418d-9d6b-37e60c7c9dc5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345736084000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "71170ed8-1d83-4ddb-a2c3-cc586185a185",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345731061000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "cc1e7b43-2115-49e1-9ddb-bc806843992f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345728126000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "504321ba-9d79-42f3-96d0-a12427b5d6cb",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345728067000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "3832a6aa-e8a2-4e42-abc8-9283ae438b0b",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345728067000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "8bd0e4bb-4bae-4471-9e97-74a668984469",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345728067000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "88f9b9d3-6398-4a5e-9045-9a8cd9e38f91",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345727621000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "d68ec5ac-a3e9-4ea4-8f4e-ce85e26970d4",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345727578000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to user request",
+    "hint": null,
+    "id": "6e9eb1f3-939c-439c-a758-70b7c9c2a34f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345727577000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "62d7dd14-5511-49de-8bf3-cb0e9d2996a8",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345726584000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "d3cc41cb-190f-4e5a-b21f-1e01d6207155",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345725236000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to user request",
+    "hint": null,
+    "id": "502d466e-caa0-4ed4-a4f7-9b2cc9add5e6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345724547000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "462e37ab-d81c-4a8c-9298-763d76153de8",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345719935000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "73ded886-56cb-4117-a3aa-701f82e3eaa4",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345718735000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "a26cdcc6-4d26-40c1-95b3-dbff58798022",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345718061000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "da4f05e5-8f02-4409-bf05-7bd5adb185d2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345718014000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "cf70a08b-da95-4f83-a318-28da7f2d030e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345718014000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "1fb7d7d5-3939-4e17-a231-e9da03e8b4d2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345717955000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "5091c98e-74e5-4a97-9ac3-cb776b8ead66",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345717954000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "838af56c-093f-4a3b-846e-a7a64f3478b7",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345717954000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to user request",
+    "hint": null,
+    "id": "e1352713-400b-431f-90bf-8a2cafa7baec",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345716319000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "abe2b9df-343f-4bc1-a26a-bf06bc2a0dd5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345713236000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "8951cb1c-3127-4c68-b7bf-f2dd584e83d5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345701311000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "73c4eca8-abdb-4926-80d6-4e94b50fdd7c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345695463000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "c44c18c9-9a76-4be9-a436-883f25c6f2e6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345695463000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "3416f8b4-9d3b-4e97-be0a-19edcb7fd42b",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345695419000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "acb66c86-868a-46d1-8835-f992d8a9dd48",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345695419000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "8b24c2ac-36cb-4a4e-9f65-9437332709a4",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345692733000
+  },
+  {
+    "detail": null,
+    "error_severity": "FATAL",
+    "event_message": "connection to client lost",
+    "hint": null,
+    "id": "4befcc13-3815-46ce-8eb3-86dc60c9b5d6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345670338000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not send data to client: Broken pipe",
+    "hint": null,
+    "id": "148494ca-2329-4e13-9cb1-e8bf2dce372d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345670327000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "1da19ed6-f0e2-43b1-b2b2-063551f7fe15",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345658441000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "19a3ab72-65af-47eb-934f-c1a15a721ff8",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345658394000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "67515108-f20b-4083-b7b2-625fb3b8cf83",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345658392000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "duration: 41728.585 ms  plan:\nQuery Text: SET statement_timeout='58s'; SET idle_session_timeout='58s';\nSELECT\n  e.name,\n  n.nspname AS schema,\n  e.default_version,\n  x.extversion AS installed_version,\n  e.comment,\n  ev.schema AS default_version_schema\nFROM\n  pg_available_extensions e\n  LEFT JOIN pg_extension x ON e.name = x.extname\n  LEFT JOIN pg_namespace n ON x.extnamespace = n.oid\n  LEFT JOIN pg_available_extension_versions ev\n    ON ev.name = e.name AND ev.version = e.default_version;\n\n\n-- source: dashboard\n-- user: session:0e49a632-ce0d-4eb5-9841-06c1c24bdbfd\n-- date: 2026-05-09T16:53:08.816Z\nHash Left Join  (cost=5.97..8.11 rows=100 width=260)\n  Hash Cond: ((e.name = e_1.name) AND (e.default_version = e_1.version))\n  ->  Hash Left Join  (cost=3.44..4.83 rows=100 width=196)\n        Hash Cond: (e.name = x.extname)\n        ->  Function Scan on pg_available_extensions e  (cost=0.03..1.02 rows=100 width=128)\n        ->  Hash  (cost=3.41..3.41 rows=1 width=132)\n              ->  Nested Loop Left Join  (cost=0.14..3.41 rows=1 width=132)\n                    ->  Seq Scan on pg_extension x  (cost=0.00..1.01 rows=1 width=72)\n                    ->  Index Scan using pg_namespace_oid_index on pg_namespace n  (cost=0.14..2.36 rows=1 width=68)\n                          Index Cond: (oid = x.extnamespace)\n  ->  Hash  (cost=1.02..1.02 rows=100 width=160)\n        ->  Function Scan on pg_available_extension_versions e_1  (cost=0.03..1.02 rows=100 width=160)",
+    "hint": null,
+    "id": "21f1b990-8b7b-420c-9ef6-b8473dd9fe9c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345643879000
+  },
+  {
+    "detail": "There are no running transactions.",
+    "error_severity": "LOG",
+    "event_message": "logical decoding found consistent point at 1E/44012248",
+    "hint": null,
+    "id": "35087a34-9eb3-481b-99a5-746000eb73d3",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345632441000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "d0ffbca4-71c4-4f53-ab77-81ed1cdadd07",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345632440000
+  },
+  {
+    "detail": "Waiting for transactions (approximately 1) older than 807227 to end.",
+    "error_severity": "LOG",
+    "event_message": "logical decoding found initial starting point at 1E/44012148",
+    "hint": null,
+    "id": "4b058032-5179-4691-93d3-5bb299f72af9",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345632277000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "dd4689f4-bd3f-42cb-aeae-83e001105c7c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345628884000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=pgbouncer database=postgres SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "1879b45c-8114-4ba2-9b59-05cd9030c8e6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345623459000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"pgbouncer\" method=trust (/etc/postgresql/pg_hba.conf:84)",
+    "hint": null,
+    "id": "b0bf7bfc-ce9f-4b73-8cb0-6ac2486a6193",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345623440000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=pgbouncer database=postgres SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "7784e9e1-6f4c-4d83-a232-b9484cc6f316",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345613444000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"pgbouncer\" method=trust (/etc/postgresql/pg_hba.conf:84)",
+    "hint": null,
+    "id": "5ac9756a-c6f2-452b-8bd3-8129b0fb0103",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345613434000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "59af8e1e-4089-447c-8836-5a92e0c17fda",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345612732000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "40815af5-9780-4ad0-aa90-aedbfee65d12",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345600064000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "7de89cbe-731d-44a7-b672-9bbf54338f00",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345598000000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "0dc346e6-328b-4863-a855-445102d8b106",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345597529000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "b0dcf6a2-85be-4505-955a-34c1acf07a41",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345597525000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "9112c319-c560-4eef-8d34-15686e3a43b5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345593199000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "f6822526-4a82-4b9c-a8c4-0e08cfdc7ce0",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345593197000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "45dcf33e-c9c9-439d-af1e-e5e64fb4e608",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345592167000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "fcd3b3dd-43d9-48d6-ba6e-f9a4262a8b8d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345592150000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "ae6d74f3-97bb-4de2-a041-1db8ee1bae44",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345592069000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "01aaff15-8618-4257-bce6-384b39d391d5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345591992000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=supabase/dashboard SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "89d31a80-ab9c-4bbc-a8fb-395773e40ca1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345591952000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "82024d5a-2dc8-45b0-9432-cb3e4195093b",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345591909000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "b31e73a7-8d95-4572-b526-38f6b6c6cff6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345588814000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "10a8b4c2-6078-4760-bbf5-8f65dd77ada7",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345573781000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "00359b3f-3f7a-421a-83e4-ac5ab8a272b6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345563933000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "0ac1830a-ffd3-4f87-90f6-f30bb907c995",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345563915000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "statement: DROP FUNCTION get_throwbacks(uuid,uuid,integer,integer,integer);\n\nCREATE OR REPLACE FUNCTION get_throwbacks(\n  u_id UUID, \n  p_id UUID, \n  current_month INT, \n  current_day INT, \n  limit_count INT\n)\nRETURNS SETOF messages AS $$\nBEGIN\n  IF u_id IS NULL OR p_id IS NULL THEN\n    RETURN;\n  END IF;\n\n  RETURN QUERY\n  SELECT m.*\n  FROM messages m\n  WHERE \n    (\n      (m.sender_id = u_id AND m.receiver_id = p_id) \n      OR \n      (m.sender_id = p_id AND m.receiver_id = u_id)\n    )\n    AND m.media_url IS NOT NULL\n    AND EXTRACT(MONTH FROM m.created_at AT TIME ZONE 'UTC') = current_month\n    AND EXTRACT(DAY FROM m.created_at AT TIME ZONE 'UTC') = current_day\n    ORDER BY m.created_at DESC\n    LIMIT limit_count;\nEND;\n$$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- source: POST /mcp\n-- user: oauth:29ee7943-18cd-4593-b1b4-a4241d31774e\n-- date: 2026-05-09T16:52:38.768Z",
+    "hint": null,
+    "id": "480a245e-40c7-449c-8317-c556b5aeed27",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345562606000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=mgmt-api SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "40a50a76-021a-43d7-afc5-b08180430a97",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345562400000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "0912841f-7a89-494b-9eda-9ab30d975dfa",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345562400000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "cannot remove parameter defaults from existing function",
+    "hint": "Use DROP FUNCTION get_throwbacks(uuid,uuid,integer,integer,integer) first.",
+    "id": "80beecdf-516d-4bc7-8de5-33480169c067",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345547341000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "97b1f257-c45c-4e75-9e07-d8a79f45138c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345547144000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "statement: CREATE OR REPLACE FUNCTION get_throwbacks(\n  u_id UUID, \n  p_id UUID, \n  current_month INT, \n  current_day INT, \n  limit_count INT\n)\nRETURNS SETOF messages AS $$\nBEGIN\n  IF u_id IS NULL OR p_id IS NULL THEN\n    RETURN;\n  END IF;\n\n  RETURN QUERY\n  SELECT m.*\n  FROM messages m\n  WHERE \n    (\n      (m.sender_id = u_id AND m.receiver_id = p_id) \n      OR \n      (m.sender_id = p_id AND m.receiver_id = u_id)\n    )\n    AND m.media_url IS NOT NULL\n    AND EXTRACT(MONTH FROM m.created_at AT TIME ZONE 'UTC') = current_month\n    AND EXTRACT(DAY FROM m.created_at AT TIME ZONE 'UTC') = current_day\n    ORDER BY m.created_at DESC\n    LIMIT limit_count;\nEND;\n$$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- source: POST /mcp\n-- user: oauth:29ee7943-18cd-4593-b1b4-a4241d31774e\n-- date: 2026-05-09T16:52:11.624Z",
+    "hint": null,
+    "id": "47013586-ddba-46e1-b678-b1dda3d902e1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345540842000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "04f54bd0-1580-4b35-883d-44a69346eff2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345539014000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "5dfb3071-96d9-4fca-b4d8-6404d184a394",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345539011000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "1b281a3e-1e83-4e43-bb2c-836fb1c6d916",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345538016000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=postgres database=postgres application_name=mgmt-api SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "e95b1d4a-13bd-44fd-bf1f-aec35ed19c56",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345537700000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: identity=\"postgres\" method=scram-sha-256 (/etc/postgresql/pg_hba.conf:94)",
+    "hint": null,
+    "id": "6afee6ab-2ae6-4b60-b185-afabb575eca5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345537700000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to user request",
+    "hint": null,
+    "id": "4cf583a9-a155-43ce-a98e-e6bc924942bd",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345530904000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "d3d3dc73-88df-4391-9e70-ee9615c925e9",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345527049000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "could not receive data from client: Connection reset by peer",
+    "hint": null,
+    "id": "5c363088-1b75-469d-a525-6e1fa2fc3b93",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345526020000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to user request",
+    "hint": null,
+    "id": "a604cb53-4fe2-4a7a-ac18-7744b4f59c96",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1778345519955000
+  }
+]

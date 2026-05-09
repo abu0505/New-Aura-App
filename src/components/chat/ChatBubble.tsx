@@ -798,6 +798,8 @@ function ChatBubble({
       <div 
         ref={bubbleRef}
         data-message-id={message.id}
+        data-is-mine={isMine}
+        data-is-read={message.is_read}
         className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} my-2 z-10`}
       >
         <div className={`flex items-center gap-4 px-5 py-3 rounded-2xl border ${isMine ? 'bg-primary/10 border-primary/20 flex-row-reverse text-right' : 'bg-aura-bg-elevated border-white/5 shadow-lg text-left'} backdrop-blur-md cursor-default`}>
@@ -833,6 +835,8 @@ function ChatBubble({
     <div 
       ref={bubbleRef}
       data-message-id={message.id}
+      data-is-mine={isMine}
+      data-is-read={message.is_read}
       className={`flex flex-col relative w-full ${isMine ? 'items-end' : 'items-start'} gap-1 group z-10 overflow-visible`}
     >
       {/* Reply Icon Indicator for Swipe (Mobile) */}
@@ -1017,9 +1021,6 @@ function ChatBubble({
                ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
                : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
-          data-message-id={message.id}
-          data-is-mine={isMine}
-          data-is-read={message.is_read}
         >
         {decryptionError ? (
           <div className="flex items-center gap-2 py-1 px-1">

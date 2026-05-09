@@ -1,0 +1,272 @@
+[
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-3el | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "b952a438-1cd7-4276-8a99-c207ded1d5fb",
+    "timestamp": 1778346249730000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.30.69 | req-3eg | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "7b1e64b5-7536-4840-8f45-9d4241c08c62",
+    "timestamp": 1778346243939000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "01b660ba-3bf0-4483-bea8-c41ffb28f040",
+    "timestamp": 1778346239171000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-5y8 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "46c5bbc7-dfc7-4f5e-be8c-aeabac8bdb27",
+    "timestamp": 1778346214903000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "832713ee-b739-4cb6-bc5a-9db690b369f2",
+    "timestamp": 1778346214401000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.35.204 | req-2y71 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "57b4046f-b043-48c7-a91b-bfc4692a0044",
+    "timestamp": 1778346193820000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "be8c4b13-d38f-43cb-be0f-e6518a98cf97",
+    "timestamp": 1778346189032000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.64.237 | req-1aa | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "6d72d586-8908-49e1-b231-42e703bcfb0a",
+    "timestamp": 1778346172892000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "05f5306c-800d-4baa-8e1b-1ddd71d6ac39",
+    "timestamp": 1778346167891000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-wsi | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "0bd2ee57-86ab-44d2-8c1c-12586a843a79",
+    "timestamp": 1778346124885000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-wry | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "41166ddd-9aa5-4864-b24e-3d773d7271ce",
+    "timestamp": 1778346092425000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.30.69 | req-lr7 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "9f6c6ead-2bd4-4871-8a6c-6a6ba14d5b4f",
+    "timestamp": 1778346077222000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.35.204 | req-1ekf | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "490bf612-c9e7-4331-b8b1-21b09885f012",
+    "timestamp": 1778346066803000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "f3ff5c1c-993f-4d82-aa12-2d3f37f8fbbf",
+    "timestamp": 1778346062016000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-1eke | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "3f38645d-7e0a-4bf1-af34-c01736ae9e94",
+    "timestamp": 1778346061861000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-21w | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "cedd0b6c-fca8-4c81-aa3c-c61867b7d6c7",
+    "timestamp": 1778346042787000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "70ae218f-c1b8-48b0-bb44-408e71c39727",
+    "timestamp": 1778346041205000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-9b | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "ed098aba-b5c5-4438-89bc-5167a40c893f",
+    "timestamp": 1778346021523000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "92fc80b6-022b-4a56-b154-b5a079b69395",
+    "timestamp": 1778346020876000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-lqe | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "abc9d8dc-c414-494e-a918-5e4700a2cbae",
+    "timestamp": 1778346012866000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "8ccc9d2c-76a7-42d8-bbb8-2132d69548dd",
+    "timestamp": 1778346010032000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.64.237 | req-3b7 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "b28d0cf7-bfad-4531-bc0b-3758d1b98b6a",
+    "timestamp": 1778345985489000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "222803e9-5961-46d6-a8e0-61cb82262646",
+    "timestamp": 1778345984325000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-wqa | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "073062a1-fc66-4fde-8c1e-c580cfeddc51",
+    "timestamp": 1778345984000000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.64.237 | req-a4k | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "bc5e7fc3-5fe5-44ea-8cf8-7167d93a0361",
+    "timestamp": 1778345936970000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "3f9fed69-c233-4400-a6b5-63bec8dc9e22",
+    "timestamp": 1778345936083000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.64.237 | req-1eie | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "6c4a0c0a-9824-4328-b73e-876e58d5974c",
+    "timestamp": 1778345905949000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-8v | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "508e9a74-01db-449c-9575-fd54f32979f9",
+    "timestamp": 1778345902760000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-lop | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "b14e5a9e-cad8-4676-83b6-8b3e897acc62",
+    "timestamp": 1778345875218000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "e7107ea0-647e-497a-a444-08a874ece381",
+    "timestamp": 1778345875204000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-1zd | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "7990c2d4-da56-4e3b-9da3-50908ae1311a",
+    "timestamp": 1778345866265000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "bd4d687a-0a65-4ba9-997b-0632cd0b1c9f",
+    "timestamp": 1778345865098000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-87 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "24f3aa57-c298-4963-a1ce-7335e059a6bc",
+    "timestamp": 1778345854511000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "2633e9dd-07b9-4706-93b9-9b798c5497de",
+    "timestamp": 1778345854440000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "1ceba952-7494-4cfa-9ef9-e87fe3c5d63b",
+    "timestamp": 1778345833869000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.64.237 | req-75o | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "48e14460-7052-4837-8d57-1d77bc418e79",
+    "timestamp": 1778345783493000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "567ce978-07e3-4e58-a2ea-d3a717949538",
+    "timestamp": 1778345778495000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "c2a8aeb0-b177-4cf9-b612-2fee9e9b0c12",
+    "timestamp": 1778345768321000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.35.204 | req-y3g | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "ff19eeeb-6ed0-49a0-a780-1b153b168bd7",
+    "timestamp": 1778345762862000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "e14acff0-3102-4597-80f4-9c9cf490c0a3",
+    "timestamp": 1778345758047000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.30.69 | req-6k | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "d0cc2aa1-cc13-4664-9970-3b015bb208c0",
+    "timestamp": 1778345752421000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "ac2135a7-6ce1-492f-bdbb-58b587b3c3b1",
+    "timestamp": 1778345747423000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "831441d3-dac7-4578-9f7c-5666cc69e996",
+    "timestamp": 1778345737279000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-2y02 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "ddf1a3f3-38a7-424e-aa1b-0030bae6bdcc",
+    "timestamp": 1778345731502000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.64.237 | req-69v | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "3e9cd325-d1d6-4077-9ff1-f94694047c6d",
+    "timestamp": 1778345653147000
+  },
+  {
+    "event_message": "[Migrations] completed for tenant ugfxjjakpsngfdrjlsdr",
+    "id": "18aa34c9-a908-4135-be49-c98cadcddb4c",
+    "timestamp": 1778345635971000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.30.69 | req-69i | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "5f794b82-3142-468b-8743-f795ad183bb2",
+    "timestamp": 1778345625151000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "1d1413a1-fa83-476e-880d-41ff701547d3",
+    "timestamp": 1778345624998000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.64.237 | req-1d04 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "e654f23a-2f49-438b-9be6-22d1051b3ace",
+    "timestamp": 1778345619501000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.30.69 | req-2xy9 | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "f6053e6a-6beb-4e6f-aef9-4154b79ca386",
+    "timestamp": 1778345609128000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | ABORTED REQ | 10.112.64.237 | req-q9l | /tenants/ugfxjjakpsngfdrjlsdr/health | @supabase-infra/mgmt-api/88e72d5",
+    "id": "ed7b023d-befc-4d8e-a861-fdcb7b669cf3",
+    "timestamp": 1778345593862000
+  },
+  {
+    "event_message": "[Migrations] running for tenant ugfxjjakpsngfdrjlsdr",
+    "id": "b51ca5de-e226-45d2-b4fb-44f8d1685ce2",
+    "timestamp": 1778345592990000
+  },
+  {
+    "event_message": "[Cache] Tenant pool lookup",
+    "id": "e651e075-b3d6-4437-8fda-9e872b42a4b5",
+    "timestamp": 1778345589253000
+  },
+  {
+    "event_message": "ugfxjjakpsngfdrjlsdr | GET | 200 | 10.112.35.204 | req-a19 | /tenants/ugfxjjakpsngfdrjlsdr | @supabase-infra/mgmt-api/88e72d5",
+    "id": "e6a70d36-1335-4a6e-92ff-8b8850fd57eb",
+    "timestamp": 1778345589161000
+  }
+]

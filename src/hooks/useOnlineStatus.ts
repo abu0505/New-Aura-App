@@ -197,19 +197,4 @@ export function useOnlineStatus(
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [user?.id, encryptionStatus, currentPage, trackMyStatus, untrackMyStatus]);
-
-  // ── Heartbeat (Periodic last_seen updates for Edge Function) ────────────
-  useEffect(() => {
-    if (!user || encryptionStatus !== 'ready') return;
-    
-    // Ping every 60 seconds while the app is active to update last_seen.
-    // This allows the push notification Edge Function to correctly detect "zombie" online states.
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', user.id).then();
-      }
-    }, 60000);
-
-    return () => clearInterval(interval);
-  }, [user?.id, encryptionStatus]);
 }
