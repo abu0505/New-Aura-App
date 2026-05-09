@@ -20,10 +20,10 @@ export function useTabNotification(): void {
   }, [settings?.tab_badge_enabled]);
 
   // ── Core: fetch unread count from DB and update title ──────────────
-  const refreshCount = useCallback(async (reason: string) => {
+  const refreshCount = useCallback(async () => {
     if (!user?.id || isNative) return;
 
-    const { count, error } = await supabase
+    const { count } = await supabase
       .from('messages')
       .select('*', { count: 'exact', head: true })
       .eq('receiver_id', user.id)
@@ -42,10 +42,10 @@ export function useTabNotification(): void {
   }, [user?.id, isNative]);
 
   // ── Debounced refresh ──────────────────────────────────────────────
-  const debouncedRefresh = useCallback((reason: string) => {
+  const debouncedRefresh = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      refreshCount(reason);
+      refreshCount();
     }, 500);
   }, [refreshCount]);
 
@@ -54,21 +54,20 @@ export function useTabNotification(): void {
     if (!user?.id || isNative) return;
 
     // Fetch once immediately
-    refreshCount('initial-mount');
+    refreshCount();
 
     // Subscribe to ALL messages table events
     const unsubscribe = realtimeHub.on('messages', (payload) => {
       const row = payload.new as any;
-      const eventType = payload.eventType;
 
       if (row?.receiver_id === user.id || row?.sender_id === user.id) {
-        debouncedRefresh(`realtime-${eventType}`);
+        debouncedRefresh();
       }
     });
 
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
-        refreshCount('visibility-change');
+        refreshCount();
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
