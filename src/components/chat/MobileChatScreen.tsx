@@ -18,6 +18,7 @@ import { LastSeenStatus } from './LastSeenStatus';
 import EncryptedImage from '../common/EncryptedImage';
 import { useCall } from '../../contexts/CallContext';
 import ChatSearch from './ChatSearch';
+import { getBackgroundData } from '../../utils/backgroundParser';
 
 
 
@@ -394,6 +395,8 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     return { background: 'var(--bg-primary)' };
   };
 
+  const bgData = getBackgroundData(settings, false);
+
   const filteredPinnedMessages = pinnedMessages.filter(p => {
     if (pinFilter === 'me') return p.pinned_by === user?.id;
     if (pinFilter === 'partner') return p.pinned_by === partner.id;
@@ -434,12 +437,12 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       >
         {/* Background Layer */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
-          {settings?.background_url?.startsWith('http') && (
+          {bgData?.url?.startsWith('http') && (
             <div className="absolute inset-0">
                <EncryptedImage 
-                url={settings.background_url}
-                encryptionKey={settings.background_key}
-                nonce={settings.background_nonce}
+                url={bgData.url}
+                encryptionKey={bgData.key}
+                nonce={bgData.nonce}
                 alt="Chat Background"
                 className="w-full h-full object-cover opacity-30"
               />

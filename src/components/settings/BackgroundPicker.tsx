@@ -5,6 +5,7 @@ import { encryptFile } from '../../lib/encryption';
 import { uploadToCloudinary } from '../../lib/cloudinary';
 import { supabase } from '../../lib/supabase';
 import imageCompression from 'browser-image-compression';
+import BackgroundCropper from './BackgroundCropper';
 
 const PRESETS = [
   { id: 'none', name: 'Original', color: 'var(--bg-primary)' },
@@ -19,6 +20,7 @@ export default function BackgroundPicker() {
   const [uploading, setUploading] = useState(false);
   const [optimisticBg, setOptimisticBg] = useState<string | undefined | null>(undefined);
   const [toast, setToast] = useState<{ message: string, isError: boolean } | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError });
@@ -50,24 +52,49 @@ export default function BackgroundPicker() {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropImageSrc(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleCropComplete = async (mobileBlob: Blob, desktopBlob: Blob) => {
+    setCropImageSrc(null);
     setUploading(true);
     try {
-      const compressed = await imageCompression(file, {
+      // Process Mobile
+      const mobileCompressed = await imageCompression(new File([mobileBlob], 'mobile.jpg', { type: 'image/jpeg' }), {
         maxSizeMB: 1,
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       });
-      const fileBuffer = new Uint8Array(await compressed.arrayBuffer());
-      const { encryptedData, fileKey, nonce } = encryptFile(fileBuffer);
-      
-      const blob = new Blob([encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
-      const { url } = await uploadToCloudinary(new File([blob], 'bg.enc'));
+      const mobileBuffer = new Uint8Array(await mobileCompressed.arrayBuffer());
+      const mobileEnc = encryptFile(mobileBuffer);
+      const mobileEncBlob = new Blob([mobileEnc.encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
+      const mobileUpload = await uploadToCloudinary(new File([mobileEncBlob], 'mobile_bg.enc'));
 
-      setOptimisticBg(url);
+      // Process Desktop
+      const desktopCompressed = await imageCompression(new File([desktopBlob], 'desktop.jpg', { type: 'image/jpeg' }), {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      });
+      const desktopBuffer = new Uint8Array(await desktopCompressed.arrayBuffer());
+      const desktopEnc = encryptFile(desktopBuffer);
+      const desktopEncBlob = new Blob([desktopEnc.encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
+      const desktopUpload = await uploadToCloudinary(new File([desktopEncBlob], 'desktop_bg.enc'));
+
+      const urlPayload = JSON.stringify({ mobile: mobileUpload.url, desktop: desktopUpload.url });
+      const keyPayload = JSON.stringify({ mobile: Array.from(mobileEnc.fileKey), desktop: Array.from(desktopEnc.fileKey) });
+      const noncePayload = JSON.stringify({ mobile: Array.from(mobileEnc.nonce), desktop: Array.from(desktopEnc.nonce) });
+
+      setOptimisticBg(urlPayload);
       const { error } = await supabase.rpc('sync_chat_settings', {
-        bg_url: url,
-        bg_key: JSON.stringify(Array.from(fileKey)),
-        bg_nonce: JSON.stringify(Array.from(nonce)),
+        bg_url: urlPayload,
+        bg_key: keyPayload,
+        bg_nonce: noncePayload,
         do_sync: true
       });
 
@@ -80,7 +107,6 @@ export default function BackgroundPicker() {
         showToast('Custom background applied and secured.');
       }
     } catch (err: any) {
-      
       setOptimisticBg(undefined);
       showToast('App storage error: ' + err.message, true);
     } finally {
@@ -143,6 +169,14 @@ export default function BackgroundPicker() {
           </span>
           <span className="font-label text-[10px] uppercase tracking-widest">{toast.message}</span>
         </div>
+      )}
+
+      {cropImageSrc && (
+        <BackgroundCropper
+          imageSrc={cropImageSrc}
+          onCancel={() => setCropImageSrc(null)}
+          onSave={handleCropComplete}
+        />
       )}
     </div>
   );
