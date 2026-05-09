@@ -53,6 +53,21 @@ export default function ChunkedVideoPlayer({
   const progressRef = useRef<HTMLDivElement>(null);
   const isPlayingRef = useRef(false);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * CRITICAL BUG FIX: Track whether video.src has been set already.
+   * 
+   * The MSE pipeline creates a blob: URL via URL.createObjectURL(mediaSource).
+   * Once set as video.src, this URL is "consumed" by the browser and bound to
+   * the MediaSource object. Re-assigning video.src (even to the same URL string)
+   * after sourceopen has fired will detach the MediaSource and throw:
+   *   GET blob:... net::ERR_FILE_NOT_FOUND
+   *   MEDIA_ELEMENT_ERROR: Format error
+   * 
+   * The `video.src === videoUrl` comparison in the useEffect is unreliable because
+   * React may re-render and recalculate videoUrl (same value, new reference or
+   * browser-normalized form) causing the guard to fail. We use a ref instead.
+   */
+  const srcSetRef = useRef(false);
 
   /* ── State ───────────────────────────────────────────────────────────── */
   const [hasStarted, setHasStarted] = useState(autoPlay);
@@ -102,9 +117,18 @@ export default function ChunkedVideoPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !videoUrl) return;
-    // Only update if the src actually changed
-    if (video.src === videoUrl) return;
 
+    // CRITICAL FIX: Use ref-based guard instead of string comparison.
+    // `video.src === videoUrl` is unreliable — the browser normalizes blob: URLs
+    // and React re-renders can pass new string references for the same URL.
+    // Re-assigning video.src to an MSE blob URL after sourceopen detaches the
+    // MediaSource, causing ERR_FILE_NOT_FOUND + MEDIA_ELEMENT_ERROR: Format error.
+    if (srcSetRef.current) {
+      console.log('[ChunkedVideoPlayer] video.src already set — skipping re-assignment to prevent MSE detach');
+      return;
+    }
+
+    srcSetRef.current = true;
     console.log('[ChunkedVideoPlayer] Setting video.src to MSE/blob URL');
     video.src = videoUrl;
     // Do NOT call video.load() for blob: URLs (both regular blobs and MSE mediasource

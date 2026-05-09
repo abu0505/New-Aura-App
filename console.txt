@@ -1,0 +1,17 @@
+content.js:22 [SmartLens Content] Initializing...
+content.js:438 [SmartLens] Content script loaded
+index-TnjK_Bhc.js:40 [🔔 NOTIF] Registering service worker: /sw.js
+index-TnjK_Bhc.js:40 [🔔 NOTIF] ✅ Service Worker registered successfully
+index-TnjK_Bhc.js:40 [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
+index-TnjK_Bhc.js:40 [🔔 NOTIF]   active: activated
+index-TnjK_Bhc.js:40 [🔔 NOTIF]   waiting: none
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
