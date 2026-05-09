@@ -658,7 +658,7 @@ export function useMedia() {
 
       const uploadBlock = async (data: Uint8Array): Promise<string> => {
         const formData = new FormData();
-        formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.bin');
+        formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.enc');
         formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
         const res = await fetch(
           `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
