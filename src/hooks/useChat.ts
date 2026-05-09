@@ -814,6 +814,36 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       return;
     }
 
+    // PROFESSIONAL FIX: If the user is sending a message, it implies they have read all prior
+    // messages in the conversation, even if some older ones haven't scrolled into the viewport.
+    // Update the DB globally to mark all unread messages from the partner as read so tab badges reset.
+    const readAtIso = new Date().toISOString();
+    
+    // 1. Optimistically mark any loaded unread messages as read in the UI
+    const unreadLoadedIds = messagesRef.current.filter(m => !m.is_mine && !m.is_read).map(m => m.id);
+    if (unreadLoadedIds.length > 0) {
+      setMessages(prev => prev.map(m => 
+        unreadLoadedIds.includes(m.id) ? { ...m, is_read: true, is_delivered: true, read_at: readAtIso } : m
+      ));
+    }
+
+    // 2. Perform the global DB update in the background
+    supabase
+      .from('messages')
+      .update({ is_read: true, is_delivered: true, read_at: readAtIso })
+      .eq('receiver_id', user.id)
+      .eq('sender_id', partnerId)
+      .eq('is_read', false)
+      .then();
+      
+    supabase
+      .from('notifications')
+      .update({ read_at: readAtIso })
+      .eq('recipient_id', user.id)
+      .eq('sender_id', partnerId)
+      .is('read_at', null)
+      .then();
+
     const { error } = await supabase
       .from('messages')
       .insert({
@@ -985,6 +1015,30 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       return;
     }
 
+    // PROFESSIONAL FIX: Clear unread badges for media replies too
+    const readAtIso = new Date().toISOString();
+    const unreadLoadedIds = messagesRef.current.filter(m => !m.is_mine && !m.is_read).map(m => m.id);
+    if (unreadLoadedIds.length > 0) {
+      setMessages(prev => prev.map(m => 
+        unreadLoadedIds.includes(m.id) ? { ...m, is_read: true, is_delivered: true, read_at: readAtIso } : m
+      ));
+    }
+    supabase
+      .from('messages')
+      .update({ is_read: true, is_delivered: true, read_at: readAtIso })
+      .eq('receiver_id', user.id)
+      .eq('sender_id', partnerId)
+      .eq('is_read', false)
+      .then();
+      
+    supabase
+      .from('notifications')
+      .update({ read_at: readAtIso })
+      .eq('recipient_id', user.id)
+      .eq('sender_id', partnerId)
+      .is('read_at', null)
+      .then();
+
     const { error } = await supabase
       .from('messages')
       .insert({
@@ -1055,6 +1109,33 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     replyToId?: string
   ): string => {
     const tempId = crypto.randomUUID();
+
+    // PROFESSIONAL FIX: Clear unread badges for video message starts too
+    const readAtIso = new Date().toISOString();
+    const unreadLoadedIds = messagesRef.current.filter(m => !m.is_mine && !m.is_read).map(m => m.id);
+    if (unreadLoadedIds.length > 0) {
+      setMessages(prev => prev.map(m => 
+        unreadLoadedIds.includes(m.id) ? { ...m, is_read: true, is_delivered: true, read_at: readAtIso } : m
+      ));
+    }
+    if (user && partnerId) {
+      supabase
+        .from('messages')
+        .update({ is_read: true, is_delivered: true, read_at: readAtIso })
+        .eq('receiver_id', user.id)
+        .eq('sender_id', partnerId)
+        .eq('is_read', false)
+        .then();
+        
+      supabase
+        .from('notifications')
+        .update({ read_at: readAtIso })
+        .eq('recipient_id', user.id)
+        .eq('sender_id', partnerId)
+        .is('read_at', null)
+        .then();
+    }
+
     const optimisticMsg: ChatMessage = {
       id: tempId,
       sender_id: user?.id || '',
