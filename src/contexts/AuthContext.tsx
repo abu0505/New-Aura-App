@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [encryptionStatus, setEncryptionStatus] = useState<EncryptionState>('initializing');
+  const activeCheckPromiseRef = useRef<Promise<EncryptionState> | null>(null);
+  const lastCheckedUserIdRef = useRef<string | null>(null);
   // Ref to hold the realtime channel for device-token watch (cleanup on logout)
   const deviceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const isSigningOutRef = useRef(false);
@@ -86,11 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
               const cached = JSON.parse(localStorage.getItem(authKey) || '');
               if (cached && cached.user) {
-                setSession(cached);
-                setUser(cached.user);
-                // Optimistically check encryption status
-                const status = await checkEncryptionStatus(cached.user.id);
-                if (isMounted) setEncryptionStatus(status);
+                await handleSession(cached);
               }
             } catch (e) {
               console.error('Failed to parse cached session', e);
@@ -151,10 +149,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(currentSession?.user ?? null);
 
     if (currentSession?.user) {
-      const status = await checkEncryptionStatus(currentSession.user.id);
-      setEncryptionStatus(status);
+      const userId = currentSession.user.id;
+      
+      // Prevent redundant simultaneous checks for the same user
+      if (activeCheckPromiseRef.current && lastCheckedUserIdRef.current === userId) {
+        const status = await activeCheckPromiseRef.current;
+        setEncryptionStatus(status);
+        return;
+      }
+
+      // Start new check
+      lastCheckedUserIdRef.current = userId;
+      const checkPromise = checkEncryptionStatus(userId);
+      activeCheckPromiseRef.current = checkPromise;
+
+      try {
+        const status = await checkPromise;
+        setEncryptionStatus(status);
+      } finally {
+        // Only clear if this is still the active promise
+        if (activeCheckPromiseRef.current === checkPromise) {
+          activeCheckPromiseRef.current = null;
+        }
+      }
     } else {
       setEncryptionStatus('initializing');
+      activeCheckPromiseRef.current = null;
+      lastCheckedUserIdRef.current = null;
     }
   };
 
