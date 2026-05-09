@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
-import { useAuth } from '../../contexts/AuthContext';
 import { encryptFile } from '../../lib/encryption';
 import { uploadToCloudinary } from '../../lib/cloudinary';
 import { supabase } from '../../lib/supabase';
@@ -16,11 +15,10 @@ const PRESETS = [
 
 export default function BackgroundPicker() {
   const { settings, refreshSettings } = useChatSettingsContext();
-  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [optimisticBg, setOptimisticBg] = useState<string | undefined | null>(undefined);
   const [toast, setToast] = useState<{ message: string, isError: boolean } | null>(null);
-  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
 
   const showToast = (message: string, isError = false) => {
     setToast({ message, isError });
@@ -48,47 +46,72 @@ export default function BackgroundPicker() {
     }
   };
 
-  const handleCustomUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCropImageSrc(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = ''; // Reset input
-  };
-
-  const handleCropComplete = async (mobileBlob: Blob, desktopBlob: Blob) => {
-    setCropImageSrc(null);
+  const handleCropComplete = async (mobileBlob: Blob | null, desktopBlob: Blob | null) => {
+    setShowCropper(false);
+    if (!mobileBlob && !desktopBlob) return;
+    
     setUploading(true);
     try {
-      // Process Mobile
-      const mobileCompressed = await imageCompression(new File([mobileBlob], 'mobile.jpg', { type: 'image/jpeg' }), {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      });
-      const mobileBuffer = new Uint8Array(await mobileCompressed.arrayBuffer());
-      const mobileEnc = encryptFile(mobileBuffer);
-      const mobileEncBlob = new Blob([mobileEnc.encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
-      const mobileUpload = await uploadToCloudinary(new File([mobileEncBlob], 'mobile_bg.enc'));
+      // Parse existing settings to preserve unmodified ones
+      let existingMobileUrl = null, existingMobileKey = null, existingMobileNonce = null;
+      let existingDesktopUrl = null, existingDesktopKey = null, existingDesktopNonce = null;
+      
+      if (settings?.background_url?.startsWith('{')) {
+        const urls = JSON.parse(settings.background_url);
+        const keys = settings.background_key ? JSON.parse(settings.background_key) : {};
+        const nonces = settings.background_nonce ? JSON.parse(settings.background_nonce) : {};
+        existingMobileUrl = urls.mobile;
+        existingMobileKey = keys.mobile;
+        existingMobileNonce = nonces.mobile;
+        existingDesktopUrl = urls.desktop;
+        existingDesktopKey = keys.desktop;
+        existingDesktopNonce = nonces.desktop;
+      } else {
+        existingMobileUrl = settings?.background_url;
+        existingMobileKey = settings?.background_key ? JSON.parse(settings.background_key) : null;
+        existingMobileNonce = settings?.background_nonce ? JSON.parse(settings.background_nonce) : null;
+        existingDesktopUrl = existingMobileUrl;
+        existingDesktopKey = existingMobileKey;
+        existingDesktopNonce = existingMobileNonce;
+      }
 
-      // Process Desktop
-      const desktopCompressed = await imageCompression(new File([desktopBlob], 'desktop.jpg', { type: 'image/jpeg' }), {
-        maxSizeMB: 1,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      });
-      const desktopBuffer = new Uint8Array(await desktopCompressed.arrayBuffer());
-      const desktopEnc = encryptFile(desktopBuffer);
-      const desktopEncBlob = new Blob([desktopEnc.encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
-      const desktopUpload = await uploadToCloudinary(new File([desktopEncBlob], 'desktop_bg.enc'));
+      let mobileUploadUrl = existingMobileUrl;
+      let mobileUploadKey = existingMobileKey;
+      let mobileUploadNonce = existingMobileNonce;
 
-      const urlPayload = JSON.stringify({ mobile: mobileUpload.url, desktop: desktopUpload.url });
-      const keyPayload = JSON.stringify({ mobile: Array.from(mobileEnc.fileKey), desktop: Array.from(desktopEnc.fileKey) });
-      const noncePayload = JSON.stringify({ mobile: Array.from(mobileEnc.nonce), desktop: Array.from(desktopEnc.nonce) });
+      if (mobileBlob) {
+        const mobileCompressed = await imageCompression(new File([mobileBlob], 'mobile.jpg', { type: 'image/jpeg' }), {
+          maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true,
+        });
+        const mobileBuffer = new Uint8Array(await mobileCompressed.arrayBuffer());
+        const mobileEnc = encryptFile(mobileBuffer);
+        const mobileEncBlob = new Blob([mobileEnc.encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
+        const mobileUpload = await uploadToCloudinary(new File([mobileEncBlob], 'mobile_bg.enc'));
+        mobileUploadUrl = mobileUpload.url;
+        mobileUploadKey = Array.from(mobileEnc.fileKey);
+        mobileUploadNonce = Array.from(mobileEnc.nonce);
+      }
+
+      let desktopUploadUrl = existingDesktopUrl;
+      let desktopUploadKey = existingDesktopKey;
+      let desktopUploadNonce = existingDesktopNonce;
+
+      if (desktopBlob) {
+        const desktopCompressed = await imageCompression(new File([desktopBlob], 'desktop.jpg', { type: 'image/jpeg' }), {
+          maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true,
+        });
+        const desktopBuffer = new Uint8Array(await desktopCompressed.arrayBuffer());
+        const desktopEnc = encryptFile(desktopBuffer);
+        const desktopEncBlob = new Blob([desktopEnc.encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
+        const desktopUpload = await uploadToCloudinary(new File([desktopEncBlob], 'desktop_bg.enc'));
+        desktopUploadUrl = desktopUpload.url;
+        desktopUploadKey = Array.from(desktopEnc.fileKey);
+        desktopUploadNonce = Array.from(desktopEnc.nonce);
+      }
+
+      const urlPayload = JSON.stringify({ mobile: mobileUploadUrl, desktop: desktopUploadUrl });
+      const keyPayload = JSON.stringify({ mobile: mobileUploadKey, desktop: desktopUploadKey });
+      const noncePayload = JSON.stringify({ mobile: mobileUploadNonce, desktop: desktopUploadNonce });
 
       setOptimisticBg(urlPayload);
       const { error } = await supabase.rpc('sync_chat_settings', {
@@ -143,7 +166,7 @@ export default function BackgroundPicker() {
         ))}
         
         {/* Custom Upload */}
-        <label className="h-24 rounded-2xl border border-dashed border-white/20 hover:border-[var(--gold)]/40 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-white/5">
+        <button onClick={() => setShowCropper(true)} className="h-24 w-full rounded-2xl border border-dashed border-white/20 hover:border-[var(--gold)]/40 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-white/5">
           {uploading ? (
             <span className="material-symbols-outlined text-[var(--gold)] animate-spin">sync</span>
           ) : (
@@ -152,8 +175,7 @@ export default function BackgroundPicker() {
               <span className="font-label text-[8px] uppercase tracking-widest text-white/40">Custom</span>
             </>
           )}
-          <input type="file" onChange={handleCustomUpload} accept="image/*" className="hidden" />
-        </label>
+        </button>
       </div>
 
       <p className="text-[10px] text-white/30 italic leading-relaxed">
@@ -171,10 +193,9 @@ export default function BackgroundPicker() {
         </div>
       )}
 
-      {cropImageSrc && (
+      {showCropper && (
         <BackgroundCropper
-          imageSrc={cropImageSrc}
-          onCancel={() => setCropImageSrc(null)}
+          onCancel={() => setShowCropper(false)}
           onSave={handleCropComplete}
         />
       )}

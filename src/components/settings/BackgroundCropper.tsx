@@ -3,9 +3,8 @@ import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
 
 interface BackgroundCropperProps {
-  imageSrc: string;
   onCancel: () => void;
-  onSave: (mobileBlob: Blob, desktopBlob: Blob) => void;
+  onSave: (mobileBlob: Blob | null, desktopBlob: Blob | null) => void;
 }
 
 const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<Blob> => {
@@ -45,8 +44,10 @@ const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<Blob> =
   });
 };
 
-export default function BackgroundCropper({ imageSrc, onCancel, onSave }: BackgroundCropperProps) {
+export default function BackgroundCropper({ onCancel, onSave }: BackgroundCropperProps) {
   const [activeTab, setActiveTab] = useState<'mobile' | 'desktop'>('mobile');
+
+  const [mobileImageSrc, setMobileImageSrc] = useState<string | null>(null);
   const [desktopImageSrc, setDesktopImageSrc] = useState<string | null>(null);
 
   const [mobileCrop, setMobileCrop] = useState({ x: 0, y: 0 });
@@ -59,13 +60,20 @@ export default function BackgroundCropper({ imageSrc, onCancel, onSave }: Backgr
 
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleDesktopImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMobileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      setDesktopImageSrc(reader.result as string);
-    };
+    reader.onload = () => setMobileImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleDesktopUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setDesktopImageSrc(reader.result as string);
     reader.readAsDataURL(file);
     e.target.value = '';
   };
@@ -79,11 +87,12 @@ export default function BackgroundCropper({ imageSrc, onCancel, onSave }: Backgr
   }, []);
 
   const handleSave = async () => {
-    if (!mobileCroppedAreaPixels || !desktopCroppedAreaPixels) return;
+    if (!mobileImageSrc && !desktopImageSrc) return onCancel();
+    
     setIsProcessing(true);
     try {
-      const mobileBlob = await getCroppedImg(imageSrc, mobileCroppedAreaPixels);
-      const desktopBlob = await getCroppedImg(desktopImageSrc || imageSrc, desktopCroppedAreaPixels);
+      const mobileBlob = mobileImageSrc && mobileCroppedAreaPixels ? await getCroppedImg(mobileImageSrc, mobileCroppedAreaPixels) : null;
+      const desktopBlob = desktopImageSrc && desktopCroppedAreaPixels ? await getCroppedImg(desktopImageSrc, desktopCroppedAreaPixels) : null;
       onSave(mobileBlob, desktopBlob);
     } catch (e) {
       console.error(e);
@@ -127,27 +136,60 @@ export default function BackgroundCropper({ imageSrc, onCancel, onSave }: Backgr
         </div>
 
         {/* Cropper Area */}
-        <div className="relative w-full h-[50vh] lg:h-[60vh] bg-black/50">
+        <div className="relative w-full h-[50vh] lg:h-[60vh] bg-black/50 flex flex-col items-center justify-center">
           {activeTab === 'mobile' ? (
-            <Cropper
-              image={imageSrc}
-              crop={mobileCrop}
-              zoom={mobileZoom}
-              aspect={9 / 16}
-              onCropChange={setMobileCrop}
-              onZoomChange={setMobileZoom}
-              onCropComplete={onCropCompleteMobile}
-            />
+            mobileImageSrc ? (
+              <Cropper
+                image={mobileImageSrc}
+                crop={mobileCrop}
+                zoom={mobileZoom}
+                aspect={9 / 16}
+                onCropChange={setMobileCrop}
+                onZoomChange={setMobileZoom}
+                onCropComplete={onCropCompleteMobile}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4 text-white/50">
+                <span className="material-symbols-outlined text-4xl">smartphone</span>
+                <p className="text-sm font-label uppercase tracking-widest">No Image for Mobile</p>
+                <label className="mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">upload</span>
+                  Upload Mobile Background
+                  <input type="file" accept="image/*" className="hidden" onChange={handleMobileUpload} />
+                </label>
+              </div>
+            )
           ) : (
-            <Cropper
-              image={desktopImageSrc || imageSrc}
-              crop={desktopCrop}
-              zoom={desktopZoom}
-              aspect={16 / 9}
-              onCropChange={setDesktopCrop}
-              onZoomChange={setDesktopZoom}
-              onCropComplete={onCropCompleteDesktop}
-            />
+            desktopImageSrc ? (
+              <Cropper
+                image={desktopImageSrc}
+                crop={desktopCrop}
+                zoom={desktopZoom}
+                aspect={16 / 9}
+                onCropChange={setDesktopCrop}
+                onZoomChange={setDesktopZoom}
+                onCropComplete={onCropCompleteDesktop}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4 text-white/50">
+                <span className="material-symbols-outlined text-4xl">desktop_windows</span>
+                <p className="text-sm font-label uppercase tracking-widest">No Image for Desktop</p>
+                {mobileImageSrc && (
+                  <button 
+                    onClick={() => setDesktopImageSrc(mobileImageSrc)}
+                    className="cursor-pointer px-6 py-3 rounded-full border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">content_copy</span>
+                    Use Mobile Image
+                  </button>
+                )}
+                <label className="mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm">upload</span>
+                  Upload Desktop Background
+                  <input type="file" accept="image/*" className="hidden" onChange={handleDesktopUpload} />
+                </label>
+              </div>
+            )
           )}
         </div>
 
@@ -155,28 +197,41 @@ export default function BackgroundCropper({ imageSrc, onCancel, onSave }: Backgr
         <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 bg-black/40">
           <div className="flex-1">
             <h4 className="text-[var(--gold)] font-serif italic text-lg mb-1">
-              {activeTab === 'mobile' ? 'Mobile Aspect Ratio' : 'Desktop Aspect Ratio'}
+              {activeTab === 'mobile' ? 'Mobile Background' : 'Desktop Background'}
             </h4>
             <p className="text-white/50 text-xs font-label uppercase tracking-wider leading-relaxed">
-              Drag and zoom the image to set how the background will appear on {activeTab === 'mobile' ? 'mobile devices' : 'desktop screens'}.
-              {activeTab === 'mobile' && ' Remember to set the desktop view before saving!'}
+              {activeTab === 'mobile' ? 'Set the background for mobile devices (9:16).' : 'Set the background for desktop screens (16:9).'}
             </p>
-            {activeTab === 'desktop' && (
+            {activeTab === 'mobile' && mobileImageSrc && (
+               <div className="mt-4 flex items-center gap-4">
+                  <label className="cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                    <span className="material-symbols-outlined text-sm">image</span>
+                    Change Image
+                    <input type="file" accept="image/*" className="hidden" onChange={handleMobileUpload} />
+                  </label>
+                  <button 
+                    onClick={() => setMobileImageSrc(null)}
+                    className="text-white/40 hover:text-red-400 text-xs font-label uppercase tracking-widest transition-colors flex items-center gap-1"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    Clear
+                  </button>
+               </div>
+            )}
+            {activeTab === 'desktop' && desktopImageSrc && (
               <div className="mt-4 flex items-center gap-4">
                 <label className="cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                   <span className="material-symbols-outlined text-sm">image</span>
-                  Change Image for Desktop
-                  <input type="file" accept="image/*" className="hidden" onChange={handleDesktopImageUpload} />
+                  Change Image
+                  <input type="file" accept="image/*" className="hidden" onChange={handleDesktopUpload} />
                 </label>
-                {desktopImageSrc && (
-                  <button 
-                    onClick={() => setDesktopImageSrc(null)}
-                    className="text-white/40 hover:text-red-400 text-xs font-label uppercase tracking-widest transition-colors flex items-center gap-1"
-                  >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                    Use Same Image
-                  </button>
-                )}
+                <button 
+                  onClick={() => setDesktopImageSrc(null)}
+                  className="text-white/40 hover:text-red-400 text-xs font-label uppercase tracking-widest transition-colors flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                  Clear
+                </button>
               </div>
             )}
           </div>
@@ -190,8 +245,12 @@ export default function BackgroundCropper({ imageSrc, onCancel, onSave }: Backgr
             </button>
             <button 
               onClick={handleSave}
-              className="flex-1 md:flex-none px-8 py-3 rounded-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] text-black font-bold shadow-lg shadow-[var(--gold)]/20 hover:shadow-[var(--gold)]/40 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 font-label text-xs uppercase tracking-widest"
-              disabled={isProcessing}
+              className={`flex-1 md:flex-none px-8 py-3 rounded-full font-bold shadow-lg flex items-center justify-center gap-2 font-label text-xs uppercase tracking-widest transition-all ${
+                (!mobileImageSrc && !desktopImageSrc) 
+                  ? 'bg-white/10 text-white/40 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] text-black shadow-[var(--gold)]/20 hover:shadow-[var(--gold)]/40 hover:scale-105 active:scale-95'
+              }`}
+              disabled={isProcessing || (!mobileImageSrc && !desktopImageSrc)}
             >
               {isProcessing ? (
                 <span className="material-symbols-outlined animate-spin text-sm">sync</span>

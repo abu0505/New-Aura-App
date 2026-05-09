@@ -1,0 +1,992 @@
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?on_conflict=user_id OPTIONS: {"method":"POST","headers":{},"body":"{\"user_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"endpoint\":\"https://fcm.googleapis.com/fcm/send/fXCFS3Ek_B4:APA91bFySt6G7gy5_fHGRyzI6q2zPZj0hjBqUObIUT--W0blcmcy8oYuNU1bzdIsuF8ZuNOmMEOwsgGrtEubEjilyE_UMZESXv4f6_JGRTUQmXQscZYvVAXwI6X-QybcKWbGBGST_5Ho\",\"p256dh\":\"BIeAPbDohqS1bZyp2eDuMUamOhbi8tEPKigkLMze2Xsi2oHSrv_9ZFIEogRaGSz7Sb35p6NzqL34HjiqRkQs2L8\",\"auth\":\"BxpK81jcJfOz5OWsip6STA\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folders?select=*&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF] ✅ Subscription saved to DB successfully
+ [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
+ [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folder_items?select=folder_id&folder_id=in.%289527a350-8c61-4c4a-a043-de6810751787%2C7b50070f-2c2c-4ce2-a2bb-d394ac064919%2Cc5e8a252-a6b5-4bb7-9cf7-042871f70713%2C19ab9e7b-47af-4576-9af3-41f1ba939ad0%2Cb01aadbd-9ec2-4d2a-a408-6e3925641b54%2Cdc963530-6427-4745-a8fa-98f6246007c4%29 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28feb2bd3d-c85e-458e-b74f-c8ce34160893%2C46506b8e-b899-40d1-8a2a-36feffb2dcbf%2C444ce9d6-bb62-48a3-824f-8465f048bebf%2Cab152be0-0bd3-4094-af45-e36d583a2bfa%2Cde0f1090-3b3e-480a-909e-696d57e6ef74%2C5f9ec96d-206a-45a8-a0ae-0ffa34039f21%2C0a3c9969-0d01-410e-a3b0-b1d2309dabb8%2C06ea4e31-074e-4094-9670-0220bc4fe47a%29 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Ctype%2Ccreated_at%2Csender_public_key&media_url=not.is.null&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":9,\"limit_count\":6}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 206 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28da5cfd08-0911-4209-8b0a-6da37e04e5d8%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:12:42.330Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:12:42.914Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28da5cfd08-0911-4209-8b0a-6da37e04e5d8%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:12:44.327Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A11%3A40.107488%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.d8b42da8-a5f0-4cc2-a206-b17d953d74a7 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:12:47.084Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28d8b42da8-a5f0-4cc2-a206-b17d953d74a7%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:12:48.563Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:12:50.036Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:12:50.036Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"1a9e3584-408e-4d80-9c7b-611b0e494f33\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"xpJMNl8rgNipw4+7BKtPeH2tIx3i8h4D1ssETUiQIT2lKu/fVAN1fOspsSUi\",\"nonce\":\"f1G8nrOCSORVHEk8IvKU2QtqNGiuc3QK\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 1a9e3584... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"1a9e3584-408e-4d80-9c7b-611b0e494f33\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.d8b42da8-a5f0-4cc2-a206-b17d953d74a7 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"reaction\":\"🙈\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:12:55.581Z\"}"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:12:59.836Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:12:59.836Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"e1bbac6f-fbd7-473b-ad5e-f5999439d92c\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"+x6A/rubQGYb3873yp59KjvtiSawEQ1MLfQ3nXoUz30Sia0BZ07MIGbtDX7P7mZMEcOOW/LXJu9qbji+\",\"nonce\":\"9hPxO8nhNa+MLSGXYh7TncK4PbFyz7ho\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"d8b42da8-a5f0-4cc2-a206-b17d953d74a7\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg e1bbac6f... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"e1bbac6f-fbd7-473b-ad5e-f5999439d92c\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:13:01.590Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Receiver is online"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.c6807d96-5a41-4f5d-819a-91a0dde19fc8 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:13:03.448Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Receiver is online"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:13:10.613Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.ed93158f-ace0-4967-8a5b-4e3b9d4de2ed OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:13:11.588Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.bcea05a3-fd87-41cb-a68c-260b25c2dca4 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:13:24.780Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:13:25.573Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.4b9a63e0-955d-41fd-adf0-5736c3b86d05 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:13:26.651Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.c12efe43-9576-4ff5-a0b4-3a7022d4a404 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:13:29.829Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:13:40.775Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:13:55.689Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:14:10.582Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/sync_chat_settings OPTIONS: {"method":"POST","headers":{},"body":"{\"bg_url\":\"{\\\"mobile\\\":\\\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778343258/ija1gp3ja9txlngcp6yj.raw\\\",\\\"desktop\\\":\\\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778343259/edlcoadzyclniixkqzbr.raw\\\"}\",\"bg_key\":\"{\\\"mobile\\\":[205,160,58,47,56,166,218,197,102,209,189,27,7,153,134,27,13,67,212,240,252,106,15,168,150,255,96,110,191,152,188,241],\\\"desktop\\\":[37,100,34,219,122,47,34,21,225,249,22,66,150,19,85,18,0,38,34,146,138,94,141,142,224,136,18,52,113,76,119,120]}\",\"bg_nonce\":\"{\\\"mobile\\\":[4,165,78,177,93,198,113,118,79,92,198,248,114,158,57,42,91,82,177,239,154,123,133,83],\\\"desktop\\\":[199,70,171,198,156,38,19,218,235,123,70,6,197,188,156,155,136,99,229,5,123,7,124,0]}\",\"do_sync\":true}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:14:24.707Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28d8b42da8-a5f0-4cc2-a206-b17d953d74a7%2Cc6807d96-5a41-4f5d-819a-91a0dde19fc8%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:14:25.450Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:14:25.701Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28ed93158f-ace0-4967-8a5b-4e3b9d4de2ed%2Cbcea05a3-fd87-41cb-a68c-260b25c2dca4%2C4b9a63e0-955d-41fd-adf0-5736c3b86d05%2Cc12efe43-9576-4ff5-a0b4-3a7022d4a404%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:14:30.031Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:14:37.626Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:14:37.626Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"5dde045a-2b1a-405f-9651-0521ae71a8f8\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"Kd0O25KsMmcWQRzJj8oro6n626yZXFNfpTu36T+7kTiU3LziMK+l2wPN3qSwzkVWHQE=\",\"nonce\":\"7TS6LXesAVLlGgUVM3gxqueMoamIpEV8\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 5dde045a... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"5dde045a-2b1a-405f-9651-0521ae71a8f8\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28c6807d96-5a41-4f5d-819a-91a0dde19fc8%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:14:39.814Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:14:40.882Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%284b9a63e0-955d-41fd-adf0-5736c3b86d05%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:14:41.020Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Receiver is online"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.bcea05a3-fd87-41cb-a68c-260b25c2dca4 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"reaction\":\"🙈\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%284b9a63e0-955d-41fd-adf0-5736c3b86d05%2Cc12efe43-9576-4ff5-a0b4-3a7022d4a404%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:14:45.013Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.9a498384-5e50-4659-83fd-9237b2bb76c3 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:15:00.104Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%289a498384-5e50-4659-83fd-9237b2bb76c3%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:15:26.368Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:15:26.847Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28bcea05a3-fd87-41cb-a68c-260b25c2dca4%2C4b9a63e0-955d-41fd-adf0-5736c3b86d05%2Cc12efe43-9576-4ff5-a0b4-3a7022d4a404%2C9a498384-5e50-4659-83fd-9237b2bb76c3%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:15:27.484Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A14%3A58.143009%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:15:35.548Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:15:35.548Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"b300ec1e-e180-4125-a4ec-4ab9215f3a47\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"RS2Guo6vlbNYi87nIfcA6LJJ6w9WjdvS/peqUqc0RMjMLeiw5dylD/RQSoIMSmwd2Mk1bVJN69I=\",\"nonce\":\"QIuDtgsNBeV+Qi2nJ6lMm3xTvL60ZCN2\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:15:40.844Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:15:41.234Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28bcea05a3-fd87-41cb-a68c-260b25c2dca4%2C4b9a63e0-955d-41fd-adf0-5736c3b86d05%2Cc12efe43-9576-4ff5-a0b4-3a7022d4a404%2C9a498384-5e50-4659-83fd-9237b2bb76c3%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:15:41.859Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A15%3A35.548Z&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:15:44.215Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:15:44.215Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"c3be557c-8322-4d68-9260-14670e0e10e5\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"++XkeucCRCK4ZsBv8C9Ebb4KxdKHjOUPo7LtRO5wJlRnTsvDxkClAlRNjqFRlgCwzDNsbok4Pd03IVnYhpPG9UE=\",\"nonce\":\"GmR158fGIp+Hz/xBPtXxi8dijP1UQUGq\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:15:55.575Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:15:57.192Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:15:57.192Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"65e8b280-0ac4-4dc0-8908-048b7a656b45\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"GSefIaDu5LIhU/7OBVjuf3zDj+ba8GKXibAl8chUBegQnD9qMhGSvaupmPuAKGp1VyWRButGG8yzHJjs7Qux46/YDiCJ5DFCIsFDJya+dz6zlYs=\",\"nonce\":\"rEpQvqSezX8evDMotWiaUTs0ZP+rpszl\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:16:02.764Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:16:10.577Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg b300ec1e... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"b300ec1e-e180-4125-a4ec-4ab9215f3a47\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:16:19.178Z\"}"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28c12efe43-9576-4ff5-a0b4-3a7022d4a404%2C9a498384-5e50-4659-83fd-9237b2bb76c3%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:16:20.774Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg c3be557c... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg 65e8b280...)
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"c3be557c-8322-4d68-9260-14670e0e10e5\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28e7d3f5c9-e677-49f8-889e-81984c7d53f1%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:16:24.468Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28e7d3f5c9-e677-49f8-889e-81984c7d53f1%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:16:24.469Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Cis_read%2Cis_delivered%2Cread_at%2Cdelivered_at%2Creaction%2Cis_edited%2Cencrypted_content%2Cnonce%2Csender_public_key%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at&id=in.%28b300ec1e-e180-4125-a4ec-4ab9215f3a47%2Cc3be557c-8322-4d68-9260-14670e0e10e5%2C65e8b280-0ac4-4dc0-8908-048b7a656b45%29 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Receiver is online"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"sentTo":1}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:17:41.516Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28e7d3f5c9-e677-49f8-889e-81984c7d53f1%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:17:41.730Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:17:42.315Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%289a498384-5e50-4659-83fd-9237b2bb76c3%2Ce7d3f5c9-e677-49f8-889e-81984c7d53f1%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:17:42.844Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A16%3A21.02529%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28b0b9eebf-5bdc-4889-a584-72119b5c30cd%2C2dc7b57c-709c-4b34-85db-e5ff2e7031ea%2Ce223a2c5-eea7-43ee-9ca1-f981984e8478%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:17:45.401Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28b0b9eebf-5bdc-4889-a584-72119b5c30cd%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:17:46.707Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%282dc7b57c-709c-4b34-85db-e5ff2e7031ea%2Ce223a2c5-eea7-43ee-9ca1-f981984e8478%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:17:47.943Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:17:55.576Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:17:55.941Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:17:55.941Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"7243e2e8-12d0-4f44-ab02-8f0095b9bc5e\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"1BdthPs7g1Iwj/F01L/gUNnpE0NGu6O6wOV3ff5TxMk0EQ==\",\"nonce\":\"gxbd92Ghv3hFx0eexdM0UovPRJv5CQxg\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"2dc7b57c-709c-4b34-85db-e5ff2e7031ea\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28e7d3f5c9-e677-49f8-889e-81984c7d53f1%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:17:57.602Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 7243e2e8... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28b0b9eebf-5bdc-4889-a584-72119b5c30cd%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:06.355Z\"}"}
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"7243e2e8-12d0-4f44-ab02-8f0095b9bc5e\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.5ba4f7c3-966a-426e-b547-12148423d2f2 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:18:06.559Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%285ba4f7c3-966a-426e-b547-12148423d2f2%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:07.769Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:18:10.582Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:11.473Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:18:11.473Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"27444ab5-f07b-4a5e-b3aa-cb6653aef767\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"fKqk+pASkgPx0EGCXpiwjd156cR89qjjZSOV57VVXgSQt3ME042OcHisFGLyootUXqYoc94=\",\"nonce\":\"JWgVXHiFeG+N0MeJYfHIT1/meKQQn/09\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"e223a2c5-eea7-43ee-9ca1-f981984e8478\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 27444ab5... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"27444ab5-f07b-4a5e-b3aa-cb6653aef767\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28e223a2c5-eea7-43ee-9ca1-f981984e8478%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:13.362Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:20.508Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:18:20.508Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"3f4f70ea-1b6b-4816-bc09-0f0e25d32a6a\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"YO892GhGp3G8v7IhcHB6dy7zIoiT9JDVvn6ahEYI5V6ZQYkAO1lhAuM=\",\"nonce\":\"h8vvVxGZpfNh2mxoKHER3b/dN+jCq4Az\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"5ba4f7c3-966a-426e-b547-12148423d2f2\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 3f4f70ea... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"3f4f70ea-1b6b-4816-bc09-0f0e25d32a6a\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%285ba4f7c3-966a-426e-b547-12148423d2f2%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:22.181Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:18:25.574Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:26.071Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:18:26.071Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"054450ff-532c-4dbc-a0dd-adb78ffc0351\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"+xYP8VFCYAju68JaYxvkFSH32dwawga0u7PL+v5QhI+01z4q3OnjWmSK38YvADBqP0g=\",\"nonce\":\"1Ih1sqnAi3qXGosQPv6MJh99cCmdj0rS\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 054450ff... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"054450ff-532c-4dbc-a0dd-adb78ffc0351\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.b8d34d87-387a-497d-8434-157de1070270 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:18:30.339Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%285ba4f7c3-966a-426e-b547-12148423d2f2%2Cb8d34d87-387a-497d-8434-157de1070270%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:31.803Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:39.484Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:18:39.484Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"04a95942-ca83-4add-a76c-3392ced8b6aa\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"/fsuU9wDHR8Mq6E6N0hW2D6JFFXj+fEehGTRtnFLl++Z7L40BClsdwc/SbskZTiXR8x+5fRff7mezPRKwrWWfqG3/aJvsH+EC+eJf0V985R22hUVDzimhxUc5mbpfN+BEFA/ua84rpXLoF6gOwmyujNdOf1RwKaL5x3/5w==\",\"nonce\":\"jJrecV703oQvSujLReNBrZG1r7ZGvAAJ\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 04a95942... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:18:40.578Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"04a95942-ca83-4add-a76c-3392ced8b6aa\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.811d29f5-9036-4867-991b-ee0b9e57926f OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:18:42.713Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28811d29f5-9036-4867-991b-ee0b9e57926f%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:44.107Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:18:54.658Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:18:54.658Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"850d2cc8-7e4e-4aa3-9e0e-c74ac880676c\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"0Fb0ygy1BctfqXFM1apXI4ntcmvR9ACNHbhpIRrT5Tqd2p28K5eTYztZ1HqpdrpbOTdFHZonMT+SwnzqUe/A+0TVVTgotv+z65B5JRUvtKM7zxU0\",\"nonce\":\"uPK3DoFJ3Rg9bueyoRwqodbmS2QF3ndX\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"b8d34d87-387a-497d-8434-157de1070270\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:18:55.576Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 850d2cc8... to partner 8bb51234...
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"850d2cc8-7e4e-4aa3-9e0e-c74ac880676c\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:19:02.820Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:19:02.820Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"1bb039ec-772e-417d-a894-3b9163874220\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"Sg0Q44pSZHuZcbs5uCj+aF8TFZld8QEw7uqoWdMc9K4NrO6qThSwhE38oL1jG787kRV4WPgi1g==\",\"nonce\":\"zL/eWKEkCuIjV7zncjk7Tuk7QzEjbLL3\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"811d29f5-9036-4867-991b-ee0b9e57926f\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 1bb039ec... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"1bb039ec-772e-417d-a894-3b9163874220\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.8921735e-4377-40cc-abac-84e50aa4fd54 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:19:07.560Z\"}"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%288921735e-4377-40cc-abac-84e50aa4fd54%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:19:08.982Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:19:09.454Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%288921735e-4377-40cc-abac-84e50aa4fd54%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:19:10.086Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A19%3A07.091705%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:19:10.579Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.8921735e-4377-40cc-abac-84e50aa4fd54 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"reaction\":\"🙈\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.52982de8-c654-469f-a7fe-98cd35c90090 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:19:15.281Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:19:16.484Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.52982de8-c654-469f-a7fe-98cd35c90090 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"reaction\":\"😁\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:19:25.578Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.7d1299ab-1352-4df8-a3b2-d19be0abddef OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:19:28.414Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%287d1299ab-1352-4df8-a3b2-d19be0abddef%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:19:29.865Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.206e71be-5a4b-4b4f-bc6a-3b99a2d79d64 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-09T16:19:31.496Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28206e71be-5a4b-4b4f-bc6a-3b99a2d79d64%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:19:32.593Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:19:40.582Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:19:55.584Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:20:04.645Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:20:04.645Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"5b80a772-b0db-4c66-bc20-f9a35e5d6577\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"rEE5fEUHEQmNa1wibEkpgPVMlRnyZMtNLd/WeXs0WxQSs7dvf7vyEQvnB/rPJj2KLZwgwbD0ceENteAfePf5FPzHOR3ZlqW37mzgS9v78G0E0TzVE81C4kvOVKuDdHd6tdjobP7wZWxj3iYIx7r/Vra69hFctgFFlb4N7jAr0g14v4ERDXO+hryyi+OTp7ZI0IFZzhkIXven68Rh4clV0PwM\",\"nonce\":\"MuhmQPUg7DIoIt5qCl3s0SyXzGUIHRD+\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 5b80a772... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"5b80a772-b0db-4c66-bc20-f9a35e5d6577\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:20:10.581Z\"}"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:20:10.819Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:20:10.819Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"067214b9-6775-4f3d-bbb0-5b5caeaba4a1\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"UxAXFjXp15YgeN/V2V8C0cx95duaRmusZ1nkXgbqMrZCnYwAStM58A==\",\"nonce\":\"5aGAGwCL+aE/u/6mrdXZ2BiQpxjtCvqW\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 067214b9... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"067214b9-6775-4f3d-bbb0-5b5caeaba4a1\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Ctype%2Ccreated_at%2Csender_public_key&media_url=not.is.null&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.5b80a772-b0db-4c66-bc20-f9a35e5d6577%29%2Cand%28sender_id.eq.5b80a772-b0db-4c66-bc20-f9a35e5d6577%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"5b80a772-b0db-4c66-bc20-f9a35e5d6577\",\"current_month\":5,\"current_day\":9,\"limit_count\":6}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.5b80a772-b0db-4c66-bc20-f9a35e5d6577 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:20:17.174Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Ctype%2Ccreated_at%2Csender_public_key&media_url=not.is.null&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":9,\"limit_count\":6}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.5b80a772-b0db-4c66-bc20-f9a35e5d6577:1  Failed to load resource: the server responded with a status of 406 ()
+ [SUPABASE FETCH SUCCESS] Status: 406 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 206 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%2C7d1299ab-1352-4df8-a3b2-d19be0abddef%2C206e71be-5a4b-4b4f-bc6a-3b99a2d79d64%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:20:18.160Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A20%3A11.427546%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:20:20.183Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:20:25.576Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:20:31.561Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:20:40.583Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:20:55.575Z\"}"}
+ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A20%3A11.427546%2B00%3A00&order=created_at.asc:1  Failed to load resource: the server responded with a status of 500 ()
+ [SUPABASE FETCH SUCCESS] Status: 500 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:21:02.446Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:21:05.827Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:21:10.278Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:21:10.578Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%2C7d1299ab-1352-4df8-a3b2-d19be0abddef%2C206e71be-5a4b-4b4f-bc6a-3b99a2d79d64%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:21:10.985Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-09T16%3A20%3A11.427546%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T16:21:11.777Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2852982de8-c654-469f-a7fe-98cd35c90090%2C7d1299ab-1352-4df8-a3b2-d19be0abddef%2C206e71be-5a4b-4b4f-bc6a-3b99a2d79d64%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:21:12.283Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:21:17.192Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:21:17.192Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"6531d53b-6d6c-4d3e-ac03-0a001340e5fc\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"dmtRZlkuaiSaqgVVAMUeUckIYKA980b875OramqZGglUtrwWoXibNtQwzH3ksoiRytNY1Mhmxg==\",\"nonce\":\"xM0QgX/ZYkq2FaP1sgLoqppT7efcErEH\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T16:21:23.371Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-09T16:21:23.371Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"48365572-d9e2-4d61-8271-18b530ca61ce\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"iC0EiAUYIQhoQ2ywmSWsEjT58HwK7WjGg/1ys01Lm3s=\",\"nonce\":\"UtN+ZdBra0bHYEEFNdEWuwVgrJ4Kl/q9\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T16:21:25.583Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.6531d53b-6d6c-4d3e-ac03-0a001340e5fc OPTIONS: {"method":"PATCH","headers":{},"body":"{\"encrypted_content\":\"Chc8XEMvTQlOyO87Z4HDlDVX3q4z+Um8WaFNmbU0h0Fy6puJPKJfZisEgIDiLaFeo09Wnk+vAMuu7Yg=\",\"nonce\":\"c35GIkgh3QT9dhfEVpm7Q2JwdV+22jWX\",\"is_edited\":true,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"z5uj6oqtgfdl\"}"}
