@@ -101,8 +101,8 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-4 lg:p-10 animate-fade-in">
-      <div className="bg-[var(--bg-secondary)] border border-white/10 rounded-3xl w-full max-w-4xl flex flex-col overflow-hidden shadow-2xl relative">
+    <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex flex-col items-center justify-center p-2 lg:p-10 animate-fade-in">
+      <div className="bg-[var(--bg-secondary)] border border-white/10 rounded-3xl w-full max-w-4xl max-h-[95dvh] flex flex-col overflow-y-auto custom-scrollbar shadow-2xl relative">
         {/* Header Tabs */}
         <div className="flex items-center justify-between border-b border-white/5 p-2 bg-black/20">
           <div className="flex items-center gap-2 px-2">
@@ -136,7 +136,7 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
         </div>
 
         {/* Cropper Area */}
-        <div className="relative w-full h-[50vh] lg:h-[60vh] bg-black/50 flex flex-col items-center justify-center">
+        <div className="relative w-full min-h-[40vh] lg:h-[50vh] shrink-0 bg-black/50 flex flex-col items-center justify-center">
           {activeTab === 'mobile' ? (
             mobileImageSrc ? (
               <Cropper
@@ -152,10 +152,10 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
               <div className="flex flex-col items-center justify-center gap-4 text-white/50">
                 <span className="material-symbols-outlined text-4xl">smartphone</span>
                 <p className="text-sm font-label uppercase tracking-widest">No Image for Mobile</p>
-                <label className="mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <label className="relative mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
                   <span className="material-symbols-outlined text-sm">upload</span>
                   Upload Mobile Background
-                  <input type="file" accept="image/*" className="hidden" onChange={handleMobileUpload} />
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleMobileUpload} />
                 </label>
               </div>
             )
@@ -183,10 +183,10 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
                     Use Mobile Image
                   </button>
                 )}
-                <label className="mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <label className="relative mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
                   <span className="material-symbols-outlined text-sm">upload</span>
                   Upload Desktop Background
-                  <input type="file" accept="image/*" className="hidden" onChange={handleDesktopUpload} />
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleDesktopUpload} />
                 </label>
               </div>
             )
@@ -204,10 +204,10 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
             </p>
             {activeTab === 'mobile' && mobileImageSrc && (
                <div className="mt-4 flex items-center gap-4">
-                  <label className="cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                  <label className="relative cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
                     <span className="material-symbols-outlined text-sm">image</span>
                     Change Image
-                    <input type="file" accept="image/*" className="hidden" onChange={handleMobileUpload} />
+                    <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleMobileUpload} />
                   </label>
                   <button 
                     onClick={() => setMobileImageSrc(null)}
@@ -220,10 +220,10 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
             )}
             {activeTab === 'desktop' && desktopImageSrc && (
               <div className="mt-4 flex items-center gap-4">
-                <label className="cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+                <label className="relative cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
                   <span className="material-symbols-outlined text-sm">image</span>
                   Change Image
-                  <input type="file" accept="image/*" className="hidden" onChange={handleDesktopUpload} />
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleDesktopUpload} />
                 </label>
                 <button 
                   onClick={() => setDesktopImageSrc(null)}

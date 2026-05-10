@@ -1,11 +1,257 @@
-react-dom_client.js?v=b6ff6791:14338 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
-content.js:22 [SmartLens Content] Initializing...
-content.js:438 [SmartLens] Content script loaded
-main.tsx:14 [🔔 NOTIF] Registering service worker: /sw.js
-main.tsx:17 [🔔 NOTIF] ✅ Service Worker registered successfully
-main.tsx:18 [🔔 NOTIF]   scope: http://localhost:5173/
-main.tsx:19 [🔔 NOTIF]   active: activated
-main.tsx:20 [🔔 NOTIF]   waiting: none
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 OPTIONS: {"method":"GET","headers":{}}
+ [SmartLens Content] Initializing...
+ [SmartLens] Content script loaded
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+ [🔔 NOTIF] Registering service worker: /sw.js
+ [🔔 NOTIF] ✅ Service Worker registered successfully
+ [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
+ [🔔 NOTIF]   active: activated
+ [🔔 NOTIF]   waiting: none
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3766
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18614)
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at async https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3760
+ 
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+ @supabase/gotrue-js: Lock "lock:sb-ugfxjjakpsngfdrjlsdr-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+ @supabase/gotrue-js: Lock "lock:sb-ugfxjjakpsngfdrjlsdr-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+ @supabase/gotrue-js: Lock "lock:sb-ugfxjjakpsngfdrjlsdr-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+ @supabase/gotrue-js: Lock "lock:sb-ugfxjjakpsngfdrjlsdr-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+ [ENCRYPTION] Failed to fetch profile status: Object
+supabase-CLpXqyPc.js:24 Uncaught (in promise) 
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3766
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18614)
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at async https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3760
+ 
+ 
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"email\":\"firstuser@gmail.com\",\"password\":\"First_user\",\"gotrue_meta_security\":{}}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3766
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18614)
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at oi.signInWithPassword (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:23:19284)
+    at onSubmit (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:40:3888)
+    at yd (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:125926)
+    at https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:130919
+    at hn (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:15077)
+    at wd (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:127153)
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"email\":\"firstuser@gmail.com\",\"password\":\"First_user\",\"gotrue_meta_security\":{}}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at async https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3760
+ 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=password
+ [SUPABASE FETCH ERROR] Message: Failed to fetch
+ [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at oi.signInWithPassword (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:23:19284)
+    at onSubmit (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:40:3888)
+    at yd (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:125926)
+    at https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:130919
+    at hn (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:15077)
+    at wd (https://new-aura-v2.vercel.app/assets/index-BRxKJ_Nr.js:9:127153)
+ 
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+ [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3766
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18614)
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:21 TypeError: Failed to fetch
+    at fetch (supabase-CLpXqyPc.js:24:41821)
+    at supabase-CLpXqyPc.js:21:2856
+    at rr (supabase-CLpXqyPc.js:21:8937)
+    at J (supabase-CLpXqyPc.js:21:8679)
+    at r (supabase-CLpXqyPc.js:24:18699)
+    at supabase-CLpXqyPc.js:21:3766
+    at supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (supabase-CLpXqyPc.js:24:18614)
+rr @ supabase-CLpXqyPc.js:21
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at async https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3760
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:21 TypeError: Failed to fetch
+    at fetch (supabase-CLpXqyPc.js:24:41821)
+    at supabase-CLpXqyPc.js:21:2856
+    at rr (supabase-CLpXqyPc.js:21:8937)
+    at J (supabase-CLpXqyPc.js:21:8679)
+    at r (supabase-CLpXqyPc.js:24:18699)
+    at async supabase-CLpXqyPc.js:21:3760
+rr @ supabase-CLpXqyPc.js:21
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3766
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18614)
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:21 TypeError: Failed to fetch
+    at fetch (supabase-CLpXqyPc.js:24:41821)
+    at supabase-CLpXqyPc.js:21:2856
+    at rr (supabase-CLpXqyPc.js:21:8937)
+    at J (supabase-CLpXqyPc.js:21:8679)
+    at r (supabase-CLpXqyPc.js:24:18699)
+    at supabase-CLpXqyPc.js:21:3766
+    at supabase-CLpXqyPc.js:21:3837
+    at new Promise (<anonymous>)
+    at Vn (supabase-CLpXqyPc.js:21:3697)
+    at oi._refreshAccessToken (supabase-CLpXqyPc.js:24:18614)
+rr @ supabase-CLpXqyPc.js:21
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token:1  Failed to load resource: net::ERR_FAILED
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:2856
+    at rr (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8937)
+    at J (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:8679)
+    at r (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:18699)
+    at async https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:21:3760
+fetch @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:21 TypeError: Failed to fetch
+    at fetch (supabase-CLpXqyPc.js:24:41821)
+    at supabase-CLpXqyPc.js:21:2856
+    at rr (supabase-CLpXqyPc.js:21:8937)
+    at J (supabase-CLpXqyPc.js:21:8679)
+    at r (supabase-CLpXqyPc.js:24:18699)
+    at async supabase-CLpXqyPc.js:21:3760
+rr @ supabase-CLpXqyPc.js:21
+supabase-CLpXqyPc.js:24 AuthRetryableFetchError: Failed to fetch
+    at rr (supabase-CLpXqyPc.js:21:8994)
+    at async J (supabase-CLpXqyPc.js:21:8673)
+    at async r (supabase-CLpXqyPc.js:24:18693)
+    at async supabase-CLpXqyPc.js:21:3760
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+_useSession @ supabase-CLpXqyPc.js:24
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/auth/v1/token?grant_type=refresh_token OPTIONS: {"method":"POST","headers":{"Content-Type":"application/json;charset=UTF-8","Authorization":"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","apikey":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnZnhqamFrcHNuZ2Zkcmpsc2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDY3NzQsImV4cCI6MjA4OTkyMjc3NH0.KiA-8YqdsgO1Is2Fumh4mqmfQY8i1O_K8RnQtBcjuGo","X-Client-Info":"supabase-js-web/2.100.0","X-Supabase-Api-Version":"2024-01-01"},"body":"{\"refresh_token\":\"qktms6tsklkx\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
