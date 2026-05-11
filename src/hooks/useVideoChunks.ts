@@ -30,7 +30,7 @@
  *   - Video plays from the moment first blocks are in the buffer
  */
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { realtimeHub } from '../lib/realtimeHub';
 import { useAuth } from '../contexts/AuthContext';
 import { usePartner } from './usePartner';
@@ -581,6 +581,23 @@ export function useVideoChunks(messageId?: string) {
   const { partner } = usePartner();
   const [chunks, setChunks] = useState<ReceivedChunk[]>([]);
 
+  // ── FIX: Use a ref for partner public key to avoid stale closure in realtime callback ──
+  const partnerKeyRef = useRef<string | null>(partner?.public_key ?? null);
+  useEffect(() => {
+    partnerKeyRef.current = partner?.public_key ?? null;
+  }, [partner?.public_key]);
+
+  // ── FIX: Queue chunks that arrive before partner key is available ──
+  const pendingChunksRef = useRef<Array<{
+    message_id: string;
+    chunk_index: number;
+    chunk_url: string;
+    total_chunks: number;
+    chunk_key: string;
+    chunk_nonce: string;
+    duration: number;
+  }>>([]);
+
   // ── Subscribe to store updates ──────────────────────────────────────────
   useEffect(() => {
     const update = () => {
@@ -591,28 +608,57 @@ export function useVideoChunks(messageId?: string) {
     return () => { updateCallbacks.delete(update); };
   }, [messageId]);
 
+  // ── FIX: Process pending chunks when partner key becomes available ──────
+  useEffect(() => {
+    const partnerKey = partner?.public_key;
+    if (!partnerKey) return;
+    if (pendingChunksRef.current.length === 0) return;
+
+    const pending = [...pendingChunksRef.current];
+    pendingChunksRef.current = [];
+    LOG(`Partner key now available — processing ${pending.length} queued chunks`);
+
+    for (const row of pending) {
+      processBlock(
+        row.message_id,
+        row.chunk_index,
+        row.chunk_url,
+        row.total_chunks,
+        row.chunk_key,
+        row.chunk_nonce,
+        partnerKey,
+        row.duration
+      );
+    }
+  }, [partner?.public_key]);
+
   // ── Realtime: receive chunk inserts from DB ──────────────────────────────
   useEffect(() => {
-    if (!user?.id || !partner?.id) return;
+    if (!user?.id) return;
 
     const unsubscribe = realtimeHub.on('video_chunks', async (payload) => {
       if (payload.eventType !== 'INSERT') return;
       const row = payload.new as any;
 
-      // FIX: The OLD code filtered `receiver_id !== user.id` which meant:
-      // - Wife never got chunks because she IS the receiver (correct behavior would be to process them)
-      // - Actually: we want to process chunks WHERE user is the receiver
-      // Original line was: if (row.receiver_id !== user.id) return;
-      // That's WRONG — it blocked chunks intended FOR the current user.
-      // FIXED: Only process rows where current user is the RECEIVER
+      // Only process rows where current user is the RECEIVER
       if (row.receiver_id !== user.id) {
         LOG(`Realtime chunk ignored (not for me): msg=${row.message_id} chunk=${row.chunk_index}`);
         return;
       }
 
-      const partnerKey = partner?.public_key;
+      // FIX: Read partner key from ref (always latest) instead of stale closure
+      const partnerKey = partnerKeyRef.current;
       if (!partnerKey) {
-        WARN(`Realtime chunk received but partner public key missing — cannot decrypt`);
+        LOG(`Realtime chunk queued (partner key not yet available): msg=${row.message_id} chunk=${row.chunk_index}`);
+        pendingChunksRef.current.push({
+          message_id: row.message_id,
+          chunk_index: row.chunk_index,
+          chunk_url: row.chunk_url,
+          total_chunks: row.total_chunks,
+          chunk_key: row.chunk_key,
+          chunk_nonce: row.chunk_nonce,
+          duration: row.duration ?? 0,
+        });
         return;
       }
 
@@ -624,14 +670,14 @@ export function useVideoChunks(messageId?: string) {
         row.chunk_url,
         row.total_chunks,
         row.chunk_key,
-        row.chunk_nonce,    // base nonce in v4
+        row.chunk_nonce,
         partnerKey,
         row.duration ?? 0
       );
     });
 
     return () => unsubscribe();
-  }, [user?.id, partner?.id, partner?.public_key]);
+  }, [user?.id]);
 
   // ── getChunksForMessage ──────────────────────────────────────────────────
   const getChunksForMessage = useCallback((msgId: string): ReceivedChunk[] | null => {
