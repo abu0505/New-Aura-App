@@ -8,6 +8,7 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { AuthProvider } from './contexts/AuthContext'
 
 import { DimProvider } from './contexts/DimContext'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -63,6 +64,7 @@ createRoot(document.getElementById('root')!).render(
     <AuthProvider>
       <DimProvider>
         <App />
+        {!Capacitor.isNativePlatform() && <SpeedInsights />}
       </DimProvider>
     </AuthProvider>
   </StrictMode>,
