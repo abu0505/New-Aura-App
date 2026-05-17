@@ -1,7 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { getStoredKeyPair } from '../../lib/encryption';
-import { decryptMessageWithFallback, decodeBase64 } from '../../lib/encryption';
+import { encodeBase64 } from 'tweetnacl-util';
+import {
+  searchLocalCache,
+  cacheDecryptedMessages,
+  getCachedIds,
+  makeConversationKey,
+  type CachedMessage,
+} from '../../lib/searchCache';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -9,6 +16,16 @@ interface SearchResult {
   id: string;
   created_at: string;
   decrypted_content: string;
+  is_mine: boolean;
+  sender_id: string;
+}
+
+/** Internal pool entry — stores full text for subset filtering */
+interface PoolEntry {
+  id: string;
+  created_at: string;
+  content: string;        // original casing
+  content_lower: string;  // pre-lowered for fast search
   is_mine: boolean;
   sender_id: string;
 }
@@ -45,34 +62,25 @@ const SEARCH_STATUS_WORDS = [
   'Almost there...',
 ];
 
-const PAGE_SEARCH_SIZE = 50; // messages fetched per DB page during background scan
+const PAGE_SIZE = 500;
 
-const MSG_SEARCH_COLS =
-  'id,sender_id,encrypted_content,nonce,created_at,is_deleted_for_everyone,sender_public_key' as const;
+const MSG_COLS =
+  'id,sender_id,receiver_id,encrypted_content,nonce,created_at,is_deleted_for_everyone,sender_public_key' as const;
 
-// ─── Date Formatting ─────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function formatResultDate(isoString: string): string {
   const d = new Date(isoString);
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const msgYear = d.getFullYear();
-
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');
 
-  if (msgYear === currentYear) {
-    // Same year → "DD/MM"
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  if (d.getFullYear() === now.getFullYear()) {
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return `${day} ${monthNames[d.getMonth()]}`;
   }
-  // Past year → "DD/MM/YY"
-  const yy = String(msgYear).slice(-2);
-  return `${day}/${month}/${yy}`;
+  return `${day}/${month}/${String(d.getFullYear()).slice(-2)}`;
 }
-
-// ─── Highlight helper ─────────────────────────────────────────────────────────
 
 function highlightMatch(text: string, query: string) {
   if (!query.trim()) return text;
@@ -83,6 +91,20 @@ function highlightMatch(text: string, query: string) {
       ? <mark key={i} className="bg-primary/40 text-primary rounded px-0.5">{part}</mark>
       : part
   );
+}
+
+// ─── Worker Manager ──────────────────────────────────────────────────────────
+
+let workerInstance: Worker | null = null;
+
+function getDecryptWorker(): Worker {
+  if (!workerInstance) {
+    workerInstance = new Worker(
+      new URL('../../workers/searchDecrypt.worker.ts', import.meta.url),
+      { type: 'module' },
+    );
+  }
+  return workerInstance;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -98,14 +120,25 @@ export default function ChatSearch({
   cachedMessages,
 }: ChatSearchProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [displayResults, setDisplayResults] = useState<SearchResult[]>([]);
+  const [isWarming, setIsWarming] = useState(false);
+  const [warmingDone, setWarmingDone] = useState(false);
   const [statusWordIndex, setStatusWordIndex] = useState(0);
   const [wordVisible, setWordVisible] = useState(true);
+  const [isCommitted, setIsCommitted] = useState(false); // true after Enter
 
   const abortRef = useRef<AbortController | null>(null);
   const statusIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * The hidden pool — ALL decrypted messages found during background warming.
+   * Keyed by the INITIAL query that triggered the warm-up.
+   * As user types more characters, we re-filter THIS pool locally (0ms).
+   */
+  const poolRef = useRef<PoolEntry[]>([]);
+  const poolQueryRef = useRef(''); // the query the pool was warmed for
   const seenIdsRef = useRef<Set<string>>(new Set());
 
   // Focus input when opened
@@ -113,15 +146,19 @@ export default function ChatSearch({
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 100);
     } else {
-      // Reset state on close
       setQuery('');
-      setResults([]);
-      setIsSearching(false);
+      setDisplayResults([]);
+      setIsWarming(false);
+      setWarmingDone(false);
+      setIsCommitted(false);
       stopStatusCycle();
+      poolRef.current = [];
+      poolQueryRef.current = '';
+      seenIdsRef.current = new Set();
     }
   }, [isOpen]);
 
-  // ── Status word cycling animation ──
+  // ── Status word cycling ──
   const stopStatusCycle = useCallback(() => {
     if (statusIntervalRef.current) {
       clearInterval(statusIntervalRef.current);
@@ -133,8 +170,6 @@ export default function ChatSearch({
     stopStatusCycle();
     setStatusWordIndex(0);
     setWordVisible(true);
-
-    // Every 1.8s: fade out → change word → fade in
     let idx = 0;
     statusIntervalRef.current = setInterval(() => {
       setWordVisible(false);
@@ -146,173 +181,334 @@ export default function ChatSearch({
     }, 1800);
   }, [stopStatusCycle]);
 
-  // ── Decrypt a single DB row inline (no worker needed for search) ──
-  const tryDecrypt = useCallback((
-    row: { encrypted_content: string | null; nonce: string | null; sender_id: string; sender_public_key?: string | null; is_deleted_for_everyone?: boolean },
-    myKeyPair: { secretKey: Uint8Array; publicKey: Uint8Array },
-  ): string => {
-    if (row.is_deleted_for_everyone) return '';
-    if (!row.encrypted_content || !row.nonce) return '';
-    if (!partnerPublicKey) return '';
+  // ── Cache in-memory messages to IndexedDB ──
+  useEffect(() => {
+    if (!userId || !partnerId || cachedMessages.length === 0) return;
+    const convKey = makeConversationKey(userId, partnerId);
+    const toCache: CachedMessage[] = [];
 
-    try {
-      const isMine = row.sender_id === userId;
-      const decryptionKey = isMine
-        ? partnerPublicKey
-        : (row.sender_public_key || partnerPublicKey);
-
-      const fallbackKeys = (partnerKeyHistory || [])
-        .filter(k => k !== decryptionKey)
-        .map(k => decodeBase64(k));
-
-      return decryptMessageWithFallback(
-        row.encrypted_content,
-        row.nonce,
-        decodeBase64(decryptionKey),
-        myKeyPair.secretKey,
-        fallbackKeys,
-      );
-    } catch {
-      return '';
+    for (const m of cachedMessages) {
+      if (!m.decrypted_content) continue;
+      toCache.push({
+        id: m.id,
+        conversation_key: convKey,
+        content: m.decrypted_content.toLowerCase(),
+        content_original: m.decrypted_content,
+        sender_id: m.sender_id,
+        created_at: m.created_at,
+        is_deleted: !!m.is_deleted_for_everyone,
+      });
     }
-  }, [userId, partnerPublicKey, partnerKeyHistory]);
 
-  // ── Main search logic ──
-  const runSearch = useCallback(async (q: string) => {
-    if (!q.trim() || !userId || !partnerId) {
-      setResults([]);
-      setIsSearching(false);
-      stopStatusCycle();
+    if (toCache.length > 0) {
+      cacheDecryptedMessages(toCache).catch(() => {});
+    }
+  }, [cachedMessages, userId, partnerId]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BACKGROUND WARMING ENGINE
+  // Silently fetches + decrypts ALL matching messages into the hidden pool.
+  // User sees nothing until they press Enter.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const runBackgroundWarm = useCallback(async (q: string) => {
+    if (!q.trim() || !userId || !partnerId) return;
+
+    // If new query is a SUPERSET of current pool query (user typed more chars),
+    // no need to re-warm — we can just subset-filter locally
+    const normalQ = q.toLowerCase();
+    if (
+      poolRef.current.length > 0 &&
+      poolQueryRef.current &&
+      normalQ.startsWith(poolQueryRef.current.toLowerCase()) &&
+      normalQ !== poolQueryRef.current.toLowerCase()
+    ) {
+      // Pool is already warm and still valid — just update committed results if shown
+      if (isCommitted) {
+        const filtered = filterPool(normalQ);
+        setDisplayResults(filtered);
+      }
       return;
     }
 
-    // Abort any previous search
+    // New base query — need full warm-up
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
 
-    setResults([]);
-    setIsSearching(true);
+    poolRef.current = [];
+    poolQueryRef.current = normalQ;
     seenIdsRef.current = new Set();
+    setIsWarming(true);
+    setWarmingDone(false);
     startStatusCycle();
 
-    const normalQ = q.toLowerCase();
     const myKeyPair = getStoredKeyPair();
+    const convKey = makeConversationKey(userId, partnerId);
 
-    // ── PHASE 1: Search cached (in-memory) messages, newest first ──
+    // ── PHASE 1: In-memory messages → pool ──
     const reversed = [...cachedMessages].reverse();
-    const phaseOneResults: SearchResult[] = [];
-
     for (const m of reversed) {
       if (controller.signal.aborted) return;
+      if (m.is_deleted_for_everyone || !m.decrypted_content) continue;
+      if (seenIdsRef.current.has(m.id)) continue;
 
-      const text = (m.decrypted_content || '').toLowerCase();
-      if (text.includes(normalQ) && !m.is_deleted_for_everyone) {
-        if (!seenIdsRef.current.has(m.id)) {
-          seenIdsRef.current.add(m.id);
-          phaseOneResults.push({
-            id: m.id,
-            created_at: m.created_at,
-            decrypted_content: m.decrypted_content || '',
-            is_mine: m.is_mine,
-            sender_id: m.sender_id,
-          });
-        }
+      const lower = m.decrypted_content.toLowerCase();
+      if (lower.includes(normalQ)) {
+        seenIdsRef.current.add(m.id);
+        poolRef.current.push({
+          id: m.id,
+          created_at: m.created_at,
+          content: m.decrypted_content,
+          content_lower: lower,
+          is_mine: m.is_mine,
+          sender_id: m.sender_id,
+        });
       }
     }
 
-    if (phaseOneResults.length > 0) {
-      setResults(phaseOneResults);
+    // If user already pressed Enter while we were scanning, show immediate results
+    if (isCommitted && !controller.signal.aborted) {
+      setDisplayResults(filterPool(normalQ));
     }
 
     if (controller.signal.aborted) return;
 
-    // ── PHASE 2: Progressive DB scan, newest first ──
-    // We scan page by page from newest → oldest, appending matches in real time
-    let cursor: string | null = null; // "created_at < cursor" for pagination
-
-    // We still need to scan from the very latest backwards — we'll skip IDs we've
-    // already matched in Phase 1 via seenIdsRef.
+    // ── PHASE 2: IndexedDB cache → pool ──
     try {
-      let pagesDone = 0;
-      const MAX_PAGES = 200; // safety ceiling — 200 × 50 = 10,000 messages
+      const cachedResults = await searchLocalCache(q, userId, partnerId);
+      if (controller.signal.aborted) return;
 
+      for (const cm of cachedResults) {
+        if (seenIdsRef.current.has(cm.id)) continue;
+        seenIdsRef.current.add(cm.id);
+        poolRef.current.push({
+          id: cm.id,
+          created_at: cm.created_at,
+          content: cm.content_original,
+          content_lower: cm.content.toLowerCase(),
+          is_mine: cm.sender_id === userId,
+          sender_id: cm.sender_id,
+        });
+      }
+
+      if (isCommitted && !controller.signal.aborted) {
+        setDisplayResults(filterPool(normalQ));
+      }
+    } catch { /* IndexedDB unavailable */ }
+
+    if (controller.signal.aborted) return;
+
+    // ── PHASE 3: DB scan + Worker decryption → pool ──
+    if (!myKeyPair || !partnerPublicKey) {
+      setIsWarming(false);
+      setWarmingDone(true);
+      stopStatusCycle();
+      return;
+    }
+
+    let localCachedIds: Set<string>;
+    try {
+      localCachedIds = await getCachedIds(userId, partnerId);
+    } catch {
+      localCachedIds = new Set();
+    }
+    for (const id of localCachedIds) seenIdsRef.current.add(id);
+
+    const secretKeyB64 = encodeBase64(myKeyPair.secretKey);
+    const fallbackKeysB64 = partnerKeyHistory || [];
+    const worker = getDecryptWorker();
+    let cursor: string | null = null;
+    let pagesDone = 0;
+    const MAX_PAGES = 100;
+
+    try {
       while (!controller.signal.aborted && pagesDone < MAX_PAGES) {
-        let q2 = supabase
+        let queryBuilder = supabase
           .from('messages')
-          .select(MSG_SEARCH_COLS)
+          .select(MSG_COLS)
           .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
           .order('created_at', { ascending: false })
-          .limit(PAGE_SEARCH_SIZE);
+          .limit(PAGE_SIZE);
 
-        if (cursor) q2 = q2.lt('created_at', cursor);
+        if (cursor) queryBuilder = queryBuilder.lt('created_at', cursor);
 
-        const { data, error } = await q2;
-
+        const { data, error } = await queryBuilder;
         if (controller.signal.aborted) return;
         if (error || !data || data.length === 0) break;
 
         cursor = data[data.length - 1].created_at;
+        const uncached = data.filter(row => !seenIdsRef.current.has(row.id));
 
-        // Decrypt and check each row
-        const pageResults: SearchResult[] = [];
-        for (const row of data) {
-          if (controller.signal.aborted) return;
-          if (seenIdsRef.current.has(row.id)) continue;
-          if (row.is_deleted_for_everyone) continue;
-
-          const text = myKeyPair
-            ? tryDecrypt(row as any, myKeyPair)
-            : '';
-
-          if (text.toLowerCase().includes(normalQ)) {
-            seenIdsRef.current.add(row.id);
-            pageResults.push({
-              id: row.id,
-              created_at: row.created_at,
-              decrypted_content: text,
-              is_mine: row.sender_id === userId,
-              sender_id: row.sender_id,
+        if (uncached.length > 0) {
+          const workerResult = await new Promise<{
+            matches: Array<{ id: string; content: string; sender_id: string; created_at: string; is_mine: boolean }>;
+            allDecrypted: Array<{ id: string; content: string; sender_id: string; created_at: string; is_deleted: boolean }>;
+          }>((resolve) => {
+            const handler = (e: MessageEvent) => {
+              if (e.data.type === 'BATCH_RESULT') {
+                worker.removeEventListener('message', handler);
+                resolve(e.data);
+              }
+            };
+            worker.addEventListener('message', handler);
+            worker.postMessage({
+              type: 'DECRYPT_BATCH',
+              batch: uncached,
+              userId,
+              secretKeyB64,
+              partnerPublicKeyB64: partnerPublicKey,
+              fallbackKeysB64,
+              query: q,
             });
+          });
+
+          if (controller.signal.aborted) return;
+
+          // Cache ALL decrypted messages for future searches
+          const toCache: CachedMessage[] = workerResult.allDecrypted.map(d => ({
+            id: d.id,
+            conversation_key: convKey,
+            content: d.content.toLowerCase(),
+            content_original: d.content,
+            sender_id: d.sender_id,
+            created_at: d.created_at,
+            is_deleted: d.is_deleted,
+          }));
+          cacheDecryptedMessages(toCache).catch(() => {});
+
+          // Add matches to pool
+          for (const d of workerResult.allDecrypted) {
+            seenIdsRef.current.add(d.id);
+          }
+          for (const m of workerResult.matches) {
+            poolRef.current.push({
+              id: m.id,
+              created_at: m.created_at,
+              content: m.content,
+              content_lower: m.content.toLowerCase(),
+              is_mine: m.is_mine,
+              sender_id: m.sender_id,
+            });
+          }
+
+          // Live-update display if user already pressed Enter
+          if (isCommitted && !controller.signal.aborted) {
+            setDisplayResults(filterPool(normalQ));
           }
         }
 
-        if (pageResults.length > 0 && !controller.signal.aborted) {
-          // Merge: insert at the right chronological position (results are sorted newest first)
-          setResults(prev => {
-            const merged = [...prev];
-            for (const r of pageResults) {
-              // Find position to insert (keep newest-first order by created_at)
-              const insertAt = merged.findIndex(
-                x => new Date(x.created_at) < new Date(r.created_at)
-              );
-              if (insertAt === -1) merged.push(r);
-              else merged.splice(insertAt, 0, r);
-            }
-            return merged;
-          });
-        }
-
-        if (data.length < PAGE_SEARCH_SIZE) break; // No more pages
+        if (data.length < PAGE_SIZE) break;
         pagesDone++;
       }
-    } catch {
-      // Silently ignore network errors during scan
-    }
+    } catch { /* network error */ }
 
     if (!controller.signal.aborted) {
-      setIsSearching(false);
+      setIsWarming(false);
+      setWarmingDone(true);
       stopStatusCycle();
-    }
-  }, [userId, partnerId, cachedMessages, tryDecrypt, startStatusCycle, stopStatusCycle]);
 
-  // Removed real-time debounced trigger in favor of manual "Enter" search
+      // Final update if committed
+      if (isCommitted) {
+        setDisplayResults(filterPool(normalQ));
+      }
+    }
+  }, [userId, partnerId, partnerPublicKey, partnerKeyHistory, cachedMessages, startStatusCycle, stopStatusCycle, isCommitted]);
+
+  // ── Filter pool locally by current query (subset filtering — ~0.1ms) ──
+  function filterPool(normalQuery: string): SearchResult[] {
+    const results: SearchResult[] = [];
+    for (const entry of poolRef.current) {
+      if (entry.content_lower.includes(normalQuery)) {
+        results.push({
+          id: entry.id,
+          created_at: entry.created_at,
+          decrypted_content: entry.content,
+          is_mine: entry.is_mine,
+          sender_id: entry.sender_id,
+        });
+      }
+    }
+    // Sort newest first
+    results.sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    return results;
+  }
+
+  // ── Typing handler: debounced background warm ──
+  const handleQueryChange = useCallback((value: string) => {
+    setQuery(value);
+
+    if (!value.trim()) {
+      // Cleared — reset everything
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      abortRef.current?.abort();
+      setDisplayResults([]);
+      setIsWarming(false);
+      setWarmingDone(false);
+      setIsCommitted(false);
+      stopStatusCycle();
+      poolRef.current = [];
+      poolQueryRef.current = '';
+      seenIdsRef.current = new Set();
+      return;
+    }
+
+    const normalQ = value.toLowerCase();
+
+    // If user already committed and pool is warm, live-filter immediately
+    if (isCommitted && poolRef.current.length > 0) {
+      // Check if new query is superset of pool query (can subset-filter)
+      if (normalQ.startsWith(poolQueryRef.current.toLowerCase())) {
+        setDisplayResults(filterPool(normalQ));
+        return; // No need to re-warm
+      }
+    }
+
+    // Debounce background warming (300ms)
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      runBackgroundWarm(value);
+    }, 300);
+  }, [runBackgroundWarm, stopStatusCycle, isCommitted]);
+
+  // ── Enter = commit: show results from pool instantly ──
+  const commitSearch = useCallback(() => {
+    if (!query.trim()) return;
+    const normalQ = query.toLowerCase();
+    setIsCommitted(true);
+
+    // If pool has data, show filtered results INSTANTLY
+    if (poolRef.current.length > 0) {
+      setDisplayResults(filterPool(normalQ));
+    } else {
+      // Pool is empty or still warming — show what we have (may be empty initially)
+      setDisplayResults([]);
+    }
+
+    // If warming hasn't started yet (user typed fast and hit Enter before debounce),
+    // start it immediately
+    if (!isWarming && !warmingDone) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      runBackgroundWarm(query);
+    }
+  }, [query, isWarming, warmingDone, runBackgroundWarm]);
+
+  // When warming updates pool and user is committed, auto-update display
+  useEffect(() => {
+    if (isCommitted && query.trim() && (isWarming || warmingDone)) {
+      const normalQ = query.toLowerCase();
+      setDisplayResults(filterPool(normalQ));
+    }
+  }, [isCommitted, isWarming, warmingDone, query]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
       stopStatusCycle();
+      if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [stopStatusCycle]);
 
@@ -323,10 +519,27 @@ export default function ChatSearch({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
-    if (e.key === 'Enter') runSearch(query);
+    if (e.key === 'Enter') {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      commitSearch();
+    }
   };
 
   if (!isOpen) return null;
+
+  // ── UX state ──
+  const isShowingResults = isCommitted && query.trim();
+  const isActivelySearching = isWarming && isCommitted;
+  const showNoResults = isCommitted && !isWarming && warmingDone && query.trim() && displayResults.length === 0;
+
+  // Warming indicator (subtle, while typing before Enter)
+  const showWarmingHint = isWarming && !isCommitted && query.trim();
+
+  const phaseLabel = isActivelySearching
+    ? SEARCH_STATUS_WORDS[statusWordIndex]
+    : showWarmingHint
+    ? 'Preparing results...'
+    : '';
 
   return (
     <>
@@ -356,10 +569,9 @@ export default function ChatSearch({
               search
             </span>
 
-            {/* Input + animated status word */}
             <div className="relative flex-1 overflow-hidden">
-              {/* Animated status word (shown while searching, above the input) */}
-              {isSearching && query.trim() && (
+              {/* Animated status word */}
+              {(isActivelySearching || showWarmingHint) && query.trim() && (
                 <div
                   className="absolute inset-0 pointer-events-none flex items-center"
                   style={{ zIndex: 1 }}
@@ -375,7 +587,7 @@ export default function ChatSearch({
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {SEARCH_STATUS_WORDS[statusWordIndex]}
+                    {phaseLabel}
                   </span>
                 </div>
               )}
@@ -383,13 +595,13 @@ export default function ChatSearch({
                 ref={inputRef}
                 type="text"
                 value={query}
-                onChange={e => setQuery(e.target.value)}
+                onChange={e => handleQueryChange(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Search messages..."
                 className="w-full bg-transparent outline-none focus:ring-0 border-none text-sm placeholder-aura-text-secondary"
                 style={{
-                  color: isSearching && query.trim() ? 'transparent' : 'var(--color-text-primary, #f0e6d3)',
-                  caretColor: isSearching && query.trim() ? 'transparent' : 'var(--color-primary, #e6c487)',
+                  color: (isActivelySearching || showWarmingHint) && query.trim() ? 'transparent' : 'var(--color-text-primary, #f0e6d3)',
+                  caretColor: (isActivelySearching || showWarmingHint) && query.trim() ? 'transparent' : 'var(--color-primary, #e6c487)',
                   transition: 'color 0.2s',
                 }}
               />
@@ -398,7 +610,7 @@ export default function ChatSearch({
             {/* Clear / Close */}
             {query ? (
               <button
-                onClick={() => { setQuery(''); setResults([]); abortRef.current?.abort(); setIsSearching(false); stopStatusCycle(); }}
+                onClick={() => { handleQueryChange(''); abortRef.current?.abort(); }}
                 className="text-aura-text-secondary hover:text-primary transition-colors shrink-0"
               >
                 <span className="material-symbols-outlined text-lg">close</span>
@@ -415,7 +627,7 @@ export default function ChatSearch({
 
           {/* Results Area */}
           <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(60dvh - 60px)' }}>
-            {/* Empty state */}
+            {/* Empty state — no query */}
             {!query.trim() && (
               <div className="flex flex-col items-center justify-center py-12 opacity-50">
                 <span className="material-symbols-outlined text-4xl text-primary mb-2">manage_search</span>
@@ -425,8 +637,24 @@ export default function ChatSearch({
               </div>
             )}
 
-            {/* No results (search done, query non-empty) */}
-            {!isSearching && query.trim() && results.length === 0 && (
+            {/* Typing but not yet committed — hint to press Enter */}
+            {query.trim() && !isCommitted && (
+              <div className="flex flex-col items-center justify-center py-12 opacity-50">
+                <span className="material-symbols-outlined text-4xl text-primary mb-2">keyboard_return</span>
+                <span className="text-xs text-aura-text-secondary uppercase tracking-widest">
+                  Press Enter to search
+                </span>
+                {showWarmingHint && (
+                  <span className="text-[10px] text-primary/50 uppercase tracking-widest mt-2 flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 border border-primary/30 border-t-primary rounded-full animate-spin" />
+                    Warming up results...
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* No results (search committed and done) */}
+            {showNoResults && (
               <div className="flex flex-col items-center justify-center py-12 opacity-50">
                 <span className="material-symbols-outlined text-4xl text-primary mb-2">search_off</span>
                 <span className="text-xs text-aura-text-secondary uppercase tracking-widest">
@@ -435,8 +663,8 @@ export default function ChatSearch({
               </div>
             )}
 
-            {/* Searching, no results yet */}
-            {isSearching && query.trim() && results.length === 0 && (
+            {/* Committed + searching + no results yet */}
+            {isCommitted && isWarming && query.trim() && displayResults.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 opacity-60">
                 <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
                 <span className="text-xs text-aura-text-secondary uppercase tracking-widest">
@@ -446,15 +674,14 @@ export default function ChatSearch({
             )}
 
             {/* Result list */}
-            {results.length > 0 && (
+            {isShowingResults && displayResults.length > 0 && (
               <div className="divide-y divide-white/5">
-                {results.map(result => (
+                {displayResults.map(result => (
                   <button
                     key={result.id}
                     onClick={() => handleResultClick(result)}
                     className="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 transition-colors flex items-start gap-3 group"
                   >
-                    {/* Side indicator */}
                     <div
                       className="mt-1 w-1.5 h-1.5 rounded-full shrink-0"
                       style={{
@@ -463,8 +690,6 @@ export default function ChatSearch({
                           : 'rgba(255,255,255,0.3)',
                       }}
                     />
-
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <p
                         className="text-sm leading-snug line-clamp-2"
@@ -473,25 +698,19 @@ export default function ChatSearch({
                         {highlightMatch(result.decrypted_content, query)}
                       </p>
                     </div>
-
-                    {/* Date + arrow */}
                     <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
-                      <span
-                        className="text-[10px] font-bold uppercase tracking-widest text-primary"
-                      >
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
                         {formatResultDate(result.created_at)}
                       </span>
-                      <span
-                        className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-60 transition-opacity text-primary"
-                      >
+                      <span className="material-symbols-outlined text-[14px] opacity-0 group-hover:opacity-60 transition-opacity text-primary">
                         arrow_forward
                       </span>
                     </div>
                   </button>
                 ))}
 
-                {/* "Still searching..." footer */}
-                {isSearching && (
+                {/* Still searching footer */}
+                {isWarming && (
                   <div className="flex items-center justify-center gap-2 py-3 opacity-50">
                     <div className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                     <span className="text-[10px] text-aura-text-secondary uppercase tracking-widest">

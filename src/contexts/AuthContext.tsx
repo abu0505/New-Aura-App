@@ -13,6 +13,7 @@ import {
 } from '../lib/encryption';
 // Fix 1.4: Import push debounce timers to clear them on logout
 import { pushDebounceTimers } from '../hooks/useChat';
+import { clearSearchCache } from '../lib/searchCache';
 
 const DEVICE_TOKEN_KEY = 'aura_device_token';
 
@@ -256,6 +257,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     pushDebounceTimers.forEach(timer => clearTimeout(timer));
     pushDebounceTimers.clear();
     clearStoredKeys();
+    clearSearchCache().catch(() => {}); // Clear decrypted message cache
     await supabase.auth.signOut();
     isSigningOutRef.current = false;
   };

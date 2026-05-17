@@ -12,6 +12,7 @@ import SearchOverlay from './SearchOverlay';
 import FoldersPanel from './FoldersPanel';
 import FolderView from './FolderView';
 import OnThisDayCard from './OnThisDayCard';
+import RecapCard, { type RecapItem } from './RecapCard';
 import TimelineScrubber from './TimelineScrubber';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
@@ -31,6 +32,9 @@ export default function MemoriesScreen() {
   const { folders, addItemsToFolder, createFolder } = useMediaFolders();
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [throwbacks, setThrowbacks] = useState<MemoryItem[]>([]);
+  const [lastMonthItems, setLastMonthItems] = useState<RecapItem[]>([]);
+  const [lastWeekItems, setLastWeekItems] = useState<RecapItem[]>([]);
+  const [lastYearMonthItems, setLastYearMonthItems] = useState<RecapItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -93,6 +97,7 @@ export default function MemoriesScreen() {
     isFetchingMoreRef.current = false;
     fetchMemories(1);
     fetchThrowbacks();
+    fetchRecaps();
   }, [user?.id, partner?.id]);
 
   useEffect(() => {
@@ -326,6 +331,25 @@ export default function MemoriesScreen() {
     } catch (err) {
       
     }
+  };
+
+  const fetchRecaps = async () => {
+    if (!user || !partner) return;
+    const currentMonth = new Date().getMonth() + 1; // 1-indexed
+
+    // Fetch all three recap types in parallel
+    const [lastMonthRes, lastWeekRes, lastYearMonthRes] = await Promise.allSettled([
+      supabase.rpc('get_last_month_recap', { u_id: user.id, p_id: partner.id, limit_count: 20 }),
+      supabase.rpc('get_last_week_recap',  { u_id: user.id, p_id: partner.id, limit_count: 20 }),
+      supabase.rpc('get_last_year_month_recap', { u_id: user.id, p_id: partner.id, current_month: currentMonth, limit_count: 20 }),
+    ]);
+
+    if (lastMonthRes.status === 'fulfilled' && !lastMonthRes.value.error)
+      setLastMonthItems((lastMonthRes.value.data as RecapItem[]) ?? []);
+    if (lastWeekRes.status === 'fulfilled' && !lastWeekRes.value.error)
+      setLastWeekItems((lastWeekRes.value.data as RecapItem[]) ?? []);
+    if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error)
+      setLastYearMonthItems((lastYearMonthRes.value.data as RecapItem[]) ?? []);
   };
 
 
@@ -761,13 +785,65 @@ export default function MemoriesScreen() {
           </div>
         ) : (
           <div className="flex flex-col gap-8 pb-32">
-            {throwbacks.length > 0 && !selectionMode && filter === 'all' && (
-              <OnThisDayCard 
-                throwbacks={throwbacks} 
-                partnerPublicKey={partner?.public_key || ''} 
-                onOpenMedia={(url, type, messageId) => setSelectedMedia({ url, type, messageId })}
-              />
-            )}
+            {/* ── Recap containers (only in 'all' mode, not selection mode) ── */}
+            {!selectionMode && filter === 'all' && (() => {
+              const now = new Date();
+              const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                .toLocaleDateString('en-US', { month: 'long' });
+              const lastYearNum = now.getFullYear() - 1;
+              const currentMonthName = now.toLocaleDateString('en-US', { month: 'long' });
+              return (
+                <>
+                  {/* 1 — Last Month Recap */}
+                  {lastMonthItems.length > 0 && (
+                    <RecapCard
+                      items={lastMonthItems}
+                      partnerPublicKey={partner?.public_key || ''}
+                      title={`${lastMonthName} in Review`}
+                      badge="Last Month"
+                      iconName="calendar_month"
+                      accentClass="#60a5fa"
+                      viewerSubtitle={`All of ${lastMonthName}`}
+                    />
+                  )}
+
+                  {/* 2 — Last Week Recap */}
+                  {lastWeekItems.length > 0 && (
+                    <RecapCard
+                      items={lastWeekItems}
+                      partnerPublicKey={partner?.public_key || ''}
+                      title="This Week's Memories"
+                      badge="Last 7 Days"
+                      iconName="date_range"
+                      accentClass="#a78bfa"
+                      viewerSubtitle="Past 7 Days"
+                    />
+                  )}
+
+                  {/* 3 — Last Year, Same Month */}
+                  {lastYearMonthItems.length > 0 && (
+                    <RecapCard
+                      items={lastYearMonthItems}
+                      partnerPublicKey={partner?.public_key || ''}
+                      title={`${currentMonthName} ${lastYearNum}`}
+                      badge="Last Year · This Month"
+                      iconName="history"
+                      accentClass="#34d399"
+                      viewerSubtitle={`${currentMonthName} ${lastYearNum}`}
+                    />
+                  )}
+
+                  {/* 4 — On This Day (existing) */}
+                  {throwbacks.length > 0 && (
+                    <OnThisDayCard
+                      throwbacks={throwbacks}
+                      partnerPublicKey={partner?.public_key || ''}
+                      onOpenMedia={(url, type, messageId) => setSelectedMedia({ url, type, messageId })}
+                    />
+                  )}
+                </>
+              );
+            })()}
 
             <div
               className="flex flex-col gap-6"

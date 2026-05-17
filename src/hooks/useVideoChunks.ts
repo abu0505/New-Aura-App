@@ -292,26 +292,6 @@ async function downloadAndDecryptBlock(
   }
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  MSE initialisation                                                        */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
-function switchToBlobFallback(messageId: string) {
-  const entry = videoStore.get(messageId);
-  if (!entry || entry.useBlobFallback) return;
-  WARN(`msg=${messageId}: switching to blob-assembly fallback (MSE not suitable for this format)`);
-  entry.useBlobFallback = true;
-  entry.blobFallbackBlocks = new Map();
-  // Clean up any partially-created MSE objects
-  if (entry.mediaSource && entry.mediaSource.readyState === 'open') {
-    try { entry.mediaSource.endOfStream(); } catch { /* ignore */ }
-  }
-  entry.mediaSource = null;
-  entry.sourceBuffer = null;
-  entry.blobUrl = null; // will be set once all blocks arrive
-  videoStore.set(messageId, { ...entry });
-  notifyAll();
-}
 
 function tryAssembleBlobFallback(messageId: string) {
   const entry = videoStore.get(messageId);
@@ -352,158 +332,7 @@ function tryAssembleBlobFallback(messageId: string) {
   notifyAll();
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Build reusable Blob URL from decrypted blocks (post-MSE completion)       */
-/*                                                                             */
-/*  The MSE blob URL (URL.createObjectURL(mediaSource)) is bound to one       */
-/*  MediaSource and one <video> element. If a second <video> assigns the      */
-/*  same URL, the browser throws ERR_FILE_NOT_FOUND + MEDIA_ELEMENT_ERROR.    */
-/*  This function creates a plain Blob URL from the stored decrypted blocks   */
-/*  that can be reused by any number of <video> elements.                     */
-/* ─────────────────────────────────────────────────────────────────────────── */
 
-function buildReusableBlobUrl(messageId: string) {
-  const entry = videoStore.get(messageId);
-  if (!entry) return;
-  if (entry.reusableBlobUrl) return; // already built
-  if (entry.decryptedBlocks.size < entry.totalChunks) {
-    LOG(`Reusable blob: only ${entry.decryptedBlocks.size}/${entry.totalChunks} blocks available for msg=${messageId}, skipping`);
-    return;
-  }
-
-  // Assemble blocks in order
-  const ordered: Uint8Array[] = [];
-  for (let i = 0; i < entry.totalChunks; i++) {
-    const block = entry.decryptedBlocks.get(i);
-    if (!block) {
-      WARN(`Reusable blob: block ${i} missing for msg=${messageId}, aborting`);
-      return;
-    }
-    ordered.push(block);
-  }
-
-  // Sniff MIME for Blob type
-  const sniffedMime = sniffMime(ordered[0]);
-  const blobMime = sniffedMime.split(';')[0].trim();
-  const blobParts: BlobPart[] = ordered.map(b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
-  const blob = new Blob(blobParts, { type: blobMime });
-  entry.reusableBlobUrl = URL.createObjectURL(blob);
-
-  // Free the decrypted block data — the Blob now owns the bytes
-  entry.decryptedBlocks = new Map();
-
-  videoStore.set(messageId, { ...entry });
-  LOG(`Reusable blob: assembled ${(blob.size / 1024 / 1024).toFixed(2)}MB for msg=${messageId} type=${blobMime} ✓`);
-  notifyAll();
-}
-
-function initMSE(messageId: string, mimeType: string) {
-  const entry = videoStore.get(messageId);
-  if (!entry || entry.mseInitialised) return;
-  entry.mseInitialised = true;
-
-  if (typeof MediaSource === 'undefined' || !MediaSource.isTypeSupported(mimeType)) {
-    WARN(`MSE not supported for "${mimeType}" — switching to blob-assembly fallback`);
-    videoStore.set(messageId, { ...entry });
-    switchToBlobFallback(messageId);
-    return;
-  }
-
-  LOG(`MSE init for msg=${messageId} mime="${mimeType}"`);
-  const ms = new MediaSource();
-  entry.mediaSource = ms;
-  entry.blobUrl = URL.createObjectURL(ms);
-  entry.mimeType = mimeType;
-
-  ms.addEventListener('sourceopen', () => {
-    LOG(`MSE sourceopen fired for msg=${messageId}`);
-    try {
-      const sb = ms.addSourceBuffer(mimeType);
-      entry.sourceBuffer = sb;
-
-      sb.addEventListener('updateend', () => {
-        entry.isAppending = false;
-        flushAppendQueue(messageId);
-      });
-
-      sb.addEventListener('error', (e) => {
-        ERR(`SourceBuffer error for msg=${messageId}:`, e);
-        // If SourceBuffer errors, switch to blob fallback so the video still plays
-        switchToBlobFallback(messageId);
-        // Re-queue any blocks already in appendQueue into blobFallbackBlocks
-        const freshEntry = videoStore.get(messageId);
-        if (freshEntry?.blobFallbackBlocks) {
-          for (const [idx, data] of freshEntry.appendQueue) {
-            freshEntry.blobFallbackBlocks.set(idx, data);
-          }
-          freshEntry.appendQueue.clear();
-          videoStore.set(messageId, { ...freshEntry });
-          tryAssembleBlobFallback(messageId);
-        }
-      });
-
-      // Kick off flushing in case blocks already arrived before sourceopen
-      flushAppendQueue(messageId);
-    } catch (err) {
-      ERR(`addSourceBuffer failed for msg=${messageId} — switching to blob fallback:`, err);
-      switchToBlobFallback(messageId);
-    }
-  }, { once: true });
-
-  videoStore.set(messageId, { ...entry });
-  notifyAll(); // blobUrl is now set → ChunkedVideoPlayer can set video.src
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  SourceBuffer append queue (must append blocks in strict order)            */
-/* ─────────────────────────────────────────────────────────────────────────── */
-
-function flushAppendQueue(messageId: string) {
-  const entry = videoStore.get(messageId);
-  if (!entry) return;
-  const { sourceBuffer, appendQueue, nextAppendIndex, isAppending, mediaSource } = entry;
-
-  if (!sourceBuffer || isAppending || sourceBuffer.updating) return;
-  if (!appendQueue.has(nextAppendIndex)) return;
-
-  const data = appendQueue.get(nextAppendIndex)!;
-  appendQueue.delete(nextAppendIndex);
-  entry.nextAppendIndex++;
-  entry.isAppending = true;
-
-  LOG(`MSE: appending block ${nextAppendIndex - 1} (${data.length} bytes), next=${entry.nextAppendIndex}/${entry.totalChunks}`);
-
-  try {
-    sourceBuffer.appendBuffer(data as unknown as BufferSource);
-  } catch (err) {
-    ERR(`appendBuffer error at index ${nextAppendIndex - 1}:`, err);
-    entry.isAppending = false;
-  }
-
-  // If this was the last block, signal end of stream after append completes
-  if (entry.nextAppendIndex >= entry.totalChunks && entry.receivedCount >= entry.totalChunks) {
-    const endStream = () => {
-      if (mediaSource && mediaSource.readyState === 'open') {
-        try {
-          mediaSource.endOfStream();
-          entry.isComplete = true;
-          LOG(`MSE: endOfStream() called for msg=${messageId} — video fully buffered ✓`);
-          // FIX: Build a reusable Blob URL from stored decrypted blocks.
-          // The MSE blob URL is tied to a single MediaSource and CANNOT be
-          // assigned to a second <video> element (e.g., fullscreen MediaViewer).
-          // A regular Blob URL can be reused by any number of elements.
-          buildReusableBlobUrl(messageId);
-        } catch (e) {
-          WARN(`endOfStream error (may be harmless):`, e);
-        }
-      }
-    };
-    sourceBuffer.addEventListener('updateend', endStream, { once: true });
-  }
-
-  videoStore.set(messageId, { ...entry });
-  notifyAll();
-}
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Process a received/fetched block                                          */
@@ -578,30 +407,21 @@ async function processBlock(
   entry = videoStore.get(messageId)!;
   entry.receivedCount++;
 
-  // Detect MIME from first block's magic bytes and init MSE
-  if (!entry.mseInitialised && chunkIndex === 0) {
-    const mime = sniffMime(decrypted);
-    initMSE(messageId, mime);
-    entry = videoStore.get(messageId)!;
+  // ── Always use blob-assembly path (no MSE) ──────────────────────────────
+  // MSE streaming caused persistent ERR_FILE_NOT_FOUND crashes due to a race
+  // condition between the MSE blob URL and the reusable blob URL transition.
+  // Blob assembly is simpler, works on all browsers, and for typical video
+  // sizes (5-50MB, 1-10 chunks) the wait is negligible (~seconds).
+  if (!entry.useBlobFallback) {
+    entry.useBlobFallback = true;
+    entry.blobFallbackBlocks = new Map();
+    entry.mseInitialised = true; // prevent any MSE init attempts
   }
 
-  // Route block to the correct pipeline
-  if (entry.useBlobFallback) {
-    // Blob-assembly mode: store block in the fallback map
-    if (!entry.blobFallbackBlocks) entry.blobFallbackBlocks = new Map();
-    entry.blobFallbackBlocks.set(chunkIndex, decrypted);
-    videoStore.set(messageId, { ...entry });
-    LOG(`Block ${chunkIndex}: stored in blob fallback map. have=${entry.blobFallbackBlocks.size}/${entry.totalChunks}`);
-    tryAssembleBlobFallback(messageId);
-  } else {
-    // MSE streaming mode: push to SourceBuffer append queue
-    entry.appendQueue.set(chunkIndex, decrypted);
-    // FIX: Also store decrypted block for later Blob assembly
-    entry.decryptedBlocks.set(chunkIndex, decrypted);
-    videoStore.set(messageId, { ...entry });
-    LOG(`Block ${chunkIndex}: queued for MSE append. receivedCount=${entry.receivedCount}/${entry.totalChunks}`);
-    flushAppendQueue(messageId);
-  }
+  entry.blobFallbackBlocks!.set(chunkIndex, decrypted);
+  videoStore.set(messageId, { ...entry });
+  LOG(`Block ${chunkIndex}: stored in blob assembly. have=${entry.blobFallbackBlocks!.size}/${entry.totalChunks}`);
+  tryAssembleBlobFallback(messageId);
   notifyAll();
 }
 
