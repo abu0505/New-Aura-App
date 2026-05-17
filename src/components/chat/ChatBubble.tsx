@@ -62,7 +62,6 @@ function ChatBubble({
   const { folders } = useMediaFolders();
   const { moveToGarbage } = useGarbageContext();
   const [decryptedMediaUrl, setDecryptedMediaUrl] = useState<string | null>(message.decrypted_media_url || null);
-  const [hasUploadFailed, setHasUploadFailed] = useState(false);
   // For chunked video: we use hookChunks which is reactive
   const [repliedMediaUrl, setRepliedMediaUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -227,7 +226,9 @@ function ChatBubble({
   // Chunked video: load existing chunks from DB on mount / after upload completes.
   // Polls the DB with exponential backoff (1s → 2s → 4s → … up to 30s total)
   // before declaring upload failure — this prevents false "Upload Failed" on page
-  // reload when the sender's upload is still in progress.
+  // Fetch existing chunks exactly once. Any future chunks are handled automatically
+  // by the Realtime subscription in useVideoChunks.ts. This eliminates redundant
+  // polling and prevents arbitrary "Upload Failed" timeouts on slow networks.
   useEffect(() => {
     if (!isChunkedVideo(message)) return;
     if (!partnerPublicKey) return;
@@ -240,14 +241,10 @@ function ChatBubble({
     }
 
     let cancelled = false;
-    let attempt = 0;
-    const MAX_WAIT_MS = 30_000;  // give up after 30s total
-    const startedAt = Date.now();
 
-    const tryFetch = async () => {
+    const fetchInitialChunks = async () => {
       if (cancelled) return;
-      attempt++;
-      console.log('[ChatBubble] loadExistingChunks attempt', attempt, 'for msg=' + message.id);
+      console.log('[ChatBubble] fetchInitialChunks for msg=' + message.id);
 
       const { data, error } = await supabase
         .from('video_chunks')
@@ -258,39 +255,23 @@ function ChatBubble({
       if (cancelled) return;
 
       if (error) {
-        console.error('[ChatBubble] DB error fetching chunks for msg=' + message.id, error);
+        console.error('[ChatBubble] DB error fetching initial chunks for msg=' + message.id, error);
         return;
       }
 
       if (data && data.length > 0) {
         console.log('[ChatBubble] Found', data.length, 'chunks in DB for msg=' + message.id + ', loading...');
-        setHasUploadFailed(false);
         loadExistingChunks(message.id, data, partnerPublicKey, message.sender_public_key ?? null);
-        return;
-      }
-
-      // No chunks yet — decide whether to retry or declare failure
-      const elapsedMs = Date.now() - startedAt;
-      const retryDelayMs = Math.min(1000 * Math.pow(2, attempt - 1), 8000); // 1s, 2s, 4s, 8s, 8s...
-
-      if (elapsedMs + retryDelayMs < MAX_WAIT_MS) {
-        console.log('[ChatBubble] No chunks yet for msg=' + message.id + ', retrying in ' + retryDelayMs + 'ms (elapsed=' + elapsedMs + 'ms)');
-        await new Promise(res => setTimeout(res, retryDelayMs));
-        tryFetch();
       } else {
-        // Truly no chunks after MAX_WAIT_MS — upload failed
-        console.warn('[ChatBubble] Upload failed: no chunks after', elapsedMs, 'ms for msg=' + message.id);
-        if (!cancelled) setHasUploadFailed(true);
+        console.log('[ChatBubble] No chunks yet for msg=' + message.id + '. Waiting for Realtime events...');
       }
     };
 
-    tryFetch();
+    fetchInitialChunks();
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [message.id, partnerPublicKey, message.is_uploading]);
-
-
   
   // Decrypt media for replied messages
   useEffect(() => {
@@ -564,11 +545,7 @@ function ChatBubble({
             
             {!isReady ? (
               <AnimatePresence>
-                {hasUploadFailed ? (
-                  <ChunkedVideoOverlay status="Upload Failed" isError={true} />
-                ) : (
-                  <ChunkedVideoOverlay status="Receiving video..." />
-                )}
+                <ChunkedVideoOverlay status="Receiving video..." />
               </AnimatePresence>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
