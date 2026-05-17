@@ -66,6 +66,13 @@ export interface ReceivedChunk {
 interface StoreEntry {
   /** mediasource: or blob: URL — set once when ready */
   blobUrl: string | null;
+  /**
+   * FIX: A reusable Blob URL created from the fully-assembled decrypted blocks.
+   * Unlike the MSE blob URL (which is tied to a single MediaSource and can only
+   * be assigned to one <video> element), this URL can be safely reused across
+   * multiple <video> elements (e.g., inline player + fullscreen MediaViewer).
+   */
+  reusableBlobUrl: string | null;
   /** Total video duration in seconds */
   duration: number;
   /** True once endOfStream() has been called (MSE) or blob assembled */
@@ -104,6 +111,12 @@ interface StoreEntry {
   mseInitialised: boolean;
   /** Track which block indices have already been processed (prevents duplicates) */
   processedIndices: Set<number>;
+  /**
+   * FIX: Store decrypted block data so we can build a reusable Blob URL
+   * once all blocks have been received. This is needed because the MSE blob URL
+   * cannot be reused by a second <video> element (e.g., fullscreen viewer).
+   */
+  decryptedBlocks: Map<number, Uint8Array>;
 }
 
 const videoStore = new Map<string, StoreEntry>();
@@ -131,11 +144,17 @@ function storeEntryToChunks(messageId: string): ReceivedChunk[] {
     ? Math.round((e.nextAppendIndex / e.totalChunks) * 100)
     : 0;
 
+  // FIX: Prefer the reusable blob URL over the MSE blob URL.
+  // The MSE blob URL is tied to a single MediaSource and breaks if assigned
+  // to a second <video> element. The reusable URL is a plain Blob that works
+  // with any number of elements (inline preview, fullscreen viewer, etc.).
+  const effectiveUrl = e.reusableBlobUrl || e.blobUrl;
+
   return [{
     chunkIndex: 0,
     totalChunks: e.totalChunks,
-    blobUrl: e.blobUrl,
-    isDecrypted: e.blobUrl !== null, // URL exists = player can attach
+    blobUrl: effectiveUrl,
+    isDecrypted: effectiveUrl !== null, // URL exists = player can attach
     duration: e.duration,
     bufferedPercent,
   }];
@@ -325,10 +344,56 @@ function tryAssembleBlobFallback(messageId: string) {
   const blobParts: BlobPart[] = ordered.map(b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
   const blob = new Blob(blobParts, { type: blobMime });
   entry.blobUrl = URL.createObjectURL(blob);
+  entry.reusableBlobUrl = entry.blobUrl; // Blob fallback URLs are already reusable
   entry.isComplete = true;
   entry.blobFallbackBlocks = null; // free memory
   videoStore.set(messageId, { ...entry });
   LOG(`Blob fallback: assembled ${(blob.size / 1024 / 1024).toFixed(2)}MB blob for msg=${messageId} type=${blobMime} ✓`);
+  notifyAll();
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Build reusable Blob URL from decrypted blocks (post-MSE completion)       */
+/*                                                                             */
+/*  The MSE blob URL (URL.createObjectURL(mediaSource)) is bound to one       */
+/*  MediaSource and one <video> element. If a second <video> assigns the      */
+/*  same URL, the browser throws ERR_FILE_NOT_FOUND + MEDIA_ELEMENT_ERROR.    */
+/*  This function creates a plain Blob URL from the stored decrypted blocks   */
+/*  that can be reused by any number of <video> elements.                     */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+function buildReusableBlobUrl(messageId: string) {
+  const entry = videoStore.get(messageId);
+  if (!entry) return;
+  if (entry.reusableBlobUrl) return; // already built
+  if (entry.decryptedBlocks.size < entry.totalChunks) {
+    LOG(`Reusable blob: only ${entry.decryptedBlocks.size}/${entry.totalChunks} blocks available for msg=${messageId}, skipping`);
+    return;
+  }
+
+  // Assemble blocks in order
+  const ordered: Uint8Array[] = [];
+  for (let i = 0; i < entry.totalChunks; i++) {
+    const block = entry.decryptedBlocks.get(i);
+    if (!block) {
+      WARN(`Reusable blob: block ${i} missing for msg=${messageId}, aborting`);
+      return;
+    }
+    ordered.push(block);
+  }
+
+  // Sniff MIME for Blob type
+  const sniffedMime = sniffMime(ordered[0]);
+  const blobMime = sniffedMime.split(';')[0].trim();
+  const blobParts: BlobPart[] = ordered.map(b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
+  const blob = new Blob(blobParts, { type: blobMime });
+  entry.reusableBlobUrl = URL.createObjectURL(blob);
+
+  // Free the decrypted block data — the Blob now owns the bytes
+  entry.decryptedBlocks = new Map();
+
+  videoStore.set(messageId, { ...entry });
+  LOG(`Reusable blob: assembled ${(blob.size / 1024 / 1024).toFixed(2)}MB for msg=${messageId} type=${blobMime} ✓`);
   notifyAll();
 }
 
@@ -423,6 +488,11 @@ function flushAppendQueue(messageId: string) {
           mediaSource.endOfStream();
           entry.isComplete = true;
           LOG(`MSE: endOfStream() called for msg=${messageId} — video fully buffered ✓`);
+          // FIX: Build a reusable Blob URL from stored decrypted blocks.
+          // The MSE blob URL is tied to a single MediaSource and CANNOT be
+          // assigned to a second <video> element (e.g., fullscreen MediaViewer).
+          // A regular Blob URL can be reused by any number of elements.
+          buildReusableBlobUrl(messageId);
         } catch (e) {
           WARN(`endOfStream error (may be harmless):`, e);
         }
@@ -456,6 +526,7 @@ async function processBlock(
     LOG(`Store init for msg=${messageId}, totalChunks=${totalChunks}, duration=${duration}s`);
     entry = {
       blobUrl: null,
+      reusableBlobUrl: null,
       duration,
       isComplete: false,
       receivedCount: 0,
@@ -473,6 +544,7 @@ async function processBlock(
       processedIndices: new Set(),
       blobFallbackBlocks: null,
       useBlobFallback: false,
+      decryptedBlocks: new Map(),
     };
     videoStore.set(messageId, entry);
     notifyAll();
@@ -524,6 +596,8 @@ async function processBlock(
   } else {
     // MSE streaming mode: push to SourceBuffer append queue
     entry.appendQueue.set(chunkIndex, decrypted);
+    // FIX: Also store decrypted block for later Blob assembly
+    entry.decryptedBlocks.set(chunkIndex, decrypted);
     videoStore.set(messageId, { ...entry });
     LOG(`Block ${chunkIndex}: queued for MSE append. receivedCount=${entry.receivedCount}/${entry.totalChunks}`);
     flushAppendQueue(messageId);
@@ -543,6 +617,7 @@ export function addLocalVideoForSender(messageId: string, file: Blob, duration: 
   LOG(`Sender local preview set for msg=${messageId}, duration=${duration}s`);
   videoStore.set(messageId, {
     blobUrl,
+    reusableBlobUrl: blobUrl, // Sender blob URLs are already reusable
     duration,
     isComplete: true,
     receivedCount: 1,
@@ -560,6 +635,7 @@ export function addLocalVideoForSender(messageId: string, file: Blob, duration: 
     processedIndices: new Set([0]),
     blobFallbackBlocks: null,
     useBlobFallback: false,
+    decryptedBlocks: new Map(),
   });
   notifyAll();
 }

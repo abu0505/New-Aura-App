@@ -54,7 +54,7 @@ export default function ChunkedVideoPlayer({
   const isPlayingRef = useRef(false);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
-   * CRITICAL BUG FIX: Track whether video.src has been set already.
+   * CRITICAL BUG FIX: Track which URL has been set as video.src.
    * 
    * The MSE pipeline creates a blob: URL via URL.createObjectURL(mediaSource).
    * Once set as video.src, this URL is "consumed" by the browser and bound to
@@ -63,11 +63,11 @@ export default function ChunkedVideoPlayer({
    *   GET blob:... net::ERR_FILE_NOT_FOUND
    *   MEDIA_ELEMENT_ERROR: Format error
    * 
-   * The `video.src === videoUrl` comparison in the useEffect is unreliable because
-   * React may re-render and recalculate videoUrl (same value, new reference or
-   * browser-normalized form) causing the guard to fail. We use a ref instead.
+   * We track the exact URL that was set. If the URL genuinely changes (e.g.,
+   * from MSE blob URL to a reusable plain Blob URL), we allow the update.
+   * If it's the same URL, we skip to prevent MSE detach.
    */
-  const srcSetRef = useRef(false);
+  const srcSetRef = useRef<string | null>(null);
 
   /* ── State ───────────────────────────────────────────────────────────── */
   const [hasStarted, setHasStarted] = useState(autoPlay);
@@ -118,18 +118,14 @@ export default function ChunkedVideoPlayer({
     const video = videoRef.current;
     if (!video || !videoUrl) return;
 
-    // CRITICAL FIX: Use ref-based guard instead of string comparison.
-    // `video.src === videoUrl` is unreliable — the browser normalizes blob: URLs
-    // and React re-renders can pass new string references for the same URL.
-    // Re-assigning video.src to an MSE blob URL after sourceopen detaches the
-    // MediaSource, causing ERR_FILE_NOT_FOUND + MEDIA_ELEMENT_ERROR: Format error.
-    if (srcSetRef.current) {
-      console.log('[ChunkedVideoPlayer] video.src already set — skipping re-assignment to prevent MSE detach');
+    // Skip if we've already set this exact URL
+    if (srcSetRef.current === videoUrl) {
+      console.log('[ChunkedVideoPlayer] video.src already set to this URL — skipping');
       return;
     }
 
-    srcSetRef.current = true;
-    console.log('[ChunkedVideoPlayer] Setting video.src to MSE/blob URL');
+    srcSetRef.current = videoUrl;
+    console.log('[ChunkedVideoPlayer] Setting video.src to', videoUrl.startsWith('blob:') ? 'blob URL' : 'URL');
     video.src = videoUrl;
     // Do NOT call video.load() for blob: URLs (both regular blobs and MSE mediasource
     // URLs are accessed via blob: scheme). Calling load() on an MSE src resets the

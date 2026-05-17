@@ -1,632 +1,429 @@
 content.js:22 [SmartLens Content] Initializing...
 content.js:438 [SmartLens] Content script loaded
-index-TnjK_Bhc.js:40 [🔔 NOTIF] Registering service worker: /sw.js
-index-TnjK_Bhc.js:40 [🔔 NOTIF] ✅ Service Worker registered successfully
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   active: activated
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   waiting: none
+index-uKVrTnXQ.js:40 [🔔 NOTIF] Registering service worker: /sw.js
+index-uKVrTnXQ.js:40 [🔔 NOTIF] ✅ Service Worker registered successfully
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   active: activated
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   waiting: none
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🚀 Hook mounted for user: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: initial-mount
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: false
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?select=*&recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.desc&limit=50 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folders?select=*&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-17T11:13:24.056Z\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ✅ Setting title to: "AURA" (count=13, enabled=false)
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-09T06:25:59.101Z\"}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folders?select=*&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folder_items?select=folder_id&folder_id=in.%289527a350-8c61-4c4a-a043-de6810751787%2C7b50070f-2c2c-4ce2-a2bb-d394ac064919%2Cc5e8a252-a6b5-4bb7-9cf7-042871f70713%2C19ab9e7b-47af-4576-9af3-41f1ba939ad0%2Cb01aadbd-9ec2-4d2a-a408-6e3925641b54%2Cdc963530-6427-4745-a8fa-98f6246007c4%29 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
- [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 🔑 Notification.permission = "granted"
-index-TnjK_Bhc.js:40 [🔔 NOTIF] ⏳ Waiting for ServiceWorker to be ready...
-index-TnjK_Bhc.js:40 [🔔 NOTIF] ✅ ServiceWorker is ready. Scope: https://new-aura-v2.vercel.app/
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   SW state: activated
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 📬 Found existing subscription
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 💾 Saving subscription to DB...
-index-TnjK_Bhc.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=25 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=favorited_message_ids&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?endpoint=eq.https%3A%2F%2Ffcm.googleapis.com%2Ffcm%2Fsend%2FfTdekZfgJLk%3AAPA91bHlpE8fmK1xHydUUWEp2bZlKpyLIEWi2O0xGzkqgUcPnlofz6NlUX_qCSj6jn0caLI4zLzqUvxhrnmvBzKYbuz8YA4Dw-ZrhE-sUXhm_UiVpC5MJ8H-xPzJJH2aKFJ4LFo4Cegv&user_id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"DELETE","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=25 OPTIONS: {"method":"GET","headers":{}}
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Ctype%2Ccreated_at%2Csender_public_key&media_url=not.is.null&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":17,\"limit_count\":6}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=favorited_message_ids&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 206 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?on_conflict=user_id OPTIONS: {"method":"POST","headers":{},"body":"{\"user_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"endpoint\":\"https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyLIEWi2O0xGzkqgUcPnlofz6NlUX_qCSj6jn0caLI4zLzqUvxhrnmvBzKYbuz8YA4Dw-ZrhE-sUXhm_UiVpC5MJ8H-xPzJJH2aKFJ4LFo4Cegv\",\"p256dh\":\"BEpXlyTm0UcgnC1sa_HE09hSKVcPhUihiD4lOJY2EMN3rfy1HDbG5x30W2CSgeXUBlXbCjg9UYWOYkRNfsdZoyQ\",\"auth\":\"-dJruFpKjmqoP3-VyRnhoQ\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:40 [🔔 NOTIF] ✅ Subscription saved to DB successfully
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
-index-TnjK_Bhc.js:40 [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=lt.2026-05-17T11%3A10%3A06.18312%2B00%3A00&order=created_at.desc&limit=25 OPTIONS: {"method":"GET","headers":{}}
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 🔑 Notification.permission = "granted"
+index-uKVrTnXQ.js:40 [🔔 NOTIF] ⏳ Waiting for ServiceWorker to be ready...
+index-uKVrTnXQ.js:40 [🔔 NOTIF] ✅ ServiceWorker is ready. Scope: https://new-aura-v2.vercel.app/
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   SW state: activated
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 📬 Found existing subscription
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 💾 Saving subscription to DB...
+index-uKVrTnXQ.js:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?endpoint=eq.https%3A%2F%2Ffcm.googleapis.com%2Ffcm%2Fsend%2FfTdekZfgJLk%3AAPA91bHlpE8fmK1xHydUUWEp2bZlKpyLIEWi2O0xGzkqgUcPnlofz6NlUX_qCSj6jn0caLI4zLzqUvxhrnmvBzKYbuz8YA4Dw-ZrhE-sUXhm_UiVpC5MJ8H-xPzJJH2aKFJ4LFo4Cegv&user_id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"DELETE","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 1 for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 1 for msg=56179dad-f31f-4377-bd92-a20187a66586
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.78753600-e7d8-4119-b975-bfbb3b71907e&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.56179dad-f31f-4377-bd92-a20187a66586&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28feb2bd3d-c85e-458e-b74f-c8ce34160893%2C46506b8e-b899-40d1-8a2a-36feffb2dcbf%2C444ce9d6-bb62-48a3-824f-8465f048bebf%2Cab152be0-0bd3-4094-af45-e36d583a2bfa%2Cde0f1090-3b3e-480a-909e-696d57e6ef74%2C5f9ec96d-206a-45a8-a0ae-0ffa34039f21%2C0a3c9969-0d01-410e-a3b0-b1d2309dabb8%2C06ea4e31-074e-4094-9670-0220bc4fe47a%29 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Ctype%2Ccreated_at%2Csender_public_key&media_url=not.is.null&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":9,\"limit_count\":6}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?on_conflict=user_id OPTIONS: {"method":"POST","headers":{},"body":"{\"user_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"endpoint\":\"https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyLIEWi2O0xGzkqgUcPnlofz6NlUX_qCSj6jn0caLI4zLzqUvxhrnmvBzKYbuz8YA4Dw-ZrhE-sUXhm_UiVpC5MJ8H-xPzJJH2aKFJ4LFo4Cegv\",\"p256dh\":\"BEpXlyTm0UcgnC1sa_HE09hSKVcPhUihiD4lOJY2EMN3rfy1HDbG5x30W2CSgeXUBlXbCjg9UYWOYkRNfsdZoyQ\",\"auth\":\"-dJruFpKjmqoP3-VyRnhoQ\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+index-uKVrTnXQ.js:40 [🔔 NOTIF] ✅ Subscription saved to DB successfully
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
+index-uKVrTnXQ.js:40 [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] No chunks yet for msg=78753600-e7d8-4119-b975-bfbb3b71907e, retrying in 1000ms (elapsed=928ms)
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] Found 4 chunks in DB for msg=56179dad-f31f-4377-bd92-a20187a66586, loading...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] loadExistingChunks: msg=56179dad-f31f-4377-bd92-a20187a66586, 4 chunks to process
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] loadExistingChunks: processing batch [0,1,2]
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Store init for msg=56179dad-f31f-4377-bd92-a20187a66586, totalChunks=4, duration=33s
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 0: downloading (attempt 1)...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 1: downloading (attempt 1)...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 2: downloading (attempt 1)...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 206 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 0: downloaded 5242896 bytes, decrypting...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 0: decrypted OK → 5242880 bytes
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] MIME sniff → MP4 fallback (avc1.42E01E)
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] MSE init for msg=56179dad-f31f-4377-bd92-a20187a66586 mime="video/mp4; codecs="avc1.42E01E,mp4a.40.2""
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 0: queued for MSE append. receivedCount=1/4
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 1: downloaded 5242896 bytes, decrypting...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 1: decrypted OK → 5242880 bytes
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 1: queued for MSE append. receivedCount=2/4
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 2: downloaded 5242896 bytes, decrypting...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 2: decrypted OK → 5242880 bytes
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 2: queued for MSE append. receivedCount=3/4
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] loadExistingChunks: processing batch [3]
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 3: downloading (attempt 1)...
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 3: downloaded 3976547 bytes, decrypting...
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 3: decrypted OK → 3976531 bytes
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Block 3: queued for MSE append. receivedCount=4/4
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] loadExistingChunks: msg=56179dad-f31f-4377-bd92-a20187a66586 complete
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28a3b2a826-9b2f-419c-977b-7fbe7d5a564f%2Cd71b9aa4-d707-4bc8-b21e-e10fafbf2780%2Caa6aa096-599c-4993-a5f4-7f751ccd1f55%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T06:26:05.089Z\"}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 2 for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.78753600-e7d8-4119-b975-bfbb3b71907e&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%280d96eae3-c23e-42be-b589-5beb30bc73bd%29 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.eff90ada-7af2-4083-86aa-60811eed286d OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:13:27.139Z\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] No chunks yet for msg=78753600-e7d8-4119-b975-bfbb3b71907e, retrying in 2000ms (elapsed=2172ms)
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 3 for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.78753600-e7d8-4119-b975-bfbb3b71907e&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] No chunks yet for msg=78753600-e7d8-4119-b975-bfbb3b71907e, retrying in 4000ms (elapsed=4569ms)
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 4 for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.78753600-e7d8-4119-b975-bfbb3b71907e&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] No chunks yet for msg=78753600-e7d8-4119-b975-bfbb3b71907e, retrying in 8000ms (elapsed=8790ms)
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T06:26:13.798Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28eff90ada-7af2-4083-86aa-60811eed286d%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:13:28.219Z\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2863109850-2b1f-45f8-8bd4-2adc0a7766be%2Ca3b2a826-9b2f-419c-977b-7fbe7d5a564f%2Cd71b9aa4-d707-4bc8-b21e-e10fafbf2780%2Caa6aa096-599c-4993-a5f4-7f751ccd1f55%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-09T06:26:16.557Z\"}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.3eafb517-21f0-496f-8e59-4a7be7ff7555 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:13:42.614Z\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"babebe89-fdf2-4a1f-a390-9056eb325ad2\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"\",\"nonce\":\"\",\"type\":\"video\",\"media_url\":null,\"media_key\":\"tvY0q4Wk1rLB8SCwAb6+d6+AtgZ3ctmF:Buiv5Cf2nXkbsOcw2pEyUinhnfxg2aIZq4M9HtcqLv+/T7coZe29RXRcT5HYOlJD\",\"media_nonce\":\"cI20tk7EMJRQ7Mhd+7vK4pGPRZ63F+sZ\",\"thumbnail_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307976/ks9uxqhoyfkwt35ojc6i.webp\",\"duration\":33,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%283eafb517-21f0-496f-8e59-4a7be7ff7555%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:13:43.672Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:13:48.641Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-17T11:13:48.641Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"43fa334f-af14-4b6d-a280-28bd14c9c694\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"\",\"nonce\":\"\",\"type\":\"video\",\"media_url\":null,\"media_key\":\"OIeWWxGP0wXEHTv/uLP+bbrNgPrH5Vl0:+5FMk5FFUxPbmlmx/RMNhnzseknoX9scCaaO3FnLCdLDu8uDQcRUrvFvLkFWyikG\",\"media_nonce\":\"88WVKAU3lWwCqnlOhmXuOvbEVaONeXgu\",\"thumbnail_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016429/z7eiuj259x4qyagth6r1.webp\",\"duration\":33,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
-useMedia-C0axnbcZ.js:21 [useMedia] processAndUploadChunked START msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 file=VN20260330_004847.mp4 size=18.79MB
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: INSERT
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: false
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-INSERT
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: false
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Sender local preview set for msg=babebe89-fdf2-4a1f-a390-9056eb325ad2, duration=33.266667s
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 5 for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.78753600-e7d8-4119-b975-bfbb3b71907e&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] No chunks yet for msg=78753600-e7d8-4119-b975-bfbb3b71907e, retrying in 8000ms (elapsed=17262ms)
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📡 Realtime event: UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   sender_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   receiver_id: 8bb51234-4a86-470f-9f7d-96a95f551952
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   is_read: true
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   my user_id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] ↳ Relevant to me — scheduling debounced refresh
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔄 Fetching unread count — reason: realtime-UPDATE
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   user.id: 2dfb823f-bb93-4e46-86cd-a520c5be7868
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE]   tab_badge_enabled: true
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 📊 DB result: count=13, error=none
-index-TnjK_Bhc.js:10 [📛 TAB-BADGE] 🔴 Setting title to: "(9+) AURA"
-useMedia-C0axnbcZ.js:21 [useMedia] Block 0/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307985/llcm5uwhacrotd4qzhbb.enc | inserting DB row...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"babebe89-fdf2-4a1f-a390-9056eb325ad2\",\"chunk_index\":0,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307985/llcm5uwhacrotd4qzhbb.enc\",\"chunk_key\":\"d+FhqUUi5Fram1qwFC9hpscyGGtk0Z/Y:Zb4uPixX3MjU7j8z6MXnK93bkEFc3Txb56p+pKiwbiPR37HmhfHP33beoKuVbqyU|wQoaFn09ymosaUUjXJmJsfXMqjFK1ncS:1j6gSJfUnVIlZtQo2ZDtY1Y2pu+1nxxnUPLA7JusgedmJsfBb9N9AMiajkEFkVin\",\"chunk_nonce\":\"Qm+cwlMFT6Du2Wd5cY0BmlAYOluDfcTf\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
+useMedia-q3f6sL_0.js:21 [useMedia] processAndUploadChunked START msg=43fa334f-af14-4b6d-a280-28bd14c9c694 file=VN20260330_004847.mp4 size=18.79MB
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Sender local preview set for msg=43fa334f-af14-4b6d-a280-28bd14c9c694, duration=33.266667s
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:13:53.972Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-17T11:13:53.972Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"32f43355-65e0-4880-b84c-687f2d5f5571\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"3E+DF59XLrNvOZR7QrrAMopOFeE5tm0jjCY=\",\"nonce\":\"+m5snVdCzVlefUEKHGMYr4/Kmzp3sKZa\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
-useMedia-C0axnbcZ.js:21 [useMedia] Block 0/3 DB row inserted ✓
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=0
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] loadExistingChunks attempt 6 for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.78753600-e7d8-4119-b975-bfbb3b71907e&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T06:26:28.801Z\"}"}
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 📤 Triggering push for msg 32f43355... to partner 8bb51234...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"32f43355-65e0-4880-b84c-687f2d5f5571\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] Upload failed: no chunks after 25481 ms for msg=78753600-e7d8-4119-b975-bfbb3b71907e
-s @ ChatScreen-DTWLvjd0.js:56
-await in s
-s @ ChatScreen-DTWLvjd0.js:56
-await in s
-s @ ChatScreen-DTWLvjd0.js:56
-await in s
-s @ ChatScreen-DTWLvjd0.js:56
-await in s
-s @ ChatScreen-DTWLvjd0.js:56
-await in s
-s @ ChatScreen-DTWLvjd0.js:56
-await in s
-(anonymous) @ ChatScreen-DTWLvjd0.js:56
-Wc @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Dl @ index-TnjK_Bhc.js:9
-Ol @ index-TnjK_Bhc.js:9
-Uu @ index-TnjK_Bhc.js:9
-Hu @ index-TnjK_Bhc.js:9
-ld @ index-TnjK_Bhc.js:9
-id @ index-TnjK_Bhc.js:9
-bu @ index-TnjK_Bhc.js:9
-hn @ index-TnjK_Bhc.js:9
-wd @ index-TnjK_Bhc.js:9
-up @ index-TnjK_Bhc.js:10
-cp @ index-TnjK_Bhc.js:10
-useMedia-C0axnbcZ.js:21 [useMedia] Block 1/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307988/flnvmlnwcch1d24j19pn.enc | inserting DB row...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"babebe89-fdf2-4a1f-a390-9056eb325ad2\",\"chunk_index\":1,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307988/flnvmlnwcch1d24j19pn.enc\",\"chunk_key\":\"d+FhqUUi5Fram1qwFC9hpscyGGtk0Z/Y:Zb4uPixX3MjU7j8z6MXnK93bkEFc3Txb56p+pKiwbiPR37HmhfHP33beoKuVbqyU|wQoaFn09ymosaUUjXJmJsfXMqjFK1ncS:1j6gSJfUnVIlZtQo2ZDtY1Y2pu+1nxxnUPLA7JusgedmJsfBb9N9AMiajkEFkVin\",\"chunk_nonce\":\"Qm+cwlMFT6Du2Wd5cY0BmlAYOluDfcTf\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.780f7768-440b-487c-97da-b7b781c0cd09 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:14:01.967Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28780f7768-440b-487c-97da-b7b781c0cd09%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:14:03.046Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+useMedia-q3f6sL_0.js:21 [useMedia] Block 0/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016448/wgmjinkl5z9ystsnmnkw.enc | inserting DB row...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"43fa334f-af14-4b6d-a280-28bd14c9c694\",\"chunk_index\":0,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016448/wgmjinkl5z9ystsnmnkw.enc\",\"chunk_key\":\"i8SwMgFZRcIHAj/mllwLGtto9tfiyc6R:4bkXzgg7RkoB6FbP2gEvoV+1pqCLd43nd/ckPQhgh1ug9x2271WZczZlezEPT+aG|HTWYCys2oI/d0G1CkBKI1IqFmMBWZCsX:/ChpaRZK+4f85VynoI9vSG7HNZjstiRXuObM9Yxm5NcOOJu6Wv0NBHiuW9snh0eb\",\"chunk_nonce\":\"YF7cZLUbvWsQZRuddDl/1245utJbGodi\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+useMedia-q3f6sL_0.js:21 [useMedia] Block 0/3 DB row inserted ✓
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=0
+useMedia-q3f6sL_0.js:21 [useMedia] Block 1/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016454/jtgqtccngyz6tznewzeb.enc | inserting DB row...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"43fa334f-af14-4b6d-a280-28bd14c9c694\",\"chunk_index\":1,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016454/jtgqtccngyz6tznewzeb.enc\",\"chunk_key\":\"i8SwMgFZRcIHAj/mllwLGtto9tfiyc6R:4bkXzgg7RkoB6FbP2gEvoV+1pqCLd43nd/ckPQhgh1ug9x2271WZczZlezEPT+aG|HTWYCys2oI/d0G1CkBKI1IqFmMBWZCsX:/ChpaRZK+4f85VynoI9vSG7HNZjstiRXuObM9Yxm5NcOOJu6Wv0NBHiuW9snh0eb\",\"chunk_nonce\":\"YF7cZLUbvWsQZRuddDl/1245utJbGodi\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+useMedia-q3f6sL_0.js:21 [useMedia] Block 1/3 DB row inserted ✓
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.f9353a2e-179b-4739-8883-badab317452b OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:14:18.873Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28f9353a2e-179b-4739-8883-badab317452b%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:14:23.219Z\"}"}
+useMedia-q3f6sL_0.js:21 [useMedia] Block 3/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016463/k8jzqjdrykxdnuvh95iq.enc | inserting DB row...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"43fa334f-af14-4b6d-a280-28bd14c9c694\",\"chunk_index\":3,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016463/k8jzqjdrykxdnuvh95iq.enc\",\"chunk_key\":\"i8SwMgFZRcIHAj/mllwLGtto9tfiyc6R:4bkXzgg7RkoB6FbP2gEvoV+1pqCLd43nd/ckPQhgh1ug9x2271WZczZlezEPT+aG|HTWYCys2oI/d0G1CkBKI1IqFmMBWZCsX:/ChpaRZK+4f85VynoI9vSG7HNZjstiRXuObM9Yxm5NcOOJu6Wv0NBHiuW9snh0eb\",\"chunk_nonce\":\"YF7cZLUbvWsQZRuddDl/1245utJbGodi\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+useMedia-q3f6sL_0.js:21 [useMedia] Block 3/3 DB row inserted ✓
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=3
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+useMedia-q3f6sL_0.js:21 [useMedia] Block 2/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016465/iq4sxyijfvaa0acbxenm.enc | inserting DB row...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"43fa334f-af14-4b6d-a280-28bd14c9c694\",\"chunk_index\":2,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1779016465/iq4sxyijfvaa0acbxenm.enc\",\"chunk_key\":\"i8SwMgFZRcIHAj/mllwLGtto9tfiyc6R:4bkXzgg7RkoB6FbP2gEvoV+1pqCLd43nd/ckPQhgh1ug9x2271WZczZlezEPT+aG|HTWYCys2oI/d0G1CkBKI1IqFmMBWZCsX:/ChpaRZK+4f85VynoI9vSG7HNZjstiRXuObM9Yxm5NcOOJu6Wv0NBHiuW9snh0eb\",\"chunk_nonce\":\"YF7cZLUbvWsQZRuddDl/1245utJbGodi\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+useMedia-q3f6sL_0.js:21 [useMedia] Block 2/3 DB row inserted ✓
+useMedia-q3f6sL_0.js:21 [useMedia] processAndUploadChunked COMPLETE msg=43fa334f-af14-4b6d-a280-28bd14c9c694 totalChunks=4
+ChatScreen-D0Nic9Ii.js:56 [ChatBubble] msg=43fa334f-af14-4b6d-a280-28bd14c9c694 already has decrypted chunks in store, skipping DB fetch
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+useVideoChunks-YOZHkDTE.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=43fa334f-af14-4b6d-a280-28bd14c9c694 chunk=2
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.52507903-3654-4d32-986f-1e75ad459b61 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:14:27.366Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.5b52fe71-1fdb-4db8-be4a-245b954f0e6e OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:14:29.442Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:14:30.579Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-17T11:14:30.579Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"84963594-3ae5-4ac7-8e36-7f28c9b3ee29\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"wJluvh6/9cn36Z1T3/bOOpxvqVMLxRy32SpyUA==\",\"nonce\":\"D2/WRFCo4fMBel44aIEXrKvhFsL61mXO\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
-useMedia-C0axnbcZ.js:21 [useMedia] Block 1/3 DB row inserted ✓
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=1
-useMedia-C0axnbcZ.js:21 [useMedia] Block 3/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307994/ahgvx2k68t4mmapfq1pz.enc | inserting DB row...
-useMedia-C0axnbcZ.js:21 [useMedia] Block 2/3 uploaded → https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307994/zhcrstwsipgusbvkp5eb.enc | inserting DB row...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"babebe89-fdf2-4a1f-a390-9056eb325ad2\",\"chunk_index\":3,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307994/ahgvx2k68t4mmapfq1pz.enc\",\"chunk_key\":\"d+FhqUUi5Fram1qwFC9hpscyGGtk0Z/Y:Zb4uPixX3MjU7j8z6MXnK93bkEFc3Txb56p+pKiwbiPR37HmhfHP33beoKuVbqyU|wQoaFn09ymosaUUjXJmJsfXMqjFK1ncS:1j6gSJfUnVIlZtQo2ZDtY1Y2pu+1nxxnUPLA7JusgedmJsfBb9N9AMiajkEFkVin\",\"chunk_nonce\":\"Qm+cwlMFT6Du2Wd5cY0BmlAYOluDfcTf\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks OPTIONS: {"method":"POST","headers":{},"body":"{\"message_id\":\"babebe89-fdf2-4a1f-a390-9056eb325ad2\",\"chunk_index\":2,\"total_chunks\":4,\"chunk_url\":\"https://res.cloudinary.com/del5o1vnd/raw/upload/v1778307994/zhcrstwsipgusbvkp5eb.enc\",\"chunk_key\":\"d+FhqUUi5Fram1qwFC9hpscyGGtk0Z/Y:Zb4uPixX3MjU7j8z6MXnK93bkEFc3Txb56p+pKiwbiPR37HmhfHP33beoKuVbqyU|wQoaFn09ymosaUUjXJmJsfXMqjFK1ncS:1j6gSJfUnVIlZtQo2ZDtY1Y2pu+1nxxnUPLA7JusgedmJsfBb9N9AMiajkEFkVin\",\"chunk_nonce\":\"Qm+cwlMFT6Du2Wd5cY0BmlAYOluDfcTf\",\"duration\":33,\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
-useMedia-C0axnbcZ.js:21 [useMedia] Block 2/3 DB row inserted ✓
-useMedia-C0axnbcZ.js:21 [useMedia] Block 3/3 DB row inserted ✓
-useMedia-C0axnbcZ.js:21 [useMedia] processAndUploadChunked COMPLETE msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 totalChunks=4
-ChatScreen-DTWLvjd0.js:56 [ChatBubble] msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 already has decrypted chunks in store, skipping DB fetch
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=3
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-useVideoChunks-HbYVkSag.js:1 [VideoChunks] Realtime chunk ignored (not for me): msg=babebe89-fdf2-4a1f-a390-9056eb325ad2 chunk=2
-MediaViewer-iGeZel6z.js:32 [ChunkedVideoPlayer] Setting video.src to MSE/blob URL
-MediaViewer-iGeZel6z.js:32 [ChunkedVideoPlayer] canplay fired — attempting autoplay
-MediaViewer-iGeZel6z.js:32 [ChunkedVideoPlayer] playing ✓
-MediaViewer-iGeZel6z.js:32 [ChunkedVideoPlayer] autoplay started ✓
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T06:26:43.798Z\"}"}
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 📤 Triggering push for msg 84963594... to partner 8bb51234...
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"84963594-3ae5-4ac7-8e36-7f28c9b3ee29\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-17T11:14:51.299Z\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"last_seen\":\"2026-05-09T06:26:58.799Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-17T11%3A14%3A31.671345%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:14:52.876Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-17T11:14:52.876Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"755ccf77-b874-4de0-81cb-84ee9e17e296\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"EbbsR11jxtkZ68vcQ43yOPXlvQ==\",\"nonce\":\"X55ZnzJqvq9P2cFyYb5y0e0QeNKdl8FK\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":\"52507903-3654-4d32-986f-1e75ad459b61\",\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 📤 Triggering push for msg 755ccf77... to partner 8bb51234...
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"755ccf77-b874-4de0-81cb-84ee9e17e296\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:14:54.232Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-17T11:14:54.232Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"f021bfc9-8012-45af-967c-91bbfef406fc\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"WH+pAf4B+BrlRZ/TaFT8hObr8jg=\",\"nonce\":\"FtiN5tnmC47S1znM6KcV7TQrpuRpah1m\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg f021bfc9...)
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+MediaViewer-CLHfdD44.js:32 [ChunkedVideoPlayer] Setting video.src to MSE/blob URL
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.8ff9e16c-ff16-41f1-926a-69b18dddf982 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:15:02.839Z\"}"}
+MediaViewer-CLHfdD44.js:32 [ChunkedVideoPlayer] canplay fired — attempting autoplay
+MediaViewer-CLHfdD44.js:32 [ChunkedVideoPlayer] playing ✓
+MediaViewer-CLHfdD44.js:32 [ChunkedVideoPlayer] autoplay started ✓
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.931fd037-1e10-4c44-9456-8f5b3eaf7ed7 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-05-17T11:15:08.959Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%288ff9e16c-ff16-41f1-926a-69b18dddf982%2C931fd037-1e10-4c44-9456-8f5b3eaf7ed7%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:15:25.329Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-05-17T11:15:51.989Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-05-17T11:15:51.989Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"a43b167f-ee68-4db9-be57-9bb9d905765d\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"gpxp7V3wMeaBrOku7jyoLP7wrav/bxCuFVBJ0KsXkwuJYxXmOu36rmPF1Rr8L/6HWiJHQ6us9u8j9pxKS1T8XG4LM20EPQsPEJ317zyg/0xTNI/H9Pfmnv/HGIX1vNCgeVg6xQZV4yi8DUbf2NDdsa6VtatcTxW2NB69bBB/Nyc=\",\"nonce\":\"Mb0kYNZwM/ZkjRlHsMZg4k/BDOZ2NyDv\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 201 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 📤 Triggering push for msg a43b167f... to partner 8bb51234...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"a43b167f-ee68-4db9-be57-9bb9d905765d\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+usePartner-DexRgNkR.js:2 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-17T11:16:02.357Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-17T11%3A15%3A53.768532%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
