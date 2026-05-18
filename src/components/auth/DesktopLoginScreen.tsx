@@ -58,18 +58,20 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
           <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPt3UQD2zhBjdcfz4vpoMnLVAO00p927weid8NJG3wHiiGD4FcU1P0MTD8VIMkLAfZM-917g3aicYjhSmb1SqSsCsuThtfGQQS7semr3pXlk2v9N0uWeQ10UsiwSLBcqBuSOhzePp3kU4MNVfyWGXDPMgOw6f_MWEozVvoD15vfsOjt4R6aaTsNn8QKsSyo1VpDaqwNU88qukxWfkWAdJpXUnG-yBBNzFfk4MykA2UpWQnCgOB4mCV3dS5wEZDn4RmtU6KFiU_yb8')" }}></div>
           <div className="z-10 flex flex-col items-start gap-4">
             <div className="flex items-center gap-2 opacity-60">
-              <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
-              <span className="text-[10px] tracking-[0.3em] uppercase font-label text-primary">End-to-end encrypted for two</span>
+              <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
+              <span className="text-[10px] tracking-[0.3em] uppercase font-label text-primary">Premium Quality, Guaranteed</span>
             </div>
           </div>
           
           <div className="z-10 flex flex-col justify-center flex-grow">
-            <img src="/aura-logo.png" alt="AURA Logo" className="w-32 h-32 mb-6 object-contain drop-shadow-[0_0_20px_rgba(var(--primary-rgb),0.4)]" />
+            <div className="w-24 h-24 mb-6 flex items-center justify-center bg-white/5 rounded-3xl border border-white/10 shadow-xl backdrop-blur-md">
+               <span className="material-symbols-outlined text-5xl text-primary drop-shadow-[0_0_15px_rgba(var(--primary-rgb),0.4)]">shopping_bag</span>
+            </div>
             <h1 className="font-headline text-8xl font-light tracking-[0.25em] text-primary text-glow-gold leading-tight mb-4">
-              AURA
+              AURA STORE
             </h1>
             <p className="font-headline italic text-2xl text-on-surface-variant font-light tracking-widest opacity-80">
-              Your Private World
+              Elevate Your Wardrobe
             </p>
           </div>
           
@@ -77,12 +79,12 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
             <div className="w-32 h-px bg-outline-variant opacity-30"></div>
             <div className="flex gap-12">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] tracking-widest uppercase text-outline">Intimacy</span>
-                <span className="text-xs text-on-surface/60">Crafted for connection</span>
+                <span className="text-[10px] tracking-widest uppercase text-outline">Fast Shipping</span>
+                <span className="text-xs text-on-surface/60">Worldwide delivery</span>
               </div>
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] tracking-widest uppercase text-outline">Security</span>
-                <span className="text-xs text-on-surface/60">Zero-knowledge privacy</span>
+                <span className="text-[10px] tracking-widest uppercase text-outline">Easy Returns</span>
+                <span className="text-xs text-on-surface/60">30-day return policy</span>
               </div>
             </div>
           </div>
@@ -101,14 +103,14 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
                 {isSignUp ? 'Create Account' : 'Welcome Back'}
               </h2>
               <p className="text-on-surface-variant/70 text-sm leading-relaxed">
-                {isSignUp ? 'Forge a secure space for you and your partner.' : 'Enter your credentials to return to your shared space.'}
+                {isSignUp ? 'Sign up to track orders and save your wishlist.' : 'Sign in to access your orders and saved items.'}
               </p>
             </header>
             
             <form onSubmit={handleSubmit} className="flex flex-col gap-6">
               {/* Email Field */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] uppercase tracking-[0.2em] text-outline px-1" htmlFor="email">Identity</label>
+                <label className="text-[10px] uppercase tracking-[0.2em] text-outline px-1" htmlFor="email">Email Address</label>
                 <div className="group relative">
                   <input 
                     className="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 text-on-surface placeholder:text-on-surface-variant/30 focus:ring-1 focus:ring-primary/40 focus:outline-none transition-all duration-500 font-body text-sm" 
@@ -125,7 +127,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
               {/* Password Field */}
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-end px-1">
-                  <label className="text-[10px] uppercase tracking-[0.2em] text-outline" htmlFor="password">Secret Key</label>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-outline" htmlFor="password">Password</label>
                   {!isSignUp && (
                     <a className="text-[10px] uppercase tracking-[0.1em] text-primary/60 hover:text-primary transition-colors duration-300" href="#">Forgot password?</a>
                   )}
@@ -154,7 +156,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
                   type="submit" 
                   className="w-full bg-primary-container text-on-primary py-4 rounded-full font-label font-semibold tracking-widest uppercase text-xs hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-300 shadow-xl shadow-primary/5"
                 >
-                  {loading ? 'Authenticating...' : (isSignUp ? 'Create Account' : 'Unlock AURA')}
+                  {loading ? 'Authenticating...' : (isSignUp ? 'Create Account' : 'Sign In')}
                 </button>
                 
                 <div className="flex items-center gap-4 py-2">
@@ -191,7 +193,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
               <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Concierge</a>
             </div>
             <div className="text-[#4D463A] font-body text-[10px] tracking-[0.2em] uppercase">
-                © 2024 AURA. THE SHARED SPACE.
+                © 2024 AURA STORE. ALL RIGHTS RESERVED.
             </div>
           </div>
         </footer>

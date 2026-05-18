@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAppLock } from '../../contexts/AppLockContext';
 
 export default function AppLockModal() {
@@ -8,27 +8,15 @@ export default function AppLockModal() {
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Robust focus management
-  useEffect(() => {
-    if (isLocked) {
-      // Immediate focus
-      inputRef.current?.focus();
-      
-      // Secondary focus after a small delay to catch any layout shifts or race conditions
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isLocked]);
+  // We intentionally remove the auto-focus to make it look like a real e-commerce page,
+  // preventing the keyboard from popping up immediately and looking suspicious.
 
   if (!isLocked) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pin.length < 4) {
-      setError('PIN must be at least 4 characters');
+      setError('Invalid discount code');
       return;
     }
 
@@ -38,7 +26,7 @@ export default function AppLockModal() {
     try {
       const success = await unlockApp(pin);
       if (!success) {
-        setError('Incorrect PIN. App remains locked.');
+        setError('Invalid discount code');
         setPin(''); // clear pin on failure
       }
     } catch (err) {
@@ -49,68 +37,153 @@ export default function AppLockModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-6 transition-all duration-500">
-      <div className="w-full max-w-md bg-[var(--bg-secondary)] border border-[rgba(var(--primary-rgb),_0.1)] rounded-3xl p-8 shadow-[0_0_50px_rgba(var(--primary-rgb),0.05)] relative overflow-hidden group">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-[#0a0a0a] text-white font-sans transition-all duration-500 overflow-y-auto">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 lg:px-12 py-5 border-b border-white/10 sticky top-0 bg-[#0a0a0a]/90 backdrop-blur-md z-20">
+        <div className="flex items-center gap-4">
+          <span className="material-symbols-outlined text-2xl cursor-pointer hover:text-gray-300 transition-colors">arrow_back</span>
+          <h1 className="text-lg font-bold tracking-widest uppercase">Your Cart</h1>
+        </div>
+        <div className="relative">
+          <span className="material-symbols-outlined text-2xl">shopping_bag</span>
+          <span className="absolute -top-1 -right-1 bg-white text-black text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+            2
+          </span>
+        </div>
+      </header>
+
+      {/* Two Column Layout Container */}
+      <div className="flex-1 max-w-7xl mx-auto w-full px-6 lg:p-12 flex flex-col md:flex-row gap-12 lg:gap-20">
         
-        {/* Aesthetic Background Elements */}
-        <div className="absolute -top-32 -left-32 w-64 h-64 bg-[rgba(var(--primary-rgb),_0.05)] blur-[120px] rounded-full" />
-        <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-red-900/10 blur-[120px] rounded-full" />
-
-        <div className="flex flex-col items-center text-center space-y-8 relative z-10">
-          <div className="w-20 h-20 bg-[rgba(var(--primary-rgb),_0.05)] rounded-full flex items-center justify-center border border-[rgba(var(--primary-rgb),_0.2)] shadow-[0_0_30px_rgba(var(--primary-rgb),0.1)]">
-            <span className="material-symbols-outlined text-4xl text-[var(--gold)] animate-pulse">
-              lock
-            </span>
+        {/* Left Side: Cart Items */}
+        <div className="flex-1 space-y-8">
+          <div className="hidden md:flex justify-between border-b border-white/10 pb-4 mb-4">
+             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Product</h2>
+             <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-widest">Total</h2>
           </div>
 
-          <div className="space-y-3 lg:px-4">
-            <h2 className="font-serif italic text-3xl text-[var(--gold)] tracking-wide">
-              App Locked
-            </h2>
-            <p className="text-xs text-[#998f81]/70 leading-relaxed font-label uppercase tracking-widest">
-              Enter the shared PIN to access your private connection.
-            </p>
+          {/* Item 1 */}
+          <div className="flex gap-5">
+            <div className="w-28 h-32 bg-gray-900 rounded-2xl overflow-hidden flex-shrink-0 border border-white/5">
+              <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&q=80" alt="Watch" className="w-full h-full object-cover opacity-90" />
+            </div>
+            <div className="flex-1 flex flex-col justify-between py-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-base text-gray-100">Minimalist Smartwatch</h3>
+                  <p className="text-sm text-gray-400 mt-1">Matte Black / 42mm</p>
+                </div>
+                <span className="font-bold text-lg hidden md:block">$199.00</span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="font-bold text-lg md:hidden">$199.00</span>
+                <div className="flex items-center gap-4 bg-white/5 rounded-xl px-3 py-2 border border-white/5">
+                  <span className="material-symbols-outlined text-sm cursor-pointer text-gray-400 hover:text-white transition-colors">remove</span>
+                  <span className="text-sm font-medium w-4 text-center">1</span>
+                  <span className="material-symbols-outlined text-sm cursor-pointer text-gray-400 hover:text-white transition-colors">add</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="w-full space-y-6">
-            <div className="relative">
-              <input
-                ref={inputRef}
-                type="password"
-                value={pin}
-                onChange={(e) => {
-                   setPin(e.target.value);
-                   setError(null);
-                }}
-                placeholder="ENTER PIN"
-                className="w-full bg-transparent border border-[var(--gold)]/20 rounded-2xl px-6 py-5 text-center text-3xl tracking-[0.5em] text-[#e4e1ed] focus:outline-none focus:border-[var(--gold)] focus:bg-white/[0.02] transition-all placeholder:text-[10px] placeholder:tracking-[0.3em] placeholder:uppercase placeholder:text-[#998f81]/30"
-                maxLength={10} // Just in case they want a longer pin
-                disabled={loading}
-                autoFocus
-              />
-              {error && (
-                <div className="absolute -bottom-8 left-0 right-0 text-center">
-                  <p className="text-[10px] text-red-400/90 uppercase tracking-[0.2em] font-bold">
+          {/* Item 2 */}
+          <div className="flex gap-5">
+            <div className="w-28 h-32 bg-gray-900 rounded-2xl overflow-hidden flex-shrink-0 border border-white/5">
+              <img src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=300&q=80" alt="T-Shirt" className="w-full h-full object-cover opacity-90" />
+            </div>
+            <div className="flex-1 flex flex-col justify-between py-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-base text-gray-100">Essential Heavyweight Tee</h3>
+                  <p className="text-sm text-gray-400 mt-1">Off-White / Medium</p>
+                </div>
+                <span className="font-bold text-lg hidden md:block">$45.00</span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="font-bold text-lg md:hidden">$45.00</span>
+                <div className="flex items-center gap-4 bg-white/5 rounded-xl px-3 py-2 border border-white/5">
+                  <span className="material-symbols-outlined text-sm cursor-pointer text-gray-400 hover:text-white transition-colors">remove</span>
+                  <span className="text-sm font-medium w-4 text-center">1</span>
+                  <span className="material-symbols-outlined text-sm cursor-pointer text-gray-400 hover:text-white transition-colors">add</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Side: Order Summary */}
+        <div className="w-full md:w-[380px] lg:w-[420px] flex flex-col gap-8">
+          
+          {/* Promo Code Section (The actual PIN input) */}
+          <div className="space-y-4 bg-white/[0.02] p-6 rounded-2xl border border-white/5">
+            <label className="text-xs font-semibold uppercase tracking-widest text-gray-400 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm">loyalty</span>
+              Gift card or discount code
+            </label>
+            <form onSubmit={handleSubmit} className="relative flex gap-3">
+              <div className="relative flex-1">
+                <input
+                  ref={inputRef}
+                  type="password"
+                  value={pin}
+                  onChange={(e) => {
+                    setPin(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Enter code..."
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-base text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all placeholder:text-gray-600"
+                  maxLength={10}
+                  disabled={loading}
+                />
+                {error && (
+                  <p className="absolute -bottom-6 left-2 text-[11px] text-red-400 font-medium">
                     {error}
                   </p>
-                </div>
-              )}
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={loading || pin.length === 0}
+                className="bg-white text-black px-6 rounded-xl font-bold text-sm disabled:opacity-50 disabled:bg-gray-300 transition-all active:scale-95 flex items-center justify-center min-w-[90px] shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                ) : (
+                  "Apply"
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Order Summary & Checkout */}
+          <div className="bg-white/[0.02] p-6 rounded-2xl border border-white/5 space-y-6">
+            <h2 className="text-sm font-semibold text-white uppercase tracking-widest mb-4">Order Summary</h2>
+            <div className="space-y-4">
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Subtotal</span>
+                <span className="text-white font-medium">$244.00</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Shipping</span>
+                <span className="text-white font-medium">Free Express</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Taxes</span>
+                <span className="text-white font-medium">$0.00</span>
+              </div>
+            </div>
+            
+            <div className="flex justify-between items-center pt-4 border-t border-white/10">
+              <span className="font-semibold text-lg">Total</span>
+              <span className="text-2xl font-bold">$244.00</span>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading || pin.length < 4}
-              className="w-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] text-[var(--bg-primary)] font-bold py-4 rounded-2xl shadow-[0_0_20px_rgba(var(--primary-rgb),0.15)] hover:shadow-[0_0_30px_rgba(var(--primary-rgb),0.25)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:hover:scale-100 flex items-center justify-center gap-2 mt-4"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-[var(--bg-primary)]/30 border-t-[var(--bg-primary)] rounded-full animate-spin" />
-              ) : (
-                <span className="uppercase tracking-[0.2em] text-[11px]">
-                  Unlock App
-                </span>
-              )}
+            <button className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4 shadow-[0_0_30px_rgba(255,255,255,0.15)]">
+              <span className="text-base">Proceed to Checkout</span>
+              <span className="material-symbols-outlined text-xl">arrow_forward</span>
             </button>
-          </form>
+          </div>
+
         </div>
       </div>
     </div>
