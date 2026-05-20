@@ -6,6 +6,7 @@ import { realtimeHub } from '../lib/realtimeHub';
 import type { Database } from '../integrations/supabase/types';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { toast } from 'sonner';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -617,11 +618,10 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   useEffect(() => {
     if (!pinnedMessages || pinnedMessages.length === 0) return;
     
-    const currentMessages = messagesRef.current;
-    // Find message IDs that are NOT currently loaded AND NOT already fetched
+    // Find message IDs that are NOT already in the pinned message details cache
     const missingIds = (pinnedMessages as any[])
       .map((p: any) => p.message_id)
-      .filter((id: string) => !currentMessages.find(m => m.id === id) && !pinnedMessageDetailsRef.current[id]);
+      .filter((id: string) => !pinnedMessageDetailsRef.current[id]);
 
     if (missingIds.length === 0) return;
 
@@ -1352,13 +1352,20 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     if (existing) {
       // Unpin: only the person who pinned it can unpin (or allow both for 2-person app)
       setPinnedMessages(prev => prev.filter(p => p.id !== existing.id));
-      await supabase.from('pinned_messages').delete().eq('id', existing.id);
+      const { error } = await supabase.from('pinned_messages').delete().eq('id', existing.id);
+      if (error) {
+        console.error('❌ [PIN ERROR] Failed to delete pin:', error);
+        toast.error('Failed to unpin message. Please try again.');
+        // Rollback optimistic delete
+        setPinnedMessages(prev => {
+          if (prev.some(p => p.id === existing.id)) return prev;
+          return [...prev, existing];
+        });
+        return { success: false };
+      }
+      toast.success('Message unpinned successfully!');
       return { success: true };
     } else {
-      // Fix 2.4: Enforce maximum of 3 pins
-      if (pinnedMessages.length >= 3) {
-        return { success: false, reason: 'max_pins' };
-      }
       const newPin: Database['public']['Tables']['pinned_messages']['Row'] = { 
         id: crypto.randomUUID(), 
         message_id: messageId, 
@@ -1366,11 +1373,20 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         created_at: new Date().toISOString()
       };
       setPinnedMessages(prev => [...prev, newPin]);
-      await supabase.from('pinned_messages').insert({
+      const { error } = await supabase.from('pinned_messages').insert({
         id: newPin.id,
         message_id: newPin.message_id,
-        pinned_by: newPin.pinned_by
+        pinned_by: newPin.pinned_by,
+        created_at: newPin.created_at
       });
+      if (error) {
+        console.error('❌ [PIN ERROR] Failed to insert pin:', error);
+        toast.error('Failed to pin message. Please check connection/permissions.');
+        // Rollback optimistic insert
+        setPinnedMessages(prev => prev.filter(p => p.id !== newPin.id));
+        return { success: false };
+      }
+      toast.success('Message pinned successfully!');
       return { success: true };
     }
   };

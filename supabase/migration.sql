@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS pinned_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   message_id UUID REFERENCES messages(id) ON DELETE CASCADE,
   pinned_by UUID REFERENCES profiles(id) NOT NULL,
-  pinned_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE pinned_messages ENABLE ROW LEVEL SECURITY;
@@ -291,3 +291,4 @@ ALTER PUBLICATION supabase_realtime ADD TABLE stories;
 ALTER PUBLICATION supabase_realtime ADD TABLE live_locations;
 ALTER PUBLICATION supabase_realtime ADD TABLE profiles;
 ALTER PUBLICATION supabase_realtime ADD TABLE streaks;
+ALTER PUBLICATION supabase_realtime ADD TABLE pinned_messages;

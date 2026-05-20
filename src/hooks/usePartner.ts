@@ -34,26 +34,52 @@ export function usePartner() {
 
   useEffect(() => {
     if (!user) {
+      // Clear cache on logout so next login gets a fresh fetch
+      cachedPartner = null;
+      fetchPromise = null;
       setLoading(false);
       return;
     }
 
     const fetchPartner = async () => {
-      if (cachedPartner) {
+      // If cached partner has no public_key (e.g. a test/garbage account),
+      // invalidate the cache and re-fetch so the real partner is picked up.
+      if (cachedPartner && cachedPartner.public_key && cachedPartner.public_key !== '') {
         setPartner(cachedPartner);
         setLoading(false);
         return;
       }
+      // Stale or invalid cache — clear it and re-fetch
+      cachedPartner = null;
       
       if (!fetchPromise) {
         fetchPromise = (async () => {
           try {
+            // First: try to find a partner who has already set up encryption (has a public_key)
+            // This prevents test/garbage accounts from being picked up as the partner.
+            const { data: keyedData } = await supabase
+              .from('profiles')
+              .select('id,display_name,avatar_url,avatar_key,avatar_nonce,public_key,is_online,last_seen,status_message,key_history')
+              .neq('id', user.id)
+              .neq('public_key', '')
+              .not('public_key', 'is', null)
+              .order('created_at', { ascending: true })
+              .limit(1)
+              .maybeSingle();
+
+            if (keyedData) {
+              cachedPartner = keyedData as PartnerProfile;
+              return cachedPartner;
+            }
+
+            // Fallback: pick any other profile (partner hasn't set up encryption yet)
             const { data, error } = await supabase
               .from('profiles')
               .select('id,display_name,avatar_url,avatar_key,avatar_nonce,public_key,is_online,last_seen,status_message,key_history')
               .neq('id', user.id)
+              .order('created_at', { ascending: true })
               .limit(1)
-              .single();
+              .maybeSingle();
               
             if (!error && data) {
               cachedPartner = data as PartnerProfile;
@@ -70,6 +96,7 @@ export function usePartner() {
       if (data) setPartner(data);
       setLoading(false);
     };
+
 
     fetchPartner();
 

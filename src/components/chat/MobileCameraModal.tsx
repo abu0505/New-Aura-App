@@ -15,6 +15,7 @@ import {
   type SensorCapabilities,
   type CameraLens,
 } from '../../lib/nativeCameraService';
+import { nativeCameraX, type ExtensionMode } from '../../lib/nativeCameraXBridge';
 
 interface MobileCameraModalProps {
   isOpen: boolean;
@@ -72,6 +73,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [availableLenses, setAvailableLenses] = useState<CameraLens[]>([]);
   const [activeLensId, setActiveLensId] = useState<CameraLens['id']>('main');
   const [isNightMode, setIsNightMode] = useState(false);
+  // ── Native CameraX Extension Mode ─────────────────────────────────────────
+  // Tracks which OEM extension is currently active (HDR, NIGHT, BOKEH, etc.)
+  const [activeExtension, setActiveExtension] = useState<ExtensionMode>('NONE');
+  const isNativeCameraActive = nativeCameraX.isAvailable && (activeExtension !== 'NONE');
   // Focus ring — shown briefly at the tap point
   const [focusRing, setFocusRing] = useState<{ x: number; y: number } | null>(null);
   const focusRingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -389,12 +394,42 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     setIsFlashOn(applied ? newStatus : newStatus);
   };
 
-  // Toggle Night Mode
-  const toggleNightMode = async () => {
+  // Toggle Night Mode — uses native CameraX Extension when available
+  const toggleNightMode = useCallback(async () => {
     const next = !isNightMode;
     setIsNightMode(next);
-    await applyNightMode(next);
-  };
+
+    if (nativeCameraX.isAvailable && sensorCaps?.hasNativeCameraX) {
+      // Native path: switch CameraX extension mode for real OEM Night Mode processing
+      const newMode: ExtensionMode = next ? 'NIGHT' : 'NONE';
+      const facing = facingMode === 'user' ? 'FRONT' : 'BACK';
+      const result = await nativeCameraX.switchExtension(newMode, facing);
+      if (result) {
+        setActiveExtension(newMode);
+        // If switching to NIGHT, turn off HDR (mutually exclusive)
+        if (next) setActiveExtension('NIGHT');
+      }
+    } else {
+      // Web fallback: exposure compensation boost
+      await applyNightMode(next);
+    }
+  }, [isNightMode, sensorCaps, facingMode]);
+
+  // Toggle HDR Mode — uses native CameraX Extension
+  const toggleHDR = useCallback(async () => {
+    const isCurrentlyHDR = activeExtension === 'HDR';
+    const newMode: ExtensionMode = isCurrentlyHDR ? 'NONE' : 'HDR';
+
+    if (nativeCameraX.isAvailable && sensorCaps?.hasNativeCameraX) {
+      const facing = facingMode === 'user' ? 'FRONT' : 'BACK';
+      const result = await nativeCameraX.switchExtension(newMode, facing);
+      if (result) {
+        setActiveExtension(newMode);
+        // If switching to HDR, turn off Night Mode (mutually exclusive)
+        if (!isCurrentlyHDR) setIsNightMode(false);
+      }
+    }
+  }, [activeExtension, sensorCaps, facingMode]);
 
   // Tap-to-focus handler
   const handleTapToFocus = useCallback(async (e: React.MouseEvent<HTMLVideoElement>) => {
@@ -459,6 +494,32 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     setShowShutterFlash(true);
     setTimeout(() => setShowShutterFlash(false), 100);
     if (navigator.vibrate) navigator.vibrate(50);
+
+    // ── NATIVE CAMERAX CAPTURE PATH ──────────────────────────────────────────
+    // When a CameraX extension (HDR/Night/Bokeh) is active, capture through
+    // the native pipeline. This gives us the full ISP-processed photo with
+    // OEM computational photography applied — dramatically better quality
+    // than the WebView canvas capture, especially in low light and HDR scenes.
+    if (nativeCameraX.isAvailable && activeExtension !== 'NONE' && isNativeCameraActive) {
+      try {
+        const nativeResult = await nativeCameraX.capturePhoto({ quality: 95 });
+        if (nativeResult) {
+          // Convert data URL to File
+          const res = await fetch(nativeResult.dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], `native_${activeExtension.toLowerCase()}_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const url = URL.createObjectURL(blob);
+          setCapturedFile(file);
+          setPreviewUrl(url);
+          setViewMode('preview');
+          setEnhancementStatus('idle');
+          return; // Skip canvas path
+        }
+      } catch (err) {
+        console.warn('[Camera] Native capture failed, falling back to canvas:', err);
+        // Fall through to canvas capture below
+      }
+    }
 
     const video = videoRef.current;
     const vw = video.videoWidth;
@@ -1298,15 +1359,31 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   </span>
                 </button>
 
-                {/* Night Mode — only show if device supports exposure control */}
+                {/* HDR Mode — only show if native CameraX supports it */}
+                {sensorCaps?.hasHDR && facingMode === 'environment' && (
+                  <button
+                    onClick={toggleHDR}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-500 ${
+                      activeExtension === 'HDR'
+                        ? 'bg-amber-500/80 text-white shadow-[0_0_15px_rgba(245,158,11,0.6)]'
+                        : 'bg-black/30 text-white/60 hover:bg-white/20 hover:text-white'
+                    }`}
+                    title="HDR Mode"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">hdr_on</span>
+                  </button>
+                )}
+
+                {/* Night Mode — shows if device supports it via CameraX or exposure control */}
                 {(sensorCaps?.hasNightMode || sensorCaps?.hasAutoFocus) && facingMode === 'environment' && (
                   <button
                     onClick={toggleNightMode}
                     className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all duration-500 ${
-                      isNightMode
+                      isNightMode || activeExtension === 'NIGHT'
                         ? 'bg-indigo-500/80 text-white shadow-[0_0_15px_rgba(99,102,241,0.6)]'
                         : 'bg-black/30 text-white/60 hover:bg-white/20 hover:text-white'
                     }`}
+                    title="Night Mode"
                   >
                     <span className="material-symbols-outlined text-[20px]">nightlight</span>
                   </button>

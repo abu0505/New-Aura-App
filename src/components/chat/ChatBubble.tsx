@@ -81,7 +81,7 @@ function ChatBubble({
   const touchStartX = useRef<number | null>(null);
   const hapticTriggered = useRef(false);
   
-  const isMine = isPinnedView ? true : message.is_mine;
+  const isMine = message.is_mine;
   const time = new Date(message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
   // Extract URLs

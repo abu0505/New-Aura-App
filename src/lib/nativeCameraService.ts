@@ -48,6 +48,7 @@
 
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource, CameraDirection } from '@capacitor/camera';
+import { nativeCameraX, type SupportedExtensions, type ExtensionMode } from './nativeCameraXBridge';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,21 @@ export interface SensorCapabilities {
 
   /** True if the device / OS supports Night Mode (Night Sight / HDR+) */
   hasNightMode: boolean;
+
+  /** True if the device supports HDR capture via CameraX Extensions */
+  hasHDR: boolean;
+
+  /** True if the device supports Bokeh/Portrait via CameraX Extensions */
+  hasBokeh: boolean;
+
+  /** True if the device supports Face Retouch via CameraX Extensions */
+  hasFaceRetouch: boolean;
+
+  /** True if the native CameraX plugin is available and active */
+  hasNativeCameraX: boolean;
+
+  /** List of supported extension modes from the native CameraX plugin */
+  nativeExtensions: ExtensionMode[];
 
   /** True if the camera exposes ISO/shutter manual controls */
   hasManualControls: boolean;
@@ -192,11 +208,24 @@ export async function detectNativeSensorCapabilities(): Promise<SensorCapabiliti
   const hasPointsOfInterest = Boolean(trackCaps.pointsOfInterest);
   const hasAutoFocus = hasFocusModes || hasPointsOfInterest;
 
-  // ── Night Mode / HDR ─────────────────────────────────────────────────────────
-  // Chrome 111+ exposes `exposureMode`, but Night Mode as a discrete mode is only
-  // surfaced on native Android. We approximate via the presence of manual exposure.
-  const hasExposureMode = Array.isArray(trackCaps.exposureMode);
-  const hasNightMode = isNative && hasExposureMode;
+  // ── Night Mode / HDR / Extensions ──────────────────────────────────────────
+  // Query the native CameraX plugin for real OEM extension support.
+  // This gives us ground-truth about what the ISP can actually do.
+  let nativeExts: SupportedExtensions = { back: [], front: [] };
+  let hasNativeCameraX = false;
+  if (nativeCameraX.isAvailable) {
+    try {
+      nativeExts = await nativeCameraX.getSupportedExtensions();
+      hasNativeCameraX = true;
+    } catch { /* plugin not available */ }
+  }
+
+  const currentExts = nativeExts.back; // Default to back camera extensions
+  const hasNightMode = currentExts.includes('NIGHT') || (isNative && Array.isArray(trackCaps.exposureMode));
+  const hasHDR = currentExts.includes('HDR');
+  const hasBokeh = currentExts.includes('BOKEH');
+  const hasFaceRetouch = currentExts.includes('FACE_RETOUCH');
+  const nativeExtensions: ExtensionMode[] = currentExts as ExtensionMode[];
 
   // ── Manual Controls ───────────────────────────────────────────────────────────
   const hasManualControls = isNative && Boolean(trackCaps.exposureTime || trackCaps.iso);
@@ -242,6 +271,11 @@ export async function detectNativeSensorCapabilities(): Promise<SensorCapabiliti
     hasAutoFocus,
     hasTorch,
     hasNightMode,
+    hasHDR,
+    hasBokeh,
+    hasFaceRetouch,
+    hasNativeCameraX,
+    nativeExtensions,
     hasManualControls,
     hasRawCapture,
     hasOIS,

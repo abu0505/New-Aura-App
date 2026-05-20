@@ -20,6 +20,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Register native camera plugin BEFORE super.onCreate so it's available immediately
+        registerPlugin(NativeCameraXPlugin.class);
+
         super.onCreate(savedInstanceState);
 
         // Override the WebChromeClient to auto-grant WebView permission requests

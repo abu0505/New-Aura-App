@@ -729,7 +729,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                           <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
                         </div>
                       )}
-                      <div className={`flex w-full ${firstMsg.sender_id === user?.id || viewMode === 'pinned' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex w-full ${firstMsg.sender_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                         <ChatBubbleErrorBoundary messageId={firstMsg.id}>
                           {isGroup ? (
                             <MediaGridBubble
