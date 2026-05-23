@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import type { Tab } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
+import { useStreak } from '../../contexts/StreakContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AppLayoutProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
-  streakCount: number;
   children: React.ReactNode;
 }
 
-export default function AppLayout({ activeTab, onTabChange, streakCount, children }: AppLayoutProps) {
+export default function AppLayout({ activeTab, onTabChange, children }: AppLayoutProps) {
   const { signOut } = useAuth();
+  const { streakCount, streakAtRisk, mySnappedToday, partnerSnappedToday } = useStreak();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [forceNav, setForceNav] = useState(false);
   const [hideNav, setHideNav] = useState(false);
@@ -46,6 +48,87 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
   const changeTab = (t: Tab) => {
     onTabChange(t);
     setForceNav(false);
+  };
+
+  // ── Streak badge helpers ──────────────────────────────────────────────────
+  const bothSnapped = mySnappedToday && partnerSnappedToday;
+  const isAtRisk = streakAtRisk && streakCount > 0;
+  const partnerWaitingForMe = isAtRisk && !mySnappedToday && partnerSnappedToday;
+
+  const SidebarStreakBadge = () => {
+    if (streakCount === 0 && !isAtRisk) return null;
+    return (
+      <AnimatePresence mode="wait">
+        {isAtRisk ? (
+          <motion.div
+            key="risk"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative flex items-center gap-2 bg-orange-500/10 border border-orange-400/30 py-2 px-4 rounded-full w-fit overflow-visible"
+            title={partnerWaitingForMe ? 'Snap now to save your streak!' : 'Waiting for partner to snap'}
+          >
+            {/* Pulsing ring when user needs to act */}
+            {partnerWaitingForMe && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-orange-400/50"
+                animate={{ scale: [1, 1.15, 1], opacity: [0.8, 0, 0.8] }}
+                transition={{ duration: 1.6, repeat: Infinity }}
+              />
+            )}
+            <motion.span
+              className="text-lg leading-none"
+              animate={partnerWaitingForMe ? { rotate: [0, 180, 180, 0] } : {}}
+              transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 0.5 }}
+              style={{ display: 'inline-block' }}
+            >
+              ⏳
+            </motion.span>
+            <div className="flex flex-col">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-orange-300">
+                {streakCount} Days
+              </span>
+              {partnerWaitingForMe && (
+                <motion.span
+                  className="font-sans text-[8px] font-black uppercase tracking-wider text-orange-400/70"
+                  animate={{ opacity: [1, 0.4, 1] }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
+                  Snap now!
+                </motion.span>
+              )}
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="normal"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="flex items-center gap-3 bg-[var(--bg-secondary)] border border-white/5 py-2 px-4 rounded-full w-fit"
+          >
+            <motion.span
+              className="text-lg leading-none"
+              animate={bothSnapped ? { scale: [1, 1.2, 1] } : {}}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
+              style={{ display: 'inline-block' }}
+            >
+              🔥
+            </motion.span>
+            <div className="flex flex-col">
+              <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-[var(--gold)]">
+                {streakCount} Days
+              </span>
+              {bothSnapped && (
+                <span className="font-sans text-[8px] font-black uppercase tracking-wider text-primary/40">
+                  Both Snapped ✓
+                </span>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
   };
 
   if (isDesktop) {
@@ -90,10 +173,8 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
           </nav>
 
           <div className="mt-auto pt-6 flex flex-col gap-6 shrink-0 border-t border-white/5">
-            <div className="flex items-center gap-3 bg-[var(--bg-secondary)] border border-white/5 py-2 px-4 rounded-full w-fit">
-              <span className="text-lg">🔥</span>
-              <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-[var(--gold)]">{streakCount} Days</span>
-            </div>
+            {/* Streak Badge — reads from context */}
+            <SidebarStreakBadge />
             <button 
               onClick={signOut}
               className="flex items-center gap-4 text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)] px-4 transition-colors w-full"
@@ -139,8 +220,6 @@ export default function AppLayout({ activeTab, onTabChange, streakCount, childre
           <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'stories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'stories' ? "'FILL' 1" : "" }}>auto_stories</span>
           <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Stories</span>
         </button>
-
-
 
         {/* Memories */}
         <button

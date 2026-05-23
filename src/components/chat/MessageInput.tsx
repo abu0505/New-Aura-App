@@ -22,6 +22,7 @@ import { useAutocompletePhrases } from '../../hooks/useAutocompletePhrases';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
+  handleCameraFiles: (files: File[]) => void;
   focusInput: () => void;
 }
 
@@ -35,11 +36,11 @@ interface MessageInputProps {
   partnerPublicKey?: string | null;
   onDesktopCameraClick?: () => void;
   onOptimisticMediaStart?: (text: string, localMediaUrl: string, type: string, replyToId?: string) => string;
-  onOptimisticMediaComplete?: (tempId: string, text: string, media: { url: string, media_key: string, media_nonce: string, type: string }, replyToId?: string) => void;
+  onOptimisticMediaComplete?: (tempId: string, text: string, media: { url: string, media_key: string, media_nonce: string, type: string }, replyToId?: string, isCameraCapture?: boolean) => void;
   partnerId?: string;
   onChunkedVideoStart?: (thumbnailLocalUrl: string, replyToId?: string) => string;
   onChunkedVideoStatusUpdate?: (tempId: string, status: string) => void;
-  onChunkedVideoCommit?: (tempId: string, thumbResult: { url: string; key: string; nonce: string } | null, duration: number, replyToId?: string) => Promise<void>;
+  onChunkedVideoCommit?: (tempId: string, thumbResult: { url: string; key: string; nonce: string } | null, duration: number, replyToId?: string, isCameraCapture?: boolean) => Promise<void>;
   onChunkedVideoFinalize?: (tempId: string) => void;
 }
 
@@ -101,13 +102,15 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     handleDroppedFiles: (files: File[]) => {
       if (files.length === 0) return;
       if (files.some(f => f.type.includes('image/') || f.type.includes('video/'))) {
-        // setPendingFiles(files);
-        // setPendingCaption('');
-        // setShowQualityModal(true);
         performUpload(files, false, '');
       } else {
         performUpload(files, false, '');
       }
+    },
+    handleCameraFiles: (files: File[]) => {
+      if (files.length === 0) return;
+      // Camera captures — set isCameraCapture=true for streak tracking
+      performUpload(files, false, '', undefined, true);
     },
     focusInput: () => {
       textareaRef.current?.focus();
@@ -401,10 +404,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   };
 
   const handleMobileCameraSend = (file: File, caption: string, duration?: number) => {
-    // setPendingFiles([file]);
-    // setPendingCaption(caption);
-    // setShowQualityModal(true);
-    performUpload([file], false, caption, duration);
+    // Camera captures from MobileCameraModal — these count for streaks
+    performUpload([file], false, caption, duration, true);
   };
 
   const handleMobileGallerySelect = (files: File[], caption: string) => {
@@ -466,7 +467,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   const MAX_MEDIA_LIMIT = 10;
 
-  const performUpload = async (files: File[], optimize: boolean, caption: string, durationOverride?: number) => {
+  const performUpload = async (files: File[], optimize: boolean, caption: string, durationOverride?: number, isCameraCapture?: boolean) => {
     if (files.length > MAX_MEDIA_LIMIT) {
       toast(`Aree MERI BEGHAM JII aaram se! Ek sath sirf ${MAX_MEDIA_LIMIT} files bhej sakte ho. Pehli ${MAX_MEDIA_LIMIT} hi upload hongi. 😘💋`, {
         description: "Aura suggests smaller batches for absolute security.",
@@ -597,7 +598,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 media_key: uploaded.media_key,
                 media_nonce: uploaded.media_nonce,
                 type: uploaded.type,
-              }, currentReplyId);
+              }, currentReplyId, isCameraCapture);
             }
           } catch (err) {
             console.error('[Semaphore] Image upload failed for tempId:', tempId, err);
@@ -649,7 +650,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             const rawDuration = durationOverride !== undefined
               ? durationOverride
               : await getVideoDurationLocally(file);
-            await onChunkedVideoCommit(tempId, thumbDetails, Math.round(rawDuration), currentReplyId);
+            await onChunkedVideoCommit(tempId, thumbDetails, Math.round(rawDuration), currentReplyId, isCameraCapture);
           }
 
           // Step 3: Chunk + encrypt + upload (processAndUploadChunked manages its

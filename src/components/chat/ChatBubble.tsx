@@ -884,7 +884,7 @@ function ChatBubble({
           >
             {/* Quick Reactions - Only for chat view */}
             {(interactionType === 'reactions' || interactionType === 'menu') && !isPinnedView && (
-              <div className="relative flex flex-col items-center">
+              <div className={`relative flex flex-col items-center ${interactionType === 'menu' ? 'md:hidden' : ''}`}>
                 {!showAllEmojis ? (
                   <div className="p-2.5 bg-aura-bg-elevated/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/10 flex justify-center gap-1.5 rounded-full">
                     {(quickEmojis || ['❤️', '😂', '😮', '😢', '🔥', '✨']).map(emoji => (

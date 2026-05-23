@@ -38,6 +38,10 @@ export default function MemoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const favoritesRef = useRef(favorites);
+  useEffect(() => {
+    favoritesRef.current = favorites;
+  }, [favorites]);
   const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string, messageId?: string, initialIndex?: number } | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 12;
@@ -87,18 +91,9 @@ export default function MemoriesScreen() {
     lastChangeTime: number;
   }>({ active: false, startDist: 0, lastChangeTime: 0 });
 
+
   // ── Phase 5: Timeline Scrubber ───────────────────────────────────────
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Reset pagination state on user/partner change.
-    pageRef.current = 1;
-    setHasMore(true);
-    isFetchingMoreRef.current = false;
-    fetchMemories(1);
-    fetchThrowbacks();
-    fetchRecaps();
-  }, [user?.id, partner?.id]);
 
   useEffect(() => {
     return () => {
@@ -277,14 +272,29 @@ export default function MemoriesScreen() {
     if (!user || !partner) return;
     if (pageNumber === 1) setLoading(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('messages')
         .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,type,created_at,sender_public_key', { count: 'exact' })
         .not('media_url', 'is', null)
         // Fix 5.1: Use correct AND filter — must have matching sender+receiver pairs
         // Old: .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`) — TOO LOOSE, returns any msg the user was in
         // New: explicit pair filter so we only get this conversation's media
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`);
+
+      if (filter !== 'all' && filter !== 'favorites') {
+        query = query.eq('type', filter);
+      } else if (filter === 'favorites') {
+        const favs = favoritesRef.current;
+        if (favs.size === 0) {
+          setMemories([]);
+          setHasMore(false);
+          setLoading(false);
+          return;
+        }
+        query = query.in('id', Array.from(favs));
+      }
+
+      const { data, error } = await query
         .range((pageNumber - 1) * LIMIT, pageNumber * LIMIT - 1)
         .order('created_at', { ascending: false });
 
@@ -304,12 +314,12 @@ export default function MemoriesScreen() {
       // Stop paging if we got fewer rows than the limit.
       setHasMore(newMemories.length === LIMIT);
     } catch (err) {
-      
+      console.error(err);
       setHasMore(false);
     } finally {
       if (pageNumber === 1) setLoading(false);
     }
-  }, [user?.id, partner?.id]);
+  }, [user?.id, partner?.id, filter]);
 
   const fetchThrowbacks = async () => {
     if (!user || !partner) return;
@@ -351,6 +361,20 @@ export default function MemoriesScreen() {
     if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error)
       setLastYearMonthItems((lastYearMonthRes.value.data as RecapItem[]) ?? []);
   };
+
+  useEffect(() => {
+    // Reset pagination state and refetch when filter or conversation changes.
+    pageRef.current = 1;
+    setHasMore(true);
+    isFetchingMoreRef.current = false;
+    fetchMemories(1);
+  }, [filter, fetchMemories]);
+
+  useEffect(() => {
+    // Reset throwbacks and recaps on user/partner change.
+    fetchThrowbacks();
+    fetchRecaps();
+  }, [user?.id, partner?.id]);
 
 
   const loadMore = useCallback(() => {

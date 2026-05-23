@@ -861,7 +861,12 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       });
 
     if (error) {
-      
+      console.error('[❌ SEND MSG] Insert failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       if (error.message?.includes('fetch') || error.code === 'PGRST301') {
         setMessages(prev => prev.map(m => m.id === optimisticMsg.id ? { ...m, is_pending: true } : m));
         setPendingMessages(prev => [...prev, { ...optimisticMsg, retry_count: 0 }]);
@@ -973,7 +978,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     tempId: string, 
     text: string, 
     media: { url: string, media_key: string, media_nonce: string, type: string }, 
-    replyToId?: string
+    replyToId?: string,
+    isCameraCapture?: boolean
   ) => {
     if (!user || !partnerId) return;
 
@@ -1053,10 +1059,16 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         media_nonce: media.media_nonce,
         reply_to: replyToId || null,
         sender_public_key: myPublicKeyStr,
-      });
+        is_camera_capture: isCameraCapture || false,
+      } as any);
 
     if (error) {
-      
+      console.error('[❌ SEND MEDIA MSG] Insert failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       if (error.message?.includes('fetch') || error.code === 'PGRST301') {
         const msg = messagesRef.current.find(m => m.id === tempId);
         if (msg) {
@@ -1195,7 +1207,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     tempId: string,
     thumbResult: { url: string; key: string; nonce: string } | null,
     duration: number,
-    replyToId?: string
+    replyToId?: string,
+    isCameraCapture?: boolean
   ) => {
     if (!user || !partnerId || !partnerPublicKey) return;
     const myKeyPair = getStoredKeyPair();
@@ -1233,7 +1246,8 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       duration: Math.round(duration),
       reply_to: replyToId || null,
       sender_public_key: myPublicKeyStr,
-    });
+      is_camera_capture: isCameraCapture || false,
+    } as any);
 
     if (error) {
       

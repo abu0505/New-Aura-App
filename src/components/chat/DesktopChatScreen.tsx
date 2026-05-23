@@ -21,6 +21,7 @@ import { useCall } from '../../contexts/CallContext';
 import { useNotifications } from '../../contexts/NotificationContext';
 import ChatSearch from './ChatSearch';
 import { getBackgroundData } from '../../utils/backgroundParser';
+import StreakBadge from './StreakBadge';
 
 
 
@@ -457,19 +458,13 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
             <DesktopCameraStudio
               onClose={() => setIsDesktopCameraOpen(false)}
               onSend={(file, _caption) => {
-                // Manually trigger the high-quality upload workflow via MessageInput's handleDroppedFiles
-                // since they share the same media process. Alternatively, just call the media handler.
-                // handleDroppedFiles natively handles video/image by opening the Quality choice modal,
-                // but since DesktopStudio ALREADY showed a preview and caption, we might want to bypass QualityChoice
-                // or just trigger handleDroppedFiles and let it show Quality choice. 
-                // We'll let handleDroppedFiles trigger the Quality choice for consistency.
+                // Camera captures from DesktopCameraStudio — these count for streaks
                 if (messageInputRef.current) {
-                  // Hack: attach caption to file if possible or just rely on the modal
-                  // The QualityChoiceModal handles captions. So we just pass the file.
-                  messageInputRef.current.handleDroppedFiles([file]);
+                  messageInputRef.current.handleCameraFiles([file]);
                 }
               }}
               onGallerySelect={(files, _caption) => {
+                // Gallery selections — these do NOT count for streaks
                 if (messageInputRef.current) {
                   messageInputRef.current.handleDroppedFiles(files);
                 }
@@ -539,7 +534,11 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
+                  {/* Streak Badge — full variant in desktop header */}
+                  <StreakBadge variant="full" />
+                </div>
                 <p className="text-[10px] font-label tracking-[0.2em] text-aura-text-secondary uppercase mt-0.5">
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
                 </p>

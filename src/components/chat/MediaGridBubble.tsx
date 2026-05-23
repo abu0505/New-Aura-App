@@ -316,8 +316,8 @@ function MediaGridBubble({
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
             className={`absolute bottom-full mb-4 ${isMine ? 'right-0' : 'left-0'} z-50`}
           >
-            {interactionType === 'reactions' && (
-              <div className={`flex flex-col gap-2 ${isMine ? 'items-end' : 'items-start'}`}>
+            {(interactionType === 'reactions' || interactionType === 'menu') && (
+              <div className={`flex flex-col gap-2 ${isMine ? 'items-end' : 'items-start'} ${interactionType === 'menu' ? 'md:hidden' : ''}`}>
                 {!showAllEmojis ? (
                   <div className="flex items-center gap-1 bg-aura-bg-elevated/95 backdrop-blur-md p-1.5 rounded-full border border-white/5 shadow-2xl">
                     {(quickEmojis || ['❤️', '😂', '😮', '😢', '🙏']).map(emoji => (

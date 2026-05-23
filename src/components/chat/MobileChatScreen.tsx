@@ -19,6 +19,7 @@ import EncryptedImage from '../common/EncryptedImage';
 import { useCall } from '../../contexts/CallContext';
 import ChatSearch from './ChatSearch';
 import { getBackgroundData } from '../../utils/backgroundParser';
+import StreakBadge from './StreakBadge';
 
 
 
@@ -476,11 +477,15 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-aura-success rounded-full border-2 border-background"></div>
               )}
             </div>
-            <div className="flex flex-col min-w-0 flex-1">
-              <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
-              <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate">
-                <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} compact />
-              </span>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+              <div className="flex flex-col min-w-0">
+                <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
+                <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate">
+                  <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} compact />
+                </span>
+              </div>
+              {/* Streak Badge — compact pill in mobile header */}
+              <StreakBadge variant="compact" />
             </div>
           </div>
           <div className="flex items-center gap-4 text-aura-text-secondary">

@@ -10,7 +10,6 @@ const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen'));
 import AppLayout from './components/layout/AppLayout';
-import { useStreaks } from './hooks/useStreaks';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { usePresenceChannel } from './hooks/usePresenceChannel';
@@ -30,14 +29,13 @@ import CallOverlay from './components/call/CallOverlay';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { GarbageProvider } from './contexts/GarbageContext';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
+import { StreakProvider, useStreak } from './contexts/StreakContext';
 
 function InnerApp({ 
   session, 
-  partner, 
-  streakCount, 
-  showCelebration, 
-  setShowCelebration 
+  partner,
 }: any) {
+  const { streakCount, showCelebration, setShowCelebration } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   
   // ═══════════════════════════════════════════════════════════════════
@@ -248,7 +246,7 @@ function InnerApp({
         />
         <AppLockModal />
       <KeySetupModal />
-      <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} streakCount={streakCount}>
+      <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper}>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center bg-background w-full h-full">
             <p className="text-primary/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>
@@ -288,7 +286,6 @@ function InnerApp({
 export default function App() {
   const { session, loading, user } = useAuth();
   const { partner } = usePartner();
-  const { streakCount, showCelebration, setShowCelebration } = useStreaks();
 
   // ═══ Start RealtimeHub ONCE when user + partner are available ═══
   // This creates ONE shared Postgres Changes channel for the entire app,
@@ -395,13 +392,12 @@ export default function App() {
           <MediaFoldersProvider>
             <CallProvider>
               <NotificationProvider>
-                <InnerApp 
-                  session={session} 
-                  partner={partner} 
-                  streakCount={streakCount} 
-                  showCelebration={showCelebration}
-                  setShowCelebration={setShowCelebration}
-                />
+                <StreakProvider>
+                  <InnerApp 
+                    session={session} 
+                    partner={partner} 
+                  />
+                </StreakProvider>
               </NotificationProvider>
             </CallProvider>
           </MediaFoldersProvider>
