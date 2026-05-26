@@ -17,3 +17,14 @@ index 1234567..abcdefg 100644
      }
  
      private lateinit var legacyFlow: LegacyCameraFlow
+diff --git a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt
+index 2345678..bcdefgh 100644
+--- a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt
++++ b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt
+@@ -537,7 +537,7 @@
+                     }
+                 }
+-                processResultEditFromGallery(intent)
++                processResultEditFromGallery(intent ?: return)
+                 lastEditUri = null
+             }

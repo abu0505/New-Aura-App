@@ -68,20 +68,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Race getSession against a 3-second timeout
       // This prevents the app from being stuck on the splash screen infinitely
       // if Supabase is down or network fails (since gotrue-js retries with exponential backoff).
-      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const getSessionTimeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
       
       try {
         const result = await Promise.race([
           supabase.auth.getSession().then(({ data }) => data.session),
-          timeout
+          getSessionTimeout
         ]);
 
         if (!isMounted) return;
 
-        if (result) {
-          // getSession finished quickly
-          await handleSession(result);
-        } else {
+        let sessionToProcess = result;
+
+        if (!sessionToProcess) {
           // Timeout occurred! Network is probably down or project paused.
           // Recover session from local storage manually to unblock UI.
           const authKey = Object.keys(localStorage).find(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
@@ -89,11 +88,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             try {
               const cached = JSON.parse(localStorage.getItem(authKey) || '');
               if (cached && cached.user) {
-                await handleSession(cached);
+                sessionToProcess = cached;
               }
             } catch (e) {
               console.error('Failed to parse cached session', e);
             }
+          }
+        }
+
+        if (sessionToProcess) {
+          // handleSession calls checkEncryptionStatus which makes 2-3 Supabase
+          // network calls (profile fetch, syncPublicKey). On spotty networks or
+          // Android cold starts, these can hang indefinitely — which blocks
+          // setLoading(false) and causes the "AURA / Welcome to Aura" splash
+          // screen to stay forever. Guard with a 5-second timeout.
+          // If it times out, we still set session/user so the UI can proceed,
+          // and the onAuthStateChange listener will retry in the background.
+          const handleTimeout = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), 5000));
+          const handleResult = await Promise.race([
+            handleSession(sessionToProcess).then(() => 'done' as const),
+            handleTimeout
+          ]);
+          if (handleResult === 'timeout') {
+            console.warn('[AUTH] handleSession timed out during startup — setting session anyway to unblock UI');
+            // Set session/user so the app can render (even if encryption status is still initializing)
+            // The onAuthStateChange callback will fire and retry handleSession in the background.
+            setSession(sessionToProcess);
+            setUser(sessionToProcess.user ?? null);
           }
         }
       } catch (err) {
