@@ -503,6 +503,20 @@ export function useSnapCapture(
     }));
   }, [send, stopCapture]);
 
+  /** Reset snap capture state to idle (called by chat screen after photos are sent) */
+  const resetSnapCapture = useCallback(() => {
+    setState({
+      phase: 'idle',
+      role: null,
+      photosCount: 0,
+      totalPhotos: MAX_PHOTOS,
+      photos: [],
+      errorMessage: null,
+    });
+    photosAccumulatorRef.current = [];
+    photosCountRef.current = 0;
+  }, []);
+
   /** Handle consent modal response */
   const handleConsent = useCallback((agreed: boolean) => {
     const currentUser = userRef.current;
@@ -579,5 +593,6 @@ export function useSnapCapture(
     cancelSnapCapture,
     handleConsent,
     getCameraStream,
+    resetSnapCapture,
   };
 }

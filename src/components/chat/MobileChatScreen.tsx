@@ -76,29 +76,51 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const { settings } = useChatSettingsContext();
   const { initiateCall } = useCall();
 
-  // ═══ SnapCapture: Send photos to chat when session completes ═════════
-  useEffect(() => {
-    if (snapCapture.snapState.phase !== 'completing') return;
-    if (snapCapture.snapState.role !== 'initiator') return;
-    
-    const photos = snapCapture.snapState.photos;
-    if (photos.length === 0) return;
+  // ═══ SnapCapture: Send photos to chat in REAL-TIME as they arrive ═════
+  const snapSentCountRef = useRef(0);
 
-    // Send each photo as an individual image message.
-    // The existing messageGrouping.ts will auto-group them into MediaGridBubble.
+  // Reset sent counter when a new session starts
+  useEffect(() => {
+    if (snapCapture.snapState.phase === 'requesting') {
+      snapSentCountRef.current = 0;
+    }
+  }, [snapCapture.snapState.phase]);
+
+  // Send each new photo to chat as it arrives during capturing
+  useEffect(() => {
+    if (snapCapture.snapState.role !== 'initiator') return;
+    if (snapCapture.snapState.phase !== 'capturing' && snapCapture.snapState.phase !== 'completing') return;
+
+    const photos = snapCapture.snapState.photos;
+    const alreadySent = snapSentCountRef.current;
+    const newPhotos = photos.slice(alreadySent);
+
+    if (newPhotos.length === 0) {
+      // If completing and nothing new to send, just reset
+      if (snapCapture.snapState.phase === 'completing') {
+        snapCapture.resetSnapCapture();
+      }
+      return;
+    }
+
     (async () => {
-      for (const photo of photos) {
+      for (const photo of newPhotos) {
         await sendMessage('', {
           url: photo.url,
           media_key: photo.media_key,
           media_nonce: photo.media_nonce,
           type: 'image',
         });
-        // Small delay between sends to ensure correct ordering
+        snapSentCountRef.current++;
         await new Promise(r => setTimeout(r, 100));
       }
+
+      // If we're in completing phase and all photos are sent, reset
+      if (snapCapture.snapState.phase === 'completing') {
+        snapCapture.resetSnapCapture();
+      }
     })();
-  }, [snapCapture.snapState.phase, snapCapture.snapState.role]);
+  }, [snapCapture.snapState.photos.length, snapCapture.snapState.phase, snapCapture.snapState.role]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);

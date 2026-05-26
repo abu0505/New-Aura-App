@@ -1,0 +1,902 @@
+[
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "process 2254127 acquired ShareLock on transaction 845837 after 1170.248 ms",
+    "hint": null,
+    "id": "135d6963-cb6c-4ee1-a0d7-a578b191017d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817409150000
+  },
+  {
+    "detail": "Process holding the lock: 2254126. Wait queue: 2254127.",
+    "error_severity": "LOG",
+    "event_message": "process 2254127 still waiting for ShareLock on transaction 845837 after 1027.030 ms",
+    "hint": null,
+    "id": "ea24e998-b7be-417f-920d-ab55df6c2514",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817409045000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "canceling statement due to statement timeout",
+    "hint": null,
+    "id": "403a03ea-0477-4301-be00-1a722617071e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817408839000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "process 2254126 acquired ShareLock on transaction 845834 after 6061.831 ms",
+    "hint": null,
+    "id": "b7449752-b1cb-4b06-88f7-44c8a8cd5633",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817407591000
+  },
+  {
+    "detail": "Process holding the lock: 2254120. Wait queue: 2254126.",
+    "error_severity": "LOG",
+    "event_message": "process 2254126 still waiting for ShareLock on transaction 845834 after 1005.716 ms",
+    "hint": null,
+    "id": "91d5c4cd-f2b2-4d52-9128-1b5bb06e3bc9",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817402491000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "invalid input syntax for type uuid: \"undefined\"",
+    "hint": null,
+    "id": "bae8cf68-0374-4004-8f20-344e3ac73b89",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817375472000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "invalid input syntax for type uuid: \"undefined\"",
+    "hint": null,
+    "id": "2cb5c7b3-f50f-4021-89c7-da1c6ff7775c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817340518000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "invalid input syntax for type uuid: \"undefined\"",
+    "hint": null,
+    "id": "c4c5a930-ed1c-4977-a4e1-f14764c21024",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817323621000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "invalid input syntax for type uuid: \"undefined\"",
+    "hint": null,
+    "id": "ab046a7a-2a28-4f6d-b305-b333f330a52f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817311596000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "invalid input syntax for type uuid: \"undefined\"",
+    "hint": null,
+    "id": "7e002def-4e44-4a54-a5fe-da7aa11540ae",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817301152000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection received: host=2406:da1c:a24:7f01:b731:88b2:c6d2:bb4e port=54600",
+    "hint": null,
+    "id": "2c5062d8-c465-41c2-b49b-2ffb4213bc33",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817282272000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint complete: wrote 73 buffers (0.3%); 0 WAL file(s) added, 0 removed, 4 recycled; write=7.232 s, sync=0.004 s, total=7.280 s; sync files=18, longest=0.003 s, average=0.001 s; distance=33183 kB, estimate=51712 kB; lsn=27/DA08CFF0, redo lsn=27/DA067ED0",
+    "hint": null,
+    "id": "4a665d7c-5827-40f0-ba5b-f6c8add9bc45",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817277538000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint starting: time",
+    "hint": null,
+    "id": "19e66b44-f96c-4b88-a815-c280a666b123",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817270260000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "new row violates row-level security policy for table \"messages\"",
+    "hint": null,
+    "id": "6234910b-ee1f-4991-a8f3-6fc1c49aeac5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817260774000
+  },
+  {
+    "detail": null,
+    "error_severity": "ERROR",
+    "event_message": "invalid input syntax for type uuid: \"undefined\"",
+    "hint": null,
+    "id": "aba31e4c-f3cb-484a-a5a1-27b0f78994f0",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817258678000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "d632b213-2a90-4690-930a-b4276ba8a23e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817153665000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "25df284d-d4a6-4d6a-94e7-6353a9096138",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817153665000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "afed2846-6b0a-4000-822e-fdd26675a506",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817153517000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "a155a924-d3ef-4135-a79a-1dd366d5c272",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817153517000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "3b5f7b75-da3d-49e7-b791-d5710338f4c6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150671000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "f8b87095-8b42-48d6-93ac-27c2ed030532",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150671000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "60a7fb0b-77d4-4f07-9f5d-764cfbcae389",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150454000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "e9e43d2d-714f-4d98-a86f-34c5d385583f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150454000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "50a6b652-5d44-4efa-b52b-a558eeaac259",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150428000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "ce58e9fc-a4b0-4278-9671-6c1ec65f54ef",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150428000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "ea16fa8e-af33-4858-ae3d-515d4390bc7b",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150366000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "d7c816fc-c770-44c4-ba8b-de07ff489b92",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817150366000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "8b748ee7-7087-4e0e-88bc-ef796e71499b",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "1b2e1aa7-ae47-4a7c-8fec-16a081c510b0",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "4db6385d-2583-4ed7-af3b-a6078cb1c5ac",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "aa053ea8-54d3-445a-8ba5-4531eaf92943",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "22a6b49c-b07b-4926-8909-606f9760e48c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "ab12840d-f24a-4315-8367-ef4c65833c97",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "cffe4a6f-5286-4a24-8676-c11a2fb337c2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "c2d7e50d-0029-47b8-9852-c71814afa9a5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779817149128000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint complete: wrote 32 buffers (0.1%); 0 WAL file(s) added, 0 removed, 2 recycled; write=3.292 s, sync=0.004 s, total=3.332 s; sync files=16, longest=0.003 s, average=0.001 s; distance=49152 kB, estimate=53771 kB; lsn=27/D80000F8, redo lsn=27/D80000A0",
+    "hint": null,
+    "id": "87b18da2-84bf-4df2-821b-629be5657c12",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816973832000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint starting: time",
+    "hint": null,
+    "id": "4e970839-f170-4d4d-b55b-5fe4eb9567a4",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816970501000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "9a79f5b6-04e7-4be5-a2ac-4d24e138756d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816762508000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "f8186d8d-9734-4b7e-97ce-1d8c92a5a392",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816762508000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "5b4c14ec-e693-4179-b736-2f02fcd2a9b7",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816762055000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "e2d48ec2-9fda-462d-b768-9a9650846307",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816762055000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "ae9b9df3-e9dc-42c4-a73c-6c712bc28a55",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761985000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "2fa83c90-5b70-4170-85b8-5499b0e48a0e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761985000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "c9e2941c-e530-4d0d-813d-f6d6593e67d5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761669000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "4b86ddf7-90e4-4675-8707-376898096b4c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761669000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "7451d6ae-119a-4ab0-a9ef-5e06d9084df1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761610000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "5451ffd2-4cd2-4326-8460-c8a4f2d518c2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761610000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "5b57b671-3703-4e1a-ae04-2b8bc1297aab",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761582000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "7e8261c6-de2f-43e6-8bd4-ce200b257109",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761582000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "a768e557-d254-4567-9df0-79b48f504b7c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761109000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "ed5d88e7-c57d-4bb4-a95f-1da002903e6e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816761109000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "193dd2e8-a98a-4446-a322-2560a3f645d4",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816760773000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "a34460c6-195c-4a4a-baa0-233f25b98369",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816760773000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "a78a7dfa-8893-402f-bee3-252ed1be75f0",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816760575000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "0fd6706d-bc6c-44a6-8d22-7660b06f436f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816760575000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "eb25b1fa-ef44-474c-91df-f62ac69ae367",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816760575000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "42f6208e-1ac8-4bef-8d09-6cb0dabf6ed3",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816760575000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint complete: wrote 50 buffers (0.2%); 0 WAL file(s) added, 0 removed, 4 recycled; write=5.134 s, sync=0.002 s, total=5.181 s; sync files=11, longest=0.001 s, average=0.001 s; distance=32768 kB, estimate=54284 kB; lsn=27/D5000080, redo lsn=27/D5000028",
+    "hint": null,
+    "id": "71ff22db-4504-47dc-88a8-b1f527814f2c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816675796000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint complete: wrote 1 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.225 s, sync=0.002 s, total=0.242 s; sync files=1, longest=0.002 s, average=0.002 s; distance=32752 kB, estimate=56675 kB; lsn=27/D3000080, redo lsn=27/D3000028",
+    "hint": null,
+    "id": "8067753d-23bf-4886-8542-9cc2f668684e",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816370305000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint starting: time",
+    "hint": null,
+    "id": "ee2ceac1-d930-47ed-8916-c8e8f9ce1a33",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816370066000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint complete: wrote 11 buffers (0.0%); 0 WAL file(s) added, 0 removed, 3 recycled; write=1.072 s, sync=0.002 s, total=1.097 s; sync files=8, longest=0.002 s, average=0.001 s; distance=32783 kB, estimate=59333 kB; lsn=27/D1003D20, redo lsn=27/D1003CC8",
+    "hint": null,
+    "id": "b3a6a60e-4a51-487c-bc7c-7671305f361c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816071442000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint starting: time",
+    "hint": null,
+    "id": "0daaa961-783a-4f8f-a7b4-9962292a78de",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816070347000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "22bebbc2-964e-4eb5-9d97-e73722fdcea6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816045588000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "12da6d12-22a0-4e97-9b0a-3b77ca56d176",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816045588000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "327437f2-f2d3-4ae9-a0ba-b3769766d7e4",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816040149000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "989957c9-448f-414b-a16c-bb94d6cf18fe",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816040149000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "e7343987-5607-4c85-9fda-84ce136fc7a2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816039164000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "74e9e257-ece1-49af-9937-4088ef037309",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816039164000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "b34b04ff-3a05-448d-bdff-7d934918794c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816039058000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "4c5f9271-9969-4b97-8c9d-7c91c85d83ad",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816039058000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "a4f06e50-4639-4401-bc3d-525ea9f1acee",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038077000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "19443792-a633-4dcb-a136-c29d4d6d5f76",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038077000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "3de264f2-9262-4733-af98-cb315f972fcb",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "8d8c9311-7b8f-48b7-b962-e6f00491a961",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "f3e49eb5-756d-490d-8ace-f00fce79f9fd",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "1692ab60-fe8a-44b8-a567-59c18cfe78c8",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "1ee1e20c-0f8c-4689-af79-f9b219f44c2f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "dc607e90-1c43-4a3a-a82f-dcbab2af5bac",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "57b24ef1-fa49-486c-9c2c-a5a215253cc1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "f73d7a29-2b8f-42a2-927f-79c5b437e2b3",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779816038076000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "c32f80d1-a394-4902-b293-183a346eec9f",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815809734000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "2049cfa2-8897-4f19-a241-36620a6cca0c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815809734000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "0fba93d1-7c2e-4c41-b9c6-a0aeaa82dde8",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815809411000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "f4eb0f44-7e21-4014-8d82-12c90c3f9da1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815809411000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "59188a51-b7a0-47bc-a922-5886c6943d88",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815808966000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "8ab8dc8d-6db0-4ed1-b05c-7b3a92e29314",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815808966000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "568653b8-f6c0-4f24-86d7-e0bac5ade0d5",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815808443000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "f7c3bdf7-7238-4c0b-a26e-b8d6b055bd7c",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815808443000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "0e0430ae-1690-4c9a-8a20-af785184faf1",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815807099000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "0525fe0e-fab0-4cbd-8356-a6708e64c1c7",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815807099000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "5da89d62-9f1b-45e4-862d-97be0f28b104",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "6db10607-6fb0-42ea-bbae-4ee1b181b856",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "78dca07b-4b90-4169-a408-b7d709a543d2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "52e82ff2-5918-425f-972c-0ff8b2bcb34d",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "977ccbef-9d0d-4356-aaf1-65587c1a6af6",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "b2673b3f-ec72-4a93-8768-a9d05155fc77",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authenticated: user=\"authenticator\" method=trust (/etc/postgresql/pg_hba.conf:85)",
+    "hint": null,
+    "id": "ce2fb031-53d9-4316-8748-a03d419d01d0",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "connection authorized: user=authenticator database=postgres application_name=postgrest SSL enabled (protocol=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, bits=256)",
+    "hint": null,
+    "id": "ef9bfb7a-af93-439e-8803-6a9884cf3d21",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815806877000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint complete: wrote 14 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.459 s, sync=0.002 s, total=1.495 s; sync files=10, longest=0.001 s, average=0.001 s; distance=32737 kB, estimate=62283 kB; lsn=27/CF000080, redo lsn=27/CF000028",
+    "hint": null,
+    "id": "b992e820-ec06-4cb1-9663-9cec6f1b75a2",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815472495000
+  },
+  {
+    "detail": null,
+    "error_severity": "LOG",
+    "event_message": "checkpoint starting: time",
+    "hint": null,
+    "id": "7dd63283-4f5a-42e5-b821-0c6ab31a695a",
+    "identifier": "ugfxjjakpsngfdrjlsdr",
+    "timestamp": 1779815471005000
+  }
+]

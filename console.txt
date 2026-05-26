@@ -7,34 +7,8 @@ index-yQRX3Xbf.js:38 [🔔 NOTIF]   active: activated
 index-yQRX3Xbf.js:38 [🔔 NOTIF]   waiting: none
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
 supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&public_key=neq.&public_key=not.is.null&order=created_at.asc&limit=1 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak%2Cstreak_at_risk%2Cuser1_snapped_today%2Cuser2_snapped_today&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?select=*&recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.desc&limit=50 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folders?select=*&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-26T14:33:14.536Z\"}"}
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 🔑 Notification.permission = "granted"
-index-yQRX3Xbf.js:38 [🔔 NOTIF] ⏳ Waiting for ServiceWorker to be ready...
-index-yQRX3Xbf.js:38 [🔔 NOTIF] ✅ ServiceWorker is ready. Scope: https://new-aura-v2.vercel.app/
-index-yQRX3Xbf.js:38 [🔔 NOTIF]   SW state: activated
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 📬 Found existing subscription
-index-yQRX3Xbf.js:38 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 💾 Saving subscription to DB...
-index-yQRX3Xbf.js:38 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?endpoint=eq.https%3A%2F%2Ffcm.googleapis.com%2Ffcm%2Fsend%2FfTdekZfgJLk%3AAPA91bHlpE8fmK1xHydUUWEp2bZlKpyLIEWi2O0xGzkqgUcPnlofz6NlUX_qCSj6jn0caLI4zLzqUvxhrnmvBzKYbuz8YA4Dw-ZrhE-sUXhm_UiVpC5MJ8H-xPzJJH2aKFJ4LFo4Cegv&user_id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"DELETE","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folder_items?select=folder_id&folder_id=in.%289527a350-8c61-4c4a-a043-de6810751787%2C7b50070f-2c2c-4ce2-a2bb-d394ac064919%2Cc5e8a252-a6b5-4bb7-9cf7-042871f70713%2C19ab9e7b-47af-4576-9af3-41f1ba939ad0%2Cb01aadbd-9ec2-4d2a-a408-6e3925641b54%2Cdc963530-6427-4745-a8fa-98f6246007c4%29 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak%2Cstreak_at_risk%2Cuser1_snapped_today%2Cuser2_snapped_today&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 400 (Bad Request)
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&public_key=neq.&public_key=not.is.null&order=created_at.asc&limit=1' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&public_key=neq.&public_key=not.is.null&order=created_at.asc&limit=1 net::ERR_FAILED 522
 fetch @ supabase-CLpXqyPc.js:24
 (anonymous) @ supabase-CLpXqyPc.js:24
 (anonymous) @ supabase-CLpXqyPc.js:24
@@ -49,58 +23,821 @@ e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
 sd @ index-yQRX3Xbf.js:9
 od @ index-yQRX3Xbf.js:9
 (anonymous) @ index-yQRX3Xbf.js:9
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 400 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?on_conflict=user_id OPTIONS: {"method":"POST","headers":{},"body":"{\"user_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"endpoint\":\"https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyLIEWi2O0xGzkqgUcPnlofz6NlUX_qCSj6jn0caLI4zLzqUvxhrnmvBzKYbuz8YA4Dw-ZrhE-sUXhm_UiVpC5MJ8H-xPzJJH2aKFJ4LFo4Cegv\",\"p256dh\":\"BEpXlyTm0UcgnC1sa_HE09hSKVcPhUihiD4lOJY2EMN3rfy1HDbG5x30W2CSgeXUBlXbCjg9UYWOYkRNfsdZoyQ\",\"auth\":\"-dJruFpKjmqoP3-VyRnhoQ\"}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
-index-yQRX3Xbf.js:38 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=25 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=favorited_message_ids&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-index-yQRX3Xbf.js:38 [🔔 NOTIF] ✅ Subscription saved to DB successfully
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
-index-yQRX3Xbf.js:38 [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Ctype%2Ccreated_at%2Csender_public_key&media_url=not.is.null&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":26,\"limit_count\":6}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":20}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_week_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":20}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_year_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"limit_count\":20}"}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28a256ba58-44ce-45ca-aaa0-5d862ff9f39d%29 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 206 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-CFOmHpOL.js:56 [ChatBubble] fetchInitialChunks for msg=7e3707da-4c57-4702-9f14-b77f4ca06d01
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.7e3707da-4c57-4702-9f14-b77f4ca06d01&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28feb2bd3d-c85e-458e-b74f-c8ce34160893%2C46506b8e-b899-40d1-8a2a-36feffb2dcbf%2C444ce9d6-bb62-48a3-824f-8465f048bebf%2Cab152be0-0bd3-4094-af45-e36d583a2bfa%2Cde0f1090-3b3e-480a-909e-696d57e6ef74%2C5f9ec96d-206a-45a8-a0ae-0ffa34039f21%2C0a3c9969-0d01-410e-a3b0-b1d2309dabb8%2C06ea4e31-074e-4094-9670-0220bc4fe47a%2C99ef2af3-ec1f-4d63-8fa7-be2a66c1e8d1%2C55c3993e-103c-4f9e-b2df-0627d1e06fab%2C7fd2928f-b840-4c44-bd7d-c19f1474ebfd%29 OPTIONS: {"method":"GET","headers":{}}
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase-CLpXqyPc.js:24 [SUPABASE FETCH SUCCESS] Status: 200 
-ChatScreen-CFOmHpOL.js:56 [ChatBubble] Found 1 chunks in DB for msg=7e3707da-4c57-4702-9f14-b77f4ca06d01, loading...
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] loadExistingChunks: msg=7e3707da-4c57-4702-9f14-b77f4ca06d01, 1 chunks to process
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] loadExistingChunks: processing batch [0]
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Store init for msg=7e3707da-4c57-4702-9f14-b77f4ca06d01, totalChunks=1, duration=8s
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Block 0: downloading (attempt 1)...
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Block 0: downloaded 2853129 bytes, decrypting...
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Block 0: decrypted OK → 2853113 bytes
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Block 0: stored in blob assembly. have=1/1
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Blob fallback: all 1 blocks received for msg=7e3707da-4c57-4702-9f14-b77f4ca06d01, assembling...
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] MIME sniff → MP4 fallback (avc1.42E01E)
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] Blob fallback: assembled 2.72MB blob for msg=7e3707da-4c57-4702-9f14-b77f4ca06d01 type=video/mp4 ✓
-useVideoChunks-CeLtEGEG.js:1 [VideoChunks] loadExistingChunks: msg=7e3707da-4c57-4702-9f14-b77f4ca06d01 complete
-MediaViewer-D9Q7DAKZ.js:32 [ChunkedVideoPlayer] Setting video.src to blob URL
-MediaViewer-D9Q7DAKZ.js:32 [ChunkedVideoPlayer] canplay fired — attempting autoplay
-MediaViewer-D9Q7DAKZ.js:32 [ChunkedVideoPlayer] playing ✓
-MediaViewer-D9Q7DAKZ.js:32 [ChunkedVideoPlayer] autoplay started ✓
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&public_key=neq.&public_key=not.is.null&order=created_at.asc&limit=1
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async https://new-aura-v2.vercel.app/assets/usePartner-CxJn83G7.js:2:67934
+    at async https://new-aura-v2.vercel.app/assets/usePartner-CxJn83G7.js:2:68507
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async O (https://new-aura-v2.vercel.app/assets/usePartner-CxJn83G7.js:2:36558)
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+usePartner-CxJn83G7.js:2 [ENCRYPTION] Failed to fetch profile status: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at fetch (https://n…vercel.app/assets/usePartner-CxJn83G7.js:2:36558)', hint: '', code: ''}
+O @ usePartner-CxJn83G7.js:2
+await in O
+h @ usePartner-CxJn83G7.js:2
+(anonymous) @ usePartner-CxJn83G7.js:2
+(anonymous) @ supabase-CLpXqyPc.js:24
+_notifyAllSubscribers @ supabase-CLpXqyPc.js:24
+_recoverAndRefresh @ supabase-CLpXqyPc.js:24
+await in _recoverAndRefresh
+_initialize @ supabase-CLpXqyPc.js:23
+await in _initialize
+(anonymous) @ supabase-CLpXqyPc.js:23
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:21
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=id%2Cdisplay_name%2Cavatar_url%2Cavatar_key%2Cavatar_nonce%2Cpublic_key%2Cis_online%2Clast_seen%2Cstatus_message%2Ckey_history&id=neq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc&limit=1 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/streaks?select=id%2Cuser1_id%2Cuser2_id%2Ccurrent_streak%2Clongest_streak%2Cstreak_at_risk%2Cuser1_snapped_today%2Cuser2_snapped_today&or=%28user1_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Cuser2_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?select=*&recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.desc&limit=50 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":false,\"last_seen\":\"2026-05-26T17:51:06.800Z\"}"}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?select=*&recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.desc&limit=50' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?select=*&recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.desc&limit=50 net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?select=*&recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.desc&limit=50
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async https://new-aura-v2.vercel.app/assets/index-yQRX3Xbf.js:38:92008
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async https://new-aura-v2.vercel.app/assets/GarbageContext-DqijKmhl.js:1:3938
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async https://new-aura-v2.vercel.app/assets/GarbageContext-DqijKmhl.js:1:764
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+GarbageContext-DqijKmhl.js:1 [SETTINGS] Failed to fetch settings: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at fetch (https://n…ercel.app/assets/GarbageContext-DqijKmhl.js:1:764', hint: '', code: ''}
+(anonymous) @ GarbageContext-DqijKmhl.js:1
+await in (anonymous)
+(anonymous) @ GarbageContext-DqijKmhl.js:1
+Uc @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Wu @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  PATCH https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+setTimeout
+(anonymous) @ index-yQRX3Xbf.js:38
+Uc @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Wu @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+setTimeout
+(anonymous) @ index-yQRX3Xbf.js:38
+Uc @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Wu @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+setTimeout
+(anonymous) @ index-yQRX3Xbf.js:38
+Uc @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Wu @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async d (https://new-aura-v2.vercel.app/assets/index-yQRX3Xbf.js:38:38824)
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+setTimeout
+(anonymous) @ index-yQRX3Xbf.js:38
+Uc @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Dl @ index-yQRX3Xbf.js:9
+Ol @ index-yQRX3Xbf.js:9
+Wu @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  HEAD https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async e (https://new-aura-v2.vercel.app/assets/index-yQRX3Xbf.js:10:36963)
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async O (https://new-aura-v2.vercel.app/assets/usePartner-CxJn83G7.js:2:36558)
+    at async h (https://new-aura-v2.vercel.app/assets/usePartner-CxJn83G7.js:2:66627)
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+usePartner-CxJn83G7.js:2 [ENCRYPTION] Failed to fetch profile status: {message: 'TypeError: Failed to fetch', details: 'TypeError: Failed to fetch\n    at fetch (https://n…vercel.app/assets/usePartner-CxJn83G7.js:2:66627)', hint: '', code: ''}
+O @ usePartner-CxJn83G7.js:2
+await in O
+h @ usePartner-CxJn83G7.js:2
+(anonymous) @ usePartner-CxJn83G7.js:2
+(anonymous) @ supabase-CLpXqyPc.js:24
+_notifyAllSubscribers @ supabase-CLpXqyPc.js:24
+_recoverAndRefresh @ supabase-CLpXqyPc.js:24
+await in _recoverAndRefresh
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:21
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+index-yQRX3Xbf.js:38  PATCH https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 net::ERR_FAILED 522
+f @ index-yQRX3Xbf.js:38
+(anonymous) @ index-yQRX3Xbf.js:38
+setTimeout
+c @ index-yQRX3Xbf.js:38
+index-yQRX3Xbf.js:38   Uncaught (in promise) TypeError: Failed to fetch
+    at f (index-yQRX3Xbf.js:38:38987)
+    at index-yQRX3Xbf.js:38:39403
+f @ index-yQRX3Xbf.js:38
+(anonymous) @ index-yQRX3Xbf.js:38
+setTimeout
+c @ index-yQRX3Xbf.js:38
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+(index):1 Access to fetch at 'https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc' from origin 'https://new-aura-v2.vercel.app' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+supabase-CLpXqyPc.js:24  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc net::ERR_FAILED 522
+fetch @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Message: Failed to fetch
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH ERROR] Stack: TypeError: Failed to fetch
+    at fetch (https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:41821)
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36663
+    at https://new-aura-v2.vercel.app/assets/supabase-CLpXqyPc.js:24:36900
+    at async https://new-aura-v2.vercel.app/assets/GarbageContext-DqijKmhl.js:1:3938
+fetch @ supabase-CLpXqyPc.js:24
+await in fetch
+(anonymous) @ supabase-CLpXqyPc.js:24
+(anonymous) @ supabase-CLpXqyPc.js:24
+await in (anonymous)
+then @ supabase-CLpXqyPc.js:1
+postMessage
+ie @ index-yQRX3Xbf.js:2
+re @ index-yQRX3Xbf.js:2
+postMessage
+ie @ index-yQRX3Xbf.js:2
+e.unstable_scheduleCallback @ index-yQRX3Xbf.js:2
+sd @ index-yQRX3Xbf.js:9
+od @ index-yQRX3Xbf.js:9
+(anonymous) @ index-yQRX3Xbf.js:9
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+supabase-CLpXqyPc.js:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
