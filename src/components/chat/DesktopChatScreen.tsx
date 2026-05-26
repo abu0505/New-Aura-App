@@ -881,7 +881,6 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
         photosCount={snapCapture.snapState.photosCount}
         totalPhotos={snapCapture.snapState.totalPhotos}
         errorMessage={snapCapture.snapState.errorMessage}
-        cameraStream={snapCapture.getCameraStream()}
         onCancel={snapCapture.cancelSnapCapture}
       />
 

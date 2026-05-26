@@ -825,7 +825,6 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
         photosCount={snapCapture.snapState.photosCount}
         totalPhotos={snapCapture.snapState.totalPhotos}
         errorMessage={snapCapture.snapState.errorMessage}
-        cameraStream={snapCapture.getCameraStream()}
         onCancel={snapCapture.cancelSnapCapture}
       />
 
