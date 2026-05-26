@@ -1,0 +1,19 @@
+diff --git a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt
+index 1234567..abcdefg 100644
+--- a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt
++++ b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt
+@@ -46,10 +46,10 @@
+ class CameraPlugin : Plugin() {
+ 
+     companion object {
+-        private const val CAMERA = "camera"
+-        private const val PHOTOS = "photos"
+-        private const val SAVE_GALLERY = "saveGallery"
+-        private const val READ_EXTERNAL_STORAGE = "readExternalStorage"
++        const val CAMERA = "camera"
++        const val PHOTOS = "photos"
++        const val SAVE_GALLERY = "saveGallery"
++        const val READ_EXTERNAL_STORAGE = "readExternalStorage"
+     }
+ 
+     private lateinit var legacyFlow: LegacyCameraFlow
