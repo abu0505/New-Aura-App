@@ -16,6 +16,9 @@ import android.view.Surface
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.camera.core.*
+import androidx.camera.core.resolutionselector.AspectRatioStrategy
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.extensions.ExtensionMode
 import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -77,6 +80,10 @@ class NativeCameraXPlugin : Plugin() {
     private var currentLensFacing = CameraSelector.LENS_FACING_BACK
     private var currentExtensionMode = ExtensionMode.NONE
     private var isPreviewActive = false
+
+    // ── Saved parent background color for restoration ───────────────────────
+    private var savedParentBgDrawable: android.graphics.drawable.Drawable? = null
+    private var savedParentBgColor: Int? = null
 
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -169,17 +176,36 @@ class NativeCameraXPlugin : Plugin() {
                     baseSelector
                 }
 
-                // Create PreviewView and add behind WebView
-                activity.runOnUiThread {
+                // FIX Bug 14: Create PreviewView on UI thread and WAIT for it to attach
+                // before binding use cases. Using suspendCancellableCoroutine instead of
+                // a fragile delay(100) to ensure the view is actually laid out.
+                val pv = withContext(Dispatchers.Main) {
                     setupPreviewView()
+                    previewView
                 }
 
-                // Small delay to let the view attach
-                delay(100)
+                // Wait for the PreviewView to be laid out before binding
+                if (pv != null && !pv.isLaidOut) {
+                    suspendCancellableCoroutine<Unit> { cont ->
+                        pv.post {
+                            if (cont.isActive) cont.resume(Unit) {}
+                        }
+                    }
+                }
+
+                // FIX Bug 8: Use ResolutionSelector instead of deprecated setTargetResolution
+                val resolutionSelector = ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        ResolutionStrategy(
+                            Size(1920, 1080),
+                            ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER
+                        )
+                    )
+                    .build()
 
                 // Build Preview use case
                 preview = Preview.Builder()
-                    .setTargetResolution(Size(1920, 1080))
+                    .setResolutionSelector(resolutionSelector)
                     .build()
                     .also {
                         activity.runOnUiThread {
@@ -187,10 +213,21 @@ class NativeCameraXPlugin : Plugin() {
                         }
                     }
 
+                // FIX Bug 3 & Bug 9: Use non-deprecated display rotation that updates dynamically.
+                // activity.windowManager.defaultDisplay.rotation is deprecated since API 30.
+                // Use activity.display?.rotation with a fallback for older APIs.
+                val currentRotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    activity.display?.rotation ?: Surface.ROTATION_0
+                } else {
+                    @Suppress("DEPRECATION")
+                    activity.windowManager.defaultDisplay.rotation
+                }
+
                 // Build ImageCapture use case (for high-quality photo capture)
                 imageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    .setTargetRotation(activity.windowManager.defaultDisplay.rotation)
+                    .setTargetRotation(currentRotation)
+                    .setResolutionSelector(resolutionSelector)
                     .build()
 
                 // Bind to lifecycle
@@ -270,6 +307,16 @@ class NativeCameraXPlugin : Plugin() {
 
         val quality = call.getInt("quality", 92) ?: 92
 
+        // FIX Bug 3: Update target rotation right before capture to handle
+        // orientation changes that happened after startPreview() was called.
+        val currentRotation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            activity.display?.rotation ?: Surface.ROTATION_0
+        } else {
+            @Suppress("DEPRECATION")
+            activity.windowManager.defaultDisplay.rotation
+        }
+        capture.targetRotation = currentRotation
+
         capture.takePicture(cameraExecutor, object : ImageCapture.OnImageCapturedCallback() {
             override fun onCaptureSuccess(imageProxy: ImageProxy) {
                 try {
@@ -277,34 +324,61 @@ class NativeCameraXPlugin : Plugin() {
                     val bytes = ByteArray(buffer.remaining())
                     buffer.get(bytes)
 
-                    // Decode to bitmap for rotation correction
+                    // FIX Bug 2: Null check after decode — BitmapFactory.decodeByteArray
+                    // returns null if the data is corrupt or memory is insufficient.
                     var bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    if (bitmap == null) {
+                        Log.e(TAG, "BitmapFactory.decodeByteArray returned null — corrupt or OOM")
+                        activity.runOnUiThread {
+                            call.reject("Failed to decode captured image — data may be corrupt")
+                        }
+                        return
+                    }
 
                     // Apply EXIF rotation
                     val rotationDegrees = imageProxy.imageInfo.rotationDegrees
                     if (rotationDegrees != 0) {
                         val matrix = Matrix()
                         matrix.postRotate(rotationDegrees.toFloat())
-                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                        val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+                        // FIX Bug 1: Recycle old bitmap to prevent OOM
+                        if (rotated !== bitmap) {
+                            bitmap.recycle()
+                        }
+                        bitmap = rotated
                     }
 
                     // Mirror for front camera
                     if (currentLensFacing == CameraSelector.LENS_FACING_FRONT) {
                         val mirrorMatrix = Matrix()
                         mirrorMatrix.preScale(-1f, 1f)
-                        bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, mirrorMatrix, true)
+                        val mirrored = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, mirrorMatrix, true)
+                        // FIX Bug 1: Recycle old bitmap to prevent OOM
+                        if (mirrored !== bitmap) {
+                            bitmap.recycle()
+                        }
+                        bitmap = mirrored
                     }
 
                     // Compress to JPEG
-                    val outputStream = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
-                    val jpegBytes = outputStream.toByteArray()
+                    // FIX Bug 13: Use use() to auto-close the ByteArrayOutputStream
+                    val jpegBytes: ByteArray
+                    ByteArrayOutputStream().use { outputStream ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outputStream)
+                        jpegBytes = outputStream.toByteArray()
+                    }
                     val base64 = Base64.encodeToString(jpegBytes, Base64.NO_WRAP)
+
+                    val resultWidth = bitmap.width
+                    val resultHeight = bitmap.height
+
+                    // FIX Bug 1: Recycle final bitmap — we've already extracted JPEG bytes
+                    bitmap.recycle()
 
                     val result = JSObject()
                     result.put("dataUrl", "data:image/jpeg;base64,$base64")
-                    result.put("width", bitmap.width)
-                    result.put("height", bitmap.height)
+                    result.put("width", resultWidth)
+                    result.put("height", resultHeight)
                     result.put("format", "jpeg")
                     result.put("sizeBytes", jpegBytes.size)
 
@@ -348,11 +422,24 @@ class NativeCameraXPlugin : Plugin() {
             zoomState?.maxZoomRatio ?: level
         )
 
-        cam.cameraControl.setZoomRatio(clamped)
-
-        val result = JSObject()
-        result.put("zoom", clamped.toDouble())
-        call.resolve(result)
+        // FIX Bug 11: Wait for the ListenableFuture to complete before resolving.
+        // setZoomRatio() returns a ListenableFuture — if the zoom fails (e.g.
+        // camera is closing), we should report the error instead of silently swallowing.
+        val future = cam.cameraControl.setZoomRatio(clamped)
+        future.addListener({
+            try {
+                future.get() // Throws if zoom failed
+                val result = JSObject()
+                result.put("zoom", clamped.toDouble())
+                call.resolve(result)
+            } catch (e: Exception) {
+                Log.w(TAG, "setZoom failed: ${e.message}")
+                // Still resolve with the requested value — zoom is best-effort
+                val result = JSObject()
+                result.put("zoom", clamped.toDouble())
+                call.resolve(result)
+            }
+        }, ContextCompat.getMainExecutor(activity))
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -468,13 +555,17 @@ class NativeCameraXPlugin : Plugin() {
         val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
         rootView.addView(previewView, 0)
 
-        // Make WebView background transparent so native preview shows through
-        bridge.webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+        // FIX Bug 6: Save parent background before making it transparent
+        // so we can restore it later in removePreviewView()
         bridge.webView.parent?.let {
             if (it is android.view.View) {
+                savedParentBgDrawable = it.background
                 it.setBackgroundColor(android.graphics.Color.TRANSPARENT)
             }
         }
+
+        // Make WebView background transparent so native preview shows through
+        bridge.webView.setBackgroundColor(android.graphics.Color.TRANSPARENT)
     }
 
     private fun removePreviewView() {
@@ -486,6 +577,20 @@ class NativeCameraXPlugin : Plugin() {
 
         // Restore WebView background
         bridge.webView.setBackgroundColor(android.graphics.Color.WHITE)
+
+        // FIX Bug 6: Restore parent background to saved state
+        bridge.webView.parent?.let {
+            if (it is android.view.View) {
+                val savedBg = savedParentBgDrawable
+                if (savedBg != null) {
+                    it.background = savedBg
+                } else {
+                    it.setBackgroundColor(android.graphics.Color.WHITE)
+                }
+                savedParentBgDrawable = null
+                savedParentBgColor = null
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -20,6 +20,9 @@ import { useCall } from '../../contexts/CallContext';
 import ChatSearch from './ChatSearch';
 import { getBackgroundData } from '../../utils/backgroundParser';
 import StreakBadge from './StreakBadge';
+import SnapCaptureOverlay from './SnapCaptureOverlay';
+import SnapCaptureConsentModal from './SnapCaptureConsentModal';
+import type { useSnapCapture } from '../../hooks/useSnapCapture';
 
 
 
@@ -28,9 +31,10 @@ interface MobileChatScreenProps {
   isActive?: boolean;
   partnerIsTyping: boolean;
   sendTypingEvent: (isTyping: boolean) => void;
+  snapCapture: ReturnType<typeof useSnapCapture>;
 }
 
-export default function MobileChatScreen({ partner, isActive, partnerIsTyping, sendTypingEvent }: MobileChatScreenProps) {
+export default function MobileChatScreen({ partner, isActive, partnerIsTyping, sendTypingEvent, snapCapture }: MobileChatScreenProps) {
   const { isNative } = usePlatform();
   const { user } = useAuth();
   const { markReadBySenderId } = useNotifications();
@@ -71,6 +75,31 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettingsContext();
   const { initiateCall } = useCall();
+
+  // ═══ SnapCapture: Send photos to chat when session completes ═════════
+  useEffect(() => {
+    if (snapCapture.snapState.phase !== 'completing') return;
+    if (snapCapture.snapState.role !== 'initiator') return;
+    
+    const photos = snapCapture.snapState.photos;
+    if (photos.length === 0) return;
+
+    // Send each photo as an individual image message.
+    // The existing messageGrouping.ts will auto-group them into MediaGridBubble.
+    (async () => {
+      for (const photo of photos) {
+        await sendMessage('', {
+          url: photo.url,
+          media_key: photo.media_key,
+          media_nonce: photo.media_nonce,
+          type: 'image',
+        });
+        // Small delay between sends to ensure correct ordering
+        await new Promise(r => setTimeout(r, 100));
+      }
+    })();
+  }, [snapCapture.snapState.phase, snapCapture.snapState.role]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const previousScrollHeightRef = useRef<number>(0);
@@ -507,6 +536,22 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             >
               <span className="material-symbols-outlined">videocam</span>
             </button>
+            {/* SnapCapture Button */}
+            <button
+              onClick={() => snapCapture.initiateSnapCapture()}
+              disabled={!partner.is_online || snapCapture.snapState.phase !== 'idle'}
+              className={`relative transition-all duration-300 ${
+                partner.is_online && snapCapture.snapState.phase === 'idle'
+                  ? 'hover:text-primary active:scale-90'
+                  : 'opacity-30 cursor-not-allowed'
+              }`}
+              title="Surprise Snap"
+            >
+              <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+              {partner.is_online && snapCapture.snapState.phase === 'idle' && (
+                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+              )}
+            </button>
             
             <div className="relative" ref={pinDropdownRef}>
               <button 
@@ -771,6 +816,24 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
         partnerPublicKey={partner.public_key}
         partnerKeyHistory={partner.key_history?.map(h => h.public_key)}
         cachedMessages={messages}
+      />
+
+      {/* SnapCapture Overlay */}
+      <SnapCaptureOverlay
+        phase={snapCapture.snapState.phase}
+        role={snapCapture.snapState.role}
+        photosCount={snapCapture.snapState.photosCount}
+        totalPhotos={snapCapture.snapState.totalPhotos}
+        errorMessage={snapCapture.snapState.errorMessage}
+        cameraStream={snapCapture.getCameraStream()}
+        onCancel={snapCapture.cancelSnapCapture}
+      />
+
+      {/* SnapCapture Consent Modal */}
+      <SnapCaptureConsentModal
+        isOpen={snapCapture.showConsentModal}
+        onAgree={() => snapCapture.handleConsent(true)}
+        onDisagree={() => snapCapture.handleConsent(false)}
       />
     </>
   );

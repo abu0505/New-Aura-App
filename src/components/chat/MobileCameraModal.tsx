@@ -368,11 +368,21 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       isWorkerRecordingRef.current = false;
       setDevice4kSupported(null);
       setDevice60fpsSupported(null);
+
+      // FIX: Stop native CameraX preview on close so it doesn't stay
+      // open behind the WebView after navigating away from the camera.
+      if (activeExtension !== 'NONE') {
+        nativeCameraX.stopPreview();
+        setActiveExtension('NONE');
+        setIsNightMode(false);
+      }
     }
     // Release WebGL context and Web Worker when camera closes
     return () => {
       destroyDenoiser();
       resetNativeCameraState();
+      // Also stop native preview on unmount
+      nativeCameraX.stopPreview();
     };
   }, [isOpen, previewUrl]);
 
@@ -395,41 +405,66 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   };
 
   // Toggle Night Mode — uses native CameraX Extension when available
+  // FIX Bug 4: Stop WebRTC stream before starting native CameraX to avoid
+  // hardware lock conflict (camera is an exclusive resource on Android).
   const toggleNightMode = useCallback(async () => {
     const next = !isNightMode;
     setIsNightMode(next);
 
     if (nativeCameraX.isAvailable && sensorCaps?.hasNativeCameraX) {
-      // Native path: switch CameraX extension mode for real OEM Night Mode processing
       const newMode: ExtensionMode = next ? 'NIGHT' : 'NONE';
       const facing = facingMode === 'user' ? 'FRONT' : 'BACK';
-      const result = await nativeCameraX.switchExtension(newMode, facing);
-      if (result) {
-        setActiveExtension(newMode);
-        // If switching to NIGHT, turn off HDR (mutually exclusive)
-        if (next) setActiveExtension('NIGHT');
+
+      if (next) {
+        // ENABLING Night Mode: release WebRTC camera first, then start native
+        stopCamera();
+        const result = await nativeCameraX.switchExtension(newMode, facing);
+        if (result) {
+          setActiveExtension('NIGHT');
+        } else {
+          // Native switch failed — restart WebRTC stream
+          startCamera();
+        }
+      } else {
+        // DISABLING Night Mode: stop native preview, restart WebRTC
+        await nativeCameraX.stopPreview();
+        setActiveExtension('NONE');
+        startCamera();
       }
     } else {
       // Web fallback: exposure compensation boost
       await applyNightMode(next);
     }
-  }, [isNightMode, sensorCaps, facingMode]);
+  }, [isNightMode, sensorCaps, facingMode, stopCamera, startCamera]);
 
   // Toggle HDR Mode — uses native CameraX Extension
+  // FIX Bug 4: Same hardware lock fix as toggleNightMode
   const toggleHDR = useCallback(async () => {
     const isCurrentlyHDR = activeExtension === 'HDR';
     const newMode: ExtensionMode = isCurrentlyHDR ? 'NONE' : 'HDR';
 
     if (nativeCameraX.isAvailable && sensorCaps?.hasNativeCameraX) {
       const facing = facingMode === 'user' ? 'FRONT' : 'BACK';
-      const result = await nativeCameraX.switchExtension(newMode, facing);
-      if (result) {
-        setActiveExtension(newMode);
-        // If switching to HDR, turn off Night Mode (mutually exclusive)
-        if (!isCurrentlyHDR) setIsNightMode(false);
+
+      if (!isCurrentlyHDR) {
+        // ENABLING HDR: release WebRTC camera first, then start native
+        stopCamera();
+        const result = await nativeCameraX.switchExtension(newMode, facing);
+        if (result) {
+          setActiveExtension('HDR');
+          setIsNightMode(false);
+        } else {
+          // Native switch failed — restart WebRTC stream
+          startCamera();
+        }
+      } else {
+        // DISABLING HDR: stop native preview, restart WebRTC
+        await nativeCameraX.stopPreview();
+        setActiveExtension('NONE');
+        startCamera();
       }
     }
-  }, [activeExtension, sensorCaps, facingMode]);
+  }, [activeExtension, sensorCaps, facingMode, stopCamera, startCamera]);
 
   // Tap-to-focus handler
   const handleTapToFocus = useCallback(async (e: React.MouseEvent<HTMLVideoElement>) => {
@@ -623,7 +658,9 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         }
       }, 'image/webp', webpQuality);
     }
-  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef, resolution]);
+  // FIX Bug 10: Added activeExtension to deps so the native CameraX capture path
+  // triggers correctly when user toggles HDR/Night mode (was using stale closure).
+  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef, resolution, activeExtension]);
 
   // ── TELEGRAM-STYLE RECORDING: stopRecording ────────────────────────────────
   const stopRecording = useCallback(() => {
@@ -1164,6 +1201,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                     </div>
                   ) : (
                     <div className="relative w-full h-full">
+                      {/* FIX Bug 5: Hide video element when native CameraX preview is active
+                          so the native preview (behind WebView) shows through. The native
+                          preview renders behind the WebView with a transparent background;
+                          if this opaque <video> is visible it covers the native preview. */}
                       <video
                         ref={videoRef}
                         autoPlay
@@ -1172,7 +1213,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                         className="w-full h-full object-cover pointer-events-auto"
                         style={{
                           transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
-                          transformOrigin: 'center'
+                          transformOrigin: 'center',
+                          opacity: isNativeCameraActive ? 0 : 1,
                         }}
                         onDoubleClick={toggleCamera}
                         onClick={(e) => {

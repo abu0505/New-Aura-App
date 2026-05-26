@@ -3,6 +3,7 @@ import DesktopChatScreen from './DesktopChatScreen';
 import MobileChatScreen from './MobileChatScreen';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
+import { useSnapCapture } from '../../hooks/useSnapCapture';
 import { useState, useEffect } from 'react';
 
 interface ChatScreenProps {
@@ -25,6 +26,13 @@ export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
   // subscriptions and clobbers the 'typing' Realtime broadcast connection.
   const { partnerIsTyping, sendTypingEvent } = useTypingIndicator(partner?.id);
 
+  // SnapCapture: initialized here (like typing) to avoid duplicate channels.
+  // Uses the same broadcast pattern as useTypingIndicator.
+  const snapCapture = useSnapCapture(
+    partner?.id,
+    partner?.is_online ?? false,
+  );
+
   if (!partner) {
     return (
       <div className="flex flex-col h-screen items-center justify-center bg-[var(--bg-primary)] text-[#e4e1ed] p-8 text-center space-y-6">
@@ -46,9 +54,9 @@ export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
   return (
     <div className="h-full w-full">
       {isDesktop ? (
-        <DesktopChatScreen partner={partner} isActive={isActive} partnerIsTyping={partnerIsTyping} sendTypingEvent={sendTypingEvent} />
+        <DesktopChatScreen partner={partner} isActive={isActive} partnerIsTyping={partnerIsTyping} sendTypingEvent={sendTypingEvent} snapCapture={snapCapture} />
       ) : (
-        <MobileChatScreen partner={partner} isActive={isActive} partnerIsTyping={partnerIsTyping} sendTypingEvent={sendTypingEvent} />
+        <MobileChatScreen partner={partner} isActive={isActive} partnerIsTyping={partnerIsTyping} sendTypingEvent={sendTypingEvent} snapCapture={snapCapture} />
       )}
     </div>
   );
