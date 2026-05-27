@@ -346,26 +346,6 @@ export default function NotesScreen() {
             <span className="material-symbols-outlined text-4xl text-[var(--gold)]/30 animate-pulse">sticky_note_2</span>
             <p className="text-xs text-white/30 uppercase tracking-widest animate-pulse">Loading notes...</p>
           </div>
-        ) : filteredNotes.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-4">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <span className="material-symbols-outlined text-6xl text-white/10">
-                {filter === 'trash' ? 'delete_sweep' : filter === 'archived' ? 'inventory_2' : searchQuery ? 'search_off' : 'sticky_note_2'}
-              </span>
-            </motion.div>
-            <div className="text-center">
-              <p className="text-sm text-white/30 mb-1">
-                {filter === 'trash' ? 'Trash is empty' : filter === 'archived' ? 'No archived notes' : searchQuery ? 'No matching notes' : 'No notes yet'}
-              </p>
-              <p className="text-xs text-white/15">
-                {filter === 'all' && !searchQuery && 'Tap the + button to create your first note'}
-              </p>
-            </div>
-          </div>
         ) : (
           <>
             {/* Quick add bar — Google Keep style */}
@@ -427,126 +407,150 @@ export default function NotesScreen() {
               </div>
             )}
 
-            {/* Empty trash button */}
-            {filter === 'trash' && trashCount > 0 && (
-              <div className="flex justify-center mb-4">
-                <button
-                  onClick={emptyTrash}
-                  className="flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400/70 hover:text-red-400 hover:bg-red-500/15 transition-all text-xs font-bold uppercase tracking-wider"
+            {filteredNotes.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-4">
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete_sweep</span>
-                  Empty Trash
-                </button>
+                  <span className="material-symbols-outlined text-6xl text-white/10">
+                    {filter === 'trash' ? 'delete_sweep' : filter === 'archived' ? 'inventory_2' : searchQuery ? 'search_off' : 'sticky_note_2'}
+                  </span>
+                </motion.div>
+                <div className="text-center">
+                  <p className="text-sm text-white/30 mb-1">
+                    {filter === 'trash' ? 'Trash is empty' : filter === 'archived' ? 'No archived notes' : searchQuery ? 'No matching notes' : 'No notes yet'}
+                  </p>
+                  <p className="text-xs text-white/15">
+                    {filter === 'all' && !searchQuery && 'Tap the + button to create your first note'}
+                  </p>
+                </div>
               </div>
-            )}
-
-            {/* Pinned section */}
-            {pinnedNotes.length > 0 && filter !== 'trash' && (
-              <div className="mb-6">
-                <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/25 mb-3 px-1">
-                  <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: '12px', fontVariationSettings: "'FILL' 1" }}>push_pin</span>
-                  Pinned
-                </p>
-                {viewMode === 'grid' ? (
-                  <div
-                    style={{
-                      columns: isDesktop ? 3 : 2,
-                      columnGap: '12px',
-                    }}
-                  >
-                    {pinnedNotes.map(note => (
-                      <div key={note.id} style={{ breakInside: 'avoid', marginBottom: '12px' }}>
-                        <NoteCard
-                          note={note}
-                          viewMode={viewMode}
-                          onOpen={handleOpenNote}
-                          onPin={togglePin}
-                          onArchive={handleArchiveAction}
-                          onTrash={trashNote}
-                          isSelected={selectedIds.has(note.id)}
-                          onSelect={handleSelect}
-                          selectionMode={selectionMode}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <AnimatePresence mode="popLayout">
-                      {pinnedNotes.map(note => (
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          viewMode={viewMode}
-                          onOpen={handleOpenNote}
-                          onPin={togglePin}
-                          onArchive={handleArchiveAction}
-                          onTrash={trashNote}
-                          isSelected={selectedIds.has(note.id)}
-                          onSelect={handleSelect}
-                          selectionMode={selectionMode}
-                        />
-                      ))}
-                    </AnimatePresence>
+            ) : (
+              <>
+                {/* Empty trash button */}
+                {filter === 'trash' && trashCount > 0 && (
+                  <div className="flex justify-center mb-4">
+                    <button
+                      onClick={emptyTrash}
+                      className="flex items-center gap-2 px-5 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-400/70 hover:text-red-400 hover:bg-red-500/15 transition-all text-xs font-bold uppercase tracking-wider"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete_sweep</span>
+                      Empty Trash
+                    </button>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Other notes */}
-            {unpinnedNotes.length > 0 && (
-              <div>
+                {/* Pinned section */}
                 {pinnedNotes.length > 0 && filter !== 'trash' && (
-                  <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/25 mb-3 px-1">Others</p>
-                )}
-                {viewMode === 'grid' ? (
-                  <div
-                    style={{
-                      columns: isDesktop ? 3 : 2,
-                      columnGap: '12px',
-                    }}
-                  >
-                    {unpinnedNotes.map(note => (
-                      <div key={note.id} style={{ breakInside: 'avoid', marginBottom: '12px' }}>
-                        <NoteCard
-                          note={note}
-                          viewMode={viewMode}
-                          onOpen={handleOpenNote}
-                          onPin={togglePin}
-                          onArchive={handleArchiveAction}
-                          onTrash={trashNote}
-                          onRestore={restoreNote}
-                          onDeletePermanently={deleteNotePermanently}
-                          isSelected={selectedIds.has(note.id)}
-                          onSelect={handleSelect}
-                          selectionMode={selectionMode}
-                        />
+                  <div className="mb-6">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/25 mb-3 px-1">
+                      <span className="material-symbols-outlined align-middle mr-1" style={{ fontSize: '12px', fontVariationSettings: "'FILL' 1" }}>push_pin</span>
+                      Pinned
+                    </p>
+                    {viewMode === 'grid' ? (
+                      <div
+                        style={{
+                          columns: isDesktop ? 3 : 2,
+                          columnGap: '12px',
+                        }}
+                      >
+                        {pinnedNotes.map(note => (
+                          <div key={note.id} style={{ breakInside: 'avoid', marginBottom: '12px' }}>
+                            <NoteCard
+                              note={note}
+                              viewMode={viewMode}
+                              onOpen={handleOpenNote}
+                              onPin={togglePin}
+                              onArchive={handleArchiveAction}
+                              onTrash={trashNote}
+                              isSelected={selectedIds.has(note.id)}
+                              onSelect={handleSelect}
+                              selectionMode={selectionMode}
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <AnimatePresence mode="popLayout">
-                      {unpinnedNotes.map(note => (
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          viewMode={viewMode}
-                          onOpen={handleOpenNote}
-                          onPin={togglePin}
-                          onArchive={handleArchiveAction}
-                          onTrash={trashNote}
-                          onRestore={restoreNote}
-                          onDeletePermanently={deleteNotePermanently}
-                          isSelected={selectedIds.has(note.id)}
-                          onSelect={handleSelect}
-                          selectionMode={selectionMode}
-                        />
-                      ))}
-                    </AnimatePresence>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <AnimatePresence mode="popLayout">
+                          {pinnedNotes.map(note => (
+                            <NoteCard
+                              key={note.id}
+                              note={note}
+                              viewMode={viewMode}
+                              onOpen={handleOpenNote}
+                              onPin={togglePin}
+                              onArchive={handleArchiveAction}
+                              onTrash={trashNote}
+                              isSelected={selectedIds.has(note.id)}
+                              onSelect={handleSelect}
+                              selectionMode={selectionMode}
+                            />
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
+
+                {/* Other notes */}
+                {unpinnedNotes.length > 0 && (
+                  <div>
+                    {pinnedNotes.length > 0 && filter !== 'trash' && (
+                      <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-white/25 mb-3 px-1">Others</p>
+                    )}
+                    {viewMode === 'grid' ? (
+                      <div
+                        style={{
+                          columns: isDesktop ? 3 : 2,
+                          columnGap: '12px',
+                        }}
+                      >
+                        {unpinnedNotes.map(note => (
+                          <div key={note.id} style={{ breakInside: 'avoid', marginBottom: '12px' }}>
+                            <NoteCard
+                              note={note}
+                              viewMode={viewMode}
+                              onOpen={handleOpenNote}
+                              onPin={togglePin}
+                              onArchive={handleArchiveAction}
+                              onTrash={trashNote}
+                              onRestore={restoreNote}
+                              onDeletePermanently={deleteNotePermanently}
+                              isSelected={selectedIds.has(note.id)}
+                              onSelect={handleSelect}
+                              selectionMode={selectionMode}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        <AnimatePresence mode="popLayout">
+                          {unpinnedNotes.map(note => (
+                            <NoteCard
+                              key={note.id}
+                              note={note}
+                              viewMode={viewMode}
+                              onOpen={handleOpenNote}
+                              onPin={togglePin}
+                              onArchive={handleArchiveAction}
+                              onTrash={trashNote}
+                              onRestore={restoreNote}
+                              onDeletePermanently={deleteNotePermanently}
+                              isSelected={selectedIds.has(note.id)}
+                              onSelect={handleSelect}
+                              selectionMode={selectionMode}
+                            />
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             {/* Bottom padding for FAB */}
