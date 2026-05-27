@@ -4,6 +4,7 @@ import { useNotes, type Note, type NoteView, type NoteFilter } from '../../hooks
 import NoteCard from './NoteCard';
 import NoteEditor from './NoteEditor';
 
+export default function NotesScreen() {
   const {
     notes,
     labels,
@@ -24,8 +25,6 @@ import NoteEditor from './NoteEditor';
     emptyTrash,
   } = useNotes();
 
-  const [showManageLabels, setShowManageLabels] = useState(false);
-  const [newLabelInput, setNewLabelInput] = useState('');
   const [viewMode, setViewMode] = useState<NoteView>(() => {
     return (localStorage.getItem('aura_notes_view') as NoteView) || 'grid';
   });
@@ -110,21 +109,6 @@ import NoteEditor from './NoteEditor';
   const handleCreateChecklist = () => {
     const note = createNote({ isChecklist: true, checklist: [{ id: crypto.randomUUID(), text: '', checked: false }] });
     setEditingNote(note);
-  };
-
-  const handleAddLabel = () => {
-    if (!newLabelInput.trim()) return;
-    addLabel(newLabelInput.trim());
-    setNewLabelInput('');
-  };
-
-  const handleDeleteLabel = (labelName: string) => {
-    if (window.confirm(`Are you sure you want to delete the label "${labelName}"? It will be removed from all notes.`)) {
-      removeLabel(labelName);
-      if (filter === labelName) {
-        setFilter('all');
-      }
-    }
   };
 
   // Selection
@@ -325,16 +309,6 @@ import NoteEditor from './NoteEditor';
                   {label}
                 </button>
               ))}
-
-              {/* Manage Labels trigger button */}
-              <button
-                onClick={() => setShowManageLabels(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-white/10 text-white/40 hover:text-white/70 hover:bg-white/5 transition-all whitespace-nowrap shrink-0"
-                title="Manage Labels"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>settings</span>
-                Manage
-              </button>
             </div>
           </>
         )}
@@ -623,100 +597,6 @@ import NoteEditor from './NoteEditor';
             onAddLabel={addLabel}
             onDeleteLabel={removeLabel}
           />
-        )}
-      </AnimatePresence>
-
-      {/* ═══ MANAGE LABELS MODAL ═══ */}
-      <AnimatePresence>
-        {showManageLabels && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[250] flex items-center justify-center p-4"
-            onClick={() => setShowManageLabels(false)}
-          >
-            {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
-
-            {/* Modal Card */}
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="relative z-10 w-full max-w-sm bg-[#11111a] border border-white/10 rounded-3xl p-5 shadow-2xl flex flex-col max-h-[70vh]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--gold)]">Edit Labels</h3>
-                <button
-                  onClick={() => setShowManageLabels(false)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white/80 hover:bg-white/5 transition-colors"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>close</span>
-                </button>
-              </div>
-
-              {/* Add label input */}
-              <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-4">
-                <input
-                  type="text"
-                  placeholder="Create new label..."
-                  value={newLabelInput}
-                  onChange={(e) => setNewLabelInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleAddLabel();
-                    }
-                  }}
-                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white/80 placeholder:text-white/20 focus:outline-none focus:border-white/25 transition-all"
-                  style={{ outline: 'none', boxShadow: 'none' }}
-                />
-                <button
-                  onClick={handleAddLabel}
-                  className="w-9 h-9 rounded-xl bg-[var(--gold)]/10 text-[var(--gold)] hover:bg-[var(--gold)]/20 transition-colors flex items-center justify-center"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>add</span>
-                </button>
-              </div>
-
-              {/* Labels list */}
-              <div className="flex-1 overflow-y-auto flex flex-col gap-1 pr-1 scrollbar-hide">
-                {labels.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-white/20 gap-2">
-                    <span className="material-symbols-outlined" style={{ fontSize: '24px' }}>label</span>
-                    <p className="text-[10px] uppercase tracking-wider">No labels yet</p>
-                  </div>
-                ) : (
-                  labels.map((lbl) => (
-                    <div key={lbl} className="flex items-center justify-between gap-2 p-1.5 pl-3 rounded-xl hover:bg-white/5 transition-colors group">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="material-symbols-outlined text-white/30 shrink-0" style={{ fontSize: '16px' }}>label</span>
-                        <span className="text-xs text-white/70 font-medium truncate uppercase tracking-wider">{lbl}</span>
-                      </div>
-                      <button
-                        onClick={() => handleDeleteLabel(lbl)}
-                        className="w-7 h-7 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center shrink-0"
-                        title={`Delete label "${lbl}"`}
-                      >
-                        <span className="material-symbols-outlined block" style={{ fontSize: '16px' }}>delete</span>
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-white/5 flex justify-end">
-                <button
-                  onClick={() => setShowManageLabels(false)}
-                  className="px-5 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white/70 transition-colors"
-                >
-                  Done
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
     </div>

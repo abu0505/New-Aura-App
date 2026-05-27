@@ -1492,27 +1492,27 @@ export default function NoteEditor({
                             return (
                               <div
                                 key={label}
-                                className="group flex items-center bg-white/3 hover:bg-white/5 border border-white/8 hover:border-white/15 rounded-full pr-1 pl-2.5 py-0.5 transition-all"
+                                className={`flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
+                                  isActive
+                                    ? 'bg-[var(--gold)]/15 text-[var(--gold)] border-[var(--gold)]/30'
+                                    : 'bg-white/5 text-white/40 border-white/8 hover:border-white/15'
+                                }`}
                               >
-                                <button
-                                  onClick={() => onToggleLabel(note.id, label)}
-                                  className={`flex items-center gap-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-left transition-all ${
-                                    isActive ? 'text-[var(--gold)]' : 'text-white/40 group-hover:text-white/60'
-                                  }`}
-                                >
-                                  {isActive && <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>}
+                                <button onClick={() => onToggleLabel(note.id, label)} className="flex items-center gap-1">
+                                  {isActive && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check</span>}
                                   {label}
                                 </button>
+                                <div className="w-[1px] h-3 bg-current opacity-20 mx-0.5" />
                                 <button
                                   onClick={() => {
-                                    if (window.confirm(`Delete label "${label}" globally? This removes it from all notes.`)) {
+                                    if (window.confirm(`Delete label "${label}" globally?`)) {
                                       onDeleteLabel(label);
                                     }
                                   }}
-                                  className="w-5 h-5 rounded-full flex items-center justify-center ml-1 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                                  title={`Delete label "${label}"`}
+                                  className="flex items-center justify-center w-4 h-4 rounded-full hover:bg-red-500/20 text-current hover:text-red-400 transition-colors"
+                                  title="Delete label globally"
                                 >
-                                  <span className="material-symbols-outlined select-none" style={{ fontSize: '12px' }}>close</span>
+                                  <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>close</span>
                                 </button>
                               </div>
                             );
