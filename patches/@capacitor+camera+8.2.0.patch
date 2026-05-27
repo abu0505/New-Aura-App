@@ -1,8 +1,42 @@
+diff --git a/node_modules/@capacitor/camera/android/.project b/node_modules/@capacitor/camera/android/.project
+new file mode 100644
+index 0000000..bbaa7fe
+--- /dev/null
++++ b/node_modules/@capacitor/camera/android/.project
+@@ -0,0 +1,28 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<projectDescription>
++	<name>capacitor-camera</name>
++	<comment>Project capacitor-camera created by Buildship.</comment>
++	<projects>
++	</projects>
++	<buildSpec>
++		<buildCommand>
++			<name>org.eclipse.buildship.core.gradleprojectbuilder</name>
++			<arguments>
++			</arguments>
++		</buildCommand>
++	</buildSpec>
++	<natures>
++		<nature>org.eclipse.buildship.core.gradleprojectnature</nature>
++	</natures>
++	<filteredResources>
++		<filter>
++			<id>1778149616037</id>
++			<name></name>
++			<type>30</type>
++			<matcher>
++				<id>org.eclipse.core.resources.regexFilterMatcher</id>
++				<arguments>node_modules|\.git|__CREATED_BY_JAVA_LANGUAGE_SERVER__</arguments>
++			</matcher>
++		</filter>
++	</filteredResources>
++</projectDescription>
 diff --git a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt
-index 1234567..abcdefg 100644
+index fbf333f..d7cb5e6 100644
 --- a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt
 +++ b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/CameraPlugin.kt
-@@ -46,10 +46,10 @@
+@@ -46,10 +46,10 @@ import org.json.JSONException
  class CameraPlugin : Plugin() {
  
      companion object {
@@ -18,13 +52,15 @@ index 1234567..abcdefg 100644
  
      private lateinit var legacyFlow: LegacyCameraFlow
 diff --git a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt
-index 2345678..bcdefgh 100644
+index 21cb005..ff72663 100644
 --- a/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt
 +++ b/node_modules/@capacitor/camera/android/src/main/java/com/capacitorjs/plugins/camera/IonCameraFlow.kt
-@@ -537,7 +537,7 @@
+@@ -537,7 +537,7 @@ class IonCameraFlow(
+                         putExtra(IONCAMRImageEditorActivity.IMAGE_OUTPUT_URI_EXTRAS, lastEditUri)
                      }
                  }
 -                processResultEditFromGallery(intent)
 +                processResultEditFromGallery(intent ?: return)
                  lastEditUri = null
              }
+             Activity.RESULT_CANCELED -> {
