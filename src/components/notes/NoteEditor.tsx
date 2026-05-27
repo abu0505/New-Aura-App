@@ -62,6 +62,7 @@ interface NoteEditorProps {
   labels: string[];
   onToggleLabel: (noteId: string, label: string) => void;
   onAddLabel: (label: string) => void;
+  onDeleteLabel: (label: string) => void;
 }
 
 type BottomPanel = 'none' | 'colors' | 'backgrounds' | 'mood' | 'labels' | 'more';
@@ -79,6 +80,7 @@ export default function NoteEditor({
   labels,
   onToggleLabel,
   onAddLabel,
+  onDeleteLabel,
 }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
@@ -1488,18 +1490,31 @@ export default function NoteEditor({
                           {labels.map(label => {
                             const isActive = note.labels.includes(label);
                             return (
-                              <button
+                              <div
                                 key={label}
-                                onClick={() => onToggleLabel(note.id, label)}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                                  isActive
-                                    ? 'bg-[var(--gold)]/15 text-[var(--gold)] border-[var(--gold)]/30'
-                                    : 'bg-white/5 text-white/40 border-white/8 hover:border-white/15'
-                                }`}
+                                className="group flex items-center bg-white/3 hover:bg-white/5 border border-white/8 hover:border-white/15 rounded-full pr-1 pl-2.5 py-0.5 transition-all"
                               >
-                                {isActive && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check</span>}
-                                {label}
-                              </button>
+                                <button
+                                  onClick={() => onToggleLabel(note.id, label)}
+                                  className={`flex items-center gap-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-left transition-all ${
+                                    isActive ? 'text-[var(--gold)]' : 'text-white/40 group-hover:text-white/60'
+                                  }`}
+                                >
+                                  {isActive && <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>}
+                                  {label}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm(`Delete label "${label}" globally? This removes it from all notes.`)) {
+                                      onDeleteLabel(label);
+                                    }
+                                  }}
+                                  className="w-5 h-5 rounded-full flex items-center justify-center ml-1 text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                  title={`Delete label "${label}"`}
+                                >
+                                  <span className="material-symbols-outlined select-none" style={{ fontSize: '12px' }}>close</span>
+                                </button>
+                              </div>
                             );
                           })}
                         </div>
