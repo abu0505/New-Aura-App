@@ -830,14 +830,14 @@ export default function NoteEditor({
           {note.isChecklist ? (
             <div className="flex flex-col gap-0.5">
               {note.checklist.map((item, idx) => (
-                <div key={item.id} className="flex items-start gap-2 group/item py-1">
+                <div key={item.id} className="flex items-center gap-2 group/item py-1">
                   <button
                     onClick={() => onUpdateChecklistItem(note.id, item.id, { checked: !item.checked })}
-                    className="mt-0.5 shrink-0"
+                    className="shrink-0 flex items-center justify-center"
                   >
                     <span className={`material-symbols-outlined text-lg ${
                       item.checked ? 'text-[var(--gold)]/60' : 'text-white/25'
-                    }`} style={{ fontSize: '20px' }}>
+                    }`} style={{ fontSize: '20px', display: 'block', lineHeight: '1' }}>
                       {item.checked ? 'check_box' : 'check_box_outline_blank'}
                     </span>
                   </button>

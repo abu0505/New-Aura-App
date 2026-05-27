@@ -228,10 +228,10 @@ function NoteCard({
                 <div key={item.id} className="flex items-center gap-2">
                   <span className={`material-symbols-outlined text-sm ${
                     item.checked ? 'text-[var(--gold)]/60' : 'text-white/25'
-                  }`} style={{ fontSize: '14px' }}>
+                  }`} style={{ fontSize: '14px', display: 'block', lineHeight: '1' }}>
                     {item.checked ? 'check_box' : 'check_box_outline_blank'}
                   </span>
-                  <span className={`text-xs ${
+                  <span className={`text-xs leading-none ${
                     item.checked
                       ? 'line-through text-[var(--text-secondary)]/50'
                       : 'text-[var(--text-secondary)]'
