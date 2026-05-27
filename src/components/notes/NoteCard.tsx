@@ -80,16 +80,36 @@ function NoteCard({
       try {
         const keys = getStoredKeyPair();
         if (!keys) return;
-        
-        const decrypted = nacl.secretbox.open(
-          decodeBase64(customBg.ciphertext),
-          decodeBase64(customBg.nonce),
-          keys.secretKey
-        );
-        
-        if (decrypted && isMounted) {
-          const text = new TextDecoder().decode(decrypted);
-          setDecryptedBg(text);
+
+        // New format: { url, nonce } — fetch encrypted bytes from Cloudinary
+        if ('url' in customBg && (customBg as any).url) {
+          const response = await fetch((customBg as any).url);
+          const arrayBuffer = await response.arrayBuffer();
+          const cipherBytes = new Uint8Array(arrayBuffer);
+          const decrypted = nacl.secretbox.open(
+            cipherBytes,
+            decodeBase64(customBg.nonce),
+            keys.secretKey
+          );
+          if (decrypted && isMounted) {
+            const blob = new Blob([decrypted as unknown as BlobPart]);
+            const blobUrl = URL.createObjectURL(blob);
+            setDecryptedBg(blobUrl);
+          }
+          return;
+        }
+
+        // Legacy format: { ciphertext, nonce } — inline base64 in DB
+        if ('ciphertext' in customBg && (customBg as any).ciphertext) {
+          const decrypted = nacl.secretbox.open(
+            decodeBase64((customBg as any).ciphertext),
+            decodeBase64(customBg.nonce),
+            keys.secretKey
+          );
+          if (decrypted && isMounted) {
+            const text = new TextDecoder().decode(decrypted);
+            setDecryptedBg(text);
+          }
         }
       } catch (e) {
         console.error('Failed to decrypt note custom background:', e);

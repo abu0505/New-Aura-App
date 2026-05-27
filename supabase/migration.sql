@@ -170,18 +170,7 @@ CREATE TABLE IF NOT EXISTS chat_settings (
   true_dark_mode BOOLEAN DEFAULT false,
   quick_emojis TEXT[] DEFAULT ARRAY['❤️', '😂', '😮', '😢', '😡', '👍'],
   notification_alias TEXT,
-  notification_bodies TEXT[] DEFAULT ARRAY[
-    'Someone is thinking of you 💭',
-    'A whisper has arrived for you 🤫',
-    'Your sanctuary has a new message ✨',
-    'Something special is waiting for you 💌',
-    'A secret message has arrived 🔐',
-    'You have been summoned to the sanctuary 🕯️',
-    'A gentle knock on your heart 💛',
-    'Love is calling you back 📱',
-    'The universe sent you a signal 🌙',
-    'Your world just got a little brighter ☀️'
-  ],
+  notification_bodies TEXT[] DEFAULT NULL, -- Defaults handled client-side + edge function
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

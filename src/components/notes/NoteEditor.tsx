@@ -380,6 +380,7 @@ export default function NoteEditor({
   }, [showColorMenu]);
 
   // Decrypt custom background image if present
+  // Supports both legacy (inline ciphertext) and new (Cloudinary URL) formats
   useEffect(() => {
     const customBg = note.customBg;
     if (!customBg) {
@@ -391,16 +392,37 @@ export default function NoteEditor({
       try {
         const keys = getStoredKeyPair();
         if (!keys) return;
-        
-        const decrypted = nacl.secretbox.open(
-          decodeBase64(customBg.ciphertext),
-          decodeBase64(customBg.nonce),
-          keys.secretKey
-        );
-        
-        if (decrypted && isMounted) {
-          const text = new TextDecoder().decode(decrypted);
-          setDecryptedBg(text);
+
+        // New format: { url, nonce } — fetch encrypted bytes from Cloudinary then decrypt
+        if ('url' in customBg && (customBg as any).url) {
+          const response = await fetch((customBg as any).url);
+          const arrayBuffer = await response.arrayBuffer();
+          const cipherBytes = new Uint8Array(arrayBuffer);
+          const decrypted = nacl.secretbox.open(
+            cipherBytes,
+            decodeBase64(customBg.nonce),
+            keys.secretKey
+          );
+          if (decrypted && isMounted) {
+            // The decrypted bytes are the original image file bytes
+            const blob = new Blob([decrypted as unknown as BlobPart]);
+            const blobUrl = URL.createObjectURL(blob);
+            setDecryptedBg(blobUrl);
+          }
+          return;
+        }
+
+        // Legacy format: { ciphertext, nonce } — inline base64 in DB
+        if ('ciphertext' in customBg && (customBg as any).ciphertext) {
+          const decrypted = nacl.secretbox.open(
+            decodeBase64((customBg as any).ciphertext),
+            decodeBase64(customBg.nonce),
+            keys.secretKey
+          );
+          if (decrypted && isMounted) {
+            const text = new TextDecoder().decode(decrypted);
+            setDecryptedBg(text);
+          }
         }
       } catch (e) {
         console.error('Failed to decrypt custom background image:', e);
@@ -410,8 +432,10 @@ export default function NoteEditor({
     return () => { isMounted = false; };
   }, [note.customBg]);
 
-  // Handle local background image upload & encryption
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isBgUploading, setIsBgUploading] = useState(false);
+
+  // Handle local background image upload — encrypts raw file bytes and uploads to Cloudinary
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -420,36 +444,46 @@ export default function NoteEditor({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const result = event.target?.result;
-      if (typeof result !== 'string') return;
-
-      try {
-        const keys = getStoredKeyPair();
-        if (!keys) {
-          alert('Encryption keys not found. Please setup your PIN/keys.');
-          return;
-        }
-
-        const encoder = new TextEncoder();
-        const dataUint8 = encoder.encode(result);
-
-        const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-        const encrypted = nacl.secretbox(dataUint8, nonce, keys.secretKey);
-
-        const customBg = {
-          ciphertext: encodeBase64(encrypted),
-          nonce: encodeBase64(nonce)
-        };
-
-        onUpdate(note.id, { customBg });
-      } catch (err) {
-        console.error('Encryption failed:', err);
-        alert('Failed to encrypt and save image.');
+    try {
+      setIsBgUploading(true);
+      const keys = getStoredKeyPair();
+      if (!keys) {
+        alert('Encryption keys not found. Please setup your PIN/keys.');
+        return;
       }
-    };
-    reader.readAsDataURL(file);
+
+      // Read file as raw bytes
+      const arrayBuffer = await file.arrayBuffer();
+      const dataUint8 = new Uint8Array(arrayBuffer);
+
+      // Encrypt the raw image bytes with secretbox (symmetric, using our secret key)
+      const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+      const encrypted = nacl.secretbox(dataUint8, nonce, keys.secretKey);
+
+      // Upload encrypted bytes to Cloudinary as raw file (Cloudinary sees unreadable data)
+      const formData = new FormData();
+      formData.append('file', new Blob([encrypted as unknown as BlobPart]), 'note_bg.enc');
+      formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
+        { method: 'POST', body: formData }
+      );
+      if (!response.ok) throw new Error('Cloudinary upload failed');
+      const result = await response.json();
+
+      // Store only { url, nonce } in DB — ~100 bytes vs ~300KB+ before
+      const customBg = {
+        url: result.secure_url,
+        nonce: encodeBase64(nonce)
+      };
+
+      onUpdate(note.id, { customBg });
+    } catch (err) {
+      console.error('Encryption/upload failed:', err);
+      alert('Failed to encrypt and upload image.');
+    } finally {
+      setIsBgUploading(false);
+    }
   };
 
   // Save on close
@@ -1277,13 +1311,18 @@ export default function NoteEditor({
                         />
                         <button
                           onClick={() => fileInputRef.current?.click()}
+                          disabled={isBgUploading}
                           className={`w-14 h-14 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 flex-shrink-0 ${
                             note.customBg ? 'border-[var(--gold)] scale-105' : 'border-dashed border-white/30 hover:border-white/50'
-                          } bg-white/5`}
+                          } bg-white/5 ${isBgUploading ? 'opacity-50 cursor-wait' : ''}`}
                           title="Upload Custom Background"
                         >
-                          <span className="material-symbols-outlined text-white/60" style={{ fontSize: '22px' }}>add_photo_alternate</span>
-                          <span className="text-[7px] text-white/40 font-medium">{note.customBg ? 'Change' : 'Upload'}</span>
+                          {isBgUploading ? (
+                            <span className="animate-spin material-symbols-outlined text-white/60" style={{ fontSize: '22px' }}>progress_activity</span>
+                          ) : (
+                            <span className="material-symbols-outlined text-white/60" style={{ fontSize: '22px' }}>add_photo_alternate</span>
+                          )}
+                          <span className="text-[7px] text-white/40 font-medium">{isBgUploading ? 'Uploading...' : note.customBg ? 'Change' : 'Upload'}</span>
                         </button>
 
                         {note.customBg && (
@@ -1329,27 +1368,36 @@ export default function NoteEditor({
                                     try {
                                       const keys = getStoredKeyPair();
                                       if (!keys) return;
+                                      setIsBgUploading(true);
                                       
-                                      // Convert blobUrl → dataURL via canvas/FileReader
+                                      // Fetch the decrypted blob, get raw image bytes
                                       const res = await fetch(blobUrl);
                                       const blob = await res.blob();
-                                      const dataUrl: string = await new Promise((resolve, reject) => {
-                                        const reader = new FileReader();
-                                        reader.onload = (ev) => resolve(ev.target?.result as string);
-                                        reader.onerror = reject;
-                                        reader.readAsDataURL(blob);
-                                      });
+                                      const arrayBuffer = await blob.arrayBuffer();
+                                      const dataUint8 = new Uint8Array(arrayBuffer);
                                       
-                                      const encoder = new TextEncoder();
-                                      const dataUint8 = encoder.encode(dataUrl);
+                                      // Encrypt raw bytes with secretbox
                                       const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
                                       const encrypted = nacl.secretbox(dataUint8, nonce, keys.secretKey);
                                       
+                                      // Upload encrypted bytes to Cloudinary
+                                      const formData = new FormData();
+                                      formData.append('file', new Blob([encrypted as unknown as BlobPart]), 'note_bg.enc');
+                                      formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+                                      const uploadRes = await fetch(
+                                        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
+                                        { method: 'POST', body: formData }
+                                      );
+                                      if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
+                                      const uploadResult = await uploadRes.json();
+                                      
                                       onUpdate(note.id, {
-                                        customBg: { ciphertext: encodeBase64(encrypted), nonce: encodeBase64(nonce) }
+                                        customBg: { url: uploadResult.secure_url, nonce: encodeBase64(nonce) }
                                       });
                                     } catch (err) {
                                       console.error('Failed to use memory as background:', err);
+                                    } finally {
+                                      setIsBgUploading(false);
                                     }
                                   }}
                                   className={`w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105 hover:border-white/40 relative flex items-center justify-center ${

@@ -28,8 +28,12 @@ export interface Note {
   updatedAt: string;
   // Mood journaling — unique feature
   mood: NoteMood | null;
+  // Custom background — supports two formats:
+  // Legacy: { ciphertext: string, nonce: string } (inline encrypted base64 in DB)
+  // New:    { url: string, nonce: string } (encrypted file on Cloudinary, URL in DB)
   customBg?: {
-    ciphertext: string;
+    ciphertext?: string;
+    url?: string;
     nonce: string;
   } | null;
   customColor?: string | null;
