@@ -18,7 +18,6 @@ export interface Note {
   color: NoteColor;
   background: NoteBackground;
   isPinned: boolean;
-  isArchived: boolean;
   isTrashed: boolean;
   trashedAt: string | null;
   labels: string[];
@@ -66,7 +65,7 @@ export type NoteBackground =
 export type NoteMood = 'happy' | 'calm' | 'grateful' | 'energetic' | 'reflective' | 'anxious' | 'sad';
 
 export type NoteView = 'grid' | 'list';
-export type NoteFilter = 'all' | 'archived' | 'trash' | string; // string = label name
+export type NoteFilter = 'all' | 'trash' | string; // string = label name
 
 // Google Keep-inspired dark theme colors
 export const NOTE_COLORS: Record<NoteColor, { bg: string; border: string; label: string }> = {
@@ -112,6 +111,9 @@ const STORAGE_KEY = 'aura_notes';
 const LABELS_KEY = 'aura_note_labels';
 const TRASH_EXPIRY_DAYS = 7;
 
+// Shared couple ID — both users share this fixed ID for all notes/labels
+const COUPLE_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
 // Helper to map DB row back to Note camelCase keys
 const mapDbNoteToNote = (db: any): Note => ({
   id: db.id,
@@ -120,7 +122,6 @@ const mapDbNoteToNote = (db: any): Note => ({
   color: db.color || 'default',
   background: db.background || 'none',
   isPinned: db.is_pinned || false,
-  isArchived: db.is_archived || false,
   isTrashed: db.is_trashed || false,
   trashedAt: db.trashed_at,
   labels: db.labels || [],
@@ -150,17 +151,19 @@ export function useNotes() {
   const fetchNotesAndLabels = useCallback(async () => {
     if (!user) return;
     try {
+      // Fetch all notes for the shared couple (both users see same notes)
       const { data: notesData, error: notesError } = await supabase
         .from('notes')
         .select('*')
-        .eq('user_id', user.id);
+        .eq('couple_id', COUPLE_ID);
 
       if (notesError) throw notesError;
 
+      // Fetch shared labels for the couple
       const { data: labelsData, error: labelsError } = await supabase
         .from('note_labels')
         .select('name')
-        .eq('user_id', user.id)
+        .eq('couple_id', COUPLE_ID)
         .order('created_at', { ascending: true });
 
       if (labelsError) throw labelsError;
@@ -210,12 +213,12 @@ export function useNotes() {
           const toInsert = localNotes.map(n => ({
             id: n.id,
             user_id: userId,
+            couple_id: COUPLE_ID,
             title: n.title,
             content: n.content,
             color: n.color,
             background: n.background,
             is_pinned: n.isPinned,
-            is_archived: n.isArchived,
             is_trashed: n.isTrashed,
             trashed_at: n.trashedAt,
             labels: n.labels,
@@ -242,9 +245,10 @@ export function useNotes() {
         if (localLabels.length > 0) {
           const toInsert = localLabels.map(l => ({
             user_id: userId,
+            couple_id: COUPLE_ID,
             name: l
           }));
-          await supabase.from('note_labels').upsert(toInsert, { onConflict: 'user_id,name' });
+          await supabase.from('note_labels').upsert(toInsert, { onConflict: 'couple_id,name' });
           localStorage.removeItem(localLabelsKey);
         }
       } catch (e) {
@@ -264,16 +268,16 @@ export function useNotes() {
 
     init();
 
-    // Subscribe to realtime updates for notes
+    // Subscribe to realtime updates for shared notes (both users)
     const notesChannel = supabase
-      .channel(`notes-changes-${user.id}`)
+      .channel(`notes-couple-changes`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'notes',
-          filter: `user_id=eq.${user.id}`
+          filter: `couple_id=eq.${COUPLE_ID}`
         },
         () => {
           fetchNotesAndLabels();
@@ -281,16 +285,16 @@ export function useNotes() {
       )
       .subscribe();
 
-    // Subscribe to realtime updates for labels
+    // Subscribe to realtime updates for shared labels
     const labelsChannel = supabase
-      .channel(`note-labels-changes-${user.id}`)
+      .channel(`note-labels-couple-changes`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'note_labels',
-          filter: `user_id=eq.${user.id}`
+          filter: `couple_id=eq.${COUPLE_ID}`
         },
         () => {
           fetchNotesAndLabels();
@@ -316,7 +320,6 @@ export function useNotes() {
       color: 'default',
       background: 'none',
       isPinned: false,
-      isArchived: false,
       isTrashed: false,
       trashedAt: null,
       labels: [],
@@ -334,12 +337,12 @@ export function useNotes() {
     supabase.from('notes').insert({
       id: note.id,
       user_id: user.id,
+      couple_id: COUPLE_ID,
       title: note.title,
       content: note.content,
       color: note.color,
       background: note.background,
       is_pinned: note.isPinned,
-      is_archived: note.isArchived,
       is_trashed: note.isTrashed,
       trashed_at: note.trashedAt,
       labels: note.labels,
@@ -372,7 +375,6 @@ export function useNotes() {
     if (changes.color !== undefined) payload.color = changes.color;
     if (changes.background !== undefined) payload.background = changes.background;
     if (changes.isPinned !== undefined) payload.is_pinned = changes.isPinned;
-    if (changes.isArchived !== undefined) payload.is_archived = changes.isArchived;
     if (changes.isTrashed !== undefined) payload.is_trashed = changes.isTrashed;
     if (changes.trashedAt !== undefined) payload.trashed_at = changes.trashedAt;
     if (changes.labels !== undefined) payload.labels = changes.labels;
@@ -385,7 +387,7 @@ export function useNotes() {
     supabase.from('notes')
       .update(payload)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('couple_id', COUPLE_ID)
       .then(({ error }) => {
         if (error) console.error("Error updating note:", error);
       });
@@ -399,7 +401,7 @@ export function useNotes() {
     supabase.from('notes')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('couple_id', COUPLE_ID)
       .then(({ error }) => {
         if (error) console.error("Error deleting note:", error);
       });
@@ -411,14 +413,6 @@ export function useNotes() {
 
   const restoreNote = useCallback((id: string) => {
     updateNote(id, { isTrashed: false, trashedAt: null });
-  }, [updateNote]);
-
-  const archiveNote = useCallback((id: string) => {
-    updateNote(id, { isArchived: true, isPinned: false });
-  }, [updateNote]);
-
-  const unarchiveNote = useCallback((id: string) => {
-    updateNote(id, { isArchived: false });
   }, [updateNote]);
 
   const togglePin = useCallback((id: string) => {
@@ -484,6 +478,7 @@ export function useNotes() {
     supabase.from('note_labels')
       .insert({
         user_id: user.id,
+        couple_id: COUPLE_ID,
         name: trimmed
       })
       .then(({ error }) => {
@@ -502,14 +497,14 @@ export function useNotes() {
     supabase.from('note_labels')
       .delete()
       .eq('name', labelName)
-      .eq('user_id', user.id)
+      .eq('couple_id', COUPLE_ID)
       .then(({ error }) => {
         if (error) console.error("Error removing label:", error);
       });
 
     supabase.from('notes')
       .select('id, labels')
-      .eq('user_id', user.id)
+      .eq('couple_id', COUPLE_ID)
       .contains('labels', [labelName])
       .then(({ data }) => {
         if (data) {
@@ -542,7 +537,7 @@ export function useNotes() {
     supabase.from('notes')
       .delete()
       .eq('is_trashed', true)
-      .eq('user_id', user.id)
+      .eq('couple_id', COUPLE_ID)
       .then(({ error }) => {
         if (error) console.error("Error emptying trash:", error);
       });
@@ -558,8 +553,6 @@ export function useNotes() {
     deleteNotePermanently,
     trashNote,
     restoreNote,
-    archiveNote,
-    unarchiveNote,
     togglePin,
     duplicateNote,
     // Checklist

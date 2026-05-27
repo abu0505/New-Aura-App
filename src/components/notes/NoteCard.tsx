@@ -38,7 +38,6 @@ interface NoteCardProps {
   viewMode: 'grid' | 'list';
   onOpen: (note: Note) => void;
   onPin: (id: string) => void;
-  onArchive: (id: string) => void;
   onTrash: (id: string) => void;
   onRestore?: (id: string) => void;
   onDeletePermanently?: (id: string) => void;
@@ -52,7 +51,6 @@ function NoteCard({
   viewMode,
   onOpen,
   onPin,
-  onArchive,
   onTrash,
   onRestore,
   onDeletePermanently,
@@ -346,15 +344,6 @@ function NoteCard({
               title={note.isPinned ? 'Unpin' : 'Pin'}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: note.isPinned ? "'FILL' 1" : '' }}>push_pin</span>
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onArchive(note.id); }}
-              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors shrink-0"
-              title={note.isArchived ? 'Unarchive' : 'Archive'}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
-                {note.isArchived ? 'unarchive' : 'archive'}
-              </span>
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onTrash(note.id); }}

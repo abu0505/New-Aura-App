@@ -14,8 +14,6 @@ export default function NotesScreen() {
     deleteNotePermanently,
     trashNote,
     restoreNote,
-    archiveNote,
-    unarchiveNote,
     togglePin,
     duplicateNote,
     addChecklistItem,
@@ -60,14 +58,12 @@ export default function NotesScreen() {
 
     // Apply filter
     if (filter === 'all') {
-      filtered = filtered.filter(n => !n.isArchived && !n.isTrashed);
-    } else if (filter === 'archived') {
-      filtered = filtered.filter(n => n.isArchived && !n.isTrashed);
+      filtered = filtered.filter(n => !n.isTrashed);
     } else if (filter === 'trash') {
       filtered = filtered.filter(n => n.isTrashed);
     } else {
       // Label filter
-      filtered = filtered.filter(n => !n.isArchived && !n.isTrashed && n.labels.includes(filter));
+      filtered = filtered.filter(n => !n.isTrashed && n.labels.includes(filter));
     }
 
     // Apply search
@@ -139,11 +135,6 @@ export default function NotesScreen() {
     cancelSelection();
   };
 
-  const bulkArchive = () => {
-    selectedIds.forEach(id => archiveNote(id));
-    cancelSelection();
-  };
-
   // Re-fetch the editing note when notes update (keep editor in sync)
   const currentEditingNote = useMemo(() => {
     if (!editingNote) return null;
@@ -189,13 +180,6 @@ export default function NotesScreen() {
               <p className="text-sm text-white/80 font-medium">{selectedIds.size} selected</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={bulkArchive}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10 transition-all"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>archive</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider hidden lg:block">Archive</span>
-              </button>
               <button
                 onClick={bulkTrash}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400/70 hover:text-red-400 hover:bg-red-500/15 transition-all"
@@ -303,7 +287,6 @@ export default function NotesScreen() {
             <div className="flex gap-2 overflow-x-auto scrollbar-hide pr-4 -mx-1 px-1">
               {[
                 { key: 'all', label: 'All Notes', icon: 'notes' },
-                { key: 'archived', label: 'Archive', icon: 'archive' },
                 { key: 'trash', label: 'Trash', icon: 'delete' },
               ].map(f => (
                 <button
@@ -415,12 +398,12 @@ export default function NotesScreen() {
                   transition={{ delay: 0.1 }}
                 >
                   <span className="material-symbols-outlined text-6xl text-white/10">
-                    {filter === 'trash' ? 'delete_sweep' : filter === 'archived' ? 'inventory_2' : searchQuery ? 'search_off' : 'sticky_note_2'}
+                    {filter === 'trash' ? 'delete_sweep' : searchQuery ? 'search_off' : 'sticky_note_2'}
                   </span>
                 </motion.div>
                 <div className="text-center">
                   <p className="text-sm text-white/30 mb-1">
-                    {filter === 'trash' ? 'Trash is empty' : filter === 'archived' ? 'No archived notes' : searchQuery ? 'No matching notes' : 'No notes yet'}
+                    {filter === 'trash' ? 'Trash is empty' : searchQuery ? 'No matching notes' : 'No notes yet'}
                   </p>
                   <p className="text-xs text-white/15">
                     {filter === 'all' && !searchQuery && 'Tap the + button to create your first note'}
@@ -463,7 +446,6 @@ export default function NotesScreen() {
                               viewMode={viewMode}
                               onOpen={handleOpenNote}
                               onPin={togglePin}
-                              onArchive={handleArchiveAction}
                               onTrash={trashNote}
                               isSelected={selectedIds.has(note.id)}
                               onSelect={handleSelect}
@@ -482,7 +464,6 @@ export default function NotesScreen() {
                               viewMode={viewMode}
                               onOpen={handleOpenNote}
                               onPin={togglePin}
-                              onArchive={handleArchiveAction}
                               onTrash={trashNote}
                               isSelected={selectedIds.has(note.id)}
                               onSelect={handleSelect}
@@ -515,7 +496,6 @@ export default function NotesScreen() {
                               viewMode={viewMode}
                               onOpen={handleOpenNote}
                               onPin={togglePin}
-                              onArchive={handleArchiveAction}
                               onTrash={trashNote}
                               onRestore={restoreNote}
                               onDeletePermanently={deleteNotePermanently}
@@ -536,7 +516,6 @@ export default function NotesScreen() {
                               viewMode={viewMode}
                               onOpen={handleOpenNote}
                               onPin={togglePin}
-                              onArchive={handleArchiveAction}
                               onTrash={trashNote}
                               onRestore={restoreNote}
                               onDeletePermanently={deleteNotePermanently}
