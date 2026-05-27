@@ -303,14 +303,14 @@ function NoteCard({
           <>
             <button
               onClick={(e) => { e.stopPropagation(); onRestore?.(note.id); }}
-              className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors shrink-0"
               title="Restore"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>restore_from_trash</span>
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onDeletePermanently?.(note.id); }}
-              className="p-1.5 rounded-full hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-colors shrink-0"
               title="Delete permanently"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete_forever</span>
@@ -320,7 +320,7 @@ function NoteCard({
           <>
             <button
               onClick={(e) => { e.stopPropagation(); onPin(note.id); }}
-              className={`p-1.5 rounded-full hover:bg-white/10 transition-colors ${
+              className={`flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 transition-colors shrink-0 ${
                 note.isPinned ? 'text-[var(--gold)]' : 'text-white/40 hover:text-white/70'
               }`}
               title={note.isPinned ? 'Unpin' : 'Pin'}
@@ -329,7 +329,7 @@ function NoteCard({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onArchive(note.id); }}
-              className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors shrink-0"
               title={note.isArchived ? 'Unarchive' : 'Archive'}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>
@@ -338,7 +338,7 @@ function NoteCard({
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); onTrash(note.id); }}
-              className="p-1.5 rounded-full hover:bg-white/10 text-white/40 hover:text-red-400/70 transition-colors"
+              className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/40 hover:text-red-400/70 transition-colors shrink-0"
               title="Delete"
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
