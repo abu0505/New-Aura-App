@@ -9,6 +9,7 @@ const StoriesScreen = lazy(() => import('./components/stories/StoriesScreen'));
 const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration'));
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen'));
+const NotesScreen = lazy(() => import('./components/notes/NotesScreen'));
 import AppLayout from './components/layout/AppLayout';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -261,6 +262,9 @@ function InnerApp({
           </div>
           <div className={activeTab === 'memories' ? 'h-full w-full' : 'hidden'}>
             <MemoriesScreen />
+          </div>
+          <div className={activeTab === 'notes' ? 'h-full w-full' : 'hidden'}>
+            <NotesScreen />
           </div>
 
           <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>

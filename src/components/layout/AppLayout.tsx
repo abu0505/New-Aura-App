@@ -164,6 +164,13 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
               <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Memories</span>
             </button>
             <button
+              onClick={() => onTabChange('notes')}
+              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'notes' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+            >
+              <span className="material-symbols-outlined text-2xl">sticky_note_2</span>
+              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>
+            </button>
+            <button
               onClick={() => onTabChange('settings')}
               className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
             >
@@ -202,7 +209,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${((activeTab === 'chat' || activeTab === 'memories') && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
+      <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${((activeTab === 'chat' || activeTab === 'memories' || activeTab === 'notes') && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
         {/* Chat */}
         <button
           onClick={() => changeTab('chat')}
@@ -228,6 +235,15 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
         >
           <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'memories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'memories' ? "'FILL' 1" : "" }}>photo_library</span>
           <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Memories</span>
+        </button>
+
+        {/* Notes */}
+        <button
+          onClick={() => changeTab('notes')}
+          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'notes' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+        >
+          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'notes' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'notes' ? "'FILL' 1" : "" }}>sticky_note_2</span>
+          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Notes</span>
         </button>
 
         {/* Settings */}
