@@ -102,9 +102,32 @@ export const MOOD_CONFIG: Record<NoteMood, { emoji: string; label: string; gradi
   sad:        { emoji: '😢', label: 'Sad',        gradient: 'linear-gradient(135deg, rgba(80,100,160,0.15), rgba(60,80,140,0.08))' },
 };
 
+import { supabase } from '../lib/supabase';
+
 const STORAGE_KEY = 'aura_notes';
 const LABELS_KEY = 'aura_note_labels';
 const TRASH_EXPIRY_DAYS = 7;
+
+// Helper to map DB row back to Note camelCase keys
+const mapDbNoteToNote = (db: any): Note => ({
+  id: db.id,
+  title: db.title || '',
+  content: db.content || '',
+  color: db.color || 'default',
+  background: db.background || 'none',
+  isPinned: db.is_pinned || false,
+  isArchived: db.is_archived || false,
+  isTrashed: db.is_trashed || false,
+  trashedAt: db.trashed_at,
+  labels: db.labels || [],
+  checklist: db.checklist || [],
+  isChecklist: db.is_checklist || false,
+  createdAt: db.created_at || new Date().toISOString(),
+  updatedAt: db.updated_at || new Date().toISOString(),
+  mood: db.mood || null,
+  customBg: db.custom_bg || null,
+  customColor: db.custom_color || null,
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HOOK
@@ -119,51 +142,168 @@ export function useNotes() {
 
   useEffect(() => { notesRef.current = notes; }, [notes]);
 
-  // ── Load from localStorage ────────────────────────────────────────────
-  useEffect(() => {
+  // ── Fetch from Supabase ──────────────────────────────────────────────
+  const fetchNotesAndLabels = useCallback(async () => {
     if (!user) return;
     try {
-      const key = `${STORAGE_KEY}_${user.id}`;
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed: Note[] = JSON.parse(raw);
-        // Auto-delete trash items older than 7 days
-        const now = Date.now();
-        const cleaned = parsed.filter(n => {
-          if (n.isTrashed && n.trashedAt) {
-            const elapsed = now - new Date(n.trashedAt).getTime();
-            return elapsed < TRASH_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+      const { data: notesData, error: notesError } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (notesError) throw notesError;
+
+      const { data: labelsData, error: labelsError } = await supabase
+        .from('note_labels')
+        .select('name')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+
+      if (labelsError) throw labelsError;
+
+      const mappedNotes = (notesData || []).map(mapDbNoteToNote);
+
+      // Auto-delete trash items older than 7 days
+      const now = Date.now();
+      const expiredTrashIds: string[] = [];
+      const cleanedNotes = mappedNotes.filter(n => {
+        if (n.isTrashed && n.trashedAt) {
+          const elapsed = now - new Date(n.trashedAt).getTime();
+          const expired = elapsed >= TRASH_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+          if (expired) {
+            expiredTrashIds.push(n.id);
           }
-          return true;
-        });
-        setNotes(cleaned);
-        if (cleaned.length !== parsed.length) {
-          localStorage.setItem(key, JSON.stringify(cleaned));
+          return !expired;
         }
+        return true;
+      });
+
+      if (expiredTrashIds.length > 0) {
+        supabase.from('notes').delete().in('id', expiredTrashIds).then();
       }
 
-      const labelsRaw = localStorage.getItem(`${LABELS_KEY}_${user.id}`);
-      if (labelsRaw) setLabels(JSON.parse(labelsRaw));
-    } catch {
-      // ignore corrupt data
+      setNotes(cleanedNotes);
+      setLabels((labelsData || []).map(l => l.name));
+    } catch (err) {
+      console.error('Error fetching notes/labels:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }, [user?.id]);
+  }, [user]);
 
-  // ── Persist to localStorage ───────────────────────────────────────────
-  const persist = useCallback((updatedNotes: Note[]) => {
-    if (!user) return;
-    localStorage.setItem(`${STORAGE_KEY}_${user.id}`, JSON.stringify(updatedNotes));
-  }, [user?.id]);
+  // ── Migrate from localStorage ──────────────────────────────────────────
+  const migrateLocalNotes = useCallback(async (userId: string) => {
+    const localNotesKey = `${STORAGE_KEY}_${userId}`;
+    const localLabelsKey = `${LABELS_KEY}_${userId}`;
 
-  const persistLabels = useCallback((updatedLabels: string[]) => {
+    const localNotesRaw = localStorage.getItem(localNotesKey);
+    const localLabelsRaw = localStorage.getItem(localLabelsKey);
+
+    if (localNotesRaw) {
+      try {
+        const localNotes: Note[] = JSON.parse(localNotesRaw);
+        if (localNotes.length > 0) {
+          const toInsert = localNotes.map(n => ({
+            id: n.id,
+            user_id: userId,
+            title: n.title,
+            content: n.content,
+            color: n.color,
+            background: n.background,
+            is_pinned: n.isPinned,
+            is_archived: n.isArchived,
+            is_trashed: n.isTrashed,
+            trashed_at: n.trashedAt,
+            labels: n.labels,
+            checklist: n.checklist,
+            is_checklist: n.isChecklist,
+            custom_bg: n.customBg,
+            custom_color: n.customColor,
+            mood: n.mood,
+            created_at: n.createdAt,
+            updated_at: n.updatedAt
+          }));
+
+          await supabase.from('notes').upsert(toInsert);
+          localStorage.removeItem(localNotesKey);
+        }
+      } catch (e) {
+        console.error('Error migrating local notes:', e);
+      }
+    }
+
+    if (localLabelsRaw) {
+      try {
+        const localLabels: string[] = JSON.parse(localLabelsRaw);
+        if (localLabels.length > 0) {
+          const toInsert = localLabels.map(l => ({
+            user_id: userId,
+            name: l
+          }));
+          await supabase.from('note_labels').upsert(toInsert, { onConflict: 'user_id,name' });
+          localStorage.removeItem(localLabelsKey);
+        }
+      } catch (e) {
+        console.error('Error migrating local labels:', e);
+      }
+    }
+  }, []);
+
+  // ── Initialize and Subscribe ─────────────────────────────────────────
+  useEffect(() => {
     if (!user) return;
-    localStorage.setItem(`${LABELS_KEY}_${user.id}`, JSON.stringify(updatedLabels));
-  }, [user?.id]);
+
+    const init = async () => {
+      await migrateLocalNotes(user.id);
+      await fetchNotesAndLabels();
+    };
+
+    init();
+
+    // Subscribe to realtime updates for notes
+    const notesChannel = supabase
+      .channel(`notes-changes-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'notes',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchNotesAndLabels();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to realtime updates for labels
+    const labelsChannel = supabase
+      .channel(`note-labels-changes-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'note_labels',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchNotesAndLabels();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(notesChannel);
+      supabase.removeChannel(labelsChannel);
+    };
+  }, [user, fetchNotesAndLabels, migrateLocalNotes]);
 
   // ── CRUD ──────────────────────────────────────────────────────────────
 
   const createNote = useCallback((partial?: Partial<Note>): Note => {
+    if (!user) throw new Error("No user authenticated");
     const now = new Date().toISOString();
     const note: Note = {
       id: crypto.randomUUID(),
@@ -183,25 +323,83 @@ export function useNotes() {
       mood: null,
       ...partial,
     };
-    const updated = [note, ...notesRef.current];
-    setNotes(updated);
-    persist(updated);
+
+    // Optimistic Update
+    setNotes(prev => [note, ...prev]);
+
+    supabase.from('notes').insert({
+      id: note.id,
+      user_id: user.id,
+      title: note.title,
+      content: note.content,
+      color: note.color,
+      background: note.background,
+      is_pinned: note.isPinned,
+      is_archived: note.isArchived,
+      is_trashed: note.isTrashed,
+      trashed_at: note.trashedAt,
+      labels: note.labels,
+      checklist: note.checklist,
+      is_checklist: note.isChecklist,
+      custom_bg: note.customBg,
+      custom_color: note.customColor,
+      mood: note.mood,
+      created_at: note.createdAt,
+      updated_at: note.updatedAt
+    }).then(({ error }) => {
+      if (error) console.error("Error inserting note:", error);
+    });
+
     return note;
-  }, [persist]);
+  }, [user]);
 
   const updateNote = useCallback((id: string, changes: Partial<Note>) => {
-    const updated = notesRef.current.map(n =>
-      n.id === id ? { ...n, ...changes, updatedAt: new Date().toISOString() } : n
-    );
-    setNotes(updated);
-    persist(updated);
-  }, [persist]);
+    if (!user) return;
+    const now = new Date().toISOString();
+
+    // Optimistic Update
+    setNotes(prev => prev.map(n =>
+      n.id === id ? { ...n, ...changes, updatedAt: now } : n
+    ));
+
+    const payload: any = { updated_at: now };
+    if (changes.title !== undefined) payload.title = changes.title;
+    if (changes.content !== undefined) payload.content = changes.content;
+    if (changes.color !== undefined) payload.color = changes.color;
+    if (changes.background !== undefined) payload.background = changes.background;
+    if (changes.isPinned !== undefined) payload.is_pinned = changes.isPinned;
+    if (changes.isArchived !== undefined) payload.is_archived = changes.isArchived;
+    if (changes.isTrashed !== undefined) payload.is_trashed = changes.isTrashed;
+    if (changes.trashedAt !== undefined) payload.trashed_at = changes.trashedAt;
+    if (changes.labels !== undefined) payload.labels = changes.labels;
+    if (changes.checklist !== undefined) payload.checklist = changes.checklist;
+    if (changes.isChecklist !== undefined) payload.is_checklist = changes.isChecklist;
+    if (changes.customBg !== undefined) payload.custom_bg = changes.customBg;
+    if (changes.customColor !== undefined) payload.custom_color = changes.customColor;
+    if (changes.mood !== undefined) payload.mood = changes.mood;
+
+    supabase.from('notes')
+      .update(payload)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .then(({ error }) => {
+        if (error) console.error("Error updating note:", error);
+      });
+  }, [user]);
 
   const deleteNotePermanently = useCallback((id: string) => {
-    const updated = notesRef.current.filter(n => n.id !== id);
-    setNotes(updated);
-    persist(updated);
-  }, [persist]);
+    if (!user) return;
+    // Optimistic Update
+    setNotes(prev => prev.filter(n => n.id !== id));
+
+    supabase.from('notes')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .then(({ error }) => {
+        if (error) console.error("Error deleting note:", error);
+      });
+  }, [user]);
 
   const trashNote = useCallback((id: string) => {
     updateNote(id, { isTrashed: true, trashedAt: new Date().toISOString(), isPinned: false });
@@ -237,6 +435,7 @@ export function useNotes() {
       isChecklist: original.isChecklist,
       mood: original.mood,
       customBg: original.customBg ? { ...original.customBg } : null,
+      customColor: original.customColor,
     });
   }, [createNote]);
 
@@ -271,23 +470,55 @@ export function useNotes() {
   // ── Labels ────────────────────────────────────────────────────────────
 
   const addLabel = useCallback((labelName: string) => {
-    if (labels.includes(labelName)) return;
-    const updated = [...labels, labelName];
-    setLabels(updated);
-    persistLabels(updated);
-  }, [labels, persistLabels]);
+    if (!user) return;
+    const trimmed = labelName.trim();
+    if (!trimmed || labels.includes(trimmed)) return;
+
+    // Optimistic Update
+    setLabels(prev => [...prev, trimmed]);
+
+    supabase.from('note_labels')
+      .insert({
+        user_id: user.id,
+        name: trimmed
+      })
+      .then(({ error }) => {
+        if (error) console.error("Error adding label:", error);
+      });
+  }, [user, labels]);
 
   const removeLabel = useCallback((labelName: string) => {
-    const updated = labels.filter(l => l !== labelName);
-    setLabels(updated);
-    persistLabels(updated);
-    // Remove label from all notes
-    const updatedNotes = notesRef.current.map(n =>
+    if (!user) return;
+    // Optimistic Update
+    setLabels(prev => prev.filter(l => l !== labelName));
+    setNotes(prev => prev.map(n =>
       n.labels.includes(labelName) ? { ...n, labels: n.labels.filter(l => l !== labelName) } : n
-    );
-    setNotes(updatedNotes);
-    persist(updatedNotes);
-  }, [labels, persistLabels, persist]);
+    ));
+
+    supabase.from('note_labels')
+      .delete()
+      .eq('name', labelName)
+      .eq('user_id', user.id)
+      .then(({ error }) => {
+        if (error) console.error("Error removing label:", error);
+      });
+
+    supabase.from('notes')
+      .select('id, labels')
+      .eq('user_id', user.id)
+      .contains('labels', [labelName])
+      .then(({ data }) => {
+        if (data) {
+          data.forEach(note => {
+            const updatedLabels = note.labels.filter((l: string) => l !== labelName);
+            supabase.from('notes')
+              .update({ labels: updatedLabels })
+              .eq('id', note.id)
+              .then();
+          });
+        }
+      });
+  }, [user]);
 
   const toggleNoteLabel = useCallback((noteId: string, labelName: string) => {
     const note = notesRef.current.find(n => n.id === noteId);
@@ -300,10 +531,18 @@ export function useNotes() {
 
   // ── Empty trash ───────────────────────────────────────────────────────
   const emptyTrash = useCallback(() => {
-    const updated = notesRef.current.filter(n => !n.isTrashed);
-    setNotes(updated);
-    persist(updated);
-  }, [persist]);
+    if (!user) return;
+    // Optimistic Update
+    setNotes(prev => prev.filter(n => !n.isTrashed));
+
+    supabase.from('notes')
+      .delete()
+      .eq('is_trashed', true)
+      .eq('user_id', user.id)
+      .then(({ error }) => {
+        if (error) console.error("Error emptying trash:", error);
+      });
+  }, [user]);
 
   return {
     notes,
@@ -332,3 +571,4 @@ export function useNotes() {
     emptyTrash,
   };
 }
+
