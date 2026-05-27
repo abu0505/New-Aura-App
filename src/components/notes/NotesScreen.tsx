@@ -145,15 +145,6 @@ export default function NotesScreen() {
     setEditingNote(note);
   }, []);
 
-  const handleArchiveAction = useCallback((id: string) => {
-    const note = notes.find(n => n.id === id);
-    if (note?.isArchived) {
-      unarchiveNote(id);
-    } else {
-      archiveNote(id);
-    }
-  }, [notes, archiveNote, unarchiveNote]);
-
   const trashCount = useMemo(() => notes.filter(n => n.isTrashed).length, [notes]);
 
   // Toggle search
@@ -595,7 +586,6 @@ export default function NotesScreen() {
             onUpdate={updateNote}
             onClose={() => setEditingNote(null)}
             onTrash={trashNote}
-            onArchive={handleArchiveAction}
             onDuplicate={duplicateNote}
             onTogglePin={togglePin}
             onAddChecklistItem={addChecklistItem}

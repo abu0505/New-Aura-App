@@ -54,7 +54,6 @@ interface NoteEditorProps {
   onUpdate: (id: string, changes: Partial<Note>) => void;
   onClose: () => void;
   onTrash: (id: string) => void;
-  onArchive: (id: string) => void;
   onDuplicate: (id: string) => void;
   onTogglePin: (id: string) => void;
   onAddChecklistItem: (noteId: string, text?: string) => void;
@@ -72,7 +71,6 @@ export default function NoteEditor({
   onUpdate,
   onClose,
   onTrash,
-  onArchive,
   onDuplicate,
   onTogglePin,
   onAddChecklistItem,
@@ -822,13 +820,6 @@ export default function NoteEditor({
               title={note.isPinned ? 'Unpin' : 'Pin'}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '20px', fontVariationSettings: note.isPinned ? "'FILL' 1" : '' }}>push_pin</span>
-            </button>
-            <button
-              onClick={() => { onArchive(note.id); onClose(); }}
-              className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"
-              title={note.isArchived ? 'Unarchive' : 'Archive'}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{note.isArchived ? 'unarchive' : 'archive'}</span>
             </button>
             <button
               onClick={() => togglePanel('more')}
