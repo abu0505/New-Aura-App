@@ -853,9 +853,9 @@ export default function NoteEditor({
                   />
                   <button
                     onClick={() => onRemoveChecklistItem(note.id, item.id)}
-                    className="opacity-0 group-hover/item:opacity-100 p-1 rounded-full hover:bg-white/10 text-white/25 hover:text-white/50 transition-all shrink-0"
+                    className="opacity-0 group-hover/item:opacity-100 w-7 h-7 rounded-full flex items-center justify-center hover:bg-white/10 text-white/25 hover:text-white/50 transition-all shrink-0"
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+                    <span className="material-symbols-outlined" style={{ fontSize: '16px', display: 'block', lineHeight: '1' }}>close</span>
                   </button>
                 </div>
               ))}
