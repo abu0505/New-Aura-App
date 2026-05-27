@@ -295,7 +295,7 @@ function NoteCard({
 
       {/* Hover actions (desktop) */}
       <div
-        className={`absolute bottom-0 left-0 right-0 flex items-center justify-between px-2 py-1.5 bg-black/30 backdrop-blur-sm transition-all duration-200 ${
+        className={`absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between px-2 py-1.5 bg-black/30 backdrop-blur-sm transition-all duration-200 ${
           showActions && !selectionMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
         }`}
       >
