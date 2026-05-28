@@ -530,6 +530,11 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
+          {viewMode === 'chat' && (
+            <div className="absolute top-[96px] left-[56px] z-30 pointer-events-auto">
+              <StreakBadge variant="full" />
+            </div>
+          )}
           <AnimatePresence>
             {isDraggingOver && (
               <motion.div
@@ -560,6 +565,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   nonce={bgData.nonce}
                   alt="Chat Background"
                   className="w-full h-full object-cover opacity-30"
+                  placeholder=""
                 />
                 <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" />
               </div>
@@ -571,12 +577,12 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               <div className="relative">
                 <div className="w-12 h-12 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden">
                   <EncryptedImage
-                    url={partner.avatar_url}
-                    encryptionKey={partner.avatar_key}
-                    nonce={partner.avatar_nonce}
-                    alt="Partner Avatar"
-                    className="w-full h-full object-cover rounded-full"
-                    placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=000000`}
+                     url={partner.avatar_url}
+                     encryptionKey={partner.avatar_key}
+                     nonce={partner.avatar_nonce}
+                     alt="Partner Avatar"
+                     className="w-full h-full object-cover rounded-full"
+                     placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=000000`}
                   />
                 </div>
                 {partner.is_online && (
@@ -586,8 +592,6 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               <div>
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
-                  {/* Streak Badge — full variant in desktop header */}
-                  <StreakBadge variant="full" />
                 </div>
                 <p className="text-[10px] font-label tracking-[0.2em] text-aura-text-secondary uppercase mt-0.5">
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />

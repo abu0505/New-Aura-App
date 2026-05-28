@@ -535,8 +535,6 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} compact />
                 </span>
               </div>
-              {/* Streak Badge — compact pill in mobile header */}
-              <StreakBadge variant="compact" />
             </div>
           </div>
           <div className="flex items-center gap-4 text-aura-text-secondary">
@@ -633,6 +631,11 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col relative overflow-hidden">
+          {viewMode === 'chat' && (
+            <div className="absolute top-4 left-4 z-30 pointer-events-auto">
+              <StreakBadge variant="compact" />
+            </div>
+          )}
           
           {viewMode === 'pinned' && (
             <div className="bg-primary/10 backdrop-blur-md border-b border-primary/20 px-4 py-3 flex items-center justify-between shadow-lg z-30 relative shrink-0">
