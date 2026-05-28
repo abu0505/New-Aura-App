@@ -84,9 +84,13 @@ function ChatBubble({
   const isMine = message.is_mine;
   const time = new Date(message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
+  const isNoteHighlight = !!message.decrypted_content?.startsWith('[NOTE_HIGHLIGHT]:');
+  const highlightText = isNoteHighlight ? message.decrypted_content!.substring('[NOTE_HIGHLIGHT]:'.length) : '';
+  const rawContent = isNoteHighlight ? highlightText : (message.decrypted_content || '');
+
   // Extract URLs
   const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|in|me|app|dev|to)(?:\/[^\s]*)?)/gi;
-  const rawUrls = message.decrypted_content?.match(urlRegex) || [];
+  const rawUrls = rawContent.match(urlRegex) || [];
   const urls = rawUrls.map(u => u.trim());
 
   const formatUrl = (url: string) => {
@@ -994,10 +998,27 @@ function ChatBubble({
           className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${interactionType !== 'none' ? 'scale-95 z-40' : ''} ${
           (message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker
              ? 'bg-transparent shadow-none px-0 py-0' 
-             : isMine 
-               ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
-               : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
+             : isNoteHighlight
+               ? `px-4 py-3 rounded-2xl ${!isFirst ? (isMine ? 'rounded-tr-sm' : 'rounded-tl-sm') : ''} ${!isLast ? (isMine ? 'rounded-br-sm' : 'rounded-bl-sm') : ''} border backdrop-blur-xl`
+               : isMine 
+                 ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
+                 : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
+          style={
+            isNoteHighlight && !((message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker)
+              ? {
+                  background: isMine 
+                    ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(28, 28, 46, 0.95) 100%)'
+                    : 'linear-gradient(135deg, rgba(201, 169, 110, 0.15) 0%, rgba(19, 19, 30, 0.95) 100%)',
+                  border: isMine 
+                    ? '1px solid rgba(212, 175, 55, 0.4)'
+                    : '1px solid rgba(201, 169, 110, 0.3)',
+                  boxShadow: isMine 
+                    ? '0 8px 32px rgba(212, 175, 55, 0.08), inset 0 0 12px rgba(212, 175, 55, 0.05)'
+                    : '0 8px 32px rgba(201, 169, 110, 0.05), inset 0 0 12px rgba(201, 169, 110, 0.03)',
+                }
+              : undefined
+          }
         >
         {decryptionError ? (
           <div className="flex items-center gap-2 py-1 px-1">
@@ -1057,13 +1078,26 @@ function ChatBubble({
           </div>
         )}
         {message.decrypted_content && !isSticker && (
-          <div className={`${message.media_url ? 
-            (isMine 
-              ? `mt-1 px-3 py-2 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''} w-fit ml-auto min-w-[80px]` 
-              : `mt-1 px-3 py-2 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5 shadow-lg w-fit mr-auto min-w-[80px]`) 
-            : 'text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words'}`}>
-            
-            {message.media_url ? (
+          <div className={
+            isNoteHighlight 
+              ? 'flex flex-col gap-1.5 min-w-[180px]'
+              : message.media_url ? 
+                (isMine 
+                  ? `mt-1 px-3 py-2 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''} w-fit ml-auto min-w-[80px]` 
+                  : `mt-1 px-3 py-2 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5 shadow-lg w-fit mr-auto min-w-[80px]`) 
+                : 'text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words'
+          }>
+            {isNoteHighlight ? (
+              <div className="flex flex-col gap-1.5 relative z-20">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--gold)]">
+                  <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>sticky_note_2</span>
+                  <span>Note Highlight</span>
+                </div>
+                <div className="text-[14px] leading-relaxed font-body italic pl-3 border-l-2 border-[var(--gold)]/60 text-white/95 whitespace-pre-wrap break-words">
+                  {renderContent(highlightText)}
+                </div>
+              </div>
+            ) : message.media_url ? (
               <div className="flex flex-col">
                 <div className="text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words">
                   {renderContent(message.decrypted_content)}

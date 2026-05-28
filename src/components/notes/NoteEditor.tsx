@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Note, ChecklistItem, NoteColor, NoteMood } from '../../hooks/useNotes';
 import { NOTE_COLORS, NOTE_BACKGROUNDS, MOOD_CONFIG } from '../../hooks/useNotes';
-import { getStoredKeyPair, decodeBase64, encodeBase64 } from '../../lib/encryption';
+import { getStoredKeyPair, decodeBase64, encodeBase64, encryptMessage } from '../../lib/encryption';
 import { useMedia } from '../../hooks/useMedia';
 import nacl from 'tweetnacl';
 import { useAuth } from '../../contexts/AuthContext';
@@ -520,15 +520,126 @@ export default function NoteEditor({
     });
   }, []);
 
-  useEffect(() => {
-    const handler = () => {
-      updateActiveStyles();
-    };
-    document.addEventListener('selectionchange', handler);
-    return () => {
-      document.removeEventListener('selectionchange', handler);
-    };
+  const [selectionDetails, setSelectionDetails] = useState<{
+    text: string;
+    x: number;
+    y: number;
+    show: boolean;
+  }>({ text: '', x: 0, y: 0, show: false });
+
+  const handleSelectionChange = useCallback(() => {
+    updateActiveStyles();
+
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.toString().trim() === '') {
+      setSelectionDetails(prev => prev.show ? { ...prev, show: false } : prev);
+      return;
+    }
+
+    const selectedText = selection.toString();
+    
+    if (
+      contentEditableRef.current &&
+      (contentEditableRef.current.contains(selection.anchorNode) ||
+        contentEditableRef.current.contains(selection.focusNode))
+    ) {
+      try {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        
+        const tooltipWidthEstimate = 120;
+        const rightEdgeLimit = window.innerWidth - 16;
+        
+        let x = rect.right;
+        // If placing it centered at rect.right extends beyond the right edge limit, place it at rect.left instead
+        if (rect.right + tooltipWidthEstimate / 2 > rightEdgeLimit) {
+          x = rect.left;
+          // Ensure it doesn't clip off the left edge either
+          if (x - tooltipWidthEstimate / 2 < 16) {
+            x = Math.max(tooltipWidthEstimate / 2 + 16, rect.left);
+          }
+        }
+        const y = Math.max(10, rect.top - 45);
+        
+        setSelectionDetails({
+          text: selectedText,
+          x,
+          y,
+          show: true
+        });
+      } catch (e) {
+        // Safe fallback
+      }
+    } else {
+      setSelectionDetails(prev => prev.show ? { ...prev, show: false } : prev);
+    }
   }, [updateActiveStyles]);
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [handleSelectionChange]);
+
+  const handleSendHighlightToChat = async () => {
+    if (!selectionDetails.text.trim() || !user || !partner || !partner.public_key) return;
+
+    try {
+      const myKeyPair = getStoredKeyPair();
+      if (!myKeyPair) {
+        alert('Encryption keys not found. Please setup your PIN/keys.');
+        return;
+      }
+
+      const messageText = `[NOTE_HIGHLIGHT]:${selectionDetails.text.trim()}`;
+      const encrypted = encryptMessage(messageText, decodeBase64(partner.public_key), myKeyPair.secretKey);
+      const ciphertext = encrypted.ciphertext;
+      const nonce = encrypted.nonce;
+      const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
+      const msgId = crypto.randomUUID();
+
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          id: msgId,
+          sender_id: user.id,
+          receiver_id: partner.id,
+          encrypted_content: ciphertext,
+          nonce: nonce,
+          type: 'text',
+          sender_public_key: myPublicKeyStr,
+        });
+
+      if (error) throw error;
+
+      // Silently invoke push notification
+      try {
+        const { data: { session: freshSession } } = await supabase.auth.getSession();
+        if (freshSession) {
+          supabase.functions.invoke('send-push', {
+            body: { 
+              record: { 
+                id: msgId,
+                sender_id: user.id,
+                receiver_id: partner.id,
+              } 
+            }
+          }).then();
+        }
+      } catch (err) {
+        // Ignore push failures
+      }
+
+      // Close editor
+      onClose();
+      // Switch tab to chat
+      document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'chat' }));
+    } catch (err) {
+      console.error('Failed to send note highlight to chat:', err);
+      alert('Failed to send highlight to chat.');
+    }
+  };
 
   // Focus title if empty, else focus content
   useEffect(() => {
@@ -779,6 +890,27 @@ export default function NoteEditor({
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+
+      {/* Selection Tooltip */}
+      {selectionDetails.show && (
+        <div
+          className="fixed z-[300] -translate-x-1/2 flex items-center bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-full px-3.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-auto"
+          style={{
+            left: `${selectionDetails.x}px`,
+            top: `${selectionDetails.y}px`,
+          }}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={handleSendHighlightToChat}
+            className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[var(--gold)] hover:text-white transition-colors"
+          >
+            <span className="material-symbols-outlined text-[15px]" style={{ fontVariationSettings: "'wght' 700" }}>forum</span>
+            <span>Send to Chat</span>
+          </button>
+        </div>
+      )}
 
       {/* Editor card */}
       <motion.div
