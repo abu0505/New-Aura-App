@@ -14,6 +14,7 @@ import { useMediaFolders } from '../../hooks/useMediaFolders';
 import { supabase } from '../../lib/supabase';
 import { useGarbageContext } from '../../contexts/GarbageContext';
 import { toast } from 'sonner';
+import { NOTE_COLORS, type NoteColor } from '../../hooks/useNotes';
 
 /** Extract cloud_name and public_id from a Cloudinary URL */
 function parseCloudinaryUrl(url: string): { cloudName: string; publicId: string } | null {
@@ -84,9 +85,51 @@ function ChatBubble({
   const isMine = message.is_mine;
   const time = new Date(message.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 
-  const isNoteHighlight = !!message.decrypted_content?.startsWith('[NOTE_HIGHLIGHT]:');
-  const highlightText = isNoteHighlight ? message.decrypted_content!.substring('[NOTE_HIGHLIGHT]:'.length) : '';
+  const isNoteHighlight = !!message.decrypted_content?.startsWith('[NOTE_HIGHLIGHT');
+  
+  let noteColor = 'default';
+  let noteCustomColor = '';
+  let highlightText = '';
+  
+  if (isNoteHighlight) {
+    const match = message.decrypted_content!.match(/^\[NOTE_HIGHLIGHT:color=([^&]+)&customColor=([^\]]+)\]:(.*)$/s);
+    if (match) {
+      noteColor = match[1];
+      noteCustomColor = match[2] === 'none' ? '' : match[2];
+      highlightText = match[3];
+    } else if (message.decrypted_content!.startsWith('[NOTE_HIGHLIGHT]:')) {
+      highlightText = message.decrypted_content!.substring('[NOTE_HIGHLIGHT]:'.length);
+    }
+  }
+  
   const rawContent = isNoteHighlight ? highlightText : (message.decrypted_content || '');
+
+  // Calculate accent styles dynamically based on note colors
+  const getNoteHighlightColors = () => {
+    let accentColor = 'var(--gold)';
+    let bubbleBg = 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(28, 28, 46, 0.95) 100%)';
+    let bubbleBorder = '1px solid rgba(212, 175, 55, 0.4)';
+    
+    if (noteCustomColor) {
+      accentColor = noteCustomColor;
+      bubbleBg = `linear-gradient(135deg, ${noteCustomColor}26 0%, rgba(28, 28, 46, 0.95) 100%)`;
+      bubbleBorder = `1px solid ${noteCustomColor}66`;
+    } else if (noteColor && noteColor !== 'default' && NOTE_COLORS[noteColor as NoteColor]) {
+      const cfg = NOTE_COLORS[noteColor as NoteColor];
+      // Make the accent color text fully opaque for readability by replacing alpha in rgba(r,g,b,a) with 1
+      accentColor = cfg.border.replace(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*[\d.]+\s*)?\)/gi, 'rgb($1, $2, $3)');
+      // If regex didn't match or replace, just use border color
+      if (accentColor === cfg.border) {
+        accentColor = cfg.border.replace(/[^,]+(?=\))/, '1');
+      }
+      bubbleBg = `linear-gradient(135deg, ${cfg.bg} 0%, rgba(28, 28, 46, 0.95) 100%)`;
+      bubbleBorder = `1px solid ${cfg.border}`;
+    }
+    
+    return { accentColor, bubbleBg, bubbleBorder };
+  };
+
+  const noteHighlightStyles = isNoteHighlight ? getNoteHighlightColors() : { accentColor: '', bubbleBg: '', bubbleBorder: '' };
 
   // Extract URLs
   const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.(?:com|org|net|io|co|in|me|app|dev|to)(?:\/[^\s]*)?)/gi;
@@ -1007,15 +1050,9 @@ function ChatBubble({
           style={
             isNoteHighlight && !((message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker)
               ? {
-                  background: isMine 
-                    ? 'linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(28, 28, 46, 0.95) 100%)'
-                    : 'linear-gradient(135deg, rgba(201, 169, 110, 0.15) 0%, rgba(19, 19, 30, 0.95) 100%)',
-                  border: isMine 
-                    ? '1px solid rgba(212, 175, 55, 0.4)'
-                    : '1px solid rgba(201, 169, 110, 0.3)',
-                  boxShadow: isMine 
-                    ? '0 8px 32px rgba(212, 175, 55, 0.08), inset 0 0 12px rgba(212, 175, 55, 0.05)'
-                    : '0 8px 32px rgba(201, 169, 110, 0.05), inset 0 0 12px rgba(201, 169, 110, 0.03)',
+                  background: noteHighlightStyles.bubbleBg,
+                  border: noteHighlightStyles.bubbleBorder,
+                  boxShadow: `0 8px 32px ${noteHighlightStyles.accentColor}14, inset 0 0 12px ${noteHighlightStyles.accentColor}0a`,
                 }
               : undefined
           }
@@ -1089,11 +1126,11 @@ function ChatBubble({
           }>
             {isNoteHighlight ? (
               <div className="flex flex-col gap-1.5 relative z-20">
-                <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.15em] text-[var(--gold)]">
+                <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: noteHighlightStyles.accentColor }}>
                   <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>sticky_note_2</span>
                   <span>Note Highlight</span>
                 </div>
-                <div className="text-[14px] leading-relaxed font-body italic pl-3 border-l-2 border-[var(--gold)]/60 text-white/95 whitespace-pre-wrap break-words">
+                <div className="text-[14px] leading-relaxed font-body italic pl-3 border-l-2 text-white/95 whitespace-pre-wrap break-words" style={{ borderLeftColor: `${noteHighlightStyles.accentColor}99` }}>
                   {renderContent(highlightText)}
                 </div>
               </div>

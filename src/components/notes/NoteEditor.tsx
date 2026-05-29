@@ -549,6 +549,7 @@ export default function NoteEditor({
         
         const tooltipWidthEstimate = 120;
         const rightEdgeLimit = window.innerWidth - 16;
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
         let x = rect.right;
         // If placing it centered at rect.right extends beyond the right edge limit, place it at rect.left instead
@@ -559,7 +560,11 @@ export default function NoteEditor({
             x = Math.max(tooltipWidthEstimate / 2 + 16, rect.left);
           }
         }
-        const y = Math.max(10, rect.top - 45);
+        
+        // Position below on mobile/touch to avoid system menu, above on desktop
+        const y = isTouchDevice 
+          ? rect.bottom + 12 
+          : Math.max(10, rect.top - 45);
         
         setSelectionDetails({
           text: selectedText,
@@ -592,7 +597,9 @@ export default function NoteEditor({
         return;
       }
 
-      const messageText = `[NOTE_HIGHLIGHT]:${selectionDetails.text.trim()}`;
+      const noteColor = note.color || 'default';
+      const noteCustomColor = note.customColor || 'none';
+      const messageText = `[NOTE_HIGHLIGHT:color=${noteColor}&customColor=${noteCustomColor}]:${selectionDetails.text.trim()}`;
       const encrypted = encryptMessage(messageText, decodeBase64(partner.public_key), myKeyPair.secretKey);
       const ciphertext = encrypted.ciphertext;
       const nonce = encrypted.nonce;
