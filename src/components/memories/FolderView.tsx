@@ -14,6 +14,7 @@ type LayoutMode = '2col' | '3col' | '4col' | 'bento';
 interface MemoryItem extends MessageRow {
   decryptedUrl?: string;
   loading?: boolean;
+  isChunkedVideo?: boolean;
 }
 
 interface FolderViewProps {
@@ -28,7 +29,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
   const { fetchFolderItems, removeItemFromFolder } = useMediaFolders();
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(true);
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; messageId?: string } | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('bento');
 
@@ -57,88 +58,194 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
     return `${base} ${bentoClass}`;
   };
 
+  // Concurrency queue — mirrors MemoriesScreen for performance parity
+  const MAX_CONCURRENT = 8;
+  const processingIdsRef = useRef<Set<string>>(new Set());
+  const decryptionQueueRef = useRef<string[]>([]);
   // Track which IDs we've already started decrypting to avoid stale-closure re-entry
   const decryptingRef = useRef<Set<string>>(new Set());
+  // Track generated blob URLs for cleanup on unmount ONLY (not on re-render)
+  const generatedUrlsRef = useRef<Set<string>>(new Set());
+  // Stable ref to latest items for the queue worker
+  const itemsRef = useRef<MemoryItem[]>([]);
 
   useEffect(() => {
+    let ignore = false;
+    console.log('[FolderView] useEffect load triggered. folder.id:', folder.id, 'user.id:', user?.id, 'partner.id:', partner?.id);
     if (user?.id && partner?.id) {
-      loadFolderItems();
+      loadFolderItems(ignore);
+    } else {
+      console.warn('[FolderView] useEffect load skipped: user or partner not loaded yet');
     }
+    return () => { ignore = true; };
   }, [folder.id, user?.id, partner?.id]);
 
   useEffect(() => {
+    console.log('[FolderView] mounted');
     return () => {
+      console.log('[FolderView] unmounted, clearing decryptingRef');
       decryptingRef.current.clear();
     };
   }, []);
 
-  const loadFolderItems = async () => {
-    if (!user || !partner) return;
+  const loadFolderItems = async (ignore: boolean = false) => {
+    if (!user || !partner) {
+      console.warn('[FolderView] loadFolderItems skipped: user or partner is null');
+      return;
+    }
+    console.log('[FolderView] loadFolderItems started for folder:', folder.id, 'name:', folder.name);
     setLoadingItems(true);
     decryptingRef.current.clear();
 
     try {
       const messageIds = await fetchFolderItems(folder.id);
+      if (ignore) return;
+      console.log('[FolderView] fetchFolderItems found message IDs:', messageIds);
       if (messageIds.length === 0) {
+        console.log('[FolderView] Empty collection');
         setItems([]);
         setLoadingItems(false);
         return;
       }
 
+      console.log('[FolderView] Querying supabase messages table for messageIds:', messageIds);
       const { data, error } = await supabase
         .from('messages')
-        .select('id,sender_id,media_url,media_key,media_nonce,type,created_at,sender_public_key')
+        .select('id,sender_id,media_url,media_key,media_nonce,type,created_at,sender_public_key,thumbnail_url')
         .in('id', messageIds)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[FolderView] Supabase messages query error:', error);
+        throw error;
+      }
+      if (ignore) return;
 
       const loaded = (data || []) as MemoryItem[];
+      console.log('[FolderView] Supabase returned messages count:', loaded.length, 'data:', loaded.map(m => ({ id: m.id, type: m.type, hasMedia: !!m.media_url, isChunked: m.type === 'video' && !m.media_url })));
       setLoadingItems(false);
       setItems(loaded);
+      itemsRef.current = loaded;
 
-      // Kick off decryption for ALL items immediately after load
-      // Folder collections are small (usually 1–50 items), so eager load is fine
-      loaded.forEach(item => decryptItem(item));
+      // Build decryption queue and kick off workers (same pattern as MemoriesScreen)
+      decryptionQueueRef.current = loaded
+        .filter(m => {
+          const isChunked = m.type === 'video' && !m.media_url;
+          // chunked videos: need thumbnail_url + media_key + media_nonce
+          if (isChunked) return !!m.thumbnail_url && !!m.media_key && !!m.media_nonce;
+          // regular media: need media_url + media_key + media_nonce
+          return !!m.media_url && !!m.media_key && !!m.media_nonce;
+        })
+        .map(m => m.id);
+      console.log('[FolderView] Decryption queue built, length:', decryptionQueueRef.current.length);
+      for (let i = 0; i < MAX_CONCURRENT; i++) processQueueItem(ignore);
     } catch (err) {
-      
-      setLoadingItems(false);
+      console.error('[FolderView] loadFolderItems failed with error:', err);
+      if (!ignore) setLoadingItems(false);
     }
   };
 
-  const decryptItem = async (memory: MemoryItem) => {
-    if (!partner?.public_key || !memory.media_url || !memory.media_key || !memory.media_nonce) return;
-    if (decryptingRef.current.has(memory.id)) return;
-    decryptingRef.current.add(memory.id);
+  // Queue-based decryption worker — same pattern as MemoriesScreen for performance parity
+  const processQueueItem = async (ignore: boolean = false) => {
+    if (processingIdsRef.current.size >= MAX_CONCURRENT) return;
+    if (decryptionQueueRef.current.length === 0) return;
+    if (!partner?.public_key) return;
 
-    setItems(prev => prev.map(m => m.id === memory.id ? { ...m, loading: true } : m));
+    const nextId = decryptionQueueRef.current.find(id => !processingIdsRef.current.has(id));
+    if (!nextId) return;
+
+    // Remove from queue
+    decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
+
+    const memory = itemsRef.current.find(m => m.id === nextId);
+    if (!memory || memory.decryptedUrl || memory.loading) {
+      processQueueItem(ignore);
+      return;
+    }
+
+    // Detect chunked video: type='video' and no media_url (stored in video_chunks table)
+    const isChunked = memory.type === 'video' && !memory.media_url;
+    const decryptUrl = isChunked ? memory.thumbnail_url : memory.media_url;
+
+    console.log('[FolderView] processQueueItem:', nextId, 'isChunked:', isChunked, 'decryptUrl:', decryptUrl);
+
+    if (!decryptUrl || !memory.media_key || !memory.media_nonce) {
+      // Chunked video without thumbnail — show play icon only (no thumbnail available)
+      if (isChunked) {
+        setItems(prev => {
+          const updated = prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: true } : m);
+          itemsRef.current = updated;
+          return updated;
+        });
+      }
+      processQueueItem(ignore);
+      return;
+    }
+
+    processingIdsRef.current.add(nextId);
+    setItems(prev => {
+      const updated = prev.map(m => m.id === nextId ? { ...m, loading: true } : m);
+      itemsRef.current = updated;
+      return updated;
+    });
 
     try {
+      const historyKeys = partner.key_history?.map(k => k.public_key) || undefined;
+      // For chunked videos, decrypt the thumbnail (always an image)
       const blob = await getDecryptedBlob(
-        memory.media_url,
+        decryptUrl,
         memory.media_key,
         memory.media_nonce,
-        partner.public_key
+        partner.public_key,
+        memory.sender_public_key,
+        historyKeys,
+        isChunked ? 'image' : memory.type  // thumbnail is always image
       );
+      if (ignore) return;
       if (blob) {
         const url = URL.createObjectURL(blob);
-        setItems(prev => prev.map(m => m.id === memory.id ? { ...m, decryptedUrl: url, loading: false } : m));
+        generatedUrlsRef.current.add(url);
+        console.log('[FolderView] Decryption SUCCESS:', nextId, 'blobSize:', blob.size, 'isChunked:', isChunked);
+        setItems(prev => {
+          const updated = prev.map(m => m.id === nextId ? { ...m, decryptedUrl: url, loading: false, isChunkedVideo: isChunked } : m);
+          itemsRef.current = updated;
+          return updated;
+        });
       } else {
-        setItems(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
+        console.warn('[FolderView] Decryption returned null blob:', nextId);
+        setItems(prev => {
+          const updated = prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked } : m);
+          itemsRef.current = updated;
+          return updated;
+        });
       }
     } catch (err) {
-      
-      setItems(prev => prev.map(m => m.id === memory.id ? { ...m, loading: false } : m));
-      decryptingRef.current.delete(memory.id); // allow retry on failure
+      console.error('[FolderView] Decryption error:', nextId, err);
+      setItems(prev => {
+        const updated = prev.map(m => m.id === nextId ? { ...m, loading: false } : m);
+        itemsRef.current = updated;
+        return updated;
+      });
+    } finally {
+      processingIdsRef.current.delete(nextId);
+      // Process next item in queue
+      processQueueItem(ignore);
     }
   };
 
-  // Cleanup blob URLs on unmount
+  // Cleanup blob URLs on unmount ONLY — NOT on items change!
+  // The old code revoked URLs on every items state update, which killed blob URLs
+  // that MediaViewer was still displaying (causing ERR_FILE_NOT_FOUND).
   useEffect(() => {
     return () => {
-      items.forEach(r => { if (r.decryptedUrl) URL.revokeObjectURL(r.decryptedUrl); });
+      console.log('[FolderView] Unmount cleanup: revoking all generated blob URLs. Count:', generatedUrlsRef.current.size);
+      generatedUrlsRef.current.forEach(url => {
+        console.log('[FolderView] Revoking blob URL:', url);
+        URL.revokeObjectURL(url);
+      });
+      generatedUrlsRef.current.clear();
     };
-  }, [items]);
+  }, []);
 
   const handleRemove = async (messageId: string) => {
     await removeItemFromFolder(folder.id, messageId);
@@ -251,7 +358,14 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
                 }}
                 className={getItemClasses(index)}
               >
-                <div className="w-full h-full" onClick={() => memory.decryptedUrl && setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' })}>
+                <div className="w-full h-full" onClick={() => {
+                    if (memory.isChunkedVideo) {
+                      // Chunked video: open viewer with messageId so it fetches chunks
+                      setSelectedMedia({ url: memory.decryptedUrl || '', type: 'chunked_video', messageId: memory.id });
+                    } else if (memory.decryptedUrl) {
+                      setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' });
+                    }
+                  }}>
                   {memory.loading ? (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-[rgba(var(--primary-rgb),_0.2)] border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -261,9 +375,15 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
                       {memory.type === 'image' && (
                         <img src={memory.decryptedUrl} className="w-full h-full object-cover object-center" alt="Memory" />
                       )}
-                      {memory.type === 'video' && (
+                      {(memory.type === 'video' || memory.isChunkedVideo) && (
                         <div className="w-full h-full relative">
-                          <video src={memory.decryptedUrl} className="w-full h-full object-cover object-center" />
+                          {memory.decryptedUrl ? (
+                            <img src={memory.decryptedUrl} className="w-full h-full object-cover object-center" alt="Video thumbnail" />
+                          ) : (
+                            <div className="w-full h-full bg-black/60 flex items-center justify-center">
+                              <span className="material-symbols-outlined text-white/30 text-5xl">movie</span>
+                            </div>
+                          )}
                           <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                             <span className="material-symbols-outlined text-white text-3xl">play_circle</span>
                           </div>
@@ -353,6 +473,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
         <MediaViewer
           url={selectedMedia.url}
           type={selectedMedia.type as any}
+          messageId={selectedMedia.messageId}
           onClose={() => setSelectedMedia(null)}
         />
       )}

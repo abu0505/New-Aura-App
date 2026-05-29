@@ -93,6 +93,8 @@ export default function EncryptedImage({
   }
 
   if (error || !decryptedUrl) {
+    // Don't render a broken img tag if there's no placeholder
+    if (!placeholder) return null;
     return (
       <img 
         src={placeholder} 

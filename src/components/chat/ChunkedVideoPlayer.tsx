@@ -16,6 +16,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ReceivedChunk } from '../../hooks/useVideoChunks';
+import ChunkedVideoOverlay from './ChunkedVideoOverlay';
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
 
@@ -376,8 +377,8 @@ export default function ChunkedVideoPlayer({
       {/* ── Loading overlay (video URL not yet available) ─────────────────── */}
       {!isReady && !error && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-2"
-          style={{ zIndex: 20, background: 'rgba(0,0,0,0.8)' }}
+          className="absolute inset-0 z-20 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
         >
           {thumbnailUrl && (
             <img
@@ -386,16 +387,7 @@ export default function ChunkedVideoPlayer({
               className="absolute inset-0 w-full h-full object-cover opacity-40"
             />
           )}
-          <div
-            className="relative w-7 h-7 rounded-full border-2 border-t-transparent animate-spin"
-            style={{ borderColor: 'var(--gold)', borderTopColor: 'transparent' }}
-          />
-          <span
-            className="relative text-[10px] font-semibold"
-            style={{ color: 'var(--gold-light)' }}
-          >
-            Assembling video…
-          </span>
+          <ChunkedVideoOverlay status="Fetching video..." />
         </div>
       )}
 
@@ -437,26 +429,7 @@ export default function ChunkedVideoPlayer({
         />
       )}
 
-      {/* ── Buffering spinner ──────────────────────────────────────────── */}
-      <AnimatePresence>
-        {isBuffering && hasStarted && !error && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-            style={{ zIndex: 8 }}
-          >
-            <div
-              className="w-10 h-10 rounded-full border-[3px] border-t-transparent animate-spin"
-              style={{
-                borderColor: 'rgba(255,255,255,0.7)',
-                borderTopColor: 'transparent',
-              }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       {/* ── Paused icon (center) ───────────────────────────────────────── */}
       <AnimatePresence>

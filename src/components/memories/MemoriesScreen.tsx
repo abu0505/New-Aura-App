@@ -11,8 +11,8 @@ import MediaViewer from '../chat/MediaViewer';
 import SearchOverlay from './SearchOverlay';
 import FoldersPanel from './FoldersPanel';
 import FolderView from './FolderView';
-import OnThisDayCard from './OnThisDayCard';
-import RecapCard, { type RecapItem } from './RecapCard';
+import MomentsCarousel from './MomentsCarousel';
+import type { MomentGroup } from './MomentViewer';
 import TimelineScrubber from './TimelineScrubber';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
@@ -21,6 +21,7 @@ interface MemoryItem extends MessageRow {
   decryptedUrl?: string;
   decrypted_content?: string;
   loading?: boolean;
+  isChunkedVideo?: boolean;
 }
 
 type ViewMode = 'gallery' | 'search' | 'folders' | 'folder-view';
@@ -32,9 +33,9 @@ export default function MemoriesScreen() {
   const { folders, addItemsToFolder, createFolder } = useMediaFolders();
   const [memories, setMemories] = useState<MemoryItem[]>([]);
   const [throwbacks, setThrowbacks] = useState<MemoryItem[]>([]);
-  const [lastMonthItems, setLastMonthItems] = useState<RecapItem[]>([]);
-  const [lastWeekItems, setLastWeekItems] = useState<RecapItem[]>([]);
-  const [lastYearMonthItems, setLastYearMonthItems] = useState<RecapItem[]>([]);
+  const [lastMonthItems, setLastMonthItems] = useState<MemoryItem[]>([]);
+  const [lastWeekItems, setLastWeekItems] = useState<MemoryItem[]>([]);
+  const [lastYearMonthItems, setLastYearMonthItems] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -272,18 +273,27 @@ export default function MemoriesScreen() {
     if (!user || !partner) return;
     if (pageNumber === 1) setLoading(true);
     try {
+      // Build filter based on current tab
+      let mediaFilter: string;
+      if (filter === 'video') {
+        // Videos tab: show ALL videos (including chunked ones with null media_url)
+        mediaFilter = `type.eq.video`;
+      } else if (filter !== 'all' && filter !== 'favorites') {
+        // Specific type tab (image, audio, document): must have media_url
+        mediaFilter = `and(media_url.not.is.null,type.eq.${filter})`;
+      } else {
+        // All/Favorites: include anything with media_url OR type=video (chunked)
+        mediaFilter = `media_url.not.is.null,type.eq.video`;
+      }
+
       let query = supabase
         .from('messages')
-        .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,type,created_at,sender_public_key', { count: 'exact' })
-        .not('media_url', 'is', null)
+        .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,thumbnail_url,type,created_at,sender_public_key,duration', { count: 'exact' })
+        .or(mediaFilter)
         // Fix 5.1: Use correct AND filter — must have matching sender+receiver pairs
-        // Old: .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`) — TOO LOOSE, returns any msg the user was in
-        // New: explicit pair filter so we only get this conversation's media
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`);
 
-      if (filter !== 'all' && filter !== 'favorites') {
-        query = query.eq('type', filter);
-      } else if (filter === 'favorites') {
+      if (filter === 'favorites') {
         const favs = favoritesRef.current;
         if (favs.size === 0) {
           setMemories([]);
@@ -355,11 +365,11 @@ export default function MemoriesScreen() {
     ]);
 
     if (lastMonthRes.status === 'fulfilled' && !lastMonthRes.value.error)
-      setLastMonthItems((lastMonthRes.value.data as RecapItem[]) ?? []);
+      setLastMonthItems((lastMonthRes.value.data as MemoryItem[]) ?? []);
     if (lastWeekRes.status === 'fulfilled' && !lastWeekRes.value.error)
-      setLastWeekItems((lastWeekRes.value.data as RecapItem[]) ?? []);
+      setLastWeekItems((lastWeekRes.value.data as MemoryItem[]) ?? []);
     if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error)
-      setLastYearMonthItems((lastYearMonthRes.value.data as RecapItem[]) ?? []);
+      setLastYearMonthItems((lastYearMonthRes.value.data as MemoryItem[]) ?? []);
   };
 
   useEffect(() => {
@@ -413,17 +423,45 @@ export default function MemoriesScreen() {
 
   // ── Priority Queue Logic ──
   const processQueue = useCallback(async () => {
-    if (processingIdsRef.current.size >= MAX_CONCURRENT_DECRYPTIONS) return;
-    if (decryptionQueueRef.current.length === 0) return;
+    if (processingIdsRef.current.size >= MAX_CONCURRENT_DECRYPTIONS) {
+      console.log('[MemoriesScreen] processQueue: Max concurrent limit reached:', processingIdsRef.current.size);
+      return;
+    }
+    if (decryptionQueueRef.current.length === 0) {
+      return;
+    }
 
     // Filter out items already being processed
     const nextId = decryptionQueueRef.current.find(id => !processingIdsRef.current.has(id));
-    if (!nextId) return;
+    if (!nextId) {
+      console.log('[MemoriesScreen] processQueue: All items in queue are already processing.');
+      return;
+    }
 
     const memory = memoriesRef.current.find(m => m.id === nextId);
     if (!memory || memory.decryptedUrl || memory.loading) {
+      console.log('[MemoriesScreen] processQueue: Next item invalid, skipping:', nextId, { found: !!memory, decrypted: !!memory?.decryptedUrl, loading: !!memory?.loading });
       // Remove invalid items from queue
       decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
+      processQueue();
+      return;
+    }
+
+    // Determine what URL to decrypt: for chunked videos (media_url=null), use thumbnail_url
+    const isChunked = memory.type === 'video' && !memory.media_url;
+    const decryptUrl = isChunked ? (memory as any).thumbnail_url : memory.media_url;
+    
+    console.log('[MemoriesScreen] processQueue: Starting decryption for item:', nextId, 'isChunked:', isChunked, 'decryptUrl:', decryptUrl);
+
+    // Skip items with no decryptable URL
+    if (!decryptUrl || !memory.media_key || !memory.media_nonce) {
+      console.warn('[FolderView] processQueue: Item missing decryption parameters:', nextId, { url: !!decryptUrl, key: !!memory.media_key, nonce: !!memory.media_nonce });
+      decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
+      // For chunked videos without thumbnail, mark as done (show play icon only)
+      if (isChunked) {
+        console.log('[MemoriesScreen] processQueue: Chunked video without thumbnail completed (e.g. sender side or missing thumbnail):', nextId);
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: true } : m));
+      }
       processQueue();
       return;
     }
@@ -433,25 +471,29 @@ export default function MemoriesScreen() {
     setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: true } : m));
 
     try {
+      console.log('[MemoriesScreen] processQueue: Calling getDecryptedBlob for item:', nextId, 'mediaType:', isChunked ? 'image' : memory.type);
       const blob = await getDecryptedBlob(
-        memory.media_url!,
+        decryptUrl,
         memory.media_key!,
         memory.media_nonce!,
         partner!.public_key!,
         memory.sender_public_key,
         undefined,
-        memory.type
+        isChunked ? 'image' : memory.type  // thumbnail is always image
       );
 
       if (blob) {
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
-        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, decryptedUrl: url, loading: false } : m));
+        console.log('[MemoriesScreen] processQueue: Decryption SUCCESS for item:', nextId, 'blobSize:', blob.size, 'generatedUrl:', url);
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, decryptedUrl: url, loading: false, isChunkedVideo: isChunked } : m));
       } else {
-        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false } : m));
+        console.warn('[MemoriesScreen] processQueue: Decryption returned null blob for item:', nextId);
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked } : m));
       }
-    } catch {
-      setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false } : m));
+    } catch (err) {
+      console.error('[MemoriesScreen] processQueue: Decryption THREW ERROR for item:', nextId, 'error:', err);
+      setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked } : m));
     } finally {
       processingIdsRef.current.delete(nextId);
       decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
@@ -577,7 +619,7 @@ export default function MemoriesScreen() {
       .map(m => ({
         id: m.id,
         url: m.decryptedUrl!,
-        type: (m.type === 'video') ? 'video' : 'image' as 'image' | 'video' | 'gif'
+        type: m.isChunkedVideo ? 'chunked_video' : ((m.type === 'video') ? 'video' : 'image')
       }));
   }, [filteredMemories]);
 
@@ -607,7 +649,7 @@ export default function MemoriesScreen() {
         const index = allMediaForViewer.findIndex(m => m.id === memory.id);
         setSelectedMedia({ 
           url: memory.decryptedUrl, 
-          type: memory.type || 'image', 
+          type: memory.isChunkedVideo ? 'chunked_video' : (memory.type || 'image'), 
           messageId: memory.id,
           initialIndex: index !== -1 ? index : 0
         });
@@ -809,63 +851,64 @@ export default function MemoriesScreen() {
           </div>
         ) : (
           <div className="flex flex-col gap-8 pb-32">
-            {/* ── Recap containers (only in 'all' mode, not selection mode) ── */}
+            {/* ── Moments Carousel (only in 'all' mode, not selection mode) ── */}
             {!selectionMode && filter === 'all' && (() => {
               const now = new Date();
               const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1)
                 .toLocaleDateString('en-US', { month: 'long' });
               const lastYearNum = now.getFullYear() - 1;
               const currentMonthName = now.toLocaleDateString('en-US', { month: 'long' });
+              
+              const momentGroups: MomentGroup[] = [];
+              
+              if (lastMonthItems.length > 0) {
+                momentGroups.push({
+                  id: 'last-month',
+                  title: `${lastMonthName} in Review`,
+                  badge: 'Last Month',
+                  iconName: 'calendar_month',
+                  accentColor: '#60a5fa',
+                  items: lastMonthItems,
+                });
+              }
+              if (lastWeekItems.length > 0) {
+                momentGroups.push({
+                  id: 'last-week',
+                  title: "This Week's Memories",
+                  badge: 'Last 7 Days',
+                  iconName: 'date_range',
+                  accentColor: '#a78bfa',
+                  items: lastWeekItems,
+                });
+              }
+              if (lastYearMonthItems.length > 0) {
+                momentGroups.push({
+                  id: 'last-year-month',
+                  title: `${currentMonthName} ${lastYearNum}`,
+                  badge: 'Last Year · This Month',
+                  iconName: 'history',
+                  accentColor: '#34d399',
+                  items: lastYearMonthItems,
+                });
+              }
+              if (throwbacks.length > 0) {
+                momentGroups.push({
+                  id: 'on-this-day',
+                  title: 'On This Day',
+                  badge: 'Throwback',
+                  iconName: 'auto_awesome',
+                  accentColor: 'var(--gold)',
+                  items: throwbacks,
+                });
+              }
+              
+              if (momentGroups.length === 0) return null;
+              
               return (
-                <>
-                  {/* 1 — Last Month Recap */}
-                  {lastMonthItems.length > 0 && (
-                    <RecapCard
-                      items={lastMonthItems}
-                      partnerPublicKey={partner?.public_key || ''}
-                      title={`${lastMonthName} in Review`}
-                      badge="Last Month"
-                      iconName="calendar_month"
-                      accentClass="#60a5fa"
-                      viewerSubtitle={`All of ${lastMonthName}`}
-                    />
-                  )}
-
-                  {/* 2 — Last Week Recap */}
-                  {lastWeekItems.length > 0 && (
-                    <RecapCard
-                      items={lastWeekItems}
-                      partnerPublicKey={partner?.public_key || ''}
-                      title="This Week's Memories"
-                      badge="Last 7 Days"
-                      iconName="date_range"
-                      accentClass="#a78bfa"
-                      viewerSubtitle="Past 7 Days"
-                    />
-                  )}
-
-                  {/* 3 — Last Year, Same Month */}
-                  {lastYearMonthItems.length > 0 && (
-                    <RecapCard
-                      items={lastYearMonthItems}
-                      partnerPublicKey={partner?.public_key || ''}
-                      title={`${currentMonthName} ${lastYearNum}`}
-                      badge="Last Year · This Month"
-                      iconName="history"
-                      accentClass="#34d399"
-                      viewerSubtitle={`${currentMonthName} ${lastYearNum}`}
-                    />
-                  )}
-
-                  {/* 4 — On This Day (existing) */}
-                  {throwbacks.length > 0 && (
-                    <OnThisDayCard
-                      throwbacks={throwbacks}
-                      partnerPublicKey={partner?.public_key || ''}
-                      onOpenMedia={(url, type, messageId) => setSelectedMedia({ url, type, messageId })}
-                    />
-                  )}
-                </>
+                <MomentsCarousel
+                  moments={momentGroups}
+                  partnerPublicKey={partner?.public_key || ''}
+                />
               );
             })()}
 
@@ -957,10 +1000,11 @@ export default function MemoriesScreen() {
       {/* Overlays */}
       <AnimatePresence>
         {viewMode === 'search' && (
-          <SearchOverlay onClose={() => setViewMode('gallery')} />
+          <SearchOverlay key="search" onClose={() => setViewMode('gallery')} />
         )}
         {viewMode === 'folders' && (
           <FoldersPanel
+            key="folders"
             onClose={() => setViewMode('gallery')}
             onOpenFolder={(folder) => {
               setActiveFolderView(folder);
@@ -970,6 +1014,7 @@ export default function MemoriesScreen() {
         )}
         {viewMode === 'folder-view' && activeFolderView && (
           <FolderView
+            key="folder-view"
             folder={activeFolderView}
             onClose={() => {
               setActiveFolderView(null);
@@ -1155,7 +1200,12 @@ function MemoryCard({ memory, index, cardRef, onClick, onLongPress, onTouchStart
           )}
           {memory.type === 'video' && (
             <div className="w-full h-full relative">
-              <video src={memory.decryptedUrl} className="w-full h-full object-cover" />
+              {memory.isChunkedVideo ? (
+                /* Chunked video: decryptedUrl is a thumbnail image, not a video */
+                <img src={memory.decryptedUrl} className="w-full h-full object-cover" alt="Video" loading="lazy" />
+              ) : (
+                <video src={memory.decryptedUrl} className="w-full h-full object-cover" />
+              )}
               <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                 <span className="material-symbols-outlined text-white text-3xl">play_circle</span>
               </div>

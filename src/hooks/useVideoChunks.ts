@@ -619,26 +619,28 @@ export function useVideoChunks(messageId?: string) {
       const packedKey   = rows[0]?.chunk_key ?? '';
       const duration    = rows[0]?.duration ?? 0;
 
-      // Process blocks in parallel batches of 3 (reduced from 5 for mobile bandwidth)
-      const PARALLEL = 3;
+      // Process blocks with a rolling parallel window (max 6 concurrent downloads)
+      // This is faster than batch-sequential because we start the next block
+      // as soon as any slot frees up, rather than waiting for a full batch of 6.
+      const PARALLEL = 6;
       const sorted = [...rows].sort((a, b) => a.chunk_index - b.chunk_index);
 
-      for (let i = 0; i < sorted.length; i += PARALLEL) {
-        const batch = sorted.slice(i, i + PARALLEL);
-        LOG(`loadExistingChunks: processing batch [${batch.map(r => r.chunk_index).join(',')}]`);
-        await Promise.all(batch.map(row =>
-          processBlock(
-            msgId,
-            row.chunk_index,
-            row.chunk_url,
-            totalChunks,
-            packedKey,
-            baseNonce,
-            partnerPublicKey,
-            duration
-          )
-        ));
+      const activeTasks = new Set<Promise<void>>();
+      for (const row of sorted) {
+        const task: Promise<void> = processBlock(
+          msgId,
+          row.chunk_index,
+          row.chunk_url,
+          totalChunks,
+          packedKey,
+          baseNonce,
+          partnerPublicKey,
+          duration
+        ).then(() => { activeTasks.delete(task); }).catch(() => { activeTasks.delete(task); });
+        activeTasks.add(task);
+        if (activeTasks.size >= PARALLEL) await Promise.race(activeTasks);
       }
+      await Promise.all(activeTasks);
       LOG(`loadExistingChunks: msg=${msgId} complete`);
     } catch (err) {
       ERR(`loadExistingChunks error for msg=${msgId}:`, err);

@@ -66,7 +66,9 @@ export default function ChunkedVideoOverlay({ status, isDone = false, isError = 
               textShadow: isError ? '0 1px 4px rgba(255,0,0,0.4)' : '0 1px 4px rgba(0,0,0,0.8)' 
             }}
           >
-            {displayedStatus}
+            <span className={!isError ? 'animate-pulse' : ''}>
+              {displayedStatus}
+            </span>
           </motion.span>
         </AnimatePresence>
       </div>

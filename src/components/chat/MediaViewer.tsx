@@ -3,12 +3,15 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import ChunkedVideoPlayer from './ChunkedVideoPlayer';
+import { useVideoChunks } from '../../hooks/useVideoChunks';
+import { supabase } from '../../lib/supabase';
+import { usePartner } from '../../hooks/usePartner';
 import { toast } from 'sonner';
 
 interface MediaItem {
   id: string;
   url: string;
-  type: 'image' | 'video' | 'gif';
+  type: 'image' | 'video' | 'gif' | 'chunked_video';
 }
 
 interface MediaViewerProps {
@@ -22,6 +25,67 @@ interface MediaViewerProps {
   duration?: number;
   messageId?: string;
   showViewInChat?: boolean;
+}
+
+function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration }: { messageId: string, thumbnailUrl?: string, duration?: number }) {
+  const { chunks, getChunksForMessage, loadExistingChunks } = useVideoChunks(messageId);
+  const { partner } = usePartner();
+
+  // Fetch chunks from DB and load them if they're not already in the store.
+  // This is needed for videos opened from Memories/Videos tab (not from chat),
+  // where ChatBubble never called loadExistingChunks.
+  useEffect(() => {
+    const existingChunks = getChunksForMessage(messageId);
+    if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) {
+      console.log('[ChunkedVideoFetcher] msg=' + messageId + ' already has decrypted chunks, skipping DB fetch');
+      return;
+    }
+
+    const partnerPublicKey = partner?.public_key;
+    if (!partnerPublicKey) {
+      console.warn('[ChunkedVideoFetcher] partner public key not available yet for msg=' + messageId);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchAndLoad = async () => {
+      console.log('[ChunkedVideoFetcher] fetching video_chunks from DB for msg=' + messageId);
+      const { data, error } = await supabase
+        .from('video_chunks')
+        .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+        .eq('message_id', messageId)
+        .order('chunk_index', { ascending: true });
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error('[ChunkedVideoFetcher] DB error fetching chunks for msg=' + messageId, error);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        console.log('[ChunkedVideoFetcher] Found', data.length, 'chunks in DB for msg=' + messageId + ', loading...');
+        loadExistingChunks(messageId, data, partnerPublicKey);
+      } else {
+        console.log('[ChunkedVideoFetcher] No chunks found in DB for msg=' + messageId);
+      }
+    };
+
+    fetchAndLoad();
+
+    return () => { cancelled = true; };
+  }, [messageId, partner?.public_key]);
+
+  return (
+    <ChunkedVideoPlayer 
+      chunks={chunks} 
+      thumbnailUrl={thumbnailUrl} 
+      duration={duration}
+      autoPlay
+      className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
+    />
+  );
 }
 
 export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration, messageId, showViewInChat = false }: MediaViewerProps) {
@@ -43,8 +107,34 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   
   const currentMedia = allMedia ? allMedia[currentIndex] : { id: messageId, url: initialUrl, type: initialType };
 
+  // Log initial props on mount
+  useEffect(() => {
+    console.log('[MediaViewer] mounted with props:', {
+      initialUrl,
+      initialType,
+      hasAllMedia: !!allMedia,
+      allMediaCount: allMedia?.length || 0,
+      initialIndex,
+      hasChunks: !!chunks,
+      chunksCount: chunks?.length || 0,
+      thumbnailUrl,
+      duration,
+      messageId,
+      showViewInChat
+    });
+    return () => {
+      console.log('[MediaViewer] unmounted');
+    };
+  }, []);
+
   // Reset ALL media states whenever the current item changes
   useEffect(() => {
+    console.log('[MediaViewer] currentMedia changed:', {
+      currentIndex,
+      id: currentMedia.id,
+      url: currentMedia.url,
+      type: currentMedia.type
+    });
     setVideoLoading(true);
     setVideoError(null);
     setVideoBuffered(0);
@@ -59,20 +149,36 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
     if (!v || !v.buffered.length) return;
     const bufferedEnd = v.buffered.end(v.buffered.length - 1);
     const total = v.duration || 1;
-    setVideoBuffered(Math.round((bufferedEnd / total) * 100));
+    const pct = Math.round((bufferedEnd / total) * 100);
+    console.log('[MediaViewer] video progress bufferedEnd:', bufferedEnd, 'total:', total, 'percent:', pct);
+    setVideoBuffered(pct);
   }, []);
 
   const handleVideoCanPlay = useCallback(() => {
+    console.log('[MediaViewer] video canplay event fired! Loading finished successfully.');
     setVideoLoading(false);
     setVideoError(null);
   }, []);
 
   const handleVideoError = useCallback(() => {
+    const v = videoRef.current;
+    const errCode = v?.error?.code;
+    const errMsg = v?.error?.message;
+    console.error('[MediaViewer] video error event fired!', {
+      errCode,
+      errMsg,
+      src: v?.src,
+      networkState: v?.networkState,
+      readyState: v?.readyState,
+      retryCount: retryCountRef.current
+    });
+
     // Try once more silently before showing the error UI
-    if (retryCountRef.current < 1 && videoRef.current) {
+    if (retryCountRef.current < 1 && v) {
       retryCountRef.current += 1;
-      const src = videoRef.current.src;
-      videoRef.current.src = '';
+      const src = v.src;
+      console.log('[MediaViewer] Attempting silent video retry. Resetting src to:', src);
+      v.src = '';
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.src = src;
@@ -86,6 +192,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   }, []);
 
   const retryVideo = useCallback(() => {
+    console.log('[MediaViewer] manual video retry triggered');
     if (!videoRef.current) return;
     retryCountRef.current = 0;
     setVideoError(null);
@@ -97,7 +204,10 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    return () => { 
+      console.log('[MediaViewer] restoring body scroll style:', prev);
+      document.body.style.overflow = prev; 
+    };
   }, []);
 
   const handleNext = (e?: React.MouseEvent) => {
@@ -363,8 +473,13 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                     <img
                       src={currentMedia.url}
                       alt=""
-                      onLoad={() => { setImgLoading(false); setImgError(false); }}
+                      onLoad={() => {
+                        console.log('[MediaViewer] image loaded successfully. Src:', currentMedia.url);
+                        setImgLoading(false);
+                        setImgError(false);
+                      }}
                       onError={() => {
+                        console.error('[MediaViewer] image load error! Src:', currentMedia.url, 'retryAttempt:', imgRetryRef.current);
                         if (imgRetryRef.current < 1) {
                           imgRetryRef.current++;
                           // Force reload by appending a dummy param
@@ -395,13 +510,23 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
             </div>
           ) : currentMedia.type === 'chunked_video' ? (
             <div className="w-full h-full flex items-center justify-center p-1">
-              <ChunkedVideoPlayer 
-                chunks={chunks!} 
-                thumbnailUrl={thumbnailUrl} 
-                duration={duration}
-                autoPlay
-                className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
-              />
+              {chunks ? (
+                <ChunkedVideoPlayer 
+                  chunks={chunks} 
+                  thumbnailUrl={thumbnailUrl || currentMedia.url} 
+                  duration={duration}
+                  autoPlay
+                  className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
+                />
+              ) : currentMedia.id ? (
+                <ChunkedVideoFetcher
+                  messageId={currentMedia.id}
+                  thumbnailUrl={thumbnailUrl || currentMedia.url}
+                  duration={duration}
+                />
+              ) : (
+                <div className="text-white/50 text-sm">Cannot load video</div>
+              )}
             </div>
           ) : (
             /* ── Smart video player with loading + error states ── */
