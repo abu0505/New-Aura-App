@@ -28,6 +28,7 @@ interface ChunkedVideoPlayerProps {
   autoPlay?: boolean;
   /** Total video duration in seconds. If provided, overrides the sum of chunk durations. */
   duration?: number;
+  onEnded?: () => void;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -47,6 +48,7 @@ export default function ChunkedVideoPlayer({
   className = '',
   autoPlay = false,
   duration,
+  onEnded,
 }: ChunkedVideoPlayerProps) {
   /* ── Refs ────────────────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -312,6 +314,7 @@ export default function ChunkedVideoPlayer({
         onEnded={() => {
           console.log('[ChunkedVideoPlayer] ended');
           setIsPlaying(false);
+          onEnded?.();
         }}
         onError={() => {
           const v = videoRef.current;

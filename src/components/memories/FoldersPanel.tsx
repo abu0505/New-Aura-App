@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaFolders, type MediaFolder } from '../../hooks/useMediaFolders';
 import { useMedia } from '../../hooks/useMedia';
@@ -127,7 +127,8 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
       className="absolute inset-0 z-50 bg-[var(--bg-primary)] flex flex-col"
     >
       {/* Header */}
-      <div className="px-4 pt-6 pb-4 border-b border-white/5 bg-black/20 shrink-0">
+      <div className="px-4 pt-6 pb-4 border-b border-white/5 bg-black/20 shrink-0 safe-top safe-pt">
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all">

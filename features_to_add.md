@@ -1,0 +1,5 @@
+- week moment card me sirf fav
+- moments ke ander algorithhm dalna hai jisse random 10 photos featch karega month me excluding fav photos woto display karana hii hai but 10 random bhi karana hai month moment card me.
+- year moment card me every month ki fav photo.
+- last year on this date par jitni bhi photos hai wo sari display karana hai.
+- moment card sequence last year on this day sabse phele, last year moment card sec number par, last month card 3rd number and last me last week card.

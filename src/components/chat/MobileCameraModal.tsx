@@ -121,7 +121,6 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   const shutterControls = useAnimation();
   const lockIconControls = useAnimation();
-  const countdownControls = useAnimation();
 
   // Premium: Synthetic Shutter Sound
   const playShutterSound = useCallback(() => {
@@ -988,12 +987,16 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
   }, [timerActive, timerDuration]);
 
+  // Keep a ref to the latest takePhoto so the interval always calls the
+  // freshest version (avoids stale-closure bugs when deps change mid-countdown).
+  const takePhotoRef = useRef(takePhoto);
+  useEffect(() => { takePhotoRef.current = takePhoto; }, [takePhoto]);
+
   // ── Timer Countdown Runner ──────────────────────────────────────────────────
   const runTimerThenCapture = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     let count = timerDuration;
     setTimerCountdown(count);
-    countdownControls.start({ scale: [1.4, 1], opacity: [0, 1], transition: { duration: 0.25 } });
 
     timerIntervalRef.current = setInterval(() => {
       count -= 1;
@@ -1001,19 +1004,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
         setTimerCountdown(null);
-        takePhoto();
+        takePhotoRef.current();
       } else {
         setTimerCountdown(count);
-        // Animate each tick
-        countdownControls.start({
-          scale: [1.4, 1],
-          opacity: [0, 1],
-          transition: { duration: 0.25 },
-        });
         if (navigator.vibrate) navigator.vibrate(30);
       }
     }, 1000);
-  }, [timerDuration, takePhoto, countdownControls]);
+  }, [timerDuration]);
 
   // Cancel timer if modal closes
   useEffect(() => {
@@ -1509,7 +1506,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </AnimatePresence>
 
             {/* Top Bar Overlay */}
-            <div className={`absolute top-0 inset-x-0 p-4 pt-safe-top flex items-start justify-between z-[70] pointer-events-none transition-all duration-500`}>
+            <div className={`absolute top-0 inset-x-0 p-4 safe-top safe-pt flex items-start justify-between z-[70] pointer-events-none transition-all duration-500`}>
               <button
                 onClick={onClose}
                 className={`w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md pointer-events-auto transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 text-black shadow-lg' : 'bg-black/30 text-white hover:bg-white/20'}`}
@@ -1719,11 +1716,15 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                     className="absolute w-48 h-48 rounded-full border-[2px] border-white/50"
                   />
 
-                  {/* Main countdown number */}
+                  {/* Main countdown number — key changes on each tick so Framer Motion
+                      re-mounts the element and plays the enter animation automatically.
+                      Using animate directly (not countdownControls) avoids the stale-ref
+                      race where start() fires on the old element before reconciliation. */}
                   <motion.div
                     key={`count-${timerCountdown}`}
-                    animate={countdownControls}
-                    initial={{ scale: 1.6, opacity: 0 }}
+                    initial={{ scale: 1.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.25, ease: 'easeOut' }}
                     className="relative flex flex-col items-center gap-3"
                   >
                     {/* Glowing circle background */}
@@ -1774,7 +1775,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
             </AnimatePresence>
 
             {/* Bottom Controls */}
-            <div className={`absolute bottom-0 inset-x-0 pb-safe-bottom z-[70] transition-all duration-500`}>
+            <div className={`absolute bottom-0 inset-x-0 safe-bottom z-[70] transition-all duration-500`}>
               <div className="flex items-center justify-between px-8 pb-10 pt-4">
                 {/* Gallery Button */}
                 <button
@@ -2003,7 +2004,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 </div>
 
                 {/* Preview Top Bar */}
-                <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between items-center z-50">
+                <div className="absolute top-0 inset-x-0 p-4 safe-top safe-pt flex justify-between items-center z-50">
                   <button
                     onClick={handleDiscard}
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
@@ -2017,7 +2018,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 </div>
 
                 {/* Preview Bottom Bar (Caption & Send) */}
-                <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom">
+                <div className="absolute bottom-0 inset-x-0 p-4 safe-bottom">
                   <div className="flex flex-col gap-3 max-w-lg mx-auto w-full">
                     <input
                       type="text"
@@ -2093,7 +2094,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 </div>
 
                 {/* Preview Top Bar */}
-                <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between items-center z-50">
+                <div className="absolute top-0 inset-x-0 p-4 safe-top safe-pt flex justify-between items-center z-50">
                   <button
                     onClick={handleDiscard}
                     className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
@@ -2130,7 +2131,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 </div>
 
                 {/* Preview Bottom Bar (Caption & Send) */}
-                <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom">
+                <div className="absolute bottom-0 inset-x-0 p-4 safe-bottom">
                   <div className="flex flex-col gap-4 max-w-lg mx-auto w-full">
                     <input
                       type="text"

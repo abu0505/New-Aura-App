@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { useMedia } from '../../hooks/useMedia';
 import type { Database } from '../../integrations/supabase/types';
+import ChunkedVideoPlayer from '../chat/ChunkedVideoPlayer';
+import { useVideoChunks } from '../../hooks/useVideoChunks';
+import { supabase } from '../../lib/supabase';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -28,6 +31,52 @@ interface MomentViewerProps {
   onClose: () => void;
 }
 
+// ── ChunkedVideoFetcher ──────────────────────────────────────────────────────
+function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration, partnerPublicKey, onEnded, isPaused, onTogglePause }: { messageId: string, thumbnailUrl?: string, duration?: number, partnerPublicKey: string, onEnded?: () => void, isPaused?: boolean, onTogglePause?: () => void }) {
+  const { chunks, getChunksForMessage, loadExistingChunks } = useVideoChunks(messageId);
+
+  useEffect(() => {
+    const existingChunks = getChunksForMessage(messageId);
+    if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) {
+      return;
+    }
+
+    if (!partnerPublicKey) return;
+
+    let cancelled = false;
+    const fetchAndLoad = async () => {
+      const { data, error } = await supabase
+        .from('video_chunks')
+        .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+        .eq('message_id', messageId)
+        .order('chunk_index', { ascending: true });
+
+      if (cancelled) return;
+      if (error) return;
+
+      if (data && data.length > 0) {
+        loadExistingChunks(messageId, data, partnerPublicKey);
+      }
+    };
+
+    fetchAndLoad();
+    return () => { cancelled = true; };
+  }, [messageId, partnerPublicKey]);
+
+  return (
+    <div className="w-full h-full max-h-full cursor-pointer" onClick={onTogglePause}>
+      <ChunkedVideoPlayer 
+        chunks={chunks} 
+        thumbnailUrl={thumbnailUrl} 
+        duration={duration}
+        autoPlay={!isPaused}
+        onEnded={onEnded}
+        className="w-full h-full max-h-full object-contain rounded-2xl shadow-2xl" 
+      />
+    </div>
+  );
+}
+
 // ── Auto-advance timing ─────────────────────────────────────────────────────
 const PHOTO_DURATION = 3000; // 3 seconds for photos
 
@@ -48,8 +97,40 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
   const nextMoment = currentMomentIdx < moments.length - 1 ? moments[currentMomentIdx + 1] : null;
 
   // ── Decrypt items for visible moments ──────────────────────────────────────
-  const decryptItem = useCallback(async (item: MomentItem, momentId: string) => {
-    if (item.decryptedUrl || !partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) return;
+  const decryptItem = useCallback(async (itemArg: MomentItem, momentId: string) => {
+    let item = itemArg;
+    const isChunked = item.type === 'video' && !item.media_url;
+    let decryptUrl = isChunked ? (item as any).thumbnail_url : item.media_url;
+
+    // If chunked video but no thumbnail in RPC result, fetch full row directly
+    if (isChunked && !decryptUrl) {
+      try {
+        const { data } = await supabase
+          .from('messages')
+          .select('thumbnail_url, media_key, media_nonce, sender_public_key')
+          .eq('id', item.id)
+          .single();
+        if (data?.thumbnail_url) {
+          decryptUrl = data.thumbnail_url;
+          item = { ...item, ...data };
+        }
+      } catch { /* silent */ }
+    }
+
+    if (item.decryptedUrl || !partnerPublicKey || !decryptUrl || !item.media_key || !item.media_nonce) {
+      if (isChunked && !item.decryptedUrl) {
+        // Chunked video with no thumbnail — mark as done (will use ChunkedVideoFetcher)
+        setDecryptedItems(prev => {
+          const next = new Map(prev);
+          const list = [...(next.get(momentId) || [])];
+          const idx = list.findIndex(i => i.id === item.id);
+          if (idx !== -1) list[idx] = { ...list[idx], loading: false };
+          next.set(momentId, list);
+          return next;
+        });
+      }
+      return;
+    }
 
     setDecryptedItems(prev => {
       const next = new Map(prev);
@@ -62,11 +143,13 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
 
     try {
       const blob = await getDecryptedBlob(
-        item.media_url,
+        decryptUrl,
         item.media_key,
         item.media_nonce,
         partnerPublicKey,
-        item.sender_public_key
+        item.sender_public_key,
+        undefined,
+        isChunked ? 'image' : item.type
       );
       if (blob) {
         const url = URL.createObjectURL(blob);
@@ -142,7 +225,8 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
   // ── Auto-advance logic ─────────────────────────────────────────────────────
   useEffect(() => {
     if (isPaused) return;
-    if (!currentItem?.decryptedUrl) return;
+    const isChunked = currentItem?.type === 'video' && !currentItem?.media_url;
+    if (!currentItem?.decryptedUrl && !isChunked) return;
 
     if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
 
@@ -159,7 +243,7 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
     return () => {
       if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
     };
-  }, [currentItemIdx, currentMomentIdx, isPaused, currentItem?.decryptedUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentItemIdx, currentMomentIdx, isPaused, currentItem?.decryptedUrl, currentItem?.type, currentItem?.media_url]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cleanup on unmount
   useEffect(() => {
@@ -284,30 +368,37 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
       {/* ── Thumbnail Bar ── */}
       <div className="shrink-0 px-4 pb-3">
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {items.map((item, i) => (
-            <button
-              key={item.id}
-              onClick={() => setCurrentItemIdx(i)}
-              className={`shrink-0 w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${
-                i === currentItemIdx
-                  ? 'border-[var(--gold)] scale-110 shadow-lg'
-                  : 'border-white/10 opacity-40 hover:opacity-70'
-              }`}
-            >
-              {item.decryptedUrl ? (
-                item.type === 'video'
-                  ? <video src={item.decryptedUrl} className="w-full h-full object-cover" />
-                  : <img src={item.decryptedUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                  {item.loading
-                    ? <div className="w-3 h-3 border border-white/20 border-t-[var(--gold)] rounded-full animate-spin" />
-                    : <span className="material-symbols-outlined text-[10px] text-white/20">lock</span>
-                  }
-                </div>
-              )}
-            </button>
-          ))}
+          {items.map((item, i) => {
+            const isChunked = item.type === 'video' && !item.media_url;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setCurrentItemIdx(i)}
+                className={`shrink-0 w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${
+                  i === currentItemIdx
+                    ? 'border-[var(--gold)] scale-110 shadow-lg'
+                    : 'border-white/10 opacity-40 hover:opacity-70'
+                }`}
+              >
+                {item.decryptedUrl || isChunked ? (
+                  isChunked ? (
+                    item.decryptedUrl ? <img src={item.decryptedUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-black flex items-center justify-center"><span className="material-symbols-outlined text-[10px] text-white/50">play_arrow</span></div>
+                  ) : item.type === 'video' ? (
+                    <video src={item.decryptedUrl} className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={item.decryptedUrl} alt="" className="w-full h-full object-cover" />
+                  )
+                ) : (
+                  <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                    {item.loading
+                      ? <div className="w-3 h-3 border border-white/20 border-t-[var(--gold)] rounded-full animate-spin" />
+                      : <span className="material-symbols-outlined text-[10px] text-white/20">lock</span>
+                    }
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -345,8 +436,18 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
             transition={{ duration: 0.2 }}
             className="flex items-center justify-center w-full h-full px-16 md:px-28"
           >
-            {currentItem?.decryptedUrl ? (
-              currentItem.type === 'video' ? (
+            {currentItem?.decryptedUrl || (currentItem?.type === 'video' && !currentItem?.media_url) ? (
+              (currentItem.type === 'video' && !currentItem.media_url) ? (
+                <ChunkedVideoFetcher
+                  messageId={currentItem.id}
+                  thumbnailUrl={currentItem.decryptedUrl}
+                  duration={currentItem.duration || 0}
+                  partnerPublicKey={partnerPublicKey}
+                  onEnded={handleVideoEnded}
+                  isPaused={isPaused}
+                  onTogglePause={() => setIsPaused(p => !p)}
+                />
+              ) : currentItem.type === 'video' ? (
                 <video
                   ref={videoRef}
                   key={currentItem.id}
@@ -355,7 +456,7 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
                   autoPlay={!isPaused}
                   playsInline
                   onEnded={handleVideoEnded}
-                  className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl"
+                  className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl cursor-pointer"
                   onClick={() => setIsPaused(p => !p)}
                 />
               ) : (

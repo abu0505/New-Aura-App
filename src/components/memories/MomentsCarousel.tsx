@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import MomentViewer, { type MomentGroup } from './MomentViewer';
+import { supabase } from '../../lib/supabase';
 
 interface MomentsCarouselProps {
   moments: MomentGroup[];
@@ -11,11 +12,13 @@ interface MomentsCarouselProps {
 export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCarouselProps) {
   const { getDecryptedBlob } = useMedia();
   const [coverUrls, setCoverUrls] = useState<Map<string, string>>(new Map());
+  const coverUrlsRef = useRef<Map<string, string>>(new Map()); // sync ref to avoid stale closure
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const generatedUrlsRef = useRef<Set<string>>(new Set());
   const [scrollPos, setScrollPos] = useState(0);
   const [maxScroll, setMaxScroll] = useState(0);
+
 
   // Cleanup on unmount
   useEffect(() => {
@@ -26,31 +29,60 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
 
   // Decrypt cover images for each moment
   const decryptCover = useCallback(async (moment: MomentGroup) => {
-    if (coverUrls.has(moment.id)) return;
-    const coverItem = moment.items[0];
-    if (!coverItem?.media_url || !coverItem.media_key || !coverItem.media_nonce || !partnerPublicKey) return;
+    if (coverUrlsRef.current.has(moment.id)) return;
+    let coverItem = moment.items[0];
+    if (!coverItem) return;
+
+    const isChunked = coverItem.type === 'video' && !coverItem.media_url;
+    let decryptUrl = isChunked ? (coverItem as any).thumbnail_url : coverItem.media_url;
+
+    // If chunked video but thumbnail_url not in RPC data, fetch it directly
+    if (isChunked && !decryptUrl) {
+      try {
+        const { data } = await supabase
+          .from('messages')
+          .select('thumbnail_url, media_key, media_nonce, sender_public_key')
+          .eq('id', coverItem.id)
+          .single();
+        if (data?.thumbnail_url) {
+          decryptUrl = data.thumbnail_url;
+          // Merge fetched data back
+          coverItem = { ...coverItem, ...data };
+        }
+      } catch { /* silent */ }
+    }
+
+    if (!decryptUrl || !coverItem.media_key || !coverItem.media_nonce || !partnerPublicKey) return;
+
+    // Mark as in-progress
+    coverUrlsRef.current.set(moment.id, '__loading__');
 
     try {
       const blob = await getDecryptedBlob(
-        coverItem.media_url,
+        decryptUrl,
         coverItem.media_key,
         coverItem.media_nonce,
         partnerPublicKey,
-        coverItem.sender_public_key
+        coverItem.sender_public_key,
+        undefined,
+        isChunked ? 'image' : coverItem.type
       );
       if (blob) {
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
+        coverUrlsRef.current.set(moment.id, url);
         setCoverUrls(prev => new Map(prev).set(moment.id, url));
+      } else {
+        coverUrlsRef.current.delete(moment.id);
       }
     } catch {
-      // silently fail
+      coverUrlsRef.current.delete(moment.id);
     }
-  }, [partnerPublicKey, getDecryptedBlob, coverUrls]);
+  }, [partnerPublicKey, getDecryptedBlob]); // removed coverUrls from deps to fix stale closure
 
   useEffect(() => {
     moments.forEach(m => decryptCover(m));
-  }, [moments]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [moments, decryptCover]);
 
   // Track scroll for arrow visibility
   const updateScroll = () => {
@@ -138,11 +170,20 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
                 {/* Background image & blur placeholder */}
                 <div className="absolute inset-0 bg-[var(--bg-elevated)] transition-transform duration-700 group-hover/card:scale-105">
                   {coverUrl ? (
-                    <img
-                      src={coverUrl}
-                      alt={moment.title}
-                      className="w-full h-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={coverUrl}
+                        alt={moment.title}
+                        className="w-full h-full object-cover"
+                      />
+                      {moment.items[0]?.type === 'video' && (
+                        <div className="absolute inset-0 flex items-center justify-center z-20">
+                          <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-white text-2xl ml-1">play_arrow</span>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center opacity-25">
                       <span className="material-symbols-outlined animate-pulse text-3xl">image</span>
