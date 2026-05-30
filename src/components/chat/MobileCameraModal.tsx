@@ -65,6 +65,14 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
 
+  // ── Multi-Shot States ─────────────────────────────────────────────────────
+  const [isMultiShotMode, setIsMultiShotMode] = useState(false);
+  const [multiShotFiles, setMultiShotFiles] = useState<Array<{ file: File; url: string }>>([]);
+  // Index of the currently-visible slide in carousel preview
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  // Whether we entered preview via multi-shot (drives carousel UI)
+  const [isMultiShotPreview, setIsMultiShotPreview] = useState(false);
+
   // Settings
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
   const [aspectRatio, setAspectRatio] = useState<'1:1' | '4:3' | '9:16' | '16:9'>('9:16');
@@ -376,6 +384,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       isWorkerRecordingRef.current = false;
       setDevice4kSupported(null);
       setDevice60fpsSupported(null);
+      // Reset multi-shot state
+      setIsMultiShotMode(false);
+      setMultiShotFiles(prev => { prev.forEach(f => URL.revokeObjectURL(f.url)); return []; });
+      setCarouselIndex(0);
+      setIsMultiShotPreview(false);
 
       // FIX: Stop native CameraX preview on close so it doesn't stay
       // open behind the WebView after navigating away from the camera.
@@ -552,6 +565,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
           const blob = await res.blob();
           const file = new File([blob], `native_${activeExtension.toLowerCase()}_${Date.now()}.jpg`, { type: 'image/jpeg' });
           const url = URL.createObjectURL(blob);
+          // Multi-shot path: append, don't navigate
+          if (isMultiShotMode) {
+            setMultiShotFiles(prev => prev.length >= 10 ? prev : [...prev, { file, url }]);
+            return;
+          }
           setCapturedFile(file);
           setPreviewUrl(url);
           setViewMode('preview');
@@ -633,14 +651,18 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         if (blob) {
           const file = new File([blob], `photo_${Date.now()}.${ext}`, { type: mimeType });
           const url = URL.createObjectURL(blob);
+          // ── MULTI-SHOT PATH: append to list, stay on camera ───────────────
+          if (isMultiShotMode) {
+            setMultiShotFiles(prev => {
+              if (prev.length >= 10) return prev; // hard cap at 10
+              return [...prev, { file, url }];
+            });
+            return; // do NOT navigate to preview yet
+          }
+          // ── SINGLE SHOT PATH ──────────────────────────────────────────────
           setCapturedFile(file);
           setPreviewUrl(url);
           setViewMode('preview');
-          // MOBILE OPTIMIZATION: Skip denoising pipeline entirely.
-          // At 720p-4K from a modern mobile sensor, multi-frame averaging + WebGL bilateral
-          // filter adds 300-800ms of processing for imperceptible gain at these resolutions.
-          // Denoising is only perceptually useful on <720p or in extreme low light (ISO>3200).
-          // The enhance button simply won't appear on mobile (enhancementStatus stays 'idle').
           setEnhancementStatus('idle');
         }
       }, mimeType, quality);
@@ -659,6 +681,10 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         if (blob) {
           const file = new File([blob], `photo_${Date.now()}.webp`, { type: 'image/webp' });
           const url = URL.createObjectURL(blob);
+          if (isMultiShotMode) {
+            setMultiShotFiles(prev => prev.length >= 10 ? prev : [...prev, { file, url }]);
+            return;
+          }
           setCapturedFile(file);
           setPreviewUrl(url);
           setEnhancementStatus('idle');
@@ -668,7 +694,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }
   // FIX Bug 10: Added activeExtension to deps so the native CameraX capture path
   // triggers correctly when user toggles HDR/Night mode (was using stale closure).
-  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef, resolution, activeExtension]);
+  // isMultiShotMode added so we route correctly to multi-shot vs single-shot path.
+  }, [videoRef, playShutterSound, aspectRatio, facingMode, hasHardwareZoomRef, zoomRef, resolution, activeExtension, isMultiShotMode]);
 
   // ── TELEGRAM-STYLE RECORDING: stopRecording ────────────────────────────────
   const stopRecording = useCallback(() => {
@@ -1076,10 +1103,51 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     // Reset zoom DOM transform (set directly without React state during gesture)
     if (videoRef.current) videoRef.current.style.transform = '';
     zoomRef.current.current = zoomRef.current.min;
+    // If discarding multi-shot preview, revoke all URLs and return to camera
+    if (isMultiShotPreview) {
+      multiShotFiles.forEach(f => URL.revokeObjectURL(f.url));
+      setMultiShotFiles([]);
+      setIsMultiShotPreview(false);
+      setCarouselIndex(0);
+    }
     setViewMode('camera');
   };
 
+  // Multi-shot: discard a single shot from the preview carousel
+  const handleDiscardSingleShot = (index: number) => {
+    setMultiShotFiles(prev => {
+      URL.revokeObjectURL(prev[index].url);
+      const next = prev.filter((_, i) => i !== index);
+      // If the list is now empty go back to camera
+      if (next.length === 0) {
+        setIsMultiShotPreview(false);
+        setCarouselIndex(0);
+        setViewMode('camera');
+      } else {
+        setCarouselIndex(c => Math.min(c, next.length - 1));
+      }
+      return next;
+    });
+  };
+
+  // User pressed ✓ — done capturing, go to preview carousel
+  const handleMultiShotDone = () => {
+    if (multiShotFiles.length === 0) return;
+    setIsMultiShotPreview(true);
+    setCarouselIndex(0);
+    // Use first file as the "primary" for the send handler (we'll send all)
+    setCapturedFile(multiShotFiles[0].file);
+    setPreviewUrl(multiShotFiles[0].url);
+    setViewMode('preview');
+  };
+
   const handleSendFile = () => {
+    if (isMultiShotPreview && multiShotFiles.length > 0) {
+      // Send all multi-shot photos via onGallerySelect
+      onGallerySelect(multiShotFiles.map(f => f.file), caption);
+      onClose();
+      return;
+    }
     const fileToSend = isEnhancedView && enhancedFile ? enhancedFile : capturedFile;
     if (fileToSend) {
       const isVideo = fileToSend.type.includes('video');
@@ -1511,6 +1579,39 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   </motion.button>
                 )}
 
+                {/* ── Multi-Shot Button ────────────────────────────────────────
+                    Tap to toggle burst/multi-shot mode. Only visible when not recording. */}
+                {!isRecording && (
+                  <motion.button
+                    onClick={() => {
+                      if (isMultiShotMode && multiShotFiles.length > 0) {
+                        // If mode is ON and we have shots, go to preview
+                        handleMultiShotDone();
+                      } else {
+                        setIsMultiShotMode(prev => !prev);
+                        if (navigator.vibrate) navigator.vibrate(40);
+                      }
+                    }}
+                    whileTap={{ scale: 1.15 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                    className={`w-10 h-10 flex flex-col items-center justify-center rounded-full backdrop-blur-md transition-all duration-300 ${
+                      isMultiShotMode
+                        ? 'bg-[rgba(var(--primary-rgb),0.85)] text-white shadow-[0_0_12px_rgba(var(--primary-rgb),0.5)]'
+                        : (isFlashOn && facingMode === 'user' ? 'bg-black/30 text-black' : 'bg-black/30 text-white hover:bg-white/20')
+                    }`}
+                    title={isMultiShotMode ? 'Multi-shot ON — tap to review' : 'Multi-shot off'}
+                  >
+                    <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontVariationSettings: "'FILL' 1" }}>burst_mode</span>
+                    {isMultiShotMode ? (
+                      <span className="text-[9px] font-black leading-none mt-0.5 tracking-tight text-white">
+                        {multiShotFiles.length}/10
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-black leading-none mt-0.5 tracking-tight text-white/70">off</span>
+                    )}
+                  </motion.button>
+                )}
+
                 {/* HDR Mode — only show if native CameraX supports it */}
                 {sensorCaps?.hasHDR && facingMode === 'environment' && (
                   <button
@@ -1752,8 +1853,62 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   )}
                 </div>
 
-                {/* Empty spacer for flex alignment */}
-                <div className="w-12" />
+                {/* ── Multi-shot: last-captured thumbnail + done tick ────────────
+                    Shows bottom-right next to shutter. Visible only in multi-shot mode. */}
+                <div className="w-12 h-12 relative flex items-center justify-center">
+                  <AnimatePresence>
+                    {isMultiShotMode && multiShotFiles.length > 0 && (() => {
+                      const last = multiShotFiles[multiShotFiles.length - 1];
+                      return (
+                        <motion.button
+                          key={`ms-thumb-${multiShotFiles.length}`}
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.5, opacity: 0 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                          onClick={handleMultiShotDone}
+                          className="w-12 h-12 rounded-xl overflow-hidden border-2 border-white/60 relative shadow-lg active:scale-90 transition-transform"
+                        >
+                          <img src={last.url} alt="last shot" className="w-full h-full object-cover" />
+                          {/* Badge */}
+                          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[rgba(var(--primary-rgb),1)] flex items-center justify-center shadow-md">
+                            <span className="text-[9px] font-black text-white leading-none">{multiShotFiles.length}</span>
+                          </div>
+                        </motion.button>
+                      );
+                    })()}
+                    {isMultiShotMode && multiShotFiles.length === 0 && (
+                      <motion.div
+                        key="ms-empty"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="w-12 h-12 rounded-xl border-2 border-dashed border-white/25 flex items-center justify-center"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-white/30">photo_camera</span>
+                      </motion.div>
+                    )}
+                    {!isMultiShotMode && <div key="ms-spacer" className="w-12" />}
+                  </AnimatePresence>
+
+                  {/* ✓ Done button — floats above thumbnail, only when we have shots */}
+                  <AnimatePresence>
+                    {isMultiShotMode && multiShotFiles.length > 0 && (
+                      <motion.button
+                        key="ms-done"
+                        initial={{ scale: 0, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0, opacity: 0, y: 10 }}
+                        transition={{ type: 'spring', stiffness: 380, damping: 16, delay: 0.05 }}
+                        onClick={handleMultiShotDone}
+                        className="absolute -top-9 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.7)] active:scale-90 transition-transform"
+                        title="Done — preview all shots"
+                      >
+                        <span className="material-symbols-outlined text-[18px] text-white" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </div>
@@ -1762,120 +1917,239 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
         {/* --- Post-Capture Preview Mode --- */}
         {viewMode === 'preview' && capturedFile && previewUrl && (
           <div className="relative w-full h-full bg-black flex flex-col z-50">
-            <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-              {(() => {
-                let layoutClass = 'w-full h-full';
-                if (aspectRatio === '1:1') layoutClass = 'w-full aspect-square';
-                else if (aspectRatio === '4:3') layoutClass = 'w-full aspect-[3/4]';
-                else if (aspectRatio === '16:9') layoutClass = 'w-full aspect-[16/9]';
-                else if (aspectRatio === '9:16') layoutClass = 'w-full h-full';
 
-                return (
-                  <div className={`relative ${layoutClass} overflow-hidden flex items-center justify-center`}>
-                    {capturedFile.type.startsWith('video') ? (
-                      <video
-                        src={previewUrl}
-                        controls={false}
-                        autoPlay
-                        playsInline
-                        loop
-                        muted  // Required for autoplay on mobile browsers (Chrome Android, Safari iOS)
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="relative w-full h-full overflow-hidden">
-                        <img
-                          src={isEnhancedView && enhancedUrl ? enhancedUrl : previewUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover transition-opacity duration-300"
-                        />
-                        {/* Shimmer Effect */}
-                        <AnimatePresence>
-                          {showShimmer && (
-                            <motion.div
-                              key={`shimmer-${shimmerKey}`}
-                              initial={{ x: '-120%' }}
-                              animate={{ x: '120%' }}
-                              exit={{ opacity: 0 }}
-                              transition={{ duration: 0.8, ease: "circOut" }}
-                              onAnimationComplete={() => {
-                                
-                                setShowShimmer(false);
-                              }}
-                              className="absolute inset-x-[-20%] inset-y-0 z-[100] pointer-events-none skew-x-[-15deg]"
-                              style={{ 
-                                background: 'linear-gradient(90deg, transparent 35%, var(--gold) 50%, transparent 65%)',
-                                mixBlendMode: 'screen'
-                              }}
-                            />
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
+            {/* ═══════════════════════════════════════════════════════════════
+                MULTI-SHOT CAROUSEL PREVIEW
+                Shows when the user finished a multi-shot session.
+                • Full-screen active photo in the centre
+                • Horizontal strip at the bottom (inactive = smaller, active = larger)
+            ═══════════════════════════════════════════════════════════════ */}
+            {isMultiShotPreview && multiShotFiles.length > 0 ? (
+              <>
+                {/* Active photo — full screen */}
+                <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={`carousel-main-${carouselIndex}`}
+                      src={multiShotFiles[carouselIndex]?.url}
+                      alt={`Shot ${carouselIndex + 1}`}
+                      initial={{ opacity: 0, scale: 1.04 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.97 }}
+                      transition={{ duration: 0.22, ease: 'easeOut' }}
+                      className="w-full h-full object-cover"
+                    />
+                  </AnimatePresence>
 
-            {/* Preview Top Bar */}
-            <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between items-center z-50">
-              <button
-                onClick={handleDiscard}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
-              >
-                <span className="material-symbols-outlined text-[22px]">delete</span>
-              </button>
-
-              {/* Enhance Logic Button */}
-              {capturedFile.type.startsWith('image') && enhancementStatus !== 'idle' ? (
-                <button
-                  onClick={() => {
-                    if (enhancementStatus === 'ready') {
-                      
-                      setShimmerKey(prev => prev + 1);
-                      setShowShimmer(true);
-                      setIsEnhancedView(prev => !prev);
-                      
-                    }
-                  }}
-                  className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 border backdrop-blur-md ${
-                    isEnhancedView 
-                      ? 'border-primary text-primary bg-black/40 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.5)]' 
-                      : 'border-white/20 text-white bg-black/40 hover:bg-white/10'
-                  }`}
-                >
-                  {enhancementStatus === 'processing' ? (
-                    <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
-                  ) : (
-                    <span className="material-symbols-outlined text-[22px] shadow-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                  {/* Swipe hint arrows */}
+                  {multiShotFiles.length > 1 && (
+                    <>
+                      {carouselIndex > 0 && (
+                        <button
+                          onClick={() => setCarouselIndex(i => i - 1)}
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
+                        >
+                          <span className="material-symbols-outlined text-[20px] text-white">chevron_left</span>
+                        </button>
+                      )}
+                      {carouselIndex < multiShotFiles.length - 1 && (
+                        <button
+                          onClick={() => setCarouselIndex(i => i + 1)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform"
+                        >
+                          <span className="material-symbols-outlined text-[20px] text-white">chevron_right</span>
+                        </button>
+                      )}
+                    </>
                   )}
-                </button>
-              ) : (
-                <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium">
-                  {capturedFile.type.startsWith('video') ? 'Video Preview' : 'Photo Preview'}
-                </div>
-              )}
-            </div>
 
-            {/* Preview Bottom Bar (Caption & Send) */}
-            <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom">
-              <div className="flex flex-col gap-4 max-w-lg mx-auto w-full">
-                <input
-                  type="text"
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  placeholder="Add a sweet caption..."
-                  className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 text-white placeholder-white/50 focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all font-medium"
-                />
-                <button
-                  onClick={handleSendFile}
-                  className="w-full py-4 bg-primary text-background font-bold text-lg rounded-2xl shadow-glow-gold hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
-                  Send Message
-                </button>
-              </div>
-            </div>
+                  {/* Delete this single shot (top-right) */}
+                  <button
+                    onClick={() => handleDiscardSingleShot(carouselIndex)}
+                    className="absolute top-16 right-4 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center active:scale-90 transition-transform hover:bg-red-500/70"
+                  >
+                    <span className="material-symbols-outlined text-[18px] text-white">delete</span>
+                  </button>
+
+                  {/* Counter badge */}
+                  <div className="absolute top-16 left-4 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full">
+                    <span className="text-white text-xs font-bold font-mono">{carouselIndex + 1} / {multiShotFiles.length}</span>
+                  </div>
+                </div>
+
+                {/* ── Horizontal thumbnail strip ───────────────────────────────── */}
+                <div className="absolute bottom-[140px] inset-x-0 flex items-end justify-center gap-2 px-4 pb-2 pointer-events-none">
+                  <div className="flex items-end gap-2 overflow-x-auto hide-scrollbar pointer-events-auto" style={{ maxWidth: '100%' }}>
+                    {multiShotFiles.map((shot, idx) => (
+                      <motion.button
+                        key={shot.url}
+                        onClick={() => setCarouselIndex(idx)}
+                        animate={{
+                          width: idx === carouselIndex ? 60 : 44,
+                          height: idx === carouselIndex ? 72 : 52,
+                          opacity: idx === carouselIndex ? 1 : 0.55,
+                        }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+                        className="rounded-lg overflow-hidden border-2 flex-shrink-0 active:scale-95 transition-transform"
+                        style={{
+                          borderColor: idx === carouselIndex ? 'rgba(var(--primary-rgb),1)' : 'transparent',
+                          boxShadow: idx === carouselIndex ? '0 0 12px rgba(var(--primary-rgb),0.6)' : 'none',
+                        }}
+                      >
+                        <img src={shot.url} alt={`Shot ${idx + 1}`} className="w-full h-full object-cover" />
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Preview Top Bar */}
+                <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between items-center z-50">
+                  <button
+                    onClick={handleDiscard}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
+                  >
+                    <span className="material-symbols-outlined text-[22px]">arrow_back</span>
+                  </button>
+                  <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>burst_mode</span>
+                    <span className="text-sm font-bold">{multiShotFiles.length} Photos</span>
+                  </div>
+                </div>
+
+                {/* Preview Bottom Bar (Caption & Send) */}
+                <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom">
+                  <div className="flex flex-col gap-3 max-w-lg mx-auto w-full">
+                    <input
+                      type="text"
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="Add a caption for all photos..."
+                      className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-3.5 text-white placeholder-white/50 focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all font-medium text-sm"
+                    />
+                    <button
+                      onClick={handleSendFile}
+                      className="w-full py-4 bg-primary text-background font-bold text-lg rounded-2xl shadow-glow-gold hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                      Send {multiShotFiles.length} Photos
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* ═══════════════════════════════════════════════════════════
+                 SINGLE SHOT PREVIEW (unchanged original flow)
+              ═══════════════════════════════════════════════════════════ */
+              <>
+                <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+                  {(() => {
+                    let layoutClass = 'w-full h-full';
+                    if (aspectRatio === '1:1') layoutClass = 'w-full aspect-square';
+                    else if (aspectRatio === '4:3') layoutClass = 'w-full aspect-[3/4]';
+                    else if (aspectRatio === '16:9') layoutClass = 'w-full aspect-[16/9]';
+                    else if (aspectRatio === '9:16') layoutClass = 'w-full h-full';
+
+                    return (
+                      <div className={`relative ${layoutClass} overflow-hidden flex items-center justify-center`}>
+                        {capturedFile.type.startsWith('video') ? (
+                          <video
+                            src={previewUrl}
+                            controls={false}
+                            autoPlay
+                            playsInline
+                            loop
+                            muted
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="relative w-full h-full overflow-hidden">
+                            <img
+                              src={isEnhancedView && enhancedUrl ? enhancedUrl : previewUrl}
+                              alt="Preview"
+                              className="w-full h-full object-cover transition-opacity duration-300"
+                            />
+                            <AnimatePresence>
+                              {showShimmer && (
+                                <motion.div
+                                  key={`shimmer-${shimmerKey}`}
+                                  initial={{ x: '-120%' }}
+                                  animate={{ x: '120%' }}
+                                  exit={{ opacity: 0 }}
+                                  transition={{ duration: 0.8, ease: 'circOut' }}
+                                  onAnimationComplete={() => setShowShimmer(false)}
+                                  className="absolute inset-x-[-20%] inset-y-0 z-[100] pointer-events-none skew-x-[-15deg]"
+                                  style={{
+                                    background: 'linear-gradient(90deg, transparent 35%, var(--gold) 50%, transparent 65%)',
+                                    mixBlendMode: 'screen'
+                                  }}
+                                />
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Preview Top Bar */}
+                <div className="absolute top-0 inset-x-0 p-4 pt-safe-top flex justify-between items-center z-50">
+                  <button
+                    onClick={handleDiscard}
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-red-500/80 transition-colors backdrop-blur-md"
+                  >
+                    <span className="material-symbols-outlined text-[22px]">delete</span>
+                  </button>
+
+                  {capturedFile.type.startsWith('image') && enhancementStatus !== 'idle' ? (
+                    <button
+                      onClick={() => {
+                        if (enhancementStatus === 'ready') {
+                          setShimmerKey(prev => prev + 1);
+                          setShowShimmer(true);
+                          setIsEnhancedView(prev => !prev);
+                        }
+                      }}
+                      className={`w-10 h-10 flex items-center justify-center rounded-full transition-all duration-300 border backdrop-blur-md ${
+                        isEnhancedView
+                          ? 'border-primary text-primary bg-black/40 shadow-[0_0_15px_rgba(var(--color-primary-rgb),0.5)]'
+                          : 'border-white/20 text-white bg-black/40 hover:bg-white/10'
+                      }`}
+                    >
+                      {enhancementStatus === 'processing' ? (
+                        <span className="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[22px] shadow-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium">
+                      {capturedFile.type.startsWith('video') ? 'Video Preview' : 'Photo Preview'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Preview Bottom Bar (Caption & Send) */}
+                <div className="absolute bottom-0 inset-x-0 p-4 pb-safe-bottom">
+                  <div className="flex flex-col gap-4 max-w-lg mx-auto w-full">
+                    <input
+                      type="text"
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      placeholder="Add a sweet caption..."
+                      className="w-full bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-5 py-4 text-white placeholder-white/50 focus:outline-none focus:border-white/50 focus:bg-white/20 transition-all font-medium"
+                    />
+                    <button
+                      onClick={handleSendFile}
+                      className="w-full py-4 bg-primary text-background font-bold text-lg rounded-2xl shadow-glow-gold hover:scale-[1.02] active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+                    >
+                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                      Send Message
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         )}
       </motion.div>
