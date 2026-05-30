@@ -26,7 +26,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
   const [selectedDate, setSelectedDate] = useState('');
   const [results, setResults] = useState<MemoryItem[]>([]);
   const [searching, setSearching] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; messageId?: string } | null>(null);
 
   const handleSearch = async (date: string) => {
     if (!date || !user || !partner) return;
@@ -155,7 +155,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
                 onViewportEnter={() => {
                   if (!memory.decryptedUrl && !memory.loading) decryptMedia(memory);
                 }}
-                onClick={() => memory.decryptedUrl && setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' })}
+                onClick={() => memory.decryptedUrl && setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image', messageId: memory.id })}
                 className="relative group rounded-2xl overflow-hidden bg-black/40 border border-white/5 cursor-pointer"
               >
                 {memory.loading ? (
@@ -212,6 +212,7 @@ export default function SearchOverlay({ onClose }: SearchOverlayProps) {
         <MediaViewer
           url={selectedMedia.url}
           type={selectedMedia.type as any}
+          messageId={selectedMedia.messageId}
           onClose={() => setSelectedMedia(null)}
         />
       )}

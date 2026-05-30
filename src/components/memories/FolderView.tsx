@@ -363,7 +363,7 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
                       // Chunked video: open viewer with messageId so it fetches chunks
                       setSelectedMedia({ url: memory.decryptedUrl || '', type: 'chunked_video', messageId: memory.id });
                     } else if (memory.decryptedUrl) {
-                      setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image' });
+                      setSelectedMedia({ url: memory.decryptedUrl, type: memory.type || 'image', messageId: memory.id });
                     }
                   }}>
                   {memory.loading ? (

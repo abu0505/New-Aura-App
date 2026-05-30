@@ -352,6 +352,17 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     return () => document.removeEventListener('jump-to-message', handleGlobalJump);
   }, []);
 
+  useEffect(() => {
+    const handleExtract = (e: any) => {
+      const { file } = e.detail;
+      if (messageInputRef.current && file) {
+        messageInputRef.current.handleDroppedFiles([file]);
+      }
+    };
+    document.addEventListener('send-extracted-frame', handleExtract);
+    return () => document.removeEventListener('send-extracted-frame', handleExtract);
+  }, []);
+
 
   
   // Real-time "Seen" logic using Intersection Observer

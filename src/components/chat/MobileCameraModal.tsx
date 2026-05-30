@@ -45,6 +45,13 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [showShutterFlash, setShowShutterFlash] = useState(false);
 
+  // ── Timer States ─────────────────────────────────────────────────────────────
+  // timerDuration: 0 = off, 3 = 3s, 5 = 5s, 10 = 10s
+  const [timerDuration, setTimerDuration] = useState<0 | 3 | 5 | 10>(3);
+  const [timerActive, setTimerActive] = useState(false); // true = user activated timer
+  const [timerCountdown, setTimerCountdown] = useState<number | null>(null); // current countdown value shown on screen
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Background Noise Reduction States
   const [enhancedFile, setEnhancedFile] = useState<File | null>(null);
   const [enhancedUrl, setEnhancedUrl] = useState<string | null>(null);
@@ -106,6 +113,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
 
   const shutterControls = useAnimation();
   const lockIconControls = useAnimation();
+  const countdownControls = useAnimation();
 
   // Premium: Synthetic Shutter Sound
   const playShutterSound = useCallback(() => {
@@ -926,6 +934,69 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     }, 300);
   };
 
+  // ── Timer Cycle Handler ──────────────────────────────────────────────────────
+  // Cycles: off(0) → 3s → 5s → 10s → off(0)
+  // If timer was inactive (off), clicking activates at 3s
+  // If timer was active, clicking cycles through durations
+  const cycleTimer = useCallback(() => {
+    if (!timerActive) {
+      // Activate timer at 3s (default)
+      setTimerActive(true);
+      setTimerDuration(3);
+      if (navigator.vibrate) navigator.vibrate(50);
+      return;
+    }
+    // Timer is active — cycle duration with haptic feedback
+    if (timerDuration === 3) {
+      setTimerDuration(5);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30]);
+    } else if (timerDuration === 5) {
+      setTimerDuration(10);
+      if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 30]);
+    } else {
+      // Was 10s → deactivate timer
+      setTimerActive(false);
+      setTimerDuration(3); // reset back to default for next activation
+      if (navigator.vibrate) navigator.vibrate(80);
+    }
+  }, [timerActive, timerDuration]);
+
+  // ── Timer Countdown Runner ──────────────────────────────────────────────────
+  const runTimerThenCapture = useCallback(() => {
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    let count = timerDuration;
+    setTimerCountdown(count);
+    countdownControls.start({ scale: [1.4, 1], opacity: [0, 1], transition: { duration: 0.25 } });
+
+    timerIntervalRef.current = setInterval(() => {
+      count -= 1;
+      if (count <= 0) {
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+        setTimerCountdown(null);
+        takePhoto();
+      } else {
+        setTimerCountdown(count);
+        // Animate each tick
+        countdownControls.start({
+          scale: [1.4, 1],
+          opacity: [0, 1],
+          transition: { duration: 0.25 },
+        });
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+    }, 1000);
+  }, [timerDuration, takePhoto, countdownControls]);
+
+  // Cancel timer if modal closes
+  useEffect(() => {
+    if (!isOpen && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+      setTimerCountdown(null);
+    }
+  }, [isOpen]);
+
   const handlePointerUp = () => {
     startPosRef.current = null;
     if (holdTimerRef.current) {
@@ -933,7 +1004,18 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       holdTimerRef.current = null;
       // It was a quick tap
       if (!isRecording) {
-        takePhoto();
+        // If a countdown is already running, cancel it
+        if (timerCountdown !== null) {
+          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+          timerIntervalRef.current = null;
+          setTimerCountdown(null);
+          return;
+        }
+        if (timerActive) {
+          runTimerThenCapture();
+        } else {
+          takePhoto();
+        }
       }
     }
 
@@ -1401,6 +1483,34 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   </span>
                 </button>
 
+                {/* Timer button — only show when not recording */}
+                {!isRecording && (
+                  <motion.button
+                    onClick={cycleTimer}
+                    whileTap={{ scale: 1.15 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className={`w-10 h-10 flex flex-col items-center justify-center rounded-full backdrop-blur-md transition-all duration-300 relative ${
+                      timerActive
+                        ? 'bg-[var(--gold)] text-white shadow-glow-gold'
+                        : (isFlashOn && facingMode === 'user' ? 'bg-black/30 text-black' : 'bg-black/30 text-white hover:bg-white/20')
+                    }`}
+                    title={timerActive ? `Timer: ${timerDuration}s (tap to change)` : 'Timer off (tap to enable)'}
+                  >
+                    {timerActive ? (
+                      <span className="text-sm font-bold tracking-tight text-white leading-none">
+                        {timerDuration}s
+                      </span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[16px] leading-none" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
+                        <span className="text-[9px] font-black leading-none mt-0.5 tracking-tight text-white/70">
+                          off
+                        </span>
+                      </>
+                    )}
+                  </motion.button>
+                )}
+
                 {/* HDR Mode — only show if native CameraX supports it */}
                 {sensorCaps?.hasHDR && facingMode === 'environment' && (
                   <button
@@ -1471,6 +1581,96 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                 {!isLocked && <span className="text-xs uppercase tracking-widest bg-black/40 px-2 py-1 rounded-full backdrop-blur-md">Swipe right to lock</span>}
               </motion.div>
             </div>
+
+            {/* ── Timer Countdown Overlay ──────────────────────────────────────────
+                 Full-screen premium countdown shown when self-timer is running.
+                 Tap anywhere on the countdown to cancel. */}
+            <AnimatePresence>
+              {timerCountdown !== null && (
+                <motion.div
+                  key="timer-countdown-overlay"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute inset-0 z-[85] flex flex-col items-center justify-center pointer-events-auto"
+                  style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 100%)' }}
+                  onClick={() => {
+                    // Tap to cancel
+                    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+                    timerIntervalRef.current = null;
+                    setTimerCountdown(null);
+                  }}
+                >
+                  {/* Pulsing ring */}
+                  <motion.div
+                    key={`ring-${timerCountdown}`}
+                    initial={{ scale: 0.6, opacity: 0.8 }}
+                    animate={{ scale: 1.8, opacity: 0 }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    className="absolute w-48 h-48 rounded-full border-[3px] border-[rgba(var(--primary-rgb),0.7)]"
+                  />
+                  <motion.div
+                    key={`ring2-${timerCountdown}`}
+                    initial={{ scale: 0.4, opacity: 0.6 }}
+                    animate={{ scale: 1.4, opacity: 0 }}
+                    transition={{ duration: 1, ease: 'easeOut', delay: 0.15 }}
+                    className="absolute w-48 h-48 rounded-full border-[2px] border-white/50"
+                  />
+
+                  {/* Main countdown number */}
+                  <motion.div
+                    key={`count-${timerCountdown}`}
+                    animate={countdownControls}
+                    initial={{ scale: 1.6, opacity: 0 }}
+                    className="relative flex flex-col items-center gap-3"
+                  >
+                    {/* Glowing circle background */}
+                    <div
+                      className="w-40 h-40 rounded-full flex items-center justify-center relative"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(var(--primary-rgb),0.25) 0%, rgba(var(--primary-rgb),0.05) 70%, transparent 100%)',
+                        boxShadow: '0 0 60px rgba(var(--primary-rgb),0.4), 0 0 120px rgba(var(--primary-rgb),0.15)',
+                        border: '2px solid rgba(var(--primary-rgb),0.3)',
+                      }}
+                    >
+                      <span
+                        className="font-black text-white select-none"
+                        style={{
+                          fontSize: '5.5rem',
+                          lineHeight: 1,
+                          textShadow: '0 0 30px rgba(var(--primary-rgb),0.8), 0 0 60px rgba(var(--primary-rgb),0.4)',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                        }}
+                      >
+                        {timerCountdown}
+                      </span>
+                    </div>
+
+                    {/* Progress arc */}
+                    <svg
+                      className="absolute w-[168px] h-[168px] -top-3.5 -left-3.5 -rotate-90 pointer-events-none"
+                      viewBox="0 0 168 168"
+                    >
+                      <circle cx="84" cy="84" r="80" stroke="rgba(var(--primary-rgb),0.15)" strokeWidth="3" fill="none" />
+                      <motion.circle
+                        cx="84" cy="84" r="80"
+                        stroke="rgba(var(--primary-rgb),0.85)"
+                        strokeWidth="3"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={2 * Math.PI * 80}
+                        initial={{ strokeDashoffset: 0 }}
+                        animate={{ strokeDashoffset: 2 * Math.PI * 80 }}
+                        transition={{ duration: 1, ease: 'linear' }}
+                      />
+                    </svg>
+
+                    <span className="text-white/60 text-sm font-semibold uppercase tracking-[0.2em] mt-1">Tap to cancel</span>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Bottom Controls */}
             <div className={`absolute bottom-0 inset-x-0 pb-safe-bottom z-[70] transition-all duration-500`}>

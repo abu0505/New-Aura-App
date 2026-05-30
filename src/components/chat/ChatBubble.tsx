@@ -565,6 +565,7 @@ function ChatBubble({
               chunks={chunks}
               thumbnailUrl={thumbSrc}
               duration={message.duration ?? undefined}
+              messageId={message.id}
               onClose={() => setIsPreviewOpen(false)}
             />
           )}
@@ -606,6 +607,7 @@ function ChatBubble({
               chunks={chunks}
               thumbnailUrl={thumbSrc}
               duration={message.duration ?? undefined}
+              messageId={message.id}
               onClose={() => setIsPreviewOpen(false)} 
             />
           )}
@@ -646,6 +648,7 @@ function ChatBubble({
               <MediaViewer 
                 url={decryptedMediaUrl ?? ''} 
                 type="image" 
+                messageId={message.id}
                 onClose={() => setIsPreviewOpen(false)} 
               />
             )}
@@ -750,6 +753,7 @@ function ChatBubble({
               <MediaViewer 
                 url={decryptedMediaUrl || message.media_url || ''} 
                 type={(decryptedMediaUrl || message.media_url)?.includes('.mp4') ? 'video' : 'gif'} 
+                messageId={message.id}
                 onClose={() => setIsPreviewOpen(false)} 
               />
             )}

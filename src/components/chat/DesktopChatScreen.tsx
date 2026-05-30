@@ -382,6 +382,17 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
     return () => document.removeEventListener('jump-to-message', handleGlobalJump);
   }, []);
 
+  useEffect(() => {
+    const handleExtract = (e: any) => {
+      const { file } = e.detail;
+      if (messageInputRef.current && file) {
+        messageInputRef.current.handleDroppedFiles([file]);
+      }
+    };
+    document.addEventListener('send-extracted-frame', handleExtract);
+    return () => document.removeEventListener('send-extracted-frame', handleExtract);
+  }, []);
+
 
   // Real-time "Seen" logic using Intersection Observer
   // ══ FIXED: Observer is created ONCE and persists across message changes ══

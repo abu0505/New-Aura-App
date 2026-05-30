@@ -474,6 +474,7 @@ function MediaGridBubble({
         <MediaViewer
           url={decryptedUrls[messages[selectedMediaIndex]?.id] || ''}
           type={messages[selectedMediaIndex]?.type as 'image' | 'video' | 'gif'}
+          messageId={messages[selectedMediaIndex]?.id}
           onClose={() => setSelectedMediaIndex(null)}
           // Future-proofing for swipable gallery
           allMedia={messages.map(m => ({

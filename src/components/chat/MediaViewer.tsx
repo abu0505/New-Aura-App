@@ -7,6 +7,7 @@ import { useVideoChunks } from '../../hooks/useVideoChunks';
 import { supabase } from '../../lib/supabase';
 import { usePartner } from '../../hooks/usePartner';
 import { toast } from 'sonner';
+import { useMediaFolders } from '../../hooks/useMediaFolders';
 
 interface MediaItem {
   id: string;
@@ -92,6 +93,68 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  
+  const { folders, createFolder, addItemsToFolder } = useMediaFolders();
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  const extractFrameAndSend = () => {
+    const video = videoRef.current || document.querySelector('video');
+    if (!video) {
+      toast.error("Video not found");
+      return;
+    }
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || video.clientWidth;
+      canvas.height = video.videoHeight || video.clientHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          toast.error("Could not capture frame");
+          return;
+        }
+        const file = new File([blob], 'extracted_frame.jpg', { type: 'image/jpeg' });
+        document.dispatchEvent(new CustomEvent('send-extracted-frame', { detail: { file, caption: 'Extracted frame' } }));
+        toast.success("Frame extracted and sent!");
+      }, 'image/jpeg', 0.9);
+    } catch(err) {
+      console.error("Frame extraction error", err);
+      toast.error("Failed to extract frame");
+    }
+  };
+
+  const handleAddToFolder = async (folderId: string) => {
+    if (!currentMedia.id) {
+      toast.error("Cannot add this item to a folder");
+      return;
+    }
+    const success = await addItemsToFolder(folderId, [currentMedia.id]);
+    if (success) {
+      toast.success("Added to folder");
+      setShowFolderPicker(false);
+    } else {
+      toast.error("Failed to add to folder");
+    }
+  };
+
+  const handleCreateFolderAndAdd = async () => {
+    if (!newFolderName.trim() || !currentMedia.id) return;
+    setIsCreatingFolder(true);
+    const folderId = await createFolder(newFolderName.trim());
+    if (folderId) {
+      await addItemsToFolder(folderId, [currentMedia.id]);
+      toast.success("Folder created and item added");
+      setNewFolderName('');
+      setShowFolderPicker(false);
+    } else {
+      toast.error("Failed to create folder");
+    }
+    setIsCreatingFolder(false);
+  };
 
   // ── Inline video player state ─────────────────────────────────────────────
   const [videoLoading, setVideoLoading] = useState(true);
@@ -302,6 +365,85 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               <span className="material-symbols-outlined text-2xl">forum</span>
             </button>
           )}
+          
+          {(currentMedia.type === 'video' || currentMedia.type === 'chunked_video') && (
+            <button
+              title="Extract & Send Frame"
+              onClick={(e) => {
+                e.stopPropagation();
+                extractFrameAndSend();
+              }}
+              className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-2xl">camera</span>
+            </button>
+          )}
+
+          {currentMedia.id && (
+            <div className="relative">
+              <button
+                title="Add to Folder"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowFolderPicker(!showFolderPicker);
+                }}
+                className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
+              >
+                <span className="material-symbols-outlined text-2xl">create_new_folder</span>
+              </button>
+              
+              <AnimatePresence>
+                {showFolderPicker && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-0 top-full mt-2 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl flex flex-col gap-2 z-[10001]"
+                  >
+                    <div className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1 px-1">Add to Folder</div>
+                    
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                      {folders.map(folder => (
+                        <button
+                          key={folder.id}
+                          onClick={() => handleAddToFolder(folder.id)}
+                          className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors text-left"
+                        >
+                          <span className="material-symbols-outlined text-sm text-[var(--gold)]">folder</span>
+                          <span className="text-sm text-white/90 truncate">{folder.name}</span>
+                        </button>
+                      ))}
+                      {folders.length === 0 && (
+                        <div className="text-xs text-white/40 px-2 py-1 italic">No folders yet</div>
+                      )}
+                    </div>
+                    
+                    <div className="h-px bg-white/10 my-1" />
+                    
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="New folder name..."
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolderAndAdd(); }}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--gold)] transition-colors"
+                      />
+                      <button
+                        onClick={handleCreateFolderAndAdd}
+                        disabled={isCreatingFolder || !newFolderName.trim()}
+                        className="bg-[var(--gold)] text-black rounded-lg px-3 py-1.5 text-sm font-bold disabled:opacity-50 transition-opacity"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {(currentMedia.type === 'image' || currentMedia.type === 'gif') && (
             <button
               title="Copy Image"
