@@ -619,7 +619,7 @@ export default function MemoriesScreen() {
       .map(m => ({
         id: m.id,
         url: m.decryptedUrl!,
-        type: m.isChunkedVideo ? 'chunked_video' : ((m.type === 'video') ? 'video' : 'image')
+        type: (m.isChunkedVideo ? 'chunked_video' : ((m.type === 'video') ? 'video' : 'image')) as 'image' | 'video' | 'gif' | 'chunked_video'
       }));
   }, [filteredMemories]);
 
