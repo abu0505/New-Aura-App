@@ -9,6 +9,62 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { supabase } from '../../lib/supabase';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// INLINE DRAWING TYPES & CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+type InlineDrawTool = 'pen' | 'highlighter' | 'eraser' | 'arrow' | 'double-arrow' | 'line' | 'rect' | 'circle' | 'text' | 'laser';
+
+interface InlineDrawStroke {
+  id: string;
+  tool: InlineDrawTool;
+  points: { x: number; y: number }[];
+  color: string;
+  size: number;
+  opacity: number;
+  // For shapes
+  startX?: number;
+  startY?: number;
+  endX?: number;
+  endY?: number;
+  // For text
+  text?: string;
+  fontSize?: number;
+}
+
+const INLINE_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
+  { id: 'pen', icon: 'edit', label: 'Pen' },
+  { id: 'highlighter', icon: 'ink_highlighter', label: 'Highlighter' },
+  { id: 'eraser', icon: 'ink_eraser', label: 'Eraser' },
+  { id: 'text', icon: 'text_fields', label: 'Text' },
+  { id: 'laser', icon: 'flare', label: 'Laser' },
+];
+
+const SHAPE_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
+  { id: 'rect', icon: 'rectangle', label: 'Rectangle' },
+  { id: 'circle', icon: 'circle', label: 'Circle' },
+  { id: 'line', icon: 'horizontal_rule', label: 'Line' },
+];
+
+const ARROW_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
+  { id: 'arrow', icon: 'east', label: 'Arrow' },
+  { id: 'double-arrow', icon: 'sync_alt', label: 'Double Arrow' },
+];
+
+const INLINE_DRAW_COLORS = [
+  { id: 'white', hex: '#ffffff', label: 'White' },
+  { id: 'gold', hex: '#e6c487', label: 'Gold' },
+  { id: 'red', hex: '#FF6B6B', label: 'Red' },
+  { id: 'green', hex: '#51CF66', label: 'Green' },
+  { id: 'blue', hex: '#339AF0', label: 'Blue' },
+  { id: 'purple', hex: '#CC5DE8', label: 'Purple' },
+  { id: 'orange', hex: '#FF922B', label: 'Orange' },
+  { id: 'cyan', hex: '#22B8CF', label: 'Cyan' },
+  { id: 'yellow', hex: '#FFD43B', label: 'Yellow' },
+];
+
+const INLINE_DRAW_SIZES = [2, 4, 6, 10, 16];
+
 // Helper to strip HTML tags for plain text conversions
 const getPlainText = (html: string) => {
   if (!html) return '';
@@ -24,9 +80,9 @@ const getPlainText = (html: string) => {
     .replace(/<\/h2>/gi, '\n')
     .replace(/<h3>/gi, '\n')
     .replace(/<\/h3>/gi, '\n');
-  
+
   text = text.replace(/<[^>]*>/g, '');
-  
+
   return text
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
@@ -67,6 +123,207 @@ interface NoteEditorProps {
 
 type BottomPanel = 'none' | 'colors' | 'backgrounds' | 'mood' | 'labels' | 'more';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LIVE MARKDOWN RENDERING (Typora-style)
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// When the user types markdown (e.g., **bold**, *italic*, ## heading) and
+// presses Enter or moves the cursor away, the current line auto-renders.
+// When the cursor comes back to that line, it shows raw markdown again.
+//
+// Implementation: We work at the block/line level. On 'input' and 'keyup',
+// we check the current paragraph. If cursor is NOT inside a rendered block,
+// we render it. If cursor IS inside a rendered block, we un-render it.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Markdown patterns to detect and render inline
+const MD_INLINE_RULES: { pattern: RegExp; replace: string }[] = [
+  // Bold: **text** or __text__
+  { pattern: /\*\*(.+?)\*\*/g, replace: '<strong>$1</strong>' },
+  { pattern: /__(.+?)__/g, replace: '<strong>$1</strong>' },
+  // Italic: *text* or _text_
+  { pattern: /(?<![*_])\*(?![*])(.+?)(?<![*])\*(?![*_])/g, replace: '<em>$1</em>' },
+  { pattern: /(?<![*_])_(?![_])(.+?)(?<![_])_(?![*_])/g, replace: '<em>$1</em>' },
+  // Strikethrough: ~~text~~
+  { pattern: /~~(.+?)~~/g, replace: '<del>$1</del>' },
+  // Inline code: `code`
+  { pattern: /`([^`]+)`/g, replace: '<code style="background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:0.8em;color:#4ade80;">$1</code>' },
+  // Highlight: ==text==
+  { pattern: /==(.+?)==/g, replace: '<mark style="background:rgba(255,213,79,0.25);color:#FFD54F;padding:1px 3px;border-radius:3px;">$1</mark>' },
+];
+
+// Block-level patterns (applied to entire paragraph text)
+const MD_BLOCK_RULES: { pattern: RegExp; tag: string; attrs?: string }[] = [
+  { pattern: /^### (.+)$/, tag: 'h3' },
+  { pattern: /^## (.+)$/, tag: 'h2' },
+  { pattern: /^# (.+)$/, tag: 'h1' },
+  { pattern: /^> (.+)$/, tag: 'blockquote' },
+  { pattern: /^---$/, tag: 'hr' },
+];
+
+// Convert a line of raw markdown text into rendered HTML
+// Returns blockTag when the element's tag itself should change (e.g. p → h2)
+const renderMarkdownLine = (text: string): { html: string; isBlock: boolean; blockTag?: string } => {
+  // Check block-level patterns
+  for (const rule of MD_BLOCK_RULES) {
+    const match = text.match(rule.pattern);
+    if (match) {
+      if (rule.tag === 'hr') {
+        return { html: '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:8px 0;">', isBlock: true };
+      }
+      let inner = match[1];
+      // Apply inline rules to the captured content
+      for (const inlineRule of MD_INLINE_RULES) {
+        inner = inner.replace(inlineRule.pattern, inlineRule.replace);
+      }
+      // Return inner HTML only — the caller will change the element's tag
+      return { html: inner, isBlock: true, blockTag: rule.tag };
+    }
+  }
+
+  // Apply inline rules only
+  let rendered = text;
+  let changed = false;
+  for (const rule of MD_INLINE_RULES) {
+    const newText = rendered.replace(rule.pattern, rule.replace);
+    if (newText !== rendered) changed = true;
+    rendered = newText;
+  }
+
+  return { html: rendered, isBlock: changed };
+};
+
+// Check if a paragraph element contains rendered markdown (has HTML children beyond text)
+const isRenderedMarkdown = (el: HTMLElement): boolean => {
+  return el.hasAttribute('data-md-rendered');
+};
+
+// Get raw markdown from a rendered element
+const getRawMarkdown = (el: HTMLElement): string => {
+  return el.getAttribute('data-md-raw') || el.textContent || '';
+};
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DRAWING PREVIEW (mini canvas)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function DrawingPreview({ strokes }: { strokes: any[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !strokes.length) return;
+
+    const parent = canvas.parentElement;
+    if (!parent) return;
+
+    const w = parent.clientWidth;
+    const h = parent.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    ctx.save();
+
+    strokes.forEach(stroke => {
+      if (!stroke || !stroke.tool) return;
+      if (stroke.tool === 'laser') return;
+
+      ctx.save();
+      if (stroke.tool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineWidth = stroke.size * 3;
+      } else if (stroke.tool === 'highlighter') {
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.strokeStyle = stroke.color || '#fff';
+        ctx.lineWidth = stroke.size * 4;
+        ctx.globalAlpha = 0.35;
+      } else {
+        ctx.strokeStyle = stroke.color || '#fff';
+        ctx.lineWidth = stroke.size || 2;
+        ctx.globalAlpha = stroke.opacity || 1;
+      }
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (stroke.tool === 'text' && stroke.text) {
+        ctx.fillStyle = stroke.color || '#fff';
+        ctx.font = `${stroke.fontSize || 18}px 'Inter', sans-serif`;
+        ctx.fillText(stroke.text, stroke.startX || 0, stroke.startY || 0);
+      } else if (['arrow', 'double-arrow', 'line', 'rect', 'circle'].includes(stroke.tool) && stroke.startX !== undefined) {
+        ctx.beginPath();
+        if (stroke.tool === 'rect') {
+          const x = Math.min(stroke.startX, stroke.endX);
+          const y = Math.min(stroke.startY, stroke.endY);
+          ctx.strokeRect(x, y, Math.abs(stroke.endX - stroke.startX), Math.abs(stroke.endY - stroke.startY));
+        } else if (stroke.tool === 'circle') {
+          const cx = (stroke.startX + stroke.endX) / 2;
+          const cy = (stroke.startY + stroke.endY) / 2;
+          const rx = Math.abs(stroke.endX - stroke.startX) / 2;
+          const ry = Math.abs(stroke.endY - stroke.startY) / 2;
+          ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else {
+          ctx.moveTo(stroke.startX, stroke.startY);
+          ctx.lineTo(stroke.endX, stroke.endY);
+          ctx.stroke();
+          if (stroke.tool === 'arrow' || stroke.tool === 'double-arrow') {
+            const headLen = Math.max(stroke.size * 4, 12);
+            const angle = Math.atan2(stroke.endY - stroke.startY, stroke.endX - stroke.startX);
+
+            // End arrowhead
+            ctx.beginPath();
+            ctx.moveTo(stroke.endX, stroke.endY);
+            ctx.lineTo(stroke.endX - headLen * Math.cos(angle - Math.PI / 6), stroke.endY - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(stroke.endX, stroke.endY);
+            ctx.lineTo(stroke.endX - headLen * Math.cos(angle + Math.PI / 6), stroke.endY - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.stroke();
+
+            // Start arrowhead (for double-arrow)
+            if (stroke.tool === 'double-arrow') {
+              ctx.beginPath();
+              ctx.moveTo(stroke.startX, stroke.startY);
+              ctx.lineTo(stroke.startX + headLen * Math.cos(angle - Math.PI / 6), stroke.startY + headLen * Math.sin(angle - Math.PI / 6));
+              ctx.moveTo(stroke.startX, stroke.startY);
+              ctx.lineTo(stroke.startX + headLen * Math.cos(angle + Math.PI / 6), stroke.startY + headLen * Math.sin(angle + Math.PI / 6));
+              ctx.stroke();
+            }
+          }
+        }
+      } else if (stroke.points && stroke.points.length > 1) {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        for (let i = 1; i < stroke.points.length - 1; i++) {
+          const mx = (stroke.points[i].x + stroke.points[i + 1].x) / 2;
+          const my = (stroke.points[i].y + stroke.points[i + 1].y) / 2;
+          ctx.quadraticCurveTo(stroke.points[i].x, stroke.points[i].y, mx, my);
+        }
+        ctx.lineTo(stroke.points[stroke.points.length - 1].x, stroke.points[stroke.points.length - 1].y);
+        ctx.stroke();
+      } else if (stroke.points && stroke.points.length === 1) {
+        // Draw a single dot
+        ctx.beginPath();
+        ctx.arc(stroke.points[0].x, stroke.points[0].y, stroke.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    });
+
+    ctx.restore();
+  }, [strokes]);
+
+  return <canvas ref={canvasRef} className="w-full h-full" />;
+}
+
 export default function NoteEditor({
   note,
   onUpdate,
@@ -93,6 +350,33 @@ export default function NoteEditor({
   const [decryptedBg, setDecryptedBg] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showColorMenu, setShowColorMenu] = useState(false);
+  // ═══ INLINE DRAWING STATE ═══
+  const [drawMode, setDrawMode] = useState(false);
+  const [drawTool, setDrawTool] = useState<InlineDrawTool>('pen');
+  const [drawColor, setDrawColor] = useState('#ffffff');
+  const [drawSize, setDrawSize] = useState(4);
+  const [drawStrokes, setDrawStrokes] = useState<InlineDrawStroke[]>(() => {
+    const data = note.drawingData as InlineDrawStroke[] || [];
+    return data.filter(s => s && s.tool && s.points);
+  });
+  const [drawUndoStack, setDrawUndoStack] = useState<InlineDrawStroke[][]>([]);
+  const [drawRedoStack, setDrawRedoStack] = useState<InlineDrawStroke[][]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [showDrawColors, setShowDrawColors] = useState(false);
+  const [showDrawSizes, setShowDrawSizes] = useState(false);
+  const [showDrawShapes, setShowDrawShapes] = useState(false);
+  const [showDrawArrows, setShowDrawArrows] = useState(false);
+  const [textInput, setTextInput] = useState('');
+  const [textPos, setTextPos] = useState<{ x: number; y: number } | null>(null);
+  const laserPointsRef = useRef<{ x: number; y: number; time: number }[]>([]);
+
+  const drawCanvasRef = useRef<HTMLCanvasElement>(null);
+  const drawOverlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const drawContainerRef = useRef<HTMLDivElement>(null);
+  const currentDrawStrokeRef = useRef<InlineDrawStroke | null>(null);
+  const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const drawStrokesRef = useRef(drawStrokes);
+  useEffect(() => { drawStrokesRef.current = drawStrokes; }, [drawStrokes]);
   const [activeStyles, setActiveStyles] = useState({
     bold: false,
     italic: false,
@@ -151,18 +435,18 @@ export default function NoteEditor({
       }
     });
     generatedBlobUrlsRef.current.clear();
-    
+
     decryptionObserverRef.current?.disconnect();
     sentinelObserverRef.current?.disconnect();
     decryptionObserverRef.current = null;
     sentinelObserverRef.current = null;
-    
+
     decryptingIdsRef.current.clear();
     observedIdsRef.current.clear();
     decryptedIdsRef.current.clear();
     decryptionQueueRef.current = [];
     isProcessingQueueRef.current = false;
-    
+
     setMemoriesList([]);
     setDecryptedUrls({});
     setHasMoreMemories(true);
@@ -187,7 +471,7 @@ export default function NoteEditor({
     if (!user || !partner) return;
     if (!force && (!hasMoreMemories || loadingMetadata)) return;
     setLoadingMetadata(true);
-    
+
     const LIMIT = 15;
     try {
       const { data, error } = await supabase
@@ -200,7 +484,7 @@ export default function NoteEditor({
         .range((page - 1) * LIMIT, page * LIMIT - 1);
 
       if (error) throw error;
-      
+
       const newItems = (data || []) as MemoryMetadata[];
       setMemoriesList(prev => {
         const filtered = newItems.filter(item => !prev.some(p => p.id === item.id));
@@ -226,7 +510,7 @@ export default function NoteEditor({
   const decryptMemory = useCallback(async (item: MemoryMetadata) => {
     if (!partner?.public_key) return;
     if (decryptingIdsRef.current.has(item.id) || decryptedIdsRef.current.has(item.id)) return;
-    
+
     decryptingIdsRef.current.add(item.id);
     setDecryptedUrls(prev => ({
       ...prev,
@@ -248,7 +532,7 @@ export default function NoteEditor({
         const url = URL.createObjectURL(blob);
         generatedBlobUrlsRef.current.add(url);
         decryptedIdsRef.current.add(item.id);
-        
+
         setDecryptedUrls(prev => ({
           ...prev,
           [item.id]: { blobUrl: url, loading: false }
@@ -275,7 +559,7 @@ export default function NoteEditor({
     if (decryptionQueueRef.current.length === 0) return;
 
     isProcessingQueueRef.current = true;
-    
+
     const item = decryptionQueueRef.current.shift();
     if (item) {
       const alreadyDone = decryptedIdsRef.current.has(item.id) || decryptingIdsRef.current.has(item.id);
@@ -288,7 +572,7 @@ export default function NoteEditor({
         await decryptMemory(item);
       }
     }
-    
+
     isProcessingQueueRef.current = false;
     processDecryptionQueue();
   }, [decryptMemory]);
@@ -296,7 +580,7 @@ export default function NoteEditor({
   const queueDecryption = useCallback((item: MemoryMetadata) => {
     if (decryptedIdsRef.current.has(item.id) || decryptingIdsRef.current.has(item.id)) return;
     if (decryptionQueueRef.current.some(q => q.id === item.id)) return;
-    
+
     decryptionQueueRef.current.push(item);
     processDecryptionQueue();
   }, [processDecryptionQueue]);
@@ -305,7 +589,7 @@ export default function NoteEditor({
   const registerDecryptionObserver = useCallback((node: HTMLButtonElement | null, item: MemoryMetadata) => {
     if (!node) return;
     if (observedIdsRef.current.has(item.id)) return;
-    
+
     if (!decryptionObserverRef.current) {
       decryptionObserverRef.current = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
@@ -326,7 +610,7 @@ export default function NoteEditor({
         threshold: 0.01
       });
     }
-    
+
     observedIdsRef.current.add(item.id);
     decryptionObserverRef.current.observe(node);
   }, [queueDecryption]);
@@ -334,7 +618,7 @@ export default function NoteEditor({
   // Register observer for infinite scroll metadata loading
   const registerSentinelObserver = useCallback((node: HTMLDivElement | null) => {
     if (!node) return;
-    
+
     sentinelObserverRef.current?.disconnect();
     sentinelObserverRef.current = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
@@ -346,7 +630,7 @@ export default function NoteEditor({
       rootMargin: '100px',
       threshold: 0.01
     });
-    
+
     sentinelObserverRef.current.observe(node);
   }, [fetchMemoriesPage]);
 
@@ -388,6 +672,7 @@ export default function NoteEditor({
       return;
     }
     let isMounted = true;
+    let blobUrl: string | null = null;
     const decryptData = async () => {
       try {
         const keys = getStoredKeyPair();
@@ -406,7 +691,7 @@ export default function NoteEditor({
           if (decrypted && isMounted) {
             // The decrypted bytes are the original image file bytes
             const blob = new Blob([decrypted as unknown as BlobPart]);
-            const blobUrl = URL.createObjectURL(blob);
+            blobUrl = URL.createObjectURL(blob);
             setDecryptedBg(blobUrl);
           }
           return;
@@ -429,8 +714,17 @@ export default function NoteEditor({
       }
     };
     decryptData();
-    return () => { isMounted = false; };
-  }, [note.customBg]);
+    return () => {
+      isMounted = false;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [
+    note.customBg?.nonce,
+    (note.customBg as any)?.url,
+    (note.customBg as any)?.ciphertext
+  ]);
 
   const [isBgUploading, setIsBgUploading] = useState(false);
 
@@ -488,12 +782,402 @@ export default function NoteEditor({
 
   // Save on close
   const handleClose = () => {
+    // Auto-save drawing data if in draw mode
+    if (drawMode && drawStrokes.length > 0) {
+      onUpdate(note.id, { drawingData: drawStrokes });
+    }
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
       onUpdate(note.id, { title, content });
     }
     onClose();
   };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INLINE DRAWING: Canvas setup, pointer handlers, rendering
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Setup / resize the inline drawing canvas
+  const resizeDrawCanvas = useCallback(() => {
+    const container = drawContainerRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+
+    [drawCanvasRef, drawOverlayCanvasRef].forEach(ref => {
+      const canvas = ref.current;
+      if (!canvas) return;
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      const ctx = canvas.getContext('2d');
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+  }, []);
+
+  // Draw a single stroke
+  const drawInlineStroke = useCallback((ctx: CanvasRenderingContext2D, stroke: InlineDrawStroke) => {
+    if (!stroke || !stroke.tool) return;
+    if (stroke.tool === 'laser') return;
+
+    ctx.save();
+
+    if (stroke.tool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+      ctx.lineWidth = stroke.size * 3;
+    } else if (stroke.tool === 'highlighter') {
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size * 4;
+      ctx.globalAlpha = 0.35;
+    } else {
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = stroke.size;
+      ctx.globalAlpha = stroke.opacity;
+    }
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if ((stroke.tool === 'arrow' || stroke.tool === 'double-arrow') && stroke.startX !== undefined) {
+      const headLen = Math.max(stroke.size * 4, 12);
+      const angle = Math.atan2(stroke.endY! - stroke.startY!, stroke.endX! - stroke.startX);
+
+      // Main line
+      ctx.beginPath();
+      ctx.moveTo(stroke.startX, stroke.startY!);
+      ctx.lineTo(stroke.endX!, stroke.endY!);
+      ctx.stroke();
+
+      // End arrowhead
+      ctx.beginPath();
+      ctx.moveTo(stroke.endX!, stroke.endY!);
+      ctx.lineTo(stroke.endX! - headLen * Math.cos(angle - Math.PI / 6), stroke.endY! - headLen * Math.sin(angle - Math.PI / 6));
+      ctx.moveTo(stroke.endX!, stroke.endY!);
+      ctx.lineTo(stroke.endX! - headLen * Math.cos(angle + Math.PI / 6), stroke.endY! - headLen * Math.sin(angle + Math.PI / 6));
+      ctx.stroke();
+
+      // Start arrowhead (for double-arrow)
+      if (stroke.tool === 'double-arrow') {
+        ctx.beginPath();
+        ctx.moveTo(stroke.startX, stroke.startY!);
+        ctx.lineTo(stroke.startX + headLen * Math.cos(angle - Math.PI / 6), stroke.startY! + headLen * Math.sin(angle - Math.PI / 6));
+        ctx.moveTo(stroke.startX, stroke.startY!);
+        ctx.lineTo(stroke.startX + headLen * Math.cos(angle + Math.PI / 6), stroke.startY! + headLen * Math.sin(angle + Math.PI / 6));
+        ctx.stroke();
+      }
+    } else if (stroke.tool === 'line' && stroke.startX !== undefined) {
+      ctx.beginPath();
+      ctx.moveTo(stroke.startX, stroke.startY!);
+      ctx.lineTo(stroke.endX!, stroke.endY!);
+      ctx.stroke();
+    } else if (stroke.tool === 'rect' && stroke.startX !== undefined) {
+      const x = Math.min(stroke.startX, stroke.endX!);
+      const y = Math.min(stroke.startY!, stroke.endY!);
+      const w = Math.abs(stroke.endX! - stroke.startX);
+      const h = Math.abs(stroke.endY! - stroke.startY!);
+      ctx.strokeRect(x, y, w, h);
+    } else if (stroke.tool === 'circle' && stroke.startX !== undefined) {
+      const cx = (stroke.startX + stroke.endX!) / 2;
+      const cy = (stroke.startY! + stroke.endY!) / 2;
+      const rx = Math.abs(stroke.endX! - stroke.startX) / 2;
+      const ry = Math.abs(stroke.endY! - stroke.startY!) / 2;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (stroke.tool === 'text' && stroke.text) {
+      ctx.fillStyle = stroke.color;
+      ctx.font = `${stroke.fontSize || 18}px 'Inter', sans-serif`;
+      ctx.globalAlpha = stroke.opacity;
+      ctx.fillText(stroke.text, stroke.startX || 0, stroke.startY || 0);
+    } else if (stroke.points && stroke.points.length > 1) {
+      ctx.beginPath();
+      ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+      for (let i = 1; i < stroke.points.length - 1; i++) {
+        const mx = (stroke.points[i].x + stroke.points[i + 1].x) / 2;
+        const my = (stroke.points[i].y + stroke.points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(stroke.points[i].x, stroke.points[i].y, mx, my);
+      }
+      const last = stroke.points[stroke.points.length - 1];
+      ctx.lineTo(last.x, last.y);
+      ctx.stroke();
+    } else if (stroke.points && stroke.points.length === 1) {
+      // Draw a single dot
+      ctx.beginPath();
+      ctx.arc(stroke.points[0].x, stroke.points[0].y, stroke.size / 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }, []);
+
+  // Redraw all strokes
+  const redrawInlineCanvas = useCallback(() => {
+    const canvas = drawCanvasRef.current;
+    const container = drawContainerRef.current;
+    if (!canvas || !container) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = container.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    drawStrokesRef.current.forEach(stroke => {
+      drawInlineStroke(ctx, stroke);
+    });
+  }, [drawInlineStroke]);
+
+  // Resize & redraw when entering draw mode or strokes change
+  // Resize canvas when entering draw mode or on window resize ONLY — do NOT depend on
+  // drawStrokes here because resizing always clears the canvas, which would erase every stroke.
+  useEffect(() => {
+    if (drawMode) {
+      resizeDrawCanvas();
+      redrawInlineCanvas();
+      const handleResize = () => { resizeDrawCanvas(); redrawInlineCanvas(); };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
+  }, [drawMode, resizeDrawCanvas, redrawInlineCanvas]);
+
+  // Redraw (without resize) whenever strokes state changes — e.g. after pointer-up commits a stroke
+  useEffect(() => {
+    if (drawMode) {
+      redrawInlineCanvas();
+    }
+  }, [drawStrokes, drawMode, redrawInlineCanvas]);
+
+  // Laser animation loop
+  useEffect(() => {
+    if (!drawMode) return;
+    let animationFrameId: number;
+
+    const animateLaser = () => {
+      const now = Date.now();
+      // Keep points from last 300ms
+      laserPointsRef.current = laserPointsRef.current.filter(p => now - p.time < 300);
+
+      const overlayCanvas = drawOverlayCanvasRef.current;
+      if (overlayCanvas) {
+        const ctx = overlayCanvas.getContext('2d');
+        if (ctx) {
+          const rect = overlayCanvas.getBoundingClientRect();
+          ctx.clearRect(0, 0, rect.width, rect.height);
+
+          // Render current shape preview if it's active
+          if (isDrawing && currentDrawStrokeRef.current && ['arrow', 'double-arrow', 'line', 'rect', 'circle'].includes(drawTool)) {
+            drawInlineStroke(ctx, currentDrawStrokeRef.current);
+          }
+
+          // Render laser points
+          if (laserPointsRef.current.length > 0) {
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (let i = 0; i < laserPointsRef.current.length - 1; i++) {
+              const p1 = laserPointsRef.current[i];
+              const p2 = laserPointsRef.current[i + 1];
+              const age = now - p1.time;
+              const opacity = Math.max(0, 1 - age / 300);
+              ctx.beginPath();
+              ctx.moveTo(p1.x, p1.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.strokeStyle = `rgba(255, 64, 64, ${opacity})`;
+              ctx.lineWidth = drawSize * 1.5;
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(animateLaser);
+    };
+
+    animateLaser();
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [drawMode, drawSize, isDrawing, drawTool, drawInlineStroke]);
+
+  // Pointer handlers for inline drawing
+  const getDrawPos = (e: React.PointerEvent): { x: number; y: number } => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  };
+
+  const handleDrawPointerDown = (e: React.PointerEvent) => {
+    if (!drawMode) return;
+    setIsDrawing(true);
+    const pos = getDrawPos(e);
+
+    if (drawTool === 'text') {
+      setTextPos(pos);
+      setIsDrawing(false);
+      return;
+    }
+
+    if (drawTool === 'laser') return;
+
+    // Save state for undo
+    setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
+    setDrawRedoStack([]);
+
+    if (['arrow', 'double-arrow', 'line', 'rect', 'circle'].includes(drawTool)) {
+      shapeStartRef.current = pos;
+      currentDrawStrokeRef.current = {
+        id: crypto.randomUUID(),
+        tool: drawTool,
+        points: [],
+        color: drawColor,
+        size: drawSize,
+        opacity: 1,
+        startX: pos.x,
+        startY: pos.y,
+        endX: pos.x,
+        endY: pos.y,
+      };
+    } else {
+      currentDrawStrokeRef.current = {
+        id: crypto.randomUUID(),
+        tool: drawTool,
+        points: [pos],
+        color: drawColor,
+        size: drawSize,
+        opacity: drawTool === 'highlighter' ? 0.35 : 1,
+      };
+    }
+
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleDrawPointerMove = (e: React.PointerEvent) => {
+    if (!isDrawing) return;
+    const pos = getDrawPos(e);
+
+    if (drawTool === 'laser') {
+      laserPointsRef.current.push({ ...pos, time: Date.now() });
+      return;
+    }
+
+    if (!currentDrawStrokeRef.current) return;
+
+    if (['arrow', 'double-arrow', 'line', 'rect', 'circle'].includes(drawTool)) {
+      currentDrawStrokeRef.current.endX = pos.x;
+      currentDrawStrokeRef.current.endY = pos.y;
+    } else {
+      currentDrawStrokeRef.current.points.push(pos);
+
+      // Draw everything: saved strokes + current stroke on main canvas
+      const canvas = drawCanvasRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          redrawInlineCanvas();
+          drawInlineStroke(ctx, currentDrawStrokeRef.current);
+        }
+      }
+    }
+  };
+
+  const handleDrawPointerUp = () => {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+
+    if (drawTool === 'laser') return;
+
+    if (currentDrawStrokeRef.current) {
+      // Allow saving shape if moved, or single-point dot for pen
+      const stroke = currentDrawStrokeRef.current;
+      currentDrawStrokeRef.current = null;
+      setDrawStrokes(prev => [...prev, stroke]);
+    } else {
+      setDrawUndoStack(prev => prev.slice(0, -1));
+    }
+
+    const overlayCanvas = drawOverlayCanvasRef.current;
+    if (overlayCanvas) {
+      const ctx = overlayCanvas.getContext('2d');
+      if (ctx) {
+        const rect = overlayCanvas.getBoundingClientRect();
+        ctx.clearRect(0, 0, rect.width, rect.height);
+      }
+    }
+  };
+
+  const handleTextSubmit = () => {
+    if (!textInput.trim() || !textPos) return;
+
+    setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
+    setDrawRedoStack([]);
+
+    const textStroke: InlineDrawStroke = {
+      id: crypto.randomUUID(),
+      tool: 'text',
+      points: [],
+      color: drawColor,
+      size: drawSize,
+      opacity: 1,
+      startX: textPos.x,
+      startY: textPos.y,
+      text: textInput,
+      fontSize: drawSize * 5,
+    };
+
+    setDrawStrokes(prev => [...prev, textStroke]);
+    setTextInput('');
+    setTextPos(null);
+  };
+
+  const drawUndo = useCallback(() => {
+    if (drawUndoStack.length === 0) return;
+    const prevState = drawUndoStack[drawUndoStack.length - 1];
+    setDrawRedoStack(prev => [...prev, [...drawStrokesRef.current]]);
+    setDrawStrokes(prevState);
+    setDrawUndoStack(prev => prev.slice(0, -1));
+  }, [drawUndoStack]);
+
+  const drawRedo = useCallback(() => {
+    if (drawRedoStack.length === 0) return;
+    const nextState = drawRedoStack[drawRedoStack.length - 1];
+    setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
+    setDrawStrokes(nextState);
+    setDrawRedoStack(prev => prev.slice(0, -1));
+  }, [drawRedoStack]);
+
+  const drawClearAll = () => {
+    if (drawStrokesRef.current.length === 0) return;
+    setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
+    setDrawRedoStack([]);
+    setDrawStrokes([]);
+  };
+
+  const toggleDrawMode = () => {
+    if (drawMode) {
+      // Exiting draw mode — save drawing data
+      onUpdate(note.id, { drawingData: drawStrokes.length > 0 ? drawStrokes : null });
+    }
+    setDrawMode(!drawMode);
+    setShowDrawColors(false);
+    setShowDrawSizes(false);
+  };
+
+  // Keyboard shortcuts for draw mode
+  useEffect(() => {
+    if (!drawMode) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'z') { e.preventDefault(); drawUndo(); }
+        if (e.key === 'y') { e.preventDefault(); drawRedo(); }
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [drawMode, drawUndo, drawRedo]);
 
   // Initialize contentEditable content on mount
   useEffect(() => {
@@ -537,7 +1221,7 @@ export default function NoteEditor({
     }
 
     const selectedText = selection.toString();
-    
+
     if (
       contentEditableRef.current &&
       (contentEditableRef.current.contains(selection.anchorNode) ||
@@ -546,11 +1230,11 @@ export default function NoteEditor({
       try {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        
+
         const tooltipWidthEstimate = 120;
         const rightEdgeLimit = window.innerWidth - 16;
         const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        
+
         let x = rect.right;
         // If placing it centered at rect.right extends beyond the right edge limit, place it at rect.left instead
         if (rect.right + tooltipWidthEstimate / 2 > rightEdgeLimit) {
@@ -560,12 +1244,12 @@ export default function NoteEditor({
             x = Math.max(tooltipWidthEstimate / 2 + 16, rect.left);
           }
         }
-        
+
         // Position below on mobile/touch to avoid system menu, above on desktop
-        const y = isTouchDevice 
-          ? rect.bottom + 12 
+        const y = isTouchDevice
+          ? rect.bottom + 12
           : Math.max(10, rect.top - 45);
-        
+
         setSelectionDetails({
           text: selectedText,
           x,
@@ -625,12 +1309,12 @@ export default function NoteEditor({
         const { data: { session: freshSession } } = await supabase.auth.getSession();
         if (freshSession) {
           supabase.functions.invoke('send-push', {
-            body: { 
-              record: { 
+            body: {
+              record: {
                 id: msgId,
                 sender_id: user.id,
                 receiver_id: partner.id,
-              } 
+              }
             }
           }).then();
         }
@@ -693,12 +1377,12 @@ export default function NoteEditor({
       if (!selection || selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
       const node = range.startContainer;
-      
+
       let currentElement: HTMLElement | null = node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node.parentElement;
-      
+
       while (currentElement && currentElement !== contentEditableRef.current) {
         const tagName = currentElement.tagName.toLowerCase();
-        
+
         if (tagName === 'pre') {
           const textVal = currentElement.textContent || '';
           if (textVal.replace(/\u200B/g, '').trim() === '') {
@@ -707,9 +1391,9 @@ export default function NoteEditor({
             updateActiveStyles();
             return;
           }
-          
+
           let isLineEmpty = false;
-          
+
           if (node.nodeType === Node.TEXT_NODE) {
             const offset = range.startOffset;
             const textContent = node.textContent || '';
@@ -750,22 +1434,22 @@ export default function NoteEditor({
 
             if (isNearEnd) {
               e.preventDefault();
-              
+
               let html = currentElement.innerHTML;
               html = html.replace(/(<br\s*\/?>|\n|\s)+$/, '');
               currentElement.innerHTML = html;
-              
+
               const p = document.createElement('p');
               p.innerHTML = '<br>';
               currentElement.parentNode?.insertBefore(p, currentElement.nextSibling);
-              
+
               const newRange = document.createRange();
               const newSelection = window.getSelection();
               newRange.selectNodeContents(p);
               newRange.collapse(true);
               newSelection?.removeAllRanges();
               newSelection?.addRange(newRange);
-              
+
               updateActiveStyles();
               return;
             }
@@ -777,7 +1461,7 @@ export default function NoteEditor({
           const text = (currentElement.textContent || '').replace(/\u200B/g, '').trim();
           if (text === '') {
             e.preventDefault();
-            
+
             // If it's a list item (li), turn off list mode
             if (tagName === 'li') {
               const isOL = document.queryCommandState('insertOrderedList');
@@ -790,7 +1474,7 @@ export default function NoteEditor({
               // Convert blockquote block to paragraph
               document.execCommand('formatBlock', false, '<p>');
             }
-            
+
             updateActiveStyles();
             return;
           }
@@ -801,6 +1485,101 @@ export default function NoteEditor({
     }
   };
 
+  // ═══ LIVE MARKDOWN: Render/un-render paragraphs based on cursor ═══
+  const handleLiveMarkdown = useCallback(() => {
+    const editor = contentEditableRef.current;
+    if (!editor || note.isChecklist) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    const cursorNode = range.startContainer;
+    const cursorOffset = range.startOffset;
+
+    // Find the block-level element the cursor is in
+    let cursorBlock: HTMLElement | null = null;
+    let node: Node | null = cursorNode;
+    while (node && node !== editor) {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const el = node as HTMLElement;
+        const tag = el.tagName.toLowerCase();
+        if (['p', 'div', 'h1', 'h2', 'h3', 'blockquote', 'pre', 'li'].includes(tag)) {
+          cursorBlock = el;
+          break;
+        }
+      }
+      node = node.parentNode;
+    }
+
+    // Process all direct children of the editor
+    // Use a snapshot since we may modify the DOM
+    const children = Array.from(editor.children);
+    for (const child of children) {
+      const el = child as HTMLElement;
+
+      if (el === cursorBlock) {
+        // Cursor IS in this block: un-render to show raw markdown
+        if (isRenderedMarkdown(el)) {
+          const raw = getRawMarkdown(el);
+
+          // Create a fresh <p> with raw text (regardless of current tag)
+          const p = document.createElement('p');
+          p.textContent = raw;
+          el.replaceWith(p);
+
+          // Restore cursor position in the new element
+          try {
+            const newRange = document.createRange();
+            const textNode = p.firstChild || p;
+            const maxOffset = textNode.textContent?.length || 0;
+            newRange.setStart(textNode, Math.min(cursorOffset, maxOffset));
+            newRange.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(newRange);
+          } catch (e) { /* safe */ }
+
+          // Update cursorBlock reference to the new element
+          cursorBlock = p;
+        }
+      } else {
+        // Cursor is NOT in this block: try to render markdown
+        if (!isRenderedMarkdown(el)) {
+          const rawText = el.textContent || '';
+          if (!rawText.trim()) continue;
+
+          const { html, isBlock, blockTag } = renderMarkdownLine(rawText);
+          if (isBlock || html !== rawText) {
+            if (blockTag) {
+              // Block-level: change the element's tag (e.g., <p> → <h2>)
+              const newEl = document.createElement(blockTag);
+              newEl.setAttribute('data-md-raw', rawText);
+              newEl.setAttribute('data-md-rendered', 'true');
+              newEl.innerHTML = html;
+              el.replaceWith(newEl);
+            } else {
+              // Inline-only: keep the same element, just update innerHTML
+              el.setAttribute('data-md-raw', rawText);
+              el.setAttribute('data-md-rendered', 'true');
+              el.innerHTML = html;
+            }
+          }
+        }
+      }
+    }
+  }, [note.isChecklist]);
+
+  // Debounced live markdown on cursor movement / input
+  const mdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerLiveMarkdown = useCallback(() => {
+    if (mdTimerRef.current) clearTimeout(mdTimerRef.current);
+    mdTimerRef.current = setTimeout(handleLiveMarkdown, 80);
+  }, [handleLiveMarkdown]);
+
+  useEffect(() => {
+    return () => { if (mdTimerRef.current) clearTimeout(mdTimerRef.current); };
+  }, []);
+
   const handleTitleChange = (val: string) => {
     setTitle(val);
     debouncedSave({ title: val, content });
@@ -809,6 +1588,7 @@ export default function NoteEditor({
   const handleContentChange = (val: string) => {
     setContent(val);
     debouncedSave({ title, content: val });
+    triggerLiveMarkdown();
   };
 
   const togglePanel = (panel: BottomPanel) => {
@@ -875,17 +1655,7 @@ export default function NoteEditor({
     setNewLabelText('');
   };
 
-  // Time since creation
-  const timeAgo = (() => {
-    const diff = Date.now() - new Date(note.updatedAt).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  })();
+
 
   return (
     <motion.div
@@ -925,7 +1695,7 @@ export default function NoteEditor({
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.92, opacity: 0, y: 30 }}
         transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative z-10 w-full max-w-lg mx-4 max-h-[85dvh] flex flex-col rounded-3xl overflow-hidden shadow-2xl"
+        className="relative z-10 w-full max-w-lg mx-4 max-h-[95dvh] flex flex-col rounded-3xl overflow-hidden shadow-2xl"
         style={{
           background: note.customColor || colorStyle.bg,
           border: `1px solid ${note.customColor ? `${note.customColor}44` : colorStyle.border}`,
@@ -939,25 +1709,40 @@ export default function NoteEditor({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mood gradient overlay */}
-        {moodStyle && (
+        {moodStyle && !decryptedBg && note.background === 'none' && (
           <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ backgroundImage: moodStyle.gradient }} />
         )}
 
         {/* Header */}
-        <div className="relative z-[1] flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
-          <button
-            onClick={handleClose}
-            className="-ml-1 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
-          >
-            <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>arrow_back</span>
-          </button>
+        <div className="relative z-[1] flex items-center justify-between px-4 pt-4 pb-2 shrink-0 gap-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <button
+              onClick={handleClose}
+              className="-ml-1 w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors shrink-0"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>arrow_back</span>
+            </button>
+            <input
+              ref={titleRef}
+              type="text"
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder="Title"
+              className="flex-1 bg-transparent text-[var(--text-primary)] text-base font-semibold placeholder:text-white/20 focus:outline-none min-w-0"
+              style={{ outline: 'none', boxShadow: 'none' }}
+            />
+          </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
+            {moodStyle && (
+              <div className="w-9 h-9 flex items-center justify-center text-lg select-none cursor-default" title={moodStyle.label}>
+                {moodStyle.emoji}
+              </div>
+            )}
             <button
               onClick={() => onTogglePin(note.id)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${
-                note.isPinned ? 'text-[var(--gold)]' : 'text-white/40 hover:text-white/70'
-              }`}
+              className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${note.isPinned ? 'text-[var(--gold)]' : 'text-white/40 hover:text-white/70'
+                }`}
               title={note.isPinned ? 'Unpin' : 'Pin'}
             >
               <span className="material-symbols-outlined" style={{ fontSize: '20px', fontVariationSettings: note.isPinned ? "'FILL' 1" : '' }}>push_pin</span>
@@ -972,25 +1757,7 @@ export default function NoteEditor({
         </div>
 
         {/* Scrollable content */}
-        <div className="relative z-[1] flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
-          {/* Mood badge */}
-          {moodStyle && (
-            <div className="flex items-center gap-1.5 mb-3">
-              <span className="text-lg">{moodStyle.emoji}</span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-white/40">{moodStyle.label}</span>
-            </div>
-          )}
-
-          {/* Title */}
-          <input
-            ref={titleRef}
-            type="text"
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="Title"
-            className="w-full bg-transparent text-[var(--text-primary)] text-lg font-semibold placeholder:text-white/20 focus:outline-none mb-2"
-            style={{ outline: 'none', boxShadow: 'none' }}
-          />
+        <div className="relative z-[1] flex-1 overflow-y-auto px-4 mb-4 scrollbar-hide">
 
           {/* Content or Checklist */}
           {note.isChecklist ? (
@@ -1001,9 +1768,8 @@ export default function NoteEditor({
                     onClick={() => onUpdateChecklistItem(note.id, item.id, { checked: !item.checked })}
                     className="shrink-0 flex items-center justify-center"
                   >
-                    <span className={`material-symbols-outlined text-lg ${
-                      item.checked ? 'text-[var(--gold)]/60' : 'text-white/25'
-                    }`} style={{ fontSize: '20px', display: 'block', lineHeight: '1' }}>
+                    <span className={`material-symbols-outlined text-lg ${item.checked ? 'text-[var(--gold)]/60' : 'text-white/25'
+                      }`} style={{ fontSize: '20px', display: 'block', lineHeight: '1' }}>
                       {item.checked ? 'check_box' : 'check_box_outline_blank'}
                     </span>
                   </button>
@@ -1012,9 +1778,8 @@ export default function NoteEditor({
                     onChange={(e) => onUpdateChecklistItem(note.id, item.id, { text: e.target.value })}
                     onKeyDown={(e) => handleChecklistKeyDown(e, item, idx)}
                     placeholder="List item"
-                    className={`checklist-input flex-1 bg-transparent text-sm focus:outline-none placeholder:text-white/15 ${
-                      item.checked ? 'line-through text-white/30' : 'text-[var(--text-primary)]'
-                    }`}
+                    className={`checklist-input flex-1 bg-transparent text-sm focus:outline-none placeholder:text-white/15 ${item.checked ? 'line-through text-white/30' : 'text-[var(--text-primary)]'
+                      }`}
                     style={{ outline: 'none', boxShadow: 'none' }}
                   />
                   <button
@@ -1113,206 +1878,500 @@ export default function NoteEditor({
                 }
               `}</style>
 
-              {/* Notion-style Toolbar */}
-              <div ref={toolbarRef} className="flex items-center gap-1 pb-2 mb-3 border-b border-white/5 overflow-x-auto scrollbar-hide shrink-0">
-                <button
-                  type="button"
-                  onClick={() => handleFormat('bold')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.bold ? 'bg-white/15 text-[var(--gold)] font-bold' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Bold (Ctrl+B)"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_bold</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFormat('italic')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.italic ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Italic (Ctrl+I)"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_italic</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFormat('underline')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.underline ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Underline (Ctrl+U)"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_underlined</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFormat('strikeThrough')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.strikeThrough ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Strikethrough"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_strikethrough</span>
-                </button>
-
-                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                <button
-                  type="button"
-                  onClick={() => handleBlockFormat('p')}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${
-                    activeStyles.paragraph ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Normal Text"
-                >
-                  Txt
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBlockFormat('h1')}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${
-                    activeStyles.h1 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Heading 1"
-                >
-                  H1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBlockFormat('h2')}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${
-                    activeStyles.h2 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Heading 2"
-                >
-                  H2
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBlockFormat('h3')}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${
-                    activeStyles.h3 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Heading 3"
-                >
-                  H3
-                </button>
-
-                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                <button
-                  type="button"
-                  onClick={() => handleFormat('insertUnorderedList')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.ul ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Bullet List"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_bulleted</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleFormat('insertOrderedList')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.ol ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Numbered List"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_numbered</span>
-                </button>
-
-                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                <button
-                  type="button"
-                  onClick={() => handleBlockFormat('blockquote')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.blockquote ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Quote Block"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_quote</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBlockFormat('pre')}
-                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${
-                    activeStyles.code ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                  }`}
-                  title="Code Block"
-                >
-                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>code</span>
-                </button>
-
-                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                {/* Text Color Picker Trigger & Inline Color Selection */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowColorMenu(!showColorMenu)}
-                    className={`p-1.5 rounded-lg transition-colors flex items-center gap-0.5 ${
-                      showColorMenu ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                    }`}
-                    title="Text Color"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_color_text</span>
-                    <span
-                      className="material-symbols-outlined block transition-transform duration-200"
-                      style={{ fontSize: '14px', transform: showColorMenu ? 'rotate(-90deg)' : 'rotate(0deg)' }}
-                    >
-                      arrow_drop_down
-                    </span>
-                  </button>
-
-                  <AnimatePresence>
-                    {showColorMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8, x: -15 }}
-                        animate={{ opacity: 1, scale: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, x: -15 }}
-                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                        className="flex items-center gap-1.5 shrink-0 pl-1"
+              {/* ═══ CONDITIONAL TOOLBAR: Draw Mode vs Format Mode ═══ */}
+              {drawMode ? (
+                /* ── DRAW MODE TOOLBAR ── */
+                <div className="pb-2 mb-3 border-b border-white/5 shrink-0">
+                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+                    {/* Tools from INLINE_TOOLS */}
+                    {INLINE_TOOLS.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setDrawTool(t.id);
+                          setShowDrawShapes(false);
+                          setShowDrawArrows(false);
+                          setShowDrawColors(false);
+                          setShowDrawSizes(false);
+                        }}
+                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all shrink-0 ${drawTool === t.id
+                            ? 'bg-white/10 text-[var(--gold)]'
+                            : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                          }`}
+                        title={t.label}
                       >
-                        {[
-                          { name: 'Default', value: '#ffffff' },
-                          { name: 'Gold', value: '#D4AF37' },
-                          { name: 'Red', value: '#F28B82' },
-                          { name: 'Green', value: '#CCFF90' },
-                          { name: 'Blue', value: '#CBF0F8' },
-                          { name: 'Purple', value: '#D7AEFB' }
-                        ].map(c => (
-                          <button
-                            key={c.name}
-                            type="button"
-                            onClick={() => handleTextColor(c.value)}
-                            className="w-6 h-6 rounded-full border border-white/20 hover:scale-115 active:scale-95 transition-all shrink-0 shadow-md"
-                            style={{ backgroundColor: c.value }}
-                            title={c.name}
-                          />
-                        ))}
+                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{t.icon}</span>
+                        <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">{t.label}</span>
+                      </button>
+                    ))}
+
+                    <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                    {/* Color toggle */}
+                    <button
+                      onClick={() => { setShowDrawColors(!showDrawColors); setShowDrawSizes(false); }}
+                      className={`p-1.5 rounded-lg transition-all shrink-0 ${showDrawColors ? 'bg-white/10' : 'hover:bg-white/5'
+                        }`}
+                      title="Color"
+                    >
+                      <div className="w-5 h-5 rounded-full border-2 border-white/20" style={{ backgroundColor: drawColor }} />
+                    </button>
+
+                    {/* Size toggle */}
+                    <button
+                      onClick={() => { setShowDrawSizes(!showDrawSizes); setShowDrawColors(false); setShowDrawShapes(false); setShowDrawArrows(false); }}
+                      className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawSizes ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                        }`}
+                      title="Size"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>line_weight</span>
+                      <span className="text-[9px] font-bold text-white/30">{drawSize}px</span>
+                    </button>
+
+                    {/* Shapes toggle */}
+                    <button
+                      onClick={() => { setShowDrawShapes(!showDrawShapes); setShowDrawColors(false); setShowDrawSizes(false); setShowDrawArrows(false); }}
+                      className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawShapes || SHAPE_TOOLS.some(t => t.id === drawTool) ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                        }`}
+                      title="Shapes"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>category</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">Shapes</span>
+                    </button>
+
+                    {/* Arrows toggle */}
+                    <button
+                      onClick={() => { setShowDrawArrows(!showDrawArrows); setShowDrawColors(false); setShowDrawSizes(false); setShowDrawShapes(false); }}
+                      className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawArrows || ARROW_TOOLS.some(t => t.id === drawTool) ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                        }`}
+                      title="Arrows"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>trending_flat</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">Arrows</span>
+                    </button>
+
+                    <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                    {/* Undo */}
+                    <button
+                      onClick={drawUndo}
+                      disabled={drawUndoStack.length === 0}
+                      className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
+                      title="Undo"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>undo</span>
+                    </button>
+                    {/* Redo */}
+                    <button
+                      onClick={drawRedo}
+                      disabled={drawRedoStack.length === 0}
+                      className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
+                      title="Redo"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>redo</span>
+                    </button>
+                    {/* Clear */}
+                    <button
+                      onClick={drawClearAll}
+                      disabled={drawStrokes.length === 0}
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
+                      title="Clear All"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete_sweep</span>
+                    </button>
+
+                    <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                    {/* Done (exit draw mode) */}
+                    <button
+                      onClick={toggleDrawMode}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[var(--gold)] text-black text-[9px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition-all shrink-0"
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check</span>
+                      Done
+                    </button>
+                  </div>
+
+                  {/* Color picker row */}
+                  <AnimatePresence>
+                    {showDrawColors && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-2 pt-2 overflow-x-auto scrollbar-hide">
+                          {INLINE_DRAW_COLORS.map(c => (
+                            <button
+                              key={c.id}
+                              onClick={() => setDrawColor(c.hex)}
+                              className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 shrink-0 flex items-center justify-center ${drawColor === c.hex ? 'border-white scale-110 shadow-lg' : 'border-white/15'
+                                }`}
+                              style={{ backgroundColor: c.hex }}
+                              title={c.label}
+                            >
+                              {drawColor === c.hex && (
+                                <span className="material-symbols-outlined text-black/80" style={{ fontSize: '12px' }}>check</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Size picker row */}
+                  <AnimatePresence>
+                    {showDrawSizes && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-3 pt-2 justify-center">
+                          {INLINE_DRAW_SIZES.map(s => (
+                            <button
+                              key={s}
+                              onClick={() => setDrawSize(s)}
+                              className={`flex items-center justify-center transition-all hover:scale-110 ${drawSize === s ? 'ring-2 ring-[var(--gold)] ring-offset-2 ring-offset-transparent' : ''
+                                } rounded-full`}
+                              title={`Size ${s}`}
+                            >
+                              <div
+                                className="rounded-full"
+                                style={{
+                                  width: `${s * 2 + 6}px`,
+                                  height: `${s * 2 + 6}px`,
+                                  backgroundColor: drawColor,
+                                }}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Shapes picker row */}
+                  <AnimatePresence>
+                    {showDrawShapes && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-2 pt-2 justify-center">
+                          {SHAPE_TOOLS.map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => setDrawTool(t.id)}
+                              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${drawTool === t.id
+                                  ? 'bg-white/10 text-[var(--gold)] ring-1 ring-[var(--gold)]/50'
+                                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                }`}
+                              title={t.label}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{t.icon}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider">{t.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Arrows picker row */}
+                  <AnimatePresence>
+                    {showDrawArrows && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-2 pt-2 justify-center">
+                          {ARROW_TOOLS.map(t => (
+                            <button
+                              key={t.id}
+                              onClick={() => setDrawTool(t.id)}
+                              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${drawTool === t.id
+                                  ? 'bg-white/10 text-[var(--gold)] ring-1 ring-[var(--gold)]/50'
+                                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                                }`}
+                              title={t.label}
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{t.icon}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider">{t.label}</span>
+                            </button>
+                          ))}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-              </div>
+              ) : (
+                /* ── FORMAT MODE TOOLBAR (original) ── */
+                <div ref={toolbarRef} className="flex items-center gap-1 pb-2 mb-3 border-b border-white/5 overflow-x-auto scrollbar-hide shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleFormat('bold')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.bold ? 'bg-white/15 text-[var(--gold)] font-bold' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Bold (Ctrl+B)"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_bold</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormat('italic')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.italic ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Italic (Ctrl+I)"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_italic</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormat('underline')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.underline ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Underline (Ctrl+U)"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_underlined</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormat('strikeThrough')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.strikeThrough ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Strikethrough"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_strikethrough</span>
+                  </button>
 
-              {/* Content editable editor div */}
-              <div
-                ref={contentEditableRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={(e) => handleContentChange(e.currentTarget.innerHTML)}
-                onKeyUp={updateActiveStyles}
-                onClick={updateActiveStyles}
-                onKeyDown={handleKeyDown}
-                className="rich-editor w-full bg-transparent text-[var(--text-primary)] text-sm placeholder:text-white/20 focus:outline-none min-h-[150px] leading-relaxed cursor-text"
-                style={{ outline: 'none' }}
-                {...{ placeholder: "Note" }}
-              />
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  <button
+                    type="button"
+                    onClick={() => handleBlockFormat('p')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.paragraph ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Normal Text"
+                  >
+                    Txt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBlockFormat('h1')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h1 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Heading 1"
+                  >
+                    H1
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBlockFormat('h2')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h2 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Heading 2"
+                  >
+                    H2
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBlockFormat('h3')}
+                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h3 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Heading 3"
+                  >
+                    H3
+                  </button>
+
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  <button
+                    type="button"
+                    onClick={() => handleFormat('insertUnorderedList')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.ul ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Bullet List"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_bulleted</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFormat('insertOrderedList')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.ol ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Numbered List"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_numbered</span>
+                  </button>
+
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  <button
+                    type="button"
+                    onClick={() => handleBlockFormat('blockquote')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.blockquote ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Quote Block"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_quote</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleBlockFormat('pre')}
+                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.code ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Code Block"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>code</span>
+                  </button>
+
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  {/* Text Color Picker Trigger & Inline Color Selection */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowColorMenu(!showColorMenu)}
+                      className={`p-1.5 rounded-lg transition-colors flex items-center gap-0.5 ${showColorMenu ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                        }`}
+                      title="Text Color"
+                    >
+                      <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_color_text</span>
+                      <span
+                        className="material-symbols-outlined block transition-transform duration-200"
+                        style={{ fontSize: '14px', transform: showColorMenu ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+                      >
+                        arrow_drop_down
+                      </span>
+                    </button>
+
+                    <AnimatePresence>
+                      {showColorMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8, x: -15 }}
+                          animate={{ opacity: 1, scale: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.8, x: -15 }}
+                          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                          className="flex items-center gap-1.5 shrink-0 pl-1"
+                        >
+                          {[
+                            { name: 'Default', value: '#ffffff' },
+                            { name: 'Gold', value: '#D4AF37' },
+                            { name: 'Red', value: '#F28B82' },
+                            { name: 'Green', value: '#CCFF90' },
+                            { name: 'Blue', value: '#CBF0F8' },
+                            { name: 'Purple', value: '#D7AEFB' }
+                          ].map(c => (
+                            <button
+                              key={c.name}
+                              type="button"
+                              onClick={() => handleTextColor(c.value)}
+                              className="w-6 h-6 rounded-full border border-white/20 hover:scale-115 active:scale-95 transition-all shrink-0 shadow-md"
+                              style={{ backgroundColor: c.value }}
+                              title={c.name}
+                            />
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+
+              {/* Content editable + inline drawing overlay */}
+              <div ref={drawContainerRef} className="relative">
+                {/* Content editable editor div */}
+                <div
+                  ref={contentEditableRef}
+                  contentEditable={!drawMode}
+                  suppressContentEditableWarning
+                  onInput={(e) => handleContentChange(e.currentTarget.innerHTML)}
+                  onKeyUp={() => { updateActiveStyles(); triggerLiveMarkdown(); }}
+                  onClick={() => { if (!drawMode) { updateActiveStyles(); triggerLiveMarkdown(); } }}
+                  onKeyDown={handleKeyDown}
+                  className={`rich-editor w-full bg-transparent text-[var(--text-primary)] text-sm placeholder:text-white/20 focus:outline-none min-h-[150px] leading-relaxed ${drawMode ? 'cursor-default pointer-events-none select-none' : 'cursor-text'
+                    }`}
+                  style={{ outline: 'none' }}
+                  {...{ placeholder: "Note" }}
+                />
+
+                {/* Inline drawing canvas overlay */}
+                {drawMode && (
+                  <>
+                    <canvas
+                      ref={drawCanvasRef}
+                      className="absolute inset-0 z-[5]"
+                      style={{ touchAction: 'none', cursor: drawTool === 'eraser' ? 'crosshair' : drawTool === 'text' ? 'text' : 'default' }}
+                      onPointerDown={handleDrawPointerDown}
+                      onPointerMove={handleDrawPointerMove}
+                      onPointerUp={handleDrawPointerUp}
+                      onPointerLeave={handleDrawPointerUp}
+                    />
+                    <canvas
+                      ref={drawOverlayCanvasRef}
+                      className="absolute inset-0 z-[6] pointer-events-none"
+                    />
+
+                    <AnimatePresence>
+                      {textPos && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="absolute z-[10]"
+                          style={{ left: textPos.x, top: textPos.y - 10 }}
+                        >
+                          <div className="flex items-center gap-1.5 bg-zinc-900/95 border border-white/15 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md">
+                            <input
+                              autoFocus
+                              value={textInput}
+                              onChange={(e) => setTextInput(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleTextSubmit();
+                                if (e.key === 'Escape') setTextPos(null);
+                              }}
+                              placeholder="Type text..."
+                              className="bg-transparent text-white/80 text-sm focus:outline-none w-40"
+                              style={{ color: drawColor, fontSize: `${drawSize * 3}px`, outline: 'none', boxShadow: 'none' }}
+                            />
+                            <button
+                              onClick={handleTextSubmit}
+                              className="p-1 rounded-lg bg-[var(--gold)] text-black hover:brightness-110 transition-all"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>check</span>
+                            </button>
+                            <button
+                              onClick={() => setTextPos(null)}
+                              className="p-1 rounded-lg hover:bg-white/10 text-white/40 transition-all"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>close</span>
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </>
+                )}
+
+                {/* Show existing drawing strokes as overlay when NOT in draw mode */}
+                {!drawMode && drawStrokes.length > 0 && (
+                  <div className="absolute inset-0 pointer-events-none z-[3]">
+                    <DrawingPreview strokes={drawStrokes} />
+                  </div>
+                )}
+              </div>
             </>
           )}
+
+
 
           {/* Labels display */}
           {note.labels.length > 0 && (
@@ -1334,8 +2393,7 @@ export default function NoteEditor({
             </div>
           )}
 
-          {/* Edited timestamp */}
-          <p className="text-[10px] text-white/20 mt-4">Edited {timeAgo}</p>
+
         </div>
 
         {/* Bottom toolbar */}
@@ -1358,9 +2416,8 @@ export default function NoteEditor({
                       <div className="flex gap-2 overflow-x-auto scrollbar-hide py-2 items-center">
                         {/* 1. Custom Color Picker */}
                         <div
-                          className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center hover:scale-110 flex-shrink-0 ${
-                            note.customColor ? 'border-white/80 scale-110' : 'border-dashed border-white/30 hover:border-white/50'
-                          }`}
+                          className={`relative w-8 h-8 rounded-full overflow-hidden border-2 transition-all flex items-center justify-center hover:scale-110 flex-shrink-0 ${note.customColor ? 'border-white/80 scale-110' : 'border-dashed border-white/30 hover:border-white/50'
+                            }`}
                           style={{ backgroundColor: note.customColor || 'transparent' }}
                         >
                           {!note.customColor && (
@@ -1388,9 +2445,8 @@ export default function NoteEditor({
                           <button
                             key={color}
                             onClick={() => handleColorChange(color)}
-                            className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 flex-shrink-0 ${
-                              note.color === color && !note.customColor ? 'border-white/60 scale-110' : 'border-transparent'
-                            }`}
+                            className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 flex-shrink-0 ${note.color === color && !note.customColor ? 'border-white/60 scale-110' : 'border-transparent'
+                              }`}
                             style={{ background: NOTE_COLORS[color].bg }}
                             title={NOTE_COLORS[color].label}
                           >
@@ -1410,9 +2466,8 @@ export default function NoteEditor({
                             <button
                               key={color.id}
                               onClick={() => onUpdate(note.id, { customColor: color.hex })}
-                              className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 flex-shrink-0 ${
-                                isSelected ? 'border-white/80 scale-110' : 'border-transparent'
-                              }`}
+                              className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 flex-shrink-0 ${isSelected ? 'border-white/80 scale-110' : 'border-transparent'
+                                }`}
                               style={{ backgroundColor: color.hex }}
                               title={color.label}
                             >
@@ -1444,9 +2499,8 @@ export default function NoteEditor({
                         <button
                           onClick={() => fileInputRef.current?.click()}
                           disabled={isBgUploading}
-                          className={`w-14 h-14 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 flex-shrink-0 ${
-                            note.customBg ? 'border-[var(--gold)] scale-105' : 'border-dashed border-white/30 hover:border-white/50'
-                          } bg-white/5 ${isBgUploading ? 'opacity-50 cursor-wait' : ''}`}
+                          className={`w-14 h-14 rounded-xl border-2 flex flex-col items-center justify-center gap-0.5 transition-all hover:scale-105 flex-shrink-0 ${note.customBg ? 'border-[var(--gold)] scale-105' : 'border-dashed border-white/30 hover:border-white/50'
+                            } bg-white/5 ${isBgUploading ? 'opacity-50 cursor-wait' : ''}`}
                           title="Upload Custom Background"
                         >
                           {isBgUploading ? (
@@ -1488,7 +2542,7 @@ export default function NoteEditor({
                               const decrypted = decryptedUrls[item.id];
                               const blobUrl = decrypted?.blobUrl;
                               const isLoading = decrypted?.loading;
-                              
+
                               return (
                                 <button
                                   key={item.id}
@@ -1501,17 +2555,17 @@ export default function NoteEditor({
                                       const keys = getStoredKeyPair();
                                       if (!keys) return;
                                       setIsBgUploading(true);
-                                      
+
                                       // Fetch the decrypted blob, get raw image bytes
                                       const res = await fetch(blobUrl);
                                       const blob = await res.blob();
                                       const arrayBuffer = await blob.arrayBuffer();
                                       const dataUint8 = new Uint8Array(arrayBuffer);
-                                      
+
                                       // Encrypt raw bytes with secretbox
                                       const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
                                       const encrypted = nacl.secretbox(dataUint8, nonce, keys.secretKey);
-                                      
+
                                       // Upload encrypted bytes to Cloudinary
                                       const formData = new FormData();
                                       formData.append('file', new Blob([encrypted as unknown as BlobPart]), 'note_bg.enc');
@@ -1522,7 +2576,7 @@ export default function NoteEditor({
                                       );
                                       if (!uploadRes.ok) throw new Error('Cloudinary upload failed');
                                       const uploadResult = await uploadRes.json();
-                                      
+
                                       onUpdate(note.id, {
                                         customBg: { url: uploadResult.secure_url, nonce: encodeBase64(nonce) }
                                       });
@@ -1532,9 +2586,8 @@ export default function NoteEditor({
                                       setIsBgUploading(false);
                                     }
                                   }}
-                                  className={`w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105 hover:border-white/40 relative flex items-center justify-center ${
-                                    note.customBg ? 'border-white/10' : 'border-transparent'
-                                  } bg-white/5`}
+                                  className={`w-14 h-14 rounded-xl flex-shrink-0 overflow-hidden border-2 transition-all hover:scale-105 hover:border-white/40 relative flex items-center justify-center ${note.customBg ? 'border-white/10' : 'border-transparent'
+                                    } bg-white/5`}
                                   style={{
                                     transform: 'translate3d(0, 0, 0)',
                                     backfaceVisibility: 'hidden',
@@ -1561,7 +2614,7 @@ export default function NoteEditor({
                                 </button>
                               );
                             })}
-                            
+
                             {/* Sentinel for infinite scroll */}
                             {hasMoreMemories && (
                               <div
@@ -1590,11 +2643,10 @@ export default function NoteEditor({
                           <button
                             key={mood}
                             onClick={() => handleMoodChange(mood)}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all hover:scale-105 ${
-                              note.mood === mood
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full border transition-all hover:scale-105 ${note.mood === mood
                                 ? 'border-white/30 bg-white/10'
                                 : 'border-white/8 bg-white/3 hover:border-white/15'
-                            }`}
+                              }`}
                           >
                             <span className="text-base">{MOOD_CONFIG[mood].emoji}</span>
                             <span className="text-[10px] font-medium text-white/50">{MOOD_CONFIG[mood].label}</span>
@@ -1631,11 +2683,10 @@ export default function NoteEditor({
                             return (
                               <div
                                 key={label}
-                                className={`flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${
-                                  isActive
+                                className={`flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${isActive
                                     ? 'bg-[var(--gold)]/15 text-[var(--gold)] border-[var(--gold)]/30'
                                     : 'bg-white/5 text-white/40 border-white/8 hover:border-white/15'
-                                }`}
+                                  }`}
                               >
                                 <button onClick={() => onToggleLabel(note.id, label)} className="flex items-center gap-1">
                                   {isActive && <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>check</span>}
@@ -1701,48 +2752,51 @@ export default function NoteEditor({
             <div className="flex items-center gap-0.5">
               <button
                 onClick={() => togglePanel('colors')}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${
-                  bottomPanel === 'colors' ? 'text-[var(--gold)]' : 'text-white/40'
-                }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'colors' ? 'text-[var(--gold)]' : 'text-white/40'
+                  }`}
                 title="Colors"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>palette</span>
               </button>
               <button
                 onClick={() => togglePanel('backgrounds')}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${
-                  bottomPanel === 'backgrounds' ? 'text-[var(--gold)]' : 'text-white/40'
-                }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'backgrounds' ? 'text-[var(--gold)]' : 'text-white/40'
+                  }`}
                 title="Backgrounds"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>image</span>
               </button>
               <button
                 onClick={() => togglePanel('mood')}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${
-                  bottomPanel === 'mood' ? 'text-[var(--gold)]' : 'text-white/40'
-                }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'mood' ? 'text-[var(--gold)]' : 'text-white/40'
+                  }`}
                 title="Mood"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>mood</span>
               </button>
               <button
                 onClick={() => togglePanel('labels')}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${
-                  bottomPanel === 'labels' ? 'text-[var(--gold)]' : 'text-white/40'
-                }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'labels' ? 'text-[var(--gold)]' : 'text-white/40'
+                  }`}
                 title="Labels"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>label</span>
               </button>
               <button
                 onClick={toggleChecklist}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${
-                  note.isChecklist ? 'text-[var(--gold)]' : 'text-white/40'
-                }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${note.isChecklist ? 'text-[var(--gold)]' : 'text-white/40'
+                  }`}
                 title={note.isChecklist ? 'Convert to text' : 'Convert to checklist'}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>checklist</span>
+              </button>
+              <button
+                onClick={toggleDrawMode}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${drawMode ? 'text-[var(--gold)] bg-white/10' : 'text-white/40 hover:text-[var(--gold)]'
+                  }`}
+                title={drawMode ? 'Exit Draw Mode' : 'Draw on Note'}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>draw</span>
               </button>
             </div>
 
@@ -1755,6 +2809,8 @@ export default function NoteEditor({
           </div>
         </div>
       </motion.div>
+
+      {/* Drawing canvas is now inline — no full-screen overlay needed */}
     </motion.div>
   );
 }

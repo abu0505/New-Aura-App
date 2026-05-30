@@ -25,7 +25,6 @@ interface MediaGridBubbleProps {
   isFirst?: boolean;
   isLast?: boolean;
   onReply?: (msgId: string) => void;
-  onDelete?: (msgId: string, forEveryone: boolean) => void;
   onPin?: (msgId: string) => void;
   quickEmojis?: string[];
 }
@@ -38,7 +37,6 @@ function MediaGridBubble({
   isFirst = true,
   isLast = true,
   onReply,
-  onDelete,
   onPin,
   quickEmojis
 }: MediaGridBubbleProps) {
@@ -370,14 +368,6 @@ function MediaGridBubble({
                 hasMedia={hasCloudinaryMedia}
                 onPin={() => { onPin?.(messages[0].id); setInteractionType('none'); }}
                 onMoveToGarbage={hasCloudinaryMedia && !messages[0].is_deleted_for_everyone ? handleMoveToGarbage : undefined}
-                onDeleteForMe={() => {
-                  messages.forEach(msg => onDelete?.(msg.id, false));
-                  setInteractionType('none');
-                }}
-                onDeleteForEveryone={messages.some(msg => !msg.is_deleted_for_everyone) ? () => {
-                  messages.forEach(msg => onDelete?.(msg.id, true));
-                  setInteractionType('none');
-                } : undefined}
               />
             )}
           </motion.div>

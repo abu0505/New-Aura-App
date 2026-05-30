@@ -26,28 +26,6 @@ SELECT cron.schedule(
   'SELECT public.cleanup_old_notifications();'
 );
 
--- ═══════════════════════════════════════════════════════════════════════
--- FIX 5: Hard-delete messages marked as "deleted for everyone"
--- After 7 days, the "This message was deleted" tombstone is purged.
--- Scheduled as a daily cron job at 3:15 AM UTC.
--- ═══════════════════════════════════════════════════════════════════════
-CREATE OR REPLACE FUNCTION public.cleanup_deleted_messages()
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-  DELETE FROM public.messages
-  WHERE is_deleted_for_everyone = true
-    AND updated_at < NOW() - INTERVAL '7 days';
-END;
-$$;
-
-SELECT cron.schedule(
-  'cleanup-deleted-messages',
-  '15 3 * * *',
-  'SELECT public.cleanup_deleted_messages();'
-);
 
 -- ═══════════════════════════════════════════════════════════════════════
 -- FIX 4: Weekly VACUUM ANALYZE on main tables

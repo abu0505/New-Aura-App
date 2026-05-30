@@ -172,8 +172,8 @@ export default function MemoriesScreen() {
       if (payload.eventType === 'INSERT') {
         const newMsg = payload.new as MemoryItem;
         
-        // Filter: must have media and belong to this specific conversation
-        if (!newMsg.media_url) return;
+        // Filter: must have media, belong to this specific conversation, and not be a gif
+        if (!newMsg.media_url || (newMsg.type as string) === 'gif') return;
         
         const isFromMe = newMsg.sender_id === user.id && newMsg.receiver_id === partner.id;
         const isFromPartner = newMsg.sender_id === partner.id && newMsg.receiver_id === user.id;
@@ -291,7 +291,8 @@ export default function MemoriesScreen() {
         .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,thumbnail_url,type,created_at,sender_public_key,duration', { count: 'exact' })
         .or(mediaFilter)
         // Fix 5.1: Use correct AND filter — must have matching sender+receiver pairs
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`);
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
+        .neq('type', 'gif');
 
       if (filter === 'favorites') {
         const favs = favoritesRef.current;
@@ -347,7 +348,8 @@ export default function MemoriesScreen() {
       });
 
       if (error) throw error;
-      setThrowbacks(data as MemoryItem[]);
+      const filtered = (data as MemoryItem[]).filter(item => (item.type as string) !== 'gif');
+      setThrowbacks(filtered);
     } catch (err) {
       
     }
@@ -364,12 +366,18 @@ export default function MemoriesScreen() {
       supabase.rpc('get_last_year_month_recap', { u_id: user.id, p_id: partner.id, current_month: currentMonth, limit_count: 20 }),
     ]);
 
-    if (lastMonthRes.status === 'fulfilled' && !lastMonthRes.value.error)
-      setLastMonthItems((lastMonthRes.value.data as MemoryItem[]) ?? []);
-    if (lastWeekRes.status === 'fulfilled' && !lastWeekRes.value.error)
-      setLastWeekItems((lastWeekRes.value.data as MemoryItem[]) ?? []);
-    if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error)
-      setLastYearMonthItems((lastYearMonthRes.value.data as MemoryItem[]) ?? []);
+    if (lastMonthRes.status === 'fulfilled' && !lastMonthRes.value.error) {
+      const items = (lastMonthRes.value.data as MemoryItem[]) ?? [];
+      setLastMonthItems(items.filter(item => (item.type as string) !== 'gif'));
+    }
+    if (lastWeekRes.status === 'fulfilled' && !lastWeekRes.value.error) {
+      const items = (lastWeekRes.value.data as MemoryItem[]) ?? [];
+      setLastWeekItems(items.filter(item => (item.type as string) !== 'gif'));
+    }
+    if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error) {
+      const items = (lastYearMonthRes.value.data as MemoryItem[]) ?? [];
+      setLastYearMonthItems(items.filter(item => (item.type as string) !== 'gif'));
+    }
   };
 
   useEffect(() => {

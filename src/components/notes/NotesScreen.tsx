@@ -1,8 +1,10 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNotes, type Note, type NoteView, type NoteFilter } from '../../hooks/useNotes';
+import { useNotes, type Note, type NoteFilter } from '../../hooks/useNotes';
+import { useFolders } from '../../hooks/useFolders';
 import NoteCard from './NoteCard';
 import NoteEditor from './NoteEditor';
+import FolderBrowser from './FolderBrowser';
 
 export default function NotesScreen() {
   const {
@@ -25,9 +27,8 @@ export default function NotesScreen() {
     emptyTrash,
   } = useNotes();
 
-  const [viewMode, setViewMode] = useState<NoteView>(() => {
-    return (localStorage.getItem('aura_notes_view') as NoteView) || 'grid';
-  });
+  const viewMode = 'grid';
+  const [showNewFolder, setShowNewFolder] = useState(false);
   const [filter, setFilter] = useState<NoteFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
@@ -38,8 +39,19 @@ export default function NotesScreen() {
   const [showQuickAdd, setShowQuickAdd] = useState(false);
   const [quickTitle, setQuickTitle] = useState('');
   const [quickContent, setQuickContent] = useState('');
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const quickContentRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Folders ──
+  const {
+    folders,
+    createFolder,
+    updateFolder,
+    deleteFolder,
+    getChildFolders,
+    getFolderPath,
+  } = useFolders();
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -47,11 +59,7 @@ export default function NotesScreen() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Persist view mode
-  const handleViewChange = (mode: NoteView) => {
-    setViewMode(mode);
-    localStorage.setItem('aura_notes_view', mode);
-  };
+
 
   // Filter + search notes
   const filteredNotes = useMemo(() => {
@@ -78,18 +86,23 @@ export default function NotesScreen() {
       );
     }
 
+    // Apply folder filter (only when not searching and not in trash)
+    if (!searchQuery.trim() && filter !== 'trash') {
+      filtered = filtered.filter(n => (n.folderId || null) === currentFolderId);
+    }
+
     return filtered;
-  }, [notes, filter, searchQuery]);
+  }, [notes, filter, searchQuery, currentFolderId]);
 
   // Split pinned and unpinned
   const pinnedNotes = useMemo(() => filteredNotes.filter(n => n.isPinned), [filteredNotes]);
   const unpinnedNotes = useMemo(() => filteredNotes.filter(n => !n.isPinned), [filteredNotes]);
 
-  // Handle note creation
+  // Handle note creation (in current folder)
   const handleCreateNote = useCallback(() => {
-    const note = createNote();
+    const note = createNote({ folderId: currentFolderId });
     setEditingNote(note);
-  }, [createNote]);
+  }, [createNote, currentFolderId]);
 
   const handleQuickAdd = () => {
     if (!quickTitle.trim() && !quickContent.trim()) {
@@ -99,6 +112,7 @@ export default function NotesScreen() {
     createNote({
       title: quickTitle.trim(),
       content: quickContent.trim(),
+      folderId: currentFolderId,
     });
     setQuickTitle('');
     setQuickContent('');
@@ -107,7 +121,7 @@ export default function NotesScreen() {
   };
 
   const handleCreateChecklist = () => {
-    const note = createNote({ isChecklist: true, checklist: [{ id: crypto.randomUUID(), text: '', checked: false }] });
+    const note = createNote({ isChecklist: true, checklist: [{ id: crypto.randomUUID(), text: '', checked: false }], folderId: currentFolderId });
     setEditingNote(note);
   };
 
@@ -205,9 +219,11 @@ export default function NotesScreen() {
                     </button>
                     <div className="shrink-0">
                       <h1 className="font-serif italic text-2xl text-[var(--gold)] whitespace-nowrap">Notes</h1>
-                      <p className="font-label text-[9px] uppercase tracking-[0.2em] text-[#998f81] whitespace-nowrap">
+                     <p className="font-label text-[9px] uppercase tracking-[0.2em] text-[#998f81] whitespace-nowrap">
                         {filter === 'trash'
                           ? `${trashCount} note${trashCount !== 1 ? 's' : ''} in trash`
+                          : currentFolderId
+                          ? `${filteredNotes.length} note${filteredNotes.length !== 1 ? 's' : ''}`
                           : `${filteredNotes.length} note${filteredNotes.length !== 1 ? 's' : ''}`}
                       </p>
                     </div>
@@ -263,15 +279,20 @@ export default function NotesScreen() {
                   )}
                 </motion.div>
 
-                {/* View toggle */}
-                <button
-                  onClick={() => handleViewChange(viewMode === 'grid' ? 'list' : 'grid')}
-                  className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all shrink-0"
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                    {viewMode === 'grid' ? 'view_agenda' : 'grid_view'}
-                  </span>
-                </button>
+                {/* New Folder toggle button */}
+                {filter !== 'trash' && !searchQuery.trim() && (
+                  <button
+                    onClick={() => setShowNewFolder(prev => !prev)}
+                    className={`p-2 rounded-xl bg-white/5 border border-white/10 transition-all shrink-0 ${
+                      showNewFolder ? 'text-[var(--gold)] bg-white/10 border-[var(--gold)]/30' : 'text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10'
+                    }`}
+                    title="New Folder"
+                  >
+                    <span className="material-symbols-outlined block font-variation-settings-fill" style={{ fontSize: '20px' }}>
+                      create_new_folder
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -381,6 +402,24 @@ export default function NotesScreen() {
                 )}
               </div>
             )}
+
+            {/* Folder browser — only show when not searching and not in trash */}
+            {filter !== 'trash' && !searchQuery.trim() && (
+              <FolderBrowser
+                folders={folders}
+                notes={notes}
+                currentFolderId={currentFolderId}
+                onNavigateToFolder={setCurrentFolderId}
+                onCreateFolder={createFolder}
+                onUpdateFolder={updateFolder}
+                onDeleteFolder={deleteFolder}
+                getChildFolders={getChildFolders}
+                getFolderPath={getFolderPath}
+                showNewFolder={showNewFolder}
+                setShowNewFolder={setShowNewFolder}
+              />
+            )
+            }
 
             {filteredNotes.length === 0 ? (
               <div className="py-12 flex flex-col items-center justify-center gap-4">

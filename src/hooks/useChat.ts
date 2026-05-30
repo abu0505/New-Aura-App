@@ -1301,35 +1301,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }).eq('id', messageId);
   };
 
-  const deleteMessage = async (messageId: string, forEveryone: boolean) => {
-    if (forEveryone) {
-      setMessages(prev => prev.map(m => m.id === messageId ? { 
-        ...m, 
-        is_deleted_for_everyone: true, 
-        decrypted_content: 'This message was deleted',
-        media_url: null
-      } : m));
-      
-      await Promise.all([
-        supabase.from('messages').update({ 
-          is_deleted_for_everyone: true,
-          encrypted_content: '',
-          nonce: '',
-          media_url: null,
-          media_key: null,
-          media_nonce: null
-        }).eq('id', messageId),
-        supabase.from('media_folder_items').delete().eq('message_id', messageId),
-        supabase.from('video_chunks').delete().eq('message_id', messageId)
-      ]);
-    } else {
-      const msg = messagesRef.current.find(m => m.id === messageId);
-      const isSender = msg?.sender_id === user?.id;
-      const deleteField = isSender ? 'is_deleted_for_sender' : 'is_deleted_for_receiver';
-      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, [deleteField]: true } : m));
-      await supabase.from('messages').update({ [deleteField]: true }).eq('id', messageId);
-    }
-  };
+
 
   const markAsRead = useCallback(async (messageIds: string[]) => {
     if (messageIds.length === 0 || !user) return;
@@ -1594,7 +1566,6 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     jumpToLatest,
     reactToMessage, 
     editMessage, 
-    deleteMessage, 
     markAsRead, 
     pinMessage, 
     firstUnreadId, 

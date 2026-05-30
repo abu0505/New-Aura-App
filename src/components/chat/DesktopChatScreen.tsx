@@ -74,7 +74,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const {
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore,
     hasMore, hasMoreNewer, sendMessage, loadMore, loadMoreNewer, jumpToMessageWindow, jumpToLatest, reactToMessage, editMessage,
-    deleteMessage, pinMessage, firstUnreadId, isOnline, markAsRead,
+    pinMessage, firstUnreadId, isOnline, markAsRead,
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
@@ -809,7 +809,6 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                               isFirst={isFirstInGroup}
                               isLast={isLastInGroup}
                               onReply={viewMode === 'chat' ? handleReply : undefined}
-                              onDelete={viewMode === 'chat' ? deleteMessage : undefined}
                               onPin={pinMessage}
                               quickEmojis={settings?.quick_emojis}
                             />
@@ -819,7 +818,6 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                               partnerPublicKey={partner.public_key}
                               onReact={viewMode === 'chat' ? reactToMessage : undefined}
                               onEdit={viewMode === 'chat' ? editMessage : undefined}
-                              onDelete={viewMode === 'chat' ? deleteMessage : undefined}
                               onPin={pinMessage}
                               isFirst={isFirstInGroup}
                               isLast={isLastInGroup}

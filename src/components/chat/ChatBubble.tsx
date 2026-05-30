@@ -30,7 +30,6 @@ interface ChatBubbleProps {
   partnerPublicKey: string | null;
   onReact?: (msgId: string, emoji: string | null) => void;
   onEdit?: (msgId: string, content: string) => void;
-  onDelete?: (msgId: string, forEveryone: boolean) => void;
   onPin?: (msgId: string) => void;
   isFirst?: boolean;
   isLast?: boolean;
@@ -47,7 +46,6 @@ function ChatBubble({
   partnerPublicKey,
   onReact,
   onEdit,
-  onDelete,
   onPin,
   isFirst = true,
   isLast = true,
@@ -1011,8 +1009,6 @@ function ChatBubble({
                     setTimeout(() => editInputRef.current?.focus(), 0);
                   } : undefined}
                   onMoveToGarbage={hasCloudinaryMedia && !message.is_deleted_for_everyone ? handleMoveToGarbage : undefined}
-                  onDeleteForMe={() => { onDelete?.(message.id, false); setInteractionType('none'); }}
-                  onDeleteForEveryone={() => { onDelete?.(message.id, true); setInteractionType('none'); }}
                 />
               )
             )}

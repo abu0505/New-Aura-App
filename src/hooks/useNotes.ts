@@ -36,6 +36,10 @@ export interface Note {
     nonce: string;
   } | null;
   customColor?: string | null;
+  // Folder support — null = root level (no folder)
+  folderId?: string | null;
+  // Drawing canvas data — stored as JSON array of drawing strokes
+  drawingData?: any | null;
 }
 
 export type NoteColor =
@@ -62,7 +66,7 @@ export type NoteBackground =
   | 'travel'
   | 'celebration';
 
-export type NoteMood = 'happy' | 'calm' | 'grateful' | 'energetic' | 'reflective' | 'anxious' | 'sad';
+export type NoteMood = 'happy' | 'calm' | 'grateful' | 'energetic' | 'reflective' | 'anxious' | 'sad' | 'love';
 
 export type NoteView = 'grid' | 'list';
 export type NoteFilter = 'all' | 'trash' | string; // string = label name
@@ -103,6 +107,7 @@ export const MOOD_CONFIG: Record<NoteMood, { emoji: string; label: string; gradi
   reflective: { emoji: '🤔', label: 'Reflective', gradient: 'linear-gradient(135deg, rgba(130,100,200,0.15), rgba(100,80,180,0.08))' },
   anxious:    { emoji: '😰', label: 'Anxious',    gradient: 'linear-gradient(135deg, rgba(180,180,60,0.12), rgba(160,140,40,0.06))' },
   sad:        { emoji: '😢', label: 'Sad',        gradient: 'linear-gradient(135deg, rgba(80,100,160,0.15), rgba(60,80,140,0.08))' },
+  love:       { emoji: '❤️', label: 'Love',       gradient: 'linear-gradient(135deg, rgba(240,100,150,0.15), rgba(220,50,100,0.08))' },
 };
 
 import { supabase } from '../lib/supabase';
@@ -132,6 +137,8 @@ const mapDbNoteToNote = (db: any): Note => ({
   mood: db.mood || null,
   customBg: db.custom_bg || null,
   customColor: db.custom_color || null,
+  folderId: db.folder_id || null,
+  drawingData: db.drawing_data || null,
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -328,6 +335,8 @@ export function useNotes() {
       createdAt: now,
       updatedAt: now,
       mood: null,
+      folderId: null,
+      drawingData: null,
       ...partial,
     };
 
@@ -351,6 +360,8 @@ export function useNotes() {
       custom_bg: note.customBg,
       custom_color: note.customColor,
       mood: note.mood,
+      folder_id: note.folderId,
+      drawing_data: note.drawingData,
       created_at: note.createdAt,
       updated_at: note.updatedAt
     }).then(({ error }) => {
@@ -383,6 +394,8 @@ export function useNotes() {
     if (changes.customBg !== undefined) payload.custom_bg = changes.customBg;
     if (changes.customColor !== undefined) payload.custom_color = changes.customColor;
     if (changes.mood !== undefined) payload.mood = changes.mood;
+    if (changes.folderId !== undefined) payload.folder_id = changes.folderId;
+    if (changes.drawingData !== undefined) payload.drawing_data = changes.drawingData;
 
     supabase.from('notes')
       .update(payload)

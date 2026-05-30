@@ -75,10 +75,6 @@ CREATE POLICY "Users can update their own messages"
   ON messages FOR UPDATE
   USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 
-CREATE POLICY "Users can delete their own messages"
-  ON messages FOR DELETE
-  USING (auth.uid() = sender_id);
-
 CREATE INDEX IF NOT EXISTS idx_messages_conversation
   ON messages (LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id), created_at DESC);
 

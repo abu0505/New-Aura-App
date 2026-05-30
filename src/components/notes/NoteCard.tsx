@@ -74,6 +74,7 @@ function NoteCard({
       return;
     }
     let isMounted = true;
+    let blobUrl: string | null = null;
     const decryptData = async () => {
       try {
         const keys = getStoredKeyPair();
@@ -91,7 +92,7 @@ function NoteCard({
           );
           if (decrypted && isMounted) {
             const blob = new Blob([decrypted as unknown as BlobPart]);
-            const blobUrl = URL.createObjectURL(blob);
+            blobUrl = URL.createObjectURL(blob);
             setDecryptedBg(blobUrl);
           }
           return;
@@ -114,10 +115,20 @@ function NoteCard({
       }
     };
     decryptData();
-    return () => { isMounted = false; };
-  }, [note.customBg]);
+    return () => {
+      isMounted = false;
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [
+    note.customBg?.nonce,
+    (note.customBg as any)?.url,
+    (note.customBg as any)?.ciphertext
+  ]);
 
-  const isEmpty = !note.title && !note.content && note.checklist.length === 0;
+  const hasDrawing = note.drawingData && Array.isArray(note.drawingData) && note.drawingData.length > 0;
+  const isEmpty = !note.title && !note.content && note.checklist.length === 0 && !hasDrawing;
 
   // Checklist summary
   const checkedCount = note.checklist.filter(i => i.checked).length;
@@ -188,7 +199,7 @@ function NoteCard({
       }}
     >
       {/* Mood gradient overlay */}
-      {moodStyle && (
+      {moodStyle && !decryptedBg && note.background === 'none' && (
         <div
           className="absolute inset-0 pointer-events-none rounded-2xl"
           style={{ backgroundImage: moodStyle.gradient }}
@@ -298,6 +309,30 @@ function NoteCard({
               )}
             </div>
           )}
+
+          {/* Bottom info row (Edited + Drawing indicator) */}
+          <div className="flex items-center gap-1.5 mt-3 text-white/25">
+            <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider">
+              Edited {(() => {
+                const diff = Date.now() - new Date(note.updatedAt).getTime();
+                const mins = Math.floor(diff / 60000);
+                if (mins < 1) return 'Just now';
+                if (mins < 60) return `${mins}m ago`;
+                const hours = Math.floor(mins / 60);
+                if (hours < 24) return `${hours}h ago`;
+                const days = Math.floor(hours / 24);
+                return `${days}d ago`;
+              })()}
+            </span>
+
+            {hasDrawing && (
+              <div className="flex items-center gap-1">
+                <span className="text-[8px] sm:text-[9px] opacity-50">•</span>
+                <span className="material-symbols-outlined" style={{ fontSize: '11px' }}>draw</span>
+                <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider hidden sm:inline">Has drawing</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pin indicator */}
