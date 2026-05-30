@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAutocompletePhrases } from '../../hooks/useAutocompletePhrases';
 
 export default function AutocompleteSettings() {
-  const { phrases, addPhrase, removePhrase } = useAutocompletePhrases();
+  const { phrases, addPhrase, removePhrase, loading } = useAutocompletePhrases();
   const [inputValue, setInputValue] = useState('');
 
   const handleAdd = (e: React.FormEvent) => {
@@ -50,32 +50,45 @@ export default function AutocompleteSettings() {
 
         <div className="space-y-2 max-h-[132px] overflow-y-auto scrollbar-hide">
           <AnimatePresence>
-            {phrases.map((phrase) => (
-              <motion.div
-                key={phrase}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl py-1 px-3 shrink-0"
-              >
-                <span className="text-aura-text-primary truncate mr-4">{phrase}</span>
-                <button
-                  onClick={() => removePhrase(phrase)}
-                  className="text-aura-danger/80 hover:text-aura-danger transition-colors p-2 rounded-lg hover:bg-aura-danger/10 shrink-0"
-                  title="Remove phrase"
-                >
-                  <span className="material-symbols-outlined text-sm">delete</span>
-                </button>
-              </motion.div>
-            ))}
-            {phrases.length === 0 && (
+            {loading ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center py-8 text-aura-text-secondary/50 text-sm"
+                exit={{ opacity: 0 }}
+                className="flex justify-center py-6"
               >
-                No phrases added yet. Add one above!
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </motion.div>
+            ) : (
+              <>
+                {phrases.map((phrase) => (
+                  <motion.div
+                    key={phrase}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="flex items-center justify-between bg-black/20 border border-white/5 rounded-xl py-1 px-3 shrink-0"
+                  >
+                    <span className="text-aura-text-primary truncate mr-4">{phrase}</span>
+                    <button
+                      onClick={() => removePhrase(phrase)}
+                      className="text-aura-danger/80 hover:text-aura-danger transition-colors p-2 rounded-lg hover:bg-aura-danger/10 shrink-0"
+                      title="Remove phrase"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </motion.div>
+                ))}
+                {phrases.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center py-8 text-aura-text-secondary/50 text-sm"
+                  >
+                    No phrases added yet. Add one above!
+                  </motion.div>
+                )}
+              </>
             )}
           </AnimatePresence>
         </div>
