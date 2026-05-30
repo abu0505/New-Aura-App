@@ -1143,35 +1143,6 @@ interface MemoryCardProps {
 function MemoryCard({ memory, index, cardRef, onClick, onLongPress, onTouchStart, onTouchMove, onTouchEnd, isSelected, selectionMode, isFavorited, onToggleFavorite }: MemoryCardProps) {
   const isTall = index % 5 === 0;
   const isWide = index % 7 === 0;
-  const lastTapRef = useRef<number>(0);
-  const [showHeart, setShowHeart] = useState(false);
-  const suppressClickRef = useRef<boolean>(false);
-
-  const handlePointerDown = () => {
-    const now = Date.now();
-    if (now - lastTapRef.current < 300) {
-      // Double tap detected
-      suppressClickRef.current = true;
-      onToggleFavorite();
-      if (!isFavorited) {
-        setShowHeart(true);
-        setTimeout(() => setShowHeart(false), 800);
-      }
-      lastTapRef.current = 0; // Reset to avoid triple tap
-    } else {
-      lastTapRef.current = now;
-      suppressClickRef.current = false;
-    }
-  };
-
-  const handleInternalClick = (e: React.MouseEvent) => {
-    if (suppressClickRef.current) {
-      e.stopPropagation();
-      suppressClickRef.current = false;
-      return;
-    }
-    onClick();
-  };
 
   return (
     <motion.div
@@ -1180,8 +1151,7 @@ function MemoryCard({ memory, index, cardRef, onClick, onLongPress, onTouchStart
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.2 }}
-      onPointerDown={handlePointerDown}
-      onClick={handleInternalClick}
+      onClick={onClick}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -1241,6 +1211,31 @@ function MemoryCard({ memory, index, cardRef, onClick, onLongPress, onTouchStart
             </div>
           )}
 
+          {/* Interactive Favorite Button (desktop hover / mobile default visible) */}
+          {!selectionMode && (
+            <div className="absolute top-3 right-3 z-10 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-200">
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleFavorite();
+                }}
+                className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md border transition-all ${
+                  isFavorited
+                    ? 'bg-red-500/20 border-red-500/30 text-red-500'
+                    : 'bg-black/40 hover:bg-black/60 border-white/10 text-white/60 hover:text-white'
+                }`}
+              >
+                <span 
+                  className="material-symbols-outlined text-[18px] transition-transform duration-200"
+                  style={isFavorited ? { fontVariationSettings: "'FILL' 1" } : undefined}
+                >
+                  favorite
+                </span>
+              </motion.button>
+            </div>
+          )}
+
           {/* Selection Checkbox */}
           {selectionMode && (
             <div className="absolute top-3 right-3 z-10">
@@ -1251,37 +1246,6 @@ function MemoryCard({ memory, index, cardRef, onClick, onLongPress, onTouchStart
               </div>
             </div>
           )}
-
-          {/* Favorite Badge */}
-          {isFavorited && !selectionMode && (
-            <div className="absolute bottom-3 right-3 z-10">
-              <motion.span 
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="material-symbols-outlined text-red-500 fill-current text-[18px]"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                favorite
-              </motion.span>
-            </div>
-          )}
-
-          {/* Pop Heart Animation */}
-          <AnimatePresence>
-            {showHeart && (
-              <motion.div
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: [0, 1.5, 1], opacity: [0, 1, 0] }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, times: [0, 0.4, 1] }}
-                className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
-              >
-                <span className="material-symbols-outlined text-red-500 text-6xl fill-current" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  favorite
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </>
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center opacity-20">

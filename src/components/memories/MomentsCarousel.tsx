@@ -86,7 +86,7 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
       </div>
 
       {/* Outer container */}
-      <div className="relative px-4 sm:px-0">
+      <div className="relative">
         {/* Left Arrow */}
         <AnimatePresence>
           {scrollPos > 10 && (
