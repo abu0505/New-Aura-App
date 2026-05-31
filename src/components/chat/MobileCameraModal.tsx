@@ -51,6 +51,11 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const [timerActive, setTimerActive] = useState(false); // true = user activated timer
   const [timerCountdown, setTimerCountdown] = useState<number | null>(null); // current countdown value shown on screen
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Tracks when the timer countdown overlay was mounted. Used to ignore the
+  // synthesized 'click' event that fires ~100-200ms after the pointerup on
+  // the shutter button — without this guard the click lands on the newly-
+  // rendered overlay and immediately cancels the timer.
+  const timerOverlayMountedAtRef = useRef<number>(0);
 
   // Background Noise Reduction States
   const [enhancedFile, setEnhancedFile] = useState<File | null>(null);
@@ -996,6 +1001,8 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
   const runTimerThenCapture = useCallback(() => {
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     let count = timerDuration;
+    // Record the mount time so the overlay can reject stale click events
+    timerOverlayMountedAtRef.current = Date.now();
     setTimerCountdown(count);
 
     timerIntervalRef.current = setInterval(() => {
@@ -1694,6 +1701,12 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
                   className="absolute inset-0 z-[85] flex flex-col items-center justify-center pointer-events-auto"
                   style={{ background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 100%)' }}
                   onClick={() => {
+                    // FIX: On mobile, the browser synthesizes a 'click' event ~100-200ms
+                    // after the pointerup on the shutter button. By the time this click fires,
+                    // the timer overlay has already rendered on top of the shutter button area
+                    // and intercepts it — instantly cancelling the timer the user just started.
+                    // Guard: ignore clicks within the first 500ms of the overlay appearing.
+                    if (Date.now() - timerOverlayMountedAtRef.current < 500) return;
                     // Tap to cancel
                     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
                     timerIntervalRef.current = null;
