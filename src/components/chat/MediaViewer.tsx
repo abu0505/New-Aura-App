@@ -337,7 +337,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
         onClick={onClose}
       >
         {/* Top left info */}
-        <div style={{ position: 'absolute', top: '1.5rem', left: '1.5rem', zIndex: 10000 }}>
+        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-[10000]">
           {allMedia && allMedia.length > 1 && (
             <div className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-primary font-bold text-xs uppercase tracking-widest border border-white/5">
               {currentIndex + 1} / {allMedia.length}
@@ -345,7 +345,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
           )}
         </div>
 
-        <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.75rem', zIndex: 10000 }}>
+        <div className="absolute top-4 right-4 md:top-6 md:right-6 flex gap-1.5 md:gap-3 z-[10000]">
           {showViewInChat && currentMedia.id && (
             <button
               title="View in Chat"
@@ -394,51 +394,61 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               
               <AnimatePresence>
                 {showFolderPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute right-0 top-full mt-2 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl flex flex-col gap-2 z-[10001]"
-                  >
-                    <div className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1 px-1">Add to Folder</div>
-                    
-                    <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-1">
-                      {folders.map(folder => (
+                  <>
+                    {/* Backdrop click-away listener for the dropdown */}
+                    <div 
+                      className="fixed inset-0 z-[10000]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowFolderPicker(false);
+                      }}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="fixed md:absolute top-20 md:top-full left-0 right-0 mx-auto md:left-auto md:right-0 md:mx-0 mt-0 md:mt-2 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl flex flex-col gap-2 z-[10001]"
+                    >
+                      <div className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1 px-1">Add to Folder</div>
+                      
+                      <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                        {folders.map(folder => (
+                          <button
+                            key={folder.id}
+                            onClick={() => handleAddToFolder(folder.id)}
+                            className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors text-left"
+                          >
+                            <span className="material-symbols-outlined text-sm text-[var(--gold)]">folder</span>
+                            <span className="text-sm text-white/90 truncate">{folder.name}</span>
+                          </button>
+                        ))}
+                        {folders.length === 0 && (
+                          <div className="text-xs text-white/40 px-2 py-1 italic">No folders yet</div>
+                        )}
+                      </div>
+                      
+                      <div className="h-px bg-white/10 my-1" />
+                      
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="New folder name..."
+                          value={newFolderName}
+                          onChange={(e) => setNewFolderName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolderAndAdd(); }}
+                          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--gold)] transition-colors"
+                        />
                         <button
-                          key={folder.id}
-                          onClick={() => handleAddToFolder(folder.id)}
-                          className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors text-left"
+                          onClick={handleCreateFolderAndAdd}
+                          disabled={isCreatingFolder || !newFolderName.trim()}
+                          className="bg-[var(--gold)] text-black rounded-lg px-3 py-1.5 text-sm font-bold disabled:opacity-50 transition-opacity"
                         >
-                          <span className="material-symbols-outlined text-sm text-[var(--gold)]">folder</span>
-                          <span className="text-sm text-white/90 truncate">{folder.name}</span>
+                          Add
                         </button>
-                      ))}
-                      {folders.length === 0 && (
-                        <div className="text-xs text-white/40 px-2 py-1 italic">No folders yet</div>
-                      )}
-                    </div>
-                    
-                    <div className="h-px bg-white/10 my-1" />
-                    
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="New folder name..."
-                        value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolderAndAdd(); }}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[var(--gold)] transition-colors"
-                      />
-                      <button
-                        onClick={handleCreateFolderAndAdd}
-                        disabled={isCreatingFolder || !newFolderName.trim()}
-                        className="bg-[var(--gold)] text-black rounded-lg px-3 py-1.5 text-sm font-bold disabled:opacity-50 transition-opacity"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </motion.div>
+                      </div>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
             </div>
@@ -506,7 +516,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
           </a>
           <button
             onClick={(e) => { e.stopPropagation(); onClose(); }}
-            className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer"
+            className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
           >
             <span className="material-symbols-outlined text-2xl font-bold">close</span>
           </button>
