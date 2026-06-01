@@ -26,48 +26,45 @@ Node cannot be found in the current page.
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folders?select=*&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/chat_settings?select=id%2Cuser_id%2Cbackground_url%2Cbackground_key%2Cbackground_nonce%2Cnotification_enabled%2Ctab_badge_enabled%2Cpush_notifications_enabled%2Cupdated_at%2Cshared_pin%2Caccent_color%2Ctrue_dark_mode%2Cquick_emojis%2Cnotification_alias%2Cnotification_bodies&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-06-01T15:21:13.681Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+(index):1 [Intervention] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://fonts.gstatic.com/s/materialsymbolsoutlined/v342/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folder_items?select=folder_id&folder_id=in.%2869cd6f4f-ec7e-4f2a-92a7-1236c3463b2a%2C9527a350-8c61-4c4a-a043-de6810751787%2C7b50070f-2c2c-4ce2-a2bb-d394ac064919%2Cdc963530-6427-4745-a8fa-98f6246007c4%29 OPTIONS: {"method":"GET","headers":{}}
- [SUPABASE FETCH SUCCESS] Status: 200 
- [Intervention] Slow network is detected. See https://www.chromestatus.com/feature/5636954674692096 for more details. Fallback font will be used while loading: https://fonts.gstatic.com/s/materialsymbolsoutlined/v342/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oFsI.woff2
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-30T10:21:49.779Z\"}"}
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
+ [Intervention] Blocked call to navigator.vibrate because user hasn't tapped on the frame or any embedded frame yet: https://www.chromestatus.com/feature/5644273861001216.
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folder_items?select=folder_id&folder_id=in.%2869cd6f4f-ec7e-4f2a-92a7-1236c3463b2a%2C9527a350-8c61-4c4a-a043-de6810751787%2C7b50070f-2c2c-4ce2-a2bb-d394ac064919%2Cdc963530-6427-4745-a8fa-98f6246007c4%29 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH SUCCESS] Status: 204 
  [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
  [SnapCapture] 📡 Channel status: CLOSED
+ [SUPABASE FETCH SUCCESS] Status: 200 
  [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
  [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fXCFS3Ek_B4:APA91bFySt6G7gy5_fHGRyzI6q2zPZj0...
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=25 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
+ [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fXCFS3Ek_B4:APA91bFySt6G7gy5_fHGRyzI6q2zPZj0...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=favorited_message_ids&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
  [SnapCapture] 📡 Channel status: SUBSCRIBED
- [🔔 NOTIF] 🔍 Existing push subscription: YES ✅
- [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fXCFS3Ek_B4:APA91bFySt6G7gy5_fHGRyzI6q2zPZj0...
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=favorited_message_ids&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Ctype%2Ccreated_at%2Csender_public_key%2Cduration&or=%28media_url.not.is.null%2Ctype.eq.video%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&type=neq.gif&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":30,\"limit_count\":6}"}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":20}"}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_week_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":20}"}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_year_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"limit_count\":20}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":6,\"current_day\":1,\"limit_count\":25}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":25}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_week_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":25}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_year_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":6,\"limit_count\":25}"}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=25 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=favorited_message_ids&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Ctype%2Ccreated_at%2Csender_public_key%2Cduration&or=%28media_url.not.is.null%2Ctype.eq.video%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&type=neq.gif&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"current_day\":30,\"limit_count\":6}"}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":20}"}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_week_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":20}"}
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_year_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":5,\"limit_count\":20}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_throwbacks OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":6,\"current_day\":1,\"limit_count\":25}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":25}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_week_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"limit_count\":25}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_last_year_month_recap OPTIONS: {"method":"POST","headers":{},"body":"{\"u_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"p_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"current_month\":6,\"limit_count\":25}"}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key&id=eq.8bb51234-4a86-470f-9f7d-96a95f551952 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
@@ -77,6 +74,7 @@ Node cannot be found in the current page.
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/media_folder_items?select=folder_id&folder_id=in.%2869cd6f4f-ec7e-4f2a-92a7-1236c3463b2a%2C9527a350-8c61-4c4a-a043-de6810751787%2C7b50070f-2c2c-4ce2-a2bb-d394ac064919%2Cdc963530-6427-4745-a8fa-98f6246007c4%29 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH SUCCESS] Status: 200 
  [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
  [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
@@ -97,18 +95,24 @@ Node cannot be found in the current page.
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/push_subscriptions?on_conflict=user_id OPTIONS: {"method":"POST","headers":{},"body":"{\"user_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"endpoint\":\"https://fcm.googleapis.com/fcm/send/fXCFS3Ek_B4:APA91bFySt6G7gy5_fHGRyzI6q2zPZj0hjBqUObIUT--W0blcmcy8oYuNU1bzdIsuF8ZuNOmMEOwsgGrtEubEjilyE_UMZESXv4f6_JGRTUQmXQscZYvVAXwI6X-QybcKWbGBGST_5Ho\",\"p256dh\":\"BIeAPbDohqS1bZyp2eDuMUamOhbi8tEPKigkLMze2Xsi2oHSrv_9ZFIEogRaGSz7Sb35p6NzqL34HjiqRkQs2L8\",\"auth\":\"BxpK81jcJfOz5OWsip6STA\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 206 
+ [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH SUCCESS] Status: 200 
@@ -116,136 +120,553 @@ Node cannot be found in the current page.
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
  [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [MemoriesScreen] processQueue: Starting decryption for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 isChunked: true decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327135/uplctjearbsn1uymaes5.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 27bd3572-64fd-4d91-b5a8-86e9d7bbfd16 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326964/tdlcvcwfqcy6cwolzpz8.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 27bd3572-64fd-4d91-b5a8-86e9d7bbfd16 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 8cbd480e-85d6-492c-8077-ca1153306517 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326957/v8xww63rb7wo4x0cppnx.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 8cbd480e-85d6-492c-8077-ca1153306517 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 77efb2e2-947a-431c-bfdb-8f797f838e2d isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326951/bd2vsczonjtygljeal71.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 77efb2e2-947a-431c-bfdb-8f797f838e2d mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 62df5199-3ddc-4649-9be0-b6e906844982 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326946/c6xg8ucbwabao3lvw14l.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 62df5199-3ddc-4649-9be0-b6e906844982 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 11575dcb-1e2b-4052-b0ed-e6c9a97a20c2 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326943/nymnkcw6smxqqxqe8ilx.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 11575dcb-1e2b-4052-b0ed-e6c9a97a20c2 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 92eaa5ef-9f71-4a81-b226-3847ada7e81c isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326938/thfpecmy7bmlirlwlgin.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 92eaa5ef-9f71-4a81-b226-3847ada7e81c mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: ce0cf5c6-7cc9-4434-b854-b01eb891592a isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326474/mwodmiltmrzwj1auwzeu.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: ce0cf5c6-7cc9-4434-b854-b01eb891592a mediaType: image
  [🔔 NOTIF] ✅ Subscription saved to DB successfully
  [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
  [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%282b255848-28a3-4c42-82db-8ca498058786%2C5df94ce9-3a76-43ab-907d-814b0299b199%29 OPTIONS: {"method":"GET","headers":{}}
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 200 
- [SUPABASE FETCH SUCCESS] Status: 206 
- [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28feb2bd3d-c85e-458e-b74f-c8ce34160893%2C46506b8e-b899-40d1-8a2a-36feffb2dcbf%2C444ce9d6-bb62-48a3-824f-8465f048bebf%2Cab152be0-0bd3-4094-af45-e36d583a2bfa%2Cde0f1090-3b3e-480a-909e-696d57e6ef74%2C5f9ec96d-206a-45a8-a0ae-0ffa34039f21%2C0a3c9969-0d01-410e-a3b0-b1d2309dabb8%2C06ea4e31-074e-4094-9670-0220bc4fe47a%2C99ef2af3-ec1f-4d63-8fa7-be2a66c1e8d1%2C55c3993e-103c-4f9e-b2df-0627d1e06fab%2C7fd2928f-b840-4c44-bd7d-c19f1474ebfd%2C218cfdb6-ffb3-43b2-90db-fcf6e9728d0b%29 OPTIONS: {"method":"GET","headers":{}}
- [MemoriesScreen] processQueue: Starting decryption for item: fda90d29-23bd-4d28-b9e5-602866891fa7 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135429/xee63cht7ablj4ompukw.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: fda90d29-23bd-4d28-b9e5-602866891fa7 mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 19b130f3-32a8-4967-9e18-ac6c917fb28d isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135429/kvq5lse8vwwpxugdybat.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 19b130f3-32a8-4967-9e18-ac6c917fb28d mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 225bb3ab-05ec-4614-bac7-9c4ae19cde4c isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135429/p4i3tv3jm1jtlclh4k25.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 225bb3ab-05ec-4614-bac7-9c4ae19cde4c mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 4042d858-068b-466e-8e43-763732febe56 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/bqn1pxnitkm7yognamud.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 4042d858-068b-466e-8e43-763732febe56 mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 5c060dc8-77f0-4360-96c4-366295246eb8 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/e2eqbjdcjatcfdyah2nr.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 5c060dc8-77f0-4360-96c4-366295246eb8 mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: b3d172fd-ceac-46da-9035-fde03091b60a isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/k4qtf3p4upzdq7wx1c2a.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: b3d172fd-ceac-46da-9035-fde03091b60a mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: e8e171ec-e340-4922-9ffd-680571d2a7ac isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/pozr1c5qz5pejyug2xfa.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: e8e171ec-e340-4922-9ffd-680571d2a7ac mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: f12614a7-2ada-4d3f-b24b-20ba798b1688 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780132975/cy57t0byc60ot4glhj0d.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: f12614a7-2ada-4d3f-b24b-20ba798b1688 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: fda90d29-23bd-4d28-b9e5-602866891fa7 blobSize: 10662 generatedUrl: blob:http://localhost:5173/9b4f75b0-0952-4998-90b5-99c64fe0b906
- [MemoriesScreen] processQueue: Starting decryption for item: 5df94ce9-3a76-43ab-907d-814b0299b199 isChunked: true decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780115942/hzbvdvbgngo0rftyejnv.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 5df94ce9-3a76-43ab-907d-814b0299b199 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 19b130f3-32a8-4967-9e18-ac6c917fb28d blobSize: 13418 generatedUrl: blob:http://localhost:5173/acd1321f-698b-4bb2-8622-254135b91128
- [MemoriesScreen] processQueue: Starting decryption for item: da5a166e-bb4e-4135-ae2d-170ab764105c isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780080763/ojr0h854zndev5sjthyk.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: da5a166e-bb4e-4135-ae2d-170ab764105c mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 225bb3ab-05ec-4614-bac7-9c4ae19cde4c blobSize: 9004 generatedUrl: blob:http://localhost:5173/7c0e6f18-55c1-4a73-9377-840b12da85b1
- [MemoriesScreen] processQueue: Starting decryption for item: c00e4646-a5c1-4d87-adb0-3837efbf0595 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780080758/bvd21thgt607nmrdtzka.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: c00e4646-a5c1-4d87-adb0-3837efbf0595 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 4042d858-068b-466e-8e43-763732febe56 blobSize: 13096 generatedUrl: blob:http://localhost:5173/105e17a9-8b06-4ed3-94e0-6a42fb2484dc
- [MemoriesScreen] processQueue: Starting decryption for item: ef170b11-e5b9-4ea0-8e4c-287bf28293e1 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780080753/vuuiqkmyo7wogojiiurx.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: ef170b11-e5b9-4ea0-8e4c-287bf28293e1 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 5c060dc8-77f0-4360-96c4-366295246eb8 blobSize: 10384 generatedUrl: blob:http://localhost:5173/4b44cc00-8605-49f2-aecb-1aa2494070d5
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Max concurrent limit reached: 8
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 27bd3572-64fd-4d91-b5a8-86e9d7bbfd16 blobSize: 53704 generatedUrl: blob:http://localhost:5173/9a164b70-ffa6-4ebc-a104-9ce495789eec
+ [MemoriesScreen] processQueue: Starting decryption for item: b1f53a28-d2c4-4652-bb7d-77b96e7d7619 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326474/ni08azzmclwmxyfodobt.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: b1f53a28-d2c4-4652-bb7d-77b96e7d7619 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 blobSize: 2568 generatedUrl: blob:http://localhost:5173/4a41b3f7-06a2-4e78-8de6-4e2c82166d98
+ [MemoriesScreen] processQueue: Starting decryption for item: a82eaf86-846f-4be3-a5ac-cf7397983606 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326471/ekmcfjhsn6wspwlg6ypo.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: a82eaf86-846f-4be3-a5ac-cf7397983606 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 8cbd480e-85d6-492c-8077-ca1153306517 blobSize: 51458 generatedUrl: blob:http://localhost:5173/998cd07d-a83f-4c3d-accc-529503ccfc0e
+ [MemoriesScreen] processQueue: Starting decryption for item: 676ce8bb-c5b6-4bff-8b07-17dc62ca6c0f isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326471/pge5epxwr0ksrygpcw7l.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 676ce8bb-c5b6-4bff-8b07-17dc62ca6c0f mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 77efb2e2-947a-431c-bfdb-8f797f838e2d blobSize: 48189 generatedUrl: blob:http://localhost:5173/8a003358-44ea-44a6-abc4-b17015ae3e74
+ [MemoriesScreen] processQueue: Starting decryption for item: d260061c-9486-4649-90f7-ed4cde0c8fc1 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326471/rqptscsh0ju3qvzhwdy0.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: d260061c-9486-4649-90f7-ed4cde0c8fc1 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 62df5199-3ddc-4649-9be0-b6e906844982 blobSize: 55483 generatedUrl: blob:http://localhost:5173/92ff51bd-e601-429f-ba05-c941d965d43d
  [MemoriesScreen] processQueue: All items in queue are already processing.
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: b3d172fd-ceac-46da-9035-fde03091b60a blobSize: 8834 generatedUrl: blob:http://localhost:5173/b2afdfef-53fd-4c6f-ab96-17fd30b77c83
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 11575dcb-1e2b-4052-b0ed-e6c9a97a20c2 blobSize: 28028 generatedUrl: blob:http://localhost:5173/af2b2431-e27e-42f9-aeac-4c9dddff8dd4
  [MemoriesScreen] processQueue: All items in queue are already processing.
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: e8e171ec-e340-4922-9ffd-680571d2a7ac blobSize: 7504 generatedUrl: blob:http://localhost:5173/f2b5f4c0-ee67-40e2-8877-1380d72a11e7
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 92eaa5ef-9f71-4a81-b226-3847ada7e81c blobSize: 7084 generatedUrl: blob:http://localhost:5173/2ffcf465-fb67-4914-a010-6dc8961ad925
  [MemoriesScreen] processQueue: All items in queue are already processing.
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: f12614a7-2ada-4d3f-b24b-20ba798b1688 blobSize: 92060 generatedUrl: blob:http://localhost:5173/7b185766-8f79-4977-84b4-1c4cbb6b512e
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: ce0cf5c6-7cc9-4434-b854-b01eb891592a blobSize: 46572 generatedUrl: blob:http://localhost:5173/86f27e32-9f63-4c1b-8faa-53c39d60ce54
  [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: b1f53a28-d2c4-4652-bb7d-77b96e7d7619 blobSize: 48130 generatedUrl: blob:http://localhost:5173/5e9cbf98-71c1-4947-9476-9ee234049691
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: a82eaf86-846f-4be3-a5ac-cf7397983606 blobSize: 50256 generatedUrl: blob:http://localhost:5173/3f919bc9-56d1-46ab-a70f-27c6679c14aa
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 676ce8bb-c5b6-4bff-8b07-17dc62ca6c0f blobSize: 55210 generatedUrl: blob:http://localhost:5173/a72d2a4c-a624-4a5b-91f5-f17ec8912821
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: d260061c-9486-4649-90f7-ed4cde0c8fc1 blobSize: 47798 generatedUrl: blob:http://localhost:5173/b0805daf-5943-413d-8907-76879190953d
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/pinned_messages?select=id%2Cmessage_id%2Cpinned_by%2Ccreated_at OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [ChatBubble] fetchInitialChunks for msg=85c41580-8a6a-4d05-a3cf-415762e76e09
+ [ChatBubble] fetchInitialChunks for msg=85c41580-8a6a-4d05-a3cf-415762e76e09
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.85c41580-8a6a-4d05-a3cf-415762e76e09&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28feb2bd3d-c85e-458e-b74f-c8ce34160893%2C46506b8e-b899-40d1-8a2a-36feffb2dcbf%2C444ce9d6-bb62-48a3-824f-8465f048bebf%2Cab152be0-0bd3-4094-af45-e36d583a2bfa%2Cde0f1090-3b3e-480a-909e-696d57e6ef74%2C5f9ec96d-206a-45a8-a0ae-0ffa34039f21%2C0a3c9969-0d01-410e-a3b0-b1d2309dabb8%2C06ea4e31-074e-4094-9670-0220bc4fe47a%2C99ef2af3-ec1f-4d63-8fa7-be2a66c1e8d1%2C55c3993e-103c-4f9e-b2df-0627d1e06fab%2C7fd2928f-b840-4c44-bd7d-c19f1474ebfd%2C218cfdb6-ffb3-43b2-90db-fcf6e9728d0b%2Cf12614a7-2ada-4d3f-b24b-20ba798b1688%29 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.85c41580-8a6a-4d05-a3cf-415762e76e09&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&id=in.%28feb2bd3d-c85e-458e-b74f-c8ce34160893%2C46506b8e-b899-40d1-8a2a-36feffb2dcbf%2C444ce9d6-bb62-48a3-824f-8465f048bebf%2Cab152be0-0bd3-4094-af45-e36d583a2bfa%2Cde0f1090-3b3e-480a-909e-696d57e6ef74%2C5f9ec96d-206a-45a8-a0ae-0ffa34039f21%2C0a3c9969-0d01-410e-a3b0-b1d2309dabb8%2C06ea4e31-074e-4094-9670-0220bc4fe47a%2C99ef2af3-ec1f-4d63-8fa7-be2a66c1e8d1%2C55c3993e-103c-4f9e-b2df-0627d1e06fab%2C7fd2928f-b840-4c44-bd7d-c19f1474ebfd%2C218cfdb6-ffb3-43b2-90db-fcf6e9728d0b%2Cf12614a7-2ada-4d3f-b24b-20ba798b1688%29 OPTIONS: {"method":"GET","headers":{}}
  [SUPABASE FETCH SUCCESS] Status: 206 
  [SUPABASE FETCH SUCCESS] Status: 200 
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 5df94ce9-3a76-43ab-907d-814b0299b199 blobSize: 9988 generatedUrl: blob:http://localhost:5173/27ff8b2c-da1a-4e02-bb21-670ea47160f1
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [ChatBubble] Found 1 chunks in DB for msg=85c41580-8a6a-4d05-a3cf-415762e76e09, loading...
+ [VideoChunks] loadExistingChunks: msg=85c41580-8a6a-4d05-a3cf-415762e76e09, 1 chunks to process
+ [VideoChunks] Store init for msg=85c41580-8a6a-4d05-a3cf-415762e76e09, totalChunks=1, duration=8s
+ [VideoChunks] Block 0: downloading (attempt 1)...
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [VideoChunks] Block 0: downloaded 1313334 bytes, decrypting...
+ [VideoChunks] Block 0: decrypted OK → 1313318 bytes
+ [VideoChunks] Block 0: stored in blob assembly. have=1/1
+ [VideoChunks] Blob fallback: all 1 blocks received for msg=85c41580-8a6a-4d05-a3cf-415762e76e09, assembling...
+ [VideoChunks] MIME sniff → MP4 fallback (avc1.42E01E)
+ [VideoChunks] Blob fallback: assembled 1.25MB blob for msg=85c41580-8a6a-4d05-a3cf-415762e76e09 type=video/mp4 ✓
+ [VideoChunks] loadExistingChunks: msg=85c41580-8a6a-4d05-a3cf-415762e76e09 complete
+ [SnapCapture] 📥 Request received, consent OK — starting capture
+ [SnapCapture] 📷 Camera started successfully
+ [SnapCapture] 📤 SEND snap_ack {status: 'ready'}
+ [SnapCapture] ✅ Camera ready, ack sent, starting capture loop
+ [SnapCapture] 📸 Photo 1/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 1, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: d99ad303-2089-445a-8741-3d052426ca46 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327296/u1hdolo94serhrbnlyze.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: d99ad303-2089-445a-8741-3d052426ca46 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 isChunked: true decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327135/uplctjearbsn1uymaes5.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 27bd3572-64fd-4d91-b5a8-86e9d7bbfd16 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326964/tdlcvcwfqcy6cwolzpz8.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 27bd3572-64fd-4d91-b5a8-86e9d7bbfd16 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 8cbd480e-85d6-492c-8077-ca1153306517 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326957/v8xww63rb7wo4x0cppnx.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 8cbd480e-85d6-492c-8077-ca1153306517 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 77efb2e2-947a-431c-bfdb-8f797f838e2d isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326951/bd2vsczonjtygljeal71.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 77efb2e2-947a-431c-bfdb-8f797f838e2d mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 62df5199-3ddc-4649-9be0-b6e906844982 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326946/c6xg8ucbwabao3lvw14l.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 62df5199-3ddc-4649-9be0-b6e906844982 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 11575dcb-1e2b-4052-b0ed-e6c9a97a20c2 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326943/nymnkcw6smxqqxqe8ilx.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 11575dcb-1e2b-4052-b0ed-e6c9a97a20c2 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 92eaa5ef-9f71-4a81-b226-3847ada7e81c isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326938/thfpecmy7bmlirlwlgin.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 92eaa5ef-9f71-4a81-b226-3847ada7e81c mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 blobSize: 2568 generatedUrl: blob:http://localhost:5173/f607a329-1845-4d0f-b5c4-ba3f8bde0d06
+ [MemoriesScreen] processQueue: Starting decryption for item: ce0cf5c6-7cc9-4434-b854-b01eb891592a isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326474/mwodmiltmrzwj1auwzeu.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: ce0cf5c6-7cc9-4434-b854-b01eb891592a mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 27bd3572-64fd-4d91-b5a8-86e9d7bbfd16 blobSize: 53704 generatedUrl: blob:http://localhost:5173/a26d7d62-aa19-457c-bb87-d74ae83ab080
+ [MemoriesScreen] processQueue: Starting decryption for item: b1f53a28-d2c4-4652-bb7d-77b96e7d7619 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326474/ni08azzmclwmxyfodobt.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: b1f53a28-d2c4-4652-bb7d-77b96e7d7619 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 8cbd480e-85d6-492c-8077-ca1153306517 blobSize: 51458 generatedUrl: blob:http://localhost:5173/c1b6d83e-26b5-453f-820b-9c2c500f9f43
+ [MemoriesScreen] processQueue: Starting decryption for item: a82eaf86-846f-4be3-a5ac-cf7397983606 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326471/ekmcfjhsn6wspwlg6ypo.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: a82eaf86-846f-4be3-a5ac-cf7397983606 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 77efb2e2-947a-431c-bfdb-8f797f838e2d blobSize: 48189 generatedUrl: blob:http://localhost:5173/60b98cc2-2cf6-4cc6-bbe2-5debd9ca350e
+ [MemoriesScreen] processQueue: Starting decryption for item: 676ce8bb-c5b6-4bff-8b07-17dc62ca6c0f isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326471/pge5epxwr0ksrygpcw7l.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 676ce8bb-c5b6-4bff-8b07-17dc62ca6c0f mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 62df5199-3ddc-4649-9be0-b6e906844982 blobSize: 55483 generatedUrl: blob:http://localhost:5173/d5df4f9a-01dd-425b-8385-69e67ce3ca7f
+ [MemoriesScreen] processQueue: Starting decryption for item: d260061c-9486-4649-90f7-ed4cde0c8fc1 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780326471/rqptscsh0ju3qvzhwdy0.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: d260061c-9486-4649-90f7-ed4cde0c8fc1 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 11575dcb-1e2b-4052-b0ed-e6c9a97a20c2 blobSize: 28028 generatedUrl: blob:http://localhost:5173/abfb4342-0c5d-4c43-9005-e2b1b68a37b0
  [MemoriesScreen] processQueue: All items in queue are already processing.
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: da5a166e-bb4e-4135-ae2d-170ab764105c blobSize: 67333 generatedUrl: blob:http://localhost:5173/07e2bafb-937a-4bcb-afb4-1fdc6ca8eb61
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 92eaa5ef-9f71-4a81-b226-3847ada7e81c blobSize: 7084 generatedUrl: blob:http://localhost:5173/3eab3dfe-edf1-48b4-9d33-69c253b4a19f
  [MemoriesScreen] processQueue: All items in queue are already processing.
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: c00e4646-a5c1-4d87-adb0-3837efbf0595 blobSize: 67953 generatedUrl: blob:http://localhost:5173/345352d4-ffb9-4144-a1db-056957472748
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: ce0cf5c6-7cc9-4434-b854-b01eb891592a blobSize: 46572 generatedUrl: blob:http://localhost:5173/05f53f62-4b63-4135-a380-7bb9f58513be
  [MemoriesScreen] processQueue: All items in queue are already processing.
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: ef170b11-e5b9-4ea0-8e4c-287bf28293e1 blobSize: 65601 generatedUrl: blob:http://localhost:5173/fc1b38b9-cfa3-43ac-ab71-9aa9382075af
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: b1f53a28-d2c4-4652-bb7d-77b96e7d7619 blobSize: 48130 generatedUrl: blob:http://localhost:5173/1f46cc39-5896-40d6-9864-f8f21e7af86a
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: a82eaf86-846f-4be3-a5ac-cf7397983606 blobSize: 50256 generatedUrl: blob:http://localhost:5173/86ec4240-9ebb-4acb-92c8-343d5af33c59
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 676ce8bb-c5b6-4bff-8b07-17dc62ca6c0f blobSize: 55210 generatedUrl: blob:http://localhost:5173/b5bfbaa5-23f2-45de-86d9-f74963c3b565
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: d260061c-9486-4649-90f7-ed4cde0c8fc1 blobSize: 47798 generatedUrl: blob:http://localhost:5173/19cf4c13-73f3-4f26-9570-647d8de0a0da
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.d99ad303-2089-445a-8741-3d052426ca46 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:21:39.368Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: d99ad303-2089-445a-8741-3d052426ca46 blobSize: 54077 generatedUrl: blob:http://localhost:5173/553fadbc-f9d3-46b7-b238-baca28c8d7f6
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28d99ad303-2089-445a-8741-3d052426ca46%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:21:40.850Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 2/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 2, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: 5cee2a53-3790-41bd-8d03-6b900652bb3b isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327301/x4rx2wbfvead48seujxx.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 5cee2a53-3790-41bd-8d03-6b900652bb3b mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.5cee2a53-3790-41bd-8d03-6b900652bb3b OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:21:44.503Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 5cee2a53-3790-41bd-8d03-6b900652bb3b blobSize: 48449 generatedUrl: blob:http://localhost:5173/6132b2ea-5f60-4f47-a67a-13c0a76246ad
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 3/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 3, total: 10}
+ [Vercel Speed Insights] [vitals] {speed: '3g', metrics: Array(2), scriptVersion: '0.1.3', sdkName: '@vercel/speed-insights/react', sdkVersion: '2.0.0'} /_vercel/speed-insights/vitals
+ [MemoriesScreen] processQueue: Starting decryption for item: 26e6767b-9d76-4ac5-948f-5a80ce4a3fdd isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327306/phfxyj7aqk8ge2ag7c93.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 26e6767b-9d76-4ac5-948f-5a80ce4a3fdd mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.26e6767b-9d76-4ac5-948f-5a80ce4a3fdd OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:21:48.536Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 26e6767b-9d76-4ac5-948f-5a80ce4a3fdd blobSize: 52211 generatedUrl: blob:http://localhost:5173/87512f3e-0a39-4c7a-878d-f0a5e5733cf7
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-06-01T15:21:51.035Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-06-01T15%3A21%3A48.695928%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%285cee2a53-3790-41bd-8d03-6b900652bb3b%2C26e6767b-9d76-4ac5-948f-5a80ce4a3fdd%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:21:52.411Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 4/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 4, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: c5b23012-a968-43e6-a7e5-68ed70826c2d isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327312/vczd6grcdzc0skoifzvd.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: c5b23012-a968-43e6-a7e5-68ed70826c2d mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.c5b23012-a968-43e6-a7e5-68ed70826c2d OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:21:55.145Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: c5b23012-a968-43e6-a7e5-68ed70826c2d blobSize: 52051 generatedUrl: blob:http://localhost:5173/019dc662-00bf-4e0b-b2e8-e4db2673b947
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 5/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 5, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: bc9ca7a9-2cff-4991-90d9-f7c32b820f0a isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327316/zfe7j33q90cva8fqtloj.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: bc9ca7a9-2cff-4991-90d9-f7c32b820f0a mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.bc9ca7a9-2cff-4991-90d9-f7c32b820f0a OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:21:59.460Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: bc9ca7a9-2cff-4991-90d9-f7c32b820f0a blobSize: 51854 generatedUrl: blob:http://localhost:5173/b253e43d-7ca0-49c2-8425-db37ee8e7e38
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 6/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 6, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: fad7dd10-98bb-4226-aaf4-7c22d37fb610 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327321/ehoqsx1tshzimybqqp31.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: fad7dd10-98bb-4226-aaf4-7c22d37fb610 mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.fad7dd10-98bb-4226-aaf4-7c22d37fb610 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:03.315Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: fad7dd10-98bb-4226-aaf4-7c22d37fb610 blobSize: 51665 generatedUrl: blob:http://localhost:5173/2f940207-c7a1-4905-9711-fc9814b787cc
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.cf206fb5-3d15-4856-b6ec-5c630a68ff94 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:07.412Z\"}"}
+ [SnapCapture] 📸 Photo 7/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 7, total: 10}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28cf206fb5-3d15-4856-b6ec-5c630a68ff94%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:08.521Z\"}"}
+ [MemoriesScreen] processQueue: Starting decryption for item: d9b2f64e-6cb3-4bd8-8b60-cc68940a13da isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327326/kkfj069co0luvlkrv6ba.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: d9b2f64e-6cb3-4bd8-8b60-cc68940a13da mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.d9b2f64e-6cb3-4bd8-8b60-cc68940a13da OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:08.679Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: d9b2f64e-6cb3-4bd8-8b60-cc68940a13da blobSize: 52199 generatedUrl: blob:http://localhost:5173/292dcb48-8100-4e5d-bd49-dd89263d351f
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28d9b2f64e-6cb3-4bd8-8b60-cc68940a13da%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:09.832Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 8/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 8, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: 35ef6a32-c274-40fd-9c42-49a80f936981 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327331/nlpdczbh2uxcrlng7sdp.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 35ef6a32-c274-40fd-9c42-49a80f936981 mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.35ef6a32-c274-40fd-9c42-49a80f936981 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:13.609Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 35ef6a32-c274-40fd-9c42-49a80f936981 blobSize: 52416 generatedUrl: blob:http://localhost:5173/60a0c9fb-1ad1-47d6-afe7-98d62316249c
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%2835ef6a32-c274-40fd-9c42-49a80f936981%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:16.283Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 9/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 9, total: 10}
+ [MemoriesScreen] processQueue: Starting decryption for item: af7c0130-10a9-49b0-b3d4-febaf7709216 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327336/iueectf8w57elrvrzoji.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: af7c0130-10a9-49b0-b3d4-febaf7709216 mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.af7c0130-10a9-49b0-b3d4-febaf7709216 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:18.237Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: af7c0130-10a9-49b0-b3d4-febaf7709216 blobSize: 52041 generatedUrl: blob:http://localhost:5173/eda8ac2b-0b2c-489a-a7cb-5968972801df
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SnapCapture] 📸 Photo 10/10 captured & uploaded
+ [SnapCapture] 📤 SEND snap_photo {photo: {…}, index: 10, total: 10}
+ [SnapCapture] 📤 SEND snap_complete {}
+ [SnapCapture] 🏁 All photos captured, session complete
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:22.723Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-06-01T15:22:22.723Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"060fd657-1c8e-4a41-97e2-46173a5058f4\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"Q1kyBcwcTpwHU+kyk3cyqT+kUp0nrCrdIfCHlOCjQSN3payuEpNcHm/RfOhdRlnsjvHHg8d5Ud8=\",\"nonce\":\"3XK05+IfVw9LjnJvnxCWusp+ZLulpdkI\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg 060fd657... to partner 8bb51234...
+ [MemoriesScreen] processQueue: Starting decryption for item: 3f80cce6-dbef-43e5-91b3-e49bcf471018 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327341/eii3vkzhaj4snsmaijdq.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 3f80cce6-dbef-43e5-91b3-e49bcf471018 mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.3f80cce6-dbef-43e5-91b3-e49bcf471018 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:23.968Z\"}"}
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 3f80cce6-dbef-43e5-91b3-e49bcf471018 blobSize: 52326 generatedUrl: blob:http://localhost:5173/9e925e10-4547-4294-953c-e8be3687665b
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"060fd657-1c8e-4a41-97e2-46173a5058f4\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [MemoriesScreen] processQueue: Starting decryption for item: ced5c5d7-1c51-4690-8c8a-f28489ff81e0 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327341/eii3vkzhaj4snsmaijdq.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: ced5c5d7-1c51-4690-8c8a-f28489ff81e0 mediaType: image
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: ced5c5d7-1c51-4690-8c8a-f28489ff81e0 blobSize: 52326 generatedUrl: blob:http://localhost:5173/7ad67355-ccc5-4fd7-bab3-3ca3daf06589
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.ced5c5d7-1c51-4690-8c8a-f28489ff81e0 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:24.465Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%283f80cce6-dbef-43e5-91b3-e49bcf471018%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:25.472Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:26.502Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-06-01T15:22:26.502Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"a9075f50-410b-4d2c-bace-449f8c1549d0\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"hDQkeXYbmtGm/G3yMf7j2N8gU31IeL4MeKAzquMqe0hjF+6JPluUQToUlHsYUCtnU3+1\",\"nonce\":\"BK51E8IU+uRTk+jXR5iaRhPcUG1+V6JS\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] ⏭️ Push THROTTLED — within 5s window (msg a9075f50...)
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.d76ebfd0-72b7-4114-9c54-5419b017e548 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:29.146Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28d76ebfd0-72b7-4114-9c54-5419b017e548%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:30.276Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.ce7bf8bf-c0b5-4525-8b03-ec2be6e5a498 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:22:35.297Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:36.258Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-06-01T15:22:36.258Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"eab5e52a-c2a4-4cb2-b510-b345e9502bb1\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"qD0BgF44lzTSJaEGXrNzHSEjeywjl8oofA==\",\"nonce\":\"eiypBWNcj1IjYr3WTdSUVjDKKZNwiEok\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28ce7bf8bf-c0b5-4525-8b03-ec2be6e5a498%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:36.635Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg eab5e52a... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"eab5e52a-c2a4-4cb2-b510-b345e9502bb1\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
  [Vercel Speed Insights] [vitals] {speed: '3g', metrics: Array(1), scriptVersion: '0.1.3', sdkName: '@vercel/speed-insights/react', sdkVersion: '2.0.0'} /_vercel/speed-insights/vitals
  [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
- [MemoriesScreen] processQueue: Starting decryption for item: fda90d29-23bd-4d28-b9e5-602866891fa7 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135429/xee63cht7ablj4ompukw.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: fda90d29-23bd-4d28-b9e5-602866891fa7 mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 19b130f3-32a8-4967-9e18-ac6c917fb28d isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135429/kvq5lse8vwwpxugdybat.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 19b130f3-32a8-4967-9e18-ac6c917fb28d mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 225bb3ab-05ec-4614-bac7-9c4ae19cde4c isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135429/p4i3tv3jm1jtlclh4k25.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 225bb3ab-05ec-4614-bac7-9c4ae19cde4c mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 4042d858-068b-466e-8e43-763732febe56 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/bqn1pxnitkm7yognamud.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 4042d858-068b-466e-8e43-763732febe56 mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: 5c060dc8-77f0-4360-96c4-366295246eb8 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/e2eqbjdcjatcfdyah2nr.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 5c060dc8-77f0-4360-96c4-366295246eb8 mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: b3d172fd-ceac-46da-9035-fde03091b60a isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/k4qtf3p4upzdq7wx1c2a.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: b3d172fd-ceac-46da-9035-fde03091b60a mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: e8e171ec-e340-4922-9ffd-680571d2a7ac isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780135427/pozr1c5qz5pejyug2xfa.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: e8e171ec-e340-4922-9ffd-680571d2a7ac mediaType: image
- [MemoriesScreen] processQueue: Starting decryption for item: f12614a7-2ada-4d3f-b24b-20ba798b1688 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780132975/cy57t0byc60ot4glhj0d.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: f12614a7-2ada-4d3f-b24b-20ba798b1688 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: fda90d29-23bd-4d28-b9e5-602866891fa7 blobSize: 10662 generatedUrl: blob:http://localhost:5173/19d82707-0ecb-4e58-849d-978671af781e
- [MemoriesScreen] processQueue: Starting decryption for item: 5df94ce9-3a76-43ab-907d-814b0299b199 isChunked: true decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780115942/hzbvdvbgngo0rftyejnv.webp
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 5df94ce9-3a76-43ab-907d-814b0299b199 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 19b130f3-32a8-4967-9e18-ac6c917fb28d blobSize: 13418 generatedUrl: blob:http://localhost:5173/3b1d64bd-f46d-4a36-b051-02f6b051cedd
- [MemoriesScreen] processQueue: Starting decryption for item: da5a166e-bb4e-4135-ae2d-170ab764105c isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780080763/ojr0h854zndev5sjthyk.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: da5a166e-bb4e-4135-ae2d-170ab764105c mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 225bb3ab-05ec-4614-bac7-9c4ae19cde4c blobSize: 9004 generatedUrl: blob:http://localhost:5173/f072f82d-262a-4282-b574-55b5e74e1bee
- [MemoriesScreen] processQueue: Starting decryption for item: c00e4646-a5c1-4d87-adb0-3837efbf0595 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780080758/bvd21thgt607nmrdtzka.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: c00e4646-a5c1-4d87-adb0-3837efbf0595 mediaType: image
- [MemoriesScreen] processQueue: Decryption SUCCESS for item: 4042d858-068b-466e-8e43-763732febe56 blobSize: 13096 generatedUrl: blob:http://localhost:5173/1f0a3071-5ab7-4637-bb2b-87f182bd9044
- [MemoriesScreen] processQueue: Starting decryption for item: ef170b11-e5b9-4ea0-8e4c-287bf28293e1 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780080753/vuuiqkmyo7wogojiiurx.jpg
- [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: ef170b11-e5b9-4ea0-8e4c-287bf28293e1 mediaType: image
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: 5c060dc8-77f0-4360-96c4-366295246eb8 blobSize: 10384 generatedUrl: blob:http://localhost:5173/3aa6350e-dd26-4c5d-921d-aa7186e341b2
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: b3d172fd-ceac-46da-9035-fde03091b60a blobSize: 8834 generatedUrl: blob:http://localhost:5173/1a7cfa72-16a9-4d20-838c-146f39ce7fd8
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: e8e171ec-e340-4922-9ffd-680571d2a7ac blobSize: 7504 generatedUrl: blob:http://localhost:5173/4ebd6f32-0985-42aa-8bf6-80c16a308926
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: f12614a7-2ada-4d3f-b24b-20ba798b1688 blobSize: 92060 generatedUrl: blob:http://localhost:5173/631e4eae-fa2f-4762-bc5c-50981432c1b9
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: 5df94ce9-3a76-43ab-907d-814b0299b199 blobSize: 9988 generatedUrl: blob:http://localhost:5173/681ca515-6ca9-44a9-99f5-df77d6f3afa0
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: da5a166e-bb4e-4135-ae2d-170ab764105c blobSize: 67333 generatedUrl: blob:http://localhost:5173/83cc64a1-76c5-4034-8eec-f45120c64eb8
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: c00e4646-a5c1-4d87-adb0-3837efbf0595 blobSize: 67953 generatedUrl: blob:http://localhost:5173/f0d45def-da78-4178-9f33-b0268f2f08c6
-MemoriesScreen.tsx:445 [MemoriesScreen] processQueue: All items in queue are already processing.
-MemoriesScreen.tsx:496 [MemoriesScreen] processQueue: Decryption SUCCESS for item: ef170b11-e5b9-4ea0-8e4c-287bf28293e1 blobSize: 65601 generatedUrl: blob:http://localhost:5173/4d2d0c4f-3c39-45a6-97db-d61c8f42cd33
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-30T10:21:58.012Z\"}"}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-30T10%3A03%3A52.363055%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Cis_read%2Cis_delivered%2Cread_at%2Cdelivered_at%2Creaction%2Cis_edited%2Cencrypted_content%2Cnonce%2Csender_public_key%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at&id=in.%282b615d24-97a9-4679-bc9a-720fa3ce1e33%2Ccd542a0d-c5d6-4458-873a-887147a54d76%2C1591f8d9-edd4-4072-873f-ba00d6838451%2Ce814fdab-4105-4518-9c5f-6e0ff74aa42c%2C0516fa78-dedf-4138-8ce4-adfba3cbdede%2C4958dad0-3712-464b-bae1-a49e99e378a0%2Cf12614a7-2ada-4d3f-b24b-20ba798b1688%2C0c0667fd-fb24-4574-b3c9-91f4dd91bda8%2Cbf98e084-f6b6-43f1-b259-cad9e312be2f%2Ce8e171ec-e340-4922-9ffd-680571d2a7ac%2Cb3d172fd-ceac-46da-9035-fde03091b60a%2C5c060dc8-77f0-4360-96c4-366295246eb8%2C4042d858-068b-466e-8e43-763732febe56%2C225bb3ab-05ec-4614-bac7-9c4ae19cde4c%2C19b130f3-32a8-4967-9e18-ac6c917fb28d%2Cfda90d29-23bd-4d28-b9e5-602866891fa7%29 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-script.debug.js:1 [Vercel Speed Insights] [vitals] {speed: '3g', metrics: Array(1), scriptVersion: '0.1.3', sdkName: '@vercel/speed-insights/react', sdkVersion: '2.0.0'} /_vercel/speed-insights/vitals
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-06-01T15:22:40.516Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-06-01T15%3A22%3A37.484179%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:22:49.693Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-06-01T15:22:49.693Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"e010f1b2-627b-41c2-9a4e-9ca572c943b0\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"gnst6wn59SlcL8k3XjuxwlvWEUoocSNqaNgxXPe1XG+BSlIa4YL4AAsRa+692onXp5OpyhE0ppyb00oAGCYF22CwqSeOm47Z\",\"nonce\":\"uKqzTxs8mWi22DCFKcRk6kP6hhqhEEPy\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 201 
+ [🔔 NOTIF-SEND] 📤 Triggering push for msg e010f1b2... to partner 8bb51234...
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"e010f1b2-627b-41c2-9a4e-9ca572c943b0\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+ [Vercel Speed Insights] [vitals] {speed: '3g', metrics: Array(1), scriptVersion: '0.1.3', sdkName: '@vercel/speed-insights/react', sdkVersion: '2.0.0'} /_vercel/speed-insights/vitals
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [🔔 NOTIF-SEND] ✅ Edge function response: {"success":true,"message":"Skipped - Delivered via Realtime"}
+ [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-06-01T15:23:07.403Z\"}"}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-06-01T15%3A22%3A50.852763%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Ctype%2Ccreated_at%2Csender_public_key%2Cduration&or=%28media_url.not.is.null%2Ctype.eq.video%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&type=neq.gif&offset=0&limit=12&order=created_at.desc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 206 
+ [MemoriesScreen] processQueue: Starting decryption for item: ced5c5d7-1c51-4690-8c8a-f28489ff81e0 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327341/eii3vkzhaj4snsmaijdq.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: ced5c5d7-1c51-4690-8c8a-f28489ff81e0 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 3f80cce6-dbef-43e5-91b3-e49bcf471018 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327341/eii3vkzhaj4snsmaijdq.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 3f80cce6-dbef-43e5-91b3-e49bcf471018 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: af7c0130-10a9-49b0-b3d4-febaf7709216 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327336/iueectf8w57elrvrzoji.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: af7c0130-10a9-49b0-b3d4-febaf7709216 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: 35ef6a32-c274-40fd-9c42-49a80f936981 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327331/nlpdczbh2uxcrlng7sdp.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 35ef6a32-c274-40fd-9c42-49a80f936981 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: d9b2f64e-6cb3-4bd8-8b60-cc68940a13da isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327326/kkfj069co0luvlkrv6ba.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: d9b2f64e-6cb3-4bd8-8b60-cc68940a13da mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: fad7dd10-98bb-4226-aaf4-7c22d37fb610 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327321/ehoqsx1tshzimybqqp31.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: fad7dd10-98bb-4226-aaf4-7c22d37fb610 mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: bc9ca7a9-2cff-4991-90d9-f7c32b820f0a isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327316/zfe7j33q90cva8fqtloj.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: bc9ca7a9-2cff-4991-90d9-f7c32b820f0a mediaType: image
+ [MemoriesScreen] processQueue: Starting decryption for item: c5b23012-a968-43e6-a7e5-68ed70826c2d isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327312/vczd6grcdzc0skoifzvd.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: c5b23012-a968-43e6-a7e5-68ed70826c2d mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: ced5c5d7-1c51-4690-8c8a-f28489ff81e0 blobSize: 52326 generatedUrl: blob:http://localhost:5173/01f9be0a-0350-4765-9116-8e46563d9c79
+ [MemoriesScreen] processQueue: Starting decryption for item: 26e6767b-9d76-4ac5-948f-5a80ce4a3fdd isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327306/phfxyj7aqk8ge2ag7c93.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 26e6767b-9d76-4ac5-948f-5a80ce4a3fdd mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 3f80cce6-dbef-43e5-91b3-e49bcf471018 blobSize: 52326 generatedUrl: blob:http://localhost:5173/cbcbc756-f6f3-4016-9c73-b80ece9119d2
+ [MemoriesScreen] processQueue: Starting decryption for item: 5cee2a53-3790-41bd-8d03-6b900652bb3b isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327301/x4rx2wbfvead48seujxx.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 5cee2a53-3790-41bd-8d03-6b900652bb3b mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: af7c0130-10a9-49b0-b3d4-febaf7709216 blobSize: 52041 generatedUrl: blob:http://localhost:5173/4b338aa1-e190-47a0-b3a4-2b23987f25c0
+ [MemoriesScreen] processQueue: Starting decryption for item: d99ad303-2089-445a-8741-3d052426ca46 isChunked: false decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327296/u1hdolo94serhrbnlyze.jpg
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: d99ad303-2089-445a-8741-3d052426ca46 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 35ef6a32-c274-40fd-9c42-49a80f936981 blobSize: 52416 generatedUrl: blob:http://localhost:5173/5725fc0a-57b9-4d10-96a6-466138a2bd8d
+ [MemoriesScreen] processQueue: Starting decryption for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 isChunked: true decryptUrl: https://res.cloudinary.com/del5o1vnd/raw/upload/v1780327135/uplctjearbsn1uymaes5.webp
+ [MemoriesScreen] processQueue: Calling getDecryptedBlob for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 mediaType: image
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 85c41580-8a6a-4d05-a3cf-415762e76e09 blobSize: 2568 generatedUrl: blob:http://localhost:5173/a73b8952-817b-4ac1-b0f2-4ff25ce2cdeb
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: d9b2f64e-6cb3-4bd8-8b60-cc68940a13da blobSize: 52199 generatedUrl: blob:http://localhost:5173/44b2213d-5f6e-45f6-ad3c-c266a02f9c2b
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: fad7dd10-98bb-4226-aaf4-7c22d37fb610 blobSize: 51665 generatedUrl: blob:http://localhost:5173/cfc9c54a-7b7d-4b27-a383-1c4ff6dfb161
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: bc9ca7a9-2cff-4991-90d9-f7c32b820f0a blobSize: 51854 generatedUrl: blob:http://localhost:5173/5f4dd251-13cf-4699-9986-f74da3630800
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: c5b23012-a968-43e6-a7e5-68ed70826c2d blobSize: 52051 generatedUrl: blob:http://localhost:5173/8615295e-cded-4fea-bdfc-6100cdbfe27d
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 26e6767b-9d76-4ac5-948f-5a80ce4a3fdd blobSize: 52211 generatedUrl: blob:http://localhost:5173/b08288d5-45a8-4157-91f3-4fd80eeb8a12
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: 5cee2a53-3790-41bd-8d03-6b900652bb3b blobSize: 48449 generatedUrl: blob:http://localhost:5173/52d6d313-54a8-4677-a231-4db7e6237769
+ [MemoriesScreen] processQueue: All items in queue are already processing.
+ [MemoriesScreen] processQueue: Decryption SUCCESS for item: d99ad303-2089-445a-8741-3d052426ca46 blobSize: 54077 generatedUrl: blob:http://localhost:5173/b26d5c25-c296-4167-a0f9-950af7338f69
+ [ChatBubble] fetchInitialChunks for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9
+ [ChatBubble] fetchInitialChunks for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=eq.219760a0-ea2f-4b3a-b9f0-7d6545e871b9 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_delivered\":true,\"delivered_at\":\"2026-06-01T15:23:17.408Z\"}"}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.219760a0-ea2f-4b3a-b9f0-7d6545e871b9&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/video_chunks?select=chunk_index%2Ctotal_chunks%2Cchunk_url%2Cchunk_key%2Cchunk_nonce%2Cduration&message_id=eq.219760a0-ea2f-4b3a-b9f0-7d6545e871b9&order=chunk_index.asc OPTIONS: {"method":"GET","headers":{}}
+ [SUPABASE FETCH SUCCESS] Status: 204 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [SUPABASE FETCH SUCCESS] Status: 200 
+ [ChatBubble] No chunks yet for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9. Waiting for Realtime events...
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Store init for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9, totalChunks=1, duration=7s
+ [VideoChunks] Block 0: downloading (attempt 1)...
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+ [VideoChunks] Block 0: skipped — already processed
+ [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Block 0: skipped — already processed
+useVideoChunks.ts:45 [VideoChunks] Realtime chunk received: msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 chunk=0/0
+useVideoChunks.ts:45 [VideoChunks] Store init for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9, totalChunks=1, duration=7s
+useVideoChunks.ts:45 [VideoChunks] Block 0: downloading (attempt 1)...
+useVideoChunks.ts:45 [VideoChunks] Block 0: downloaded 2226032 bytes, decrypting...
+useVideoChunks.ts:45 [VideoChunks] Block 0: decrypted OK → 2226016 bytes
+useVideoChunks.ts:45 [VideoChunks] Block 0: stored in blob assembly. have=1/1
+useVideoChunks.ts:45 [VideoChunks] Blob fallback: all 1 blocks received for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9, assembling...
+useVideoChunks.ts:45 [VideoChunks] MIME sniff → MP4 fallback (avc1.42E01E)
+useVideoChunks.ts:45 [VideoChunks] Blob fallback: assembled 2.12MB blob for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 type=video/mp4 ✓
+useVideoChunks.ts:45 [VideoChunks] Block 0: downloaded 2226032 bytes, decrypting...
+useVideoChunks.ts:45 [VideoChunks] Block 0: decrypted OK → 2226016 bytes
+useVideoChunks.ts:45 [VideoChunks] Block 0: stored in blob assembly. have=1/1
+useVideoChunks.ts:45 [VideoChunks] Blob fallback: all 1 blocks received for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9, assembling...
+useVideoChunks.ts:45 [VideoChunks] MIME sniff → MP4 fallback (avc1.42E01E)
+useVideoChunks.ts:45 [VideoChunks] Blob fallback: assembled 2.12MB blob for msg=219760a0-ea2f-4b3a-b9f0-7d6545e871b9 type=video/mp4 ✓
 supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
 supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
@@ -257,36 +678,7 @@ supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase
 supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
 supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
 supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-30T10:22:12.706Z\"}"}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-30T10%3A03%3A52.363055%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Cis_read%2Cis_delivered%2Cread_at%2Cdelivered_at%2Creaction%2Cis_edited%2Cencrypted_content%2Cnonce%2Csender_public_key%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at&id=in.%282b615d24-97a9-4679-bc9a-720fa3ce1e33%2Ccd542a0d-c5d6-4458-873a-887147a54d76%2C1591f8d9-edd4-4072-873f-ba00d6838451%2Ce814fdab-4105-4518-9c5f-6e0ff74aa42c%2C0516fa78-dedf-4138-8ce4-adfba3cbdede%2C4958dad0-3712-464b-bae1-a49e99e378a0%2Cf12614a7-2ada-4d3f-b24b-20ba798b1688%2C0c0667fd-fb24-4574-b3c9-91f4dd91bda8%2Cbf98e084-f6b6-43f1-b259-cad9e312be2f%2Ce8e171ec-e340-4922-9ffd-680571d2a7ac%2Cb3d172fd-ceac-46da-9035-fde03091b60a%2C5c060dc8-77f0-4360-96c4-366295246eb8%2C4042d858-068b-466e-8e43-763732febe56%2C225bb3ab-05ec-4614-bac7-9c4ae19cde4c%2C19b130f3-32a8-4967-9e18-ac6c917fb28d%2Cfda90d29-23bd-4d28-b9e5-602866891fa7%29 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-30T10:22:15.476Z\"}"}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204 
-script.debug.js:1 [Vercel Speed Insights] [vitals] {speed: '4g', metrics: Array(1), scriptVersion: '0.1.3', sdkName: '@vercel/speed-insights/react', sdkVersion: '2.0.0'} /_vercel/speed-insights/vitals
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false OPTIONS: {"method":"HEAD","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Cbackup_secret_key&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_folders?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=type%2Cfile_size&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29&type=not.is.null OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/garbage_bin?select=id%2Cmessage_id%2Ccloudinary_public_id%2Ccloud_name%2Cmedia_type%2Cfile_size%2Cadded_at&added_by=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=added_at.desc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notes?select=*&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/autocomplete_phrases?select=phrase&user_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?select=public_key%2Ckey_history&id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-05-30T10:22:44.126Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/profiles?id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_online\":true,\"last_seen\":\"2026-06-01T15:23:36.479Z\"}"}
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
@@ -296,8 +688,31 @@ supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
 supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/note_labels?select=name&couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?id=in.%28219760a0-ea2f-4b3a-b9f0-7d6545e871b9%29 OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:23:37.463Z\"}"}
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-05-30T10%3A03%3A52.363055%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&created_at=gt.2026-06-01T15%3A23%3A17.789827%2B00%3A00&order=created_at.asc OPTIONS: {"method":"GET","headers":{}}
+supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204 
 supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
-supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Cis_read%2Cis_delivered%2Cread_at%2Cdelivered_at%2Creaction%2Cis_edited%2Cencrypted_content%2Cnonce%2Csender_public_key%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at&id=in.%282b615d24-97a9-4679-bc9a-720fa3ce1e33%2Ccd542a0d-c5d6-4458-873a-887147a54d76%2C1591f8d9-edd4-4072-873f-ba00d6838451%2Ce814fdab-4105-4518-9c5f-6e0ff74aa42c%2C0516fa78-dedf-4138-8ce4-adfba3cbdede%2C4958dad0-3712-464b-bae1-a49e99e378a0%2Cf12614a7-2ada-4d3f-b24b-20ba798b1688%2C0c0667fd-fb24-4574-b3c9-91f4dd91bda8%2Cbf98e084-f6b6-43f1-b259-cad9e312be2f%2Ce8e171ec-e340-4922-9ffd-680571d2a7ac%2Cb3d172fd-ceac-46da-9035-fde03091b60a%2C5c060dc8-77f0-4360-96c4-366295246eb8%2C4042d858-068b-466e-8e43-763732febe56%2C225bb3ab-05ec-4614-bac7-9c4ae19cde4c%2C19b130f3-32a8-4967-9e18-ac6c917fb28d%2Cfda90d29-23bd-4d28-b9e5-602866891fa7%29 OPTIONS: {"method":"GET","headers":{}}
-supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 200 
+ChunkedVideoPlayer.tsx:173 [ChunkedVideoPlayer] Setting video.src to blob URL
+MediaViewer.tsx:175 [MediaViewer] mounted with props: {initialUrl: '219760a0-ea2f-4b3a-b9f0-7d6545e871b9', initialType: 'chunked_video', hasAllMedia: false, allMediaCount: 0, initialIndex: 0, …}
+MediaViewer.tsx:195 [MediaViewer] currentMedia changed: {currentIndex: 0, id: '219760a0-ea2f-4b3a-b9f0-7d6545e871b9', url: '219760a0-ea2f-4b3a-b9f0-7d6545e871b9', type: 'chunked_video'}
+MediaViewer.tsx:189 [MediaViewer] unmounted
+MediaViewer.tsx:271 [MediaViewer] restoring body scroll style: 
+ChunkedVideoPlayer.tsx:168 [ChunkedVideoPlayer] video.src already set to this URL — skipping
+MediaViewer.tsx:175 [MediaViewer] mounted with props: {initialUrl: '219760a0-ea2f-4b3a-b9f0-7d6545e871b9', initialType: 'chunked_video', hasAllMedia: false, allMediaCount: 0, initialIndex: 0, …}
+MediaViewer.tsx:195 [MediaViewer] currentMedia changed: {currentIndex: 0, id: '219760a0-ea2f-4b3a-b9f0-7d6545e871b9', url: '219760a0-ea2f-4b3a-b9f0-7d6545e871b9', type: 'chunked_video'}
+ChunkedVideoPlayer.tsx:183 [ChunkedVideoPlayer] canplay fired — attempting autoplay
+ChunkedVideoPlayer.tsx:353 [ChunkedVideoPlayer] playing ✓
+ChunkedVideoPlayer.tsx:185 [ChunkedVideoPlayer] autoplay started ✓
+MediaViewer.tsx:189 [MediaViewer] unmounted
+MediaViewer.tsx:271 [MediaViewer] restoring body scroll style: 
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&is_read=eq.false OPTIONS: {"method":"PATCH","headers":{},"body":"{\"is_read\":true,\"is_delivered\":true,\"read_at\":\"2026-06-01T15:23:50.124Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/notifications?recipient_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&sender_id=eq.8bb51234-4a86-470f-9f7d-96a95f551952&read_at=is.null OPTIONS: {"method":"PATCH","headers":{},"body":"{\"read_at\":\"2026-06-01T15:23:50.124Z\"}"}
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages OPTIONS: {"method":"POST","headers":{},"body":"{\"id\":\"df779efe-e3be-49c0-835f-a5e4c7b8268c\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\",\"encrypted_content\":\"h7jxIgjSkOhQvPJdbtzGhhlVjQURzuhXUDPo17Dwj/j6H2Dhk6Eqkl7ibA==\",\"nonce\":\"aV1zE+E+nVfBUTVP8rPjtH71Wy7vra2k\",\"type\":\"text\",\"media_url\":null,\"media_key\":null,\"media_nonce\":null,\"reply_to\":null,\"sender_public_key\":\"gzIbwgbu5pn9o+llJaa7Peue1ofXxEDr+ggDz52kvjc=\"}"}
+supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204 
+supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 201 
+supabase.ts:27 [SUPABASE FETCH SUCCESS] Status: 204 
+useChat.ts:886 [🔔 NOTIF-SEND] 📤 Triggering push for msg df779efe... to partner 8bb51234...
+useChat.ts:909 [🔔 NOTIF-SEND] 🌐 Invoking send-push edge function...
+supabase.ts:24 [SUPABASE FETCH START] URL: https://ugfxjjakpsngfdrjlsdr.supabase.co/functions/v1/send-push OPTIONS: {"method":"POST","headers":{},"body":"{\"record\":{\"id\":\"df779efe-e3be-49c0-835f-a5e4c7b8268c\",\"sender_id\":\"2dfb823f-bb93-4e46-86cd-a520c5be7868\",\"receiver_id\":\"8bb51234-4a86-470f-9f7d-96a95f551952\"}}"}
+useChat.ts:890 [🔔 NOTIF-SEND] 🔓 Push throttle window expired (5s) — next message will trigger push

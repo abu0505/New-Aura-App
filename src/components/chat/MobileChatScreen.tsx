@@ -16,6 +16,7 @@ import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
 import { LastSeenStatus } from './LastSeenStatus';
 import EncryptedImage from '../common/EncryptedImage';
+import SlidingName from '../common/SlidingName';
 import { useCall } from '../../contexts/CallContext';
 import ChatSearch from './ChatSearch';
 import { getBackgroundData } from '../../utils/backgroundParser';
@@ -565,8 +566,12 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
               )}
             </div>
           <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="flex flex-col min-w-0">
-                <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
+              <div className="flex flex-col min-w-0 w-full">
+                <SlidingName
+                  name={partner.display_name || 'Your Partner'}
+                  className="w-full"
+                  textClassName="font-serif text-lg text-primary leading-tight"
+                />
                 <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate flex items-center gap-1.5 flex-wrap">
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} compact />
                   {viewMode === 'chat' && <StreakBadge variant="inline" />}

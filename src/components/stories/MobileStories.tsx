@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { usePartner } from '../../hooks/usePartner';
+import SlidingName from '../common/SlidingName';
 
 import type { Story } from '../../hooks/useStories';
 
@@ -16,15 +17,19 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
     <div className="min-h-[100dvh] pb-32 font-sans bg-[var(--bg-primary)] text-[#e4e1ed] selection:bg-[rgba(var(--primary-rgb),_0.3)]">
       {/* Top App Bar */}
       <header className="bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-40 border-b border-white/5 flex items-center justify-between px-6 py-4 w-full safe-top">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center overflow-hidden">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center overflow-hidden shrink-0">
             <img 
               src={partner?.avatar_url || 'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'A') + '&background=c9a96e&color=13131b'} 
               alt="Partner Profile" 
               className="w-full h-full object-cover rounded-full" 
             />
           </div>
-          <h1 className="font-serif italic text-xl tracking-wide text-[rgba(var(--primary-rgb),_0.9)]">{partner?.display_name || 'AURA'}</h1>
+          <SlidingName
+            name={partner?.display_name || 'AURA'}
+            className="flex-1 min-w-0"
+            textClassName="font-serif italic text-xl tracking-wide text-[rgba(var(--primary-rgb),_0.9)]"
+          />
         </div>
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors duration-300 text-[#998f81]">
           <span className="material-symbols-outlined">more_vert</span>

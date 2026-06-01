@@ -99,6 +99,18 @@ export function getVideoDuration(file: File): Promise<number> {
     const video = document.createElement('video');
     video.preload = 'metadata';
     video.muted = true;
+    video.playsInline = true;
+
+    // Style and append offscreen to ensure mobile WebViews load and process it
+    video.style.position = 'fixed';
+    video.style.top = '0';
+    video.style.left = '0';
+    video.style.width = '1px';
+    video.style.height = '1px';
+    video.style.opacity = '0';
+    video.style.pointerEvents = 'none';
+    document.body.appendChild(video);
+
     const url = URL.createObjectURL(file);
 
     let resolved = false;
@@ -112,7 +124,7 @@ export function getVideoDuration(file: File): Promise<number> {
 
     const timeout = setTimeout(() => {
       safeResolve(60); // fallback estimate
-    }, 2000);
+    }, 4000);
 
     video.onloadedmetadata = () => {
       clearTimeout(timeout);
@@ -125,6 +137,7 @@ export function getVideoDuration(file: File): Promise<number> {
     };
 
     video.src = url;
+    video.load();
   });
 }
 
@@ -142,6 +155,16 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
     video.playsInline = true;
     video.preload = 'auto';
 
+    // Style and append offscreen to ensure mobile WebViews load and process it
+    video.style.position = 'fixed';
+    video.style.top = '0';
+    video.style.left = '0';
+    video.style.width = '1px';
+    video.style.height = '1px';
+    video.style.opacity = '0';
+    video.style.pointerEvents = 'none';
+    document.body.appendChild(video);
+
     const url = URL.createObjectURL(file);
 
     const cleanup = () => {
@@ -157,9 +180,10 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
       resolve(blob);
     };
 
+    // Increase timeout to 5000ms for mobile devices
     const timeout = setTimeout(() => {
       safeResolve(null);
-    }, 3000);
+    }, 5000);
 
     const captureFrame = () => {
       try {
@@ -188,25 +212,11 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
     };
 
     video.onloadedmetadata = () => {
-      // Try currentTime=0.001 first — guarantees thatcurrentTime changes from 0 to 0.001,
-      // which triggers the onseeked event in all browsers.
-      video.currentTime = 0.001;
-    };
-
-    video.onloadeddata = () => {
-      // If the first frame is loaded without seeking, capture immediately
-      captureFrame();
+      // Seek slightly forward to force frame decoding and avoid black frames
+      video.currentTime = 0.1;
     };
 
     video.onseeked = () => {
-      if (video.videoWidth === 0 && video.currentTime < 0.05) {
-        // Not rendered yet — try 0.1s as one-time fallback
-        const prev = video.onseeked;
-        video.onseeked = captureFrame;
-        void prev; // suppress unused warning
-        video.currentTime = 0.1;
-        return;
-      }
       captureFrame();
     };
 
@@ -216,5 +226,6 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
     };
 
     video.src = url;
+    video.load();
   });
 }

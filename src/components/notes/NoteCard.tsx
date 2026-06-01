@@ -127,7 +127,10 @@ function NoteCard({
     (note.customBg as any)?.ciphertext
   ]);
 
-  const hasDrawing = note.drawingData && Array.isArray(note.drawingData) && note.drawingData.length > 0;
+  const hasDrawing = note.drawingData && (
+    (Array.isArray(note.drawingData) && note.drawingData.length > 0) ||
+    (!Array.isArray(note.drawingData) && Array.isArray(note.drawingData.strokes) && note.drawingData.strokes.length > 0)
+  );
   const isEmpty = !note.title && !note.content && note.checklist.length === 0 && !hasDrawing;
 
   // Checklist summary

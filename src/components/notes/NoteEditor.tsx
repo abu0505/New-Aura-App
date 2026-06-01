@@ -207,7 +207,15 @@ const getRawMarkdown = (el: HTMLElement): string => {
 // DRAWING PREVIEW (mini canvas)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function DrawingPreview({ strokes }: { strokes: any[] }) {
+function DrawingPreview({
+  strokes,
+  originalWidth,
+  originalHeight
+}: {
+  strokes: any[];
+  originalWidth?: number | null;
+  originalHeight?: number | null;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -229,25 +237,30 @@ function DrawingPreview({ strokes }: { strokes: any[] }) {
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    // Calculate scale factor relative to original drawing width
+    const scale = (originalWidth && originalWidth > 0) ? (w / originalWidth) : 1;
+
     ctx.save();
 
     strokes.forEach(stroke => {
       if (!stroke || !stroke.tool) return;
       if (stroke.tool === 'laser') return;
 
+      const scaledSize = stroke.size * scale;
+
       ctx.save();
       if (stroke.tool === 'eraser') {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.lineWidth = stroke.size * 3;
+        ctx.lineWidth = scaledSize * 3;
       } else if (stroke.tool === 'highlighter') {
         ctx.globalCompositeOperation = 'multiply';
         ctx.strokeStyle = stroke.color || '#fff';
-        ctx.lineWidth = stroke.size * 4;
+        ctx.lineWidth = scaledSize * 4;
         ctx.globalAlpha = 0.35;
       } else {
         ctx.strokeStyle = stroke.color || '#fff';
-        ctx.lineWidth = stroke.size || 2;
+        ctx.lineWidth = scaledSize || 2;
         ctx.globalAlpha = stroke.opacity || 1;
       }
 
@@ -256,62 +269,68 @@ function DrawingPreview({ strokes }: { strokes: any[] }) {
 
       if (stroke.tool === 'text' && stroke.text) {
         ctx.fillStyle = stroke.color || '#fff';
-        ctx.font = `${stroke.fontSize || 18}px 'Inter', sans-serif`;
-        ctx.fillText(stroke.text, stroke.startX || 0, stroke.startY || 0);
+        const fontSize = (stroke.fontSize || 18) * scale;
+        ctx.font = `${fontSize}px 'Inter', sans-serif`;
+        ctx.fillText(stroke.text, (stroke.startX || 0) * scale, (stroke.startY || 0) * scale);
       } else if (['arrow', 'double-arrow', 'line', 'rect', 'circle'].includes(stroke.tool) && stroke.startX !== undefined) {
         ctx.beginPath();
+        const startX = stroke.startX * scale;
+        const startY = stroke.startY * scale;
+        const endX = stroke.endX * scale;
+        const endY = stroke.endY * scale;
+
         if (stroke.tool === 'rect') {
-          const x = Math.min(stroke.startX, stroke.endX);
-          const y = Math.min(stroke.startY, stroke.endY);
-          ctx.strokeRect(x, y, Math.abs(stroke.endX - stroke.startX), Math.abs(stroke.endY - stroke.startY));
+          const x = Math.min(startX, endX);
+          const y = Math.min(startY, endY);
+          ctx.strokeRect(x, y, Math.abs(endX - startX), Math.abs(endY - startY));
         } else if (stroke.tool === 'circle') {
-          const cx = (stroke.startX + stroke.endX) / 2;
-          const cy = (stroke.startY + stroke.endY) / 2;
-          const rx = Math.abs(stroke.endX - stroke.startX) / 2;
-          const ry = Math.abs(stroke.endY - stroke.startY) / 2;
+          const cx = (startX + endX) / 2;
+          const cy = (startY + endY) / 2;
+          const rx = Math.abs(endX - startX) / 2;
+          const ry = Math.abs(endY - startY) / 2;
           ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
           ctx.stroke();
         } else {
-          ctx.moveTo(stroke.startX, stroke.startY);
-          ctx.lineTo(stroke.endX, stroke.endY);
+          ctx.moveTo(startX, startY);
+          ctx.lineTo(endX, endY);
           ctx.stroke();
           if (stroke.tool === 'arrow' || stroke.tool === 'double-arrow') {
-            const headLen = Math.max(stroke.size * 4, 12);
-            const angle = Math.atan2(stroke.endY - stroke.startY, stroke.endX - stroke.startX);
+            const headLen = Math.max(scaledSize * 4, 12);
+            const angle = Math.atan2(endY - startY, endX - startX);
 
             // End arrowhead
             ctx.beginPath();
-            ctx.moveTo(stroke.endX, stroke.endY);
-            ctx.lineTo(stroke.endX - headLen * Math.cos(angle - Math.PI / 6), stroke.endY - headLen * Math.sin(angle - Math.PI / 6));
-            ctx.moveTo(stroke.endX, stroke.endY);
-            ctx.lineTo(stroke.endX - headLen * Math.cos(angle + Math.PI / 6), stroke.endY - headLen * Math.sin(angle + Math.PI / 6));
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - headLen * Math.cos(angle - Math.PI / 6), endY - headLen * Math.sin(angle - Math.PI / 6));
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - headLen * Math.cos(angle + Math.PI / 6), endY - headLen * Math.sin(angle + Math.PI / 6));
             ctx.stroke();
 
             // Start arrowhead (for double-arrow)
             if (stroke.tool === 'double-arrow') {
               ctx.beginPath();
-              ctx.moveTo(stroke.startX, stroke.startY);
-              ctx.lineTo(stroke.startX + headLen * Math.cos(angle - Math.PI / 6), stroke.startY + headLen * Math.sin(angle - Math.PI / 6));
-              ctx.moveTo(stroke.startX, stroke.startY);
-              ctx.lineTo(stroke.startX + headLen * Math.cos(angle + Math.PI / 6), stroke.startY + headLen * Math.sin(angle + Math.PI / 6));
+              ctx.moveTo(startX, startY);
+              ctx.lineTo(startX + headLen * Math.cos(angle - Math.PI / 6), startY + headLen * Math.sin(angle - Math.PI / 6));
+              ctx.moveTo(startX, startY);
+              ctx.lineTo(startX + headLen * Math.cos(angle + Math.PI / 6), startY + headLen * Math.sin(angle + Math.PI / 6));
               ctx.stroke();
             }
           }
         }
       } else if (stroke.points && stroke.points.length > 1) {
         ctx.beginPath();
-        ctx.moveTo(stroke.points[0].x, stroke.points[0].y);
+        ctx.moveTo(stroke.points[0].x * scale, stroke.points[0].y * scale);
         for (let i = 1; i < stroke.points.length - 1; i++) {
-          const mx = (stroke.points[i].x + stroke.points[i + 1].x) / 2;
-          const my = (stroke.points[i].y + stroke.points[i + 1].y) / 2;
-          ctx.quadraticCurveTo(stroke.points[i].x, stroke.points[i].y, mx, my);
+          const mx = ((stroke.points[i].x + stroke.points[i + 1].x) / 2) * scale;
+          const my = ((stroke.points[i].y + stroke.points[i + 1].y) / 2) * scale;
+          ctx.quadraticCurveTo(stroke.points[i].x * scale, stroke.points[i].y * scale, mx, my);
         }
-        ctx.lineTo(stroke.points[stroke.points.length - 1].x, stroke.points[stroke.points.length - 1].y);
+        ctx.lineTo(stroke.points[stroke.points.length - 1].x * scale, stroke.points[stroke.points.length - 1].y * scale);
         ctx.stroke();
       } else if (stroke.points && stroke.points.length === 1) {
         // Draw a single dot
         ctx.beginPath();
-        ctx.arc(stroke.points[0].x, stroke.points[0].y, stroke.size / 2, 0, Math.PI * 2);
+        ctx.arc(stroke.points[0].x * scale, stroke.points[0].y * scale, scaledSize / 2, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -319,7 +338,7 @@ function DrawingPreview({ strokes }: { strokes: any[] }) {
     });
 
     ctx.restore();
-  }, [strokes]);
+  }, [strokes, originalWidth, originalHeight]);
 
   return <canvas ref={canvasRef} className="w-full h-full" />;
 }
@@ -356,8 +375,12 @@ export default function NoteEditor({
   const [drawColor, setDrawColor] = useState('#ffffff');
   const [drawSize, setDrawSize] = useState(4);
   const [drawStrokes, setDrawStrokes] = useState<InlineDrawStroke[]>(() => {
-    const data = note.drawingData as InlineDrawStroke[] || [];
-    return data.filter(s => s && s.tool && s.points);
+    const data = note.drawingData;
+    if (data && !Array.isArray(data) && Array.isArray(data.strokes)) {
+      return data.strokes.filter((s: any) => s && s.tool && s.points);
+    }
+    const arrayData = data as InlineDrawStroke[] || [];
+    return arrayData.filter(s => s && s.tool && s.points);
   });
   const [drawUndoStack, setDrawUndoStack] = useState<InlineDrawStroke[][]>([]);
   const [drawRedoStack, setDrawRedoStack] = useState<InlineDrawStroke[][]>([]);
@@ -377,6 +400,30 @@ export default function NoteEditor({
   const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
   const drawStrokesRef = useRef(drawStrokes);
   useEffect(() => { drawStrokesRef.current = drawStrokes; }, [drawStrokes]);
+
+  const savedCanvasSize = useRef<{ width: number; height: number } | null>(null);
+  useEffect(() => {
+    const data = note.drawingData;
+    if (data && !Array.isArray(data) && typeof data.canvasWidth === 'number' && typeof data.canvasHeight === 'number') {
+      savedCanvasSize.current = { width: data.canvasWidth, height: data.canvasHeight };
+    } else {
+      savedCanvasSize.current = null;
+    }
+  }, [note.drawingData]);
+
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const drawWidthRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!drawContainerRef.current) return;
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    resizeObserver.observe(drawContainerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
   const [activeStyles, setActiveStyles] = useState({
     bold: false,
     italic: false,
@@ -784,7 +831,14 @@ export default function NoteEditor({
   const handleClose = () => {
     // Auto-save drawing data if in draw mode
     if (drawMode && drawStrokes.length > 0) {
-      onUpdate(note.id, { drawingData: drawStrokes });
+      const container = drawContainerRef.current;
+      const rect = container ? container.getBoundingClientRect() : null;
+      const drawingData = {
+        strokes: drawStrokes,
+        canvasWidth: rect ? rect.width : 0,
+        canvasHeight: rect ? rect.height : 0
+      };
+      onUpdate(note.id, { drawingData });
     }
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
@@ -803,7 +857,28 @@ export default function NoteEditor({
     if (!container) return;
 
     const rect = container.getBoundingClientRect();
+    const currentWidth = rect.width;
     const dpr = window.devicePixelRatio || 1;
+
+    // Scale strokes if width changed while in draw mode
+    if (drawWidthRef.current > 0 && drawWidthRef.current !== currentWidth) {
+      const scale = currentWidth / drawWidthRef.current;
+      setDrawStrokes(prev => prev.map(stroke => {
+        const scaledPoints = stroke.points.map(p => ({ x: p.x * scale, y: p.y * scale }));
+        const updated: InlineDrawStroke = {
+          ...stroke,
+          points: scaledPoints,
+          size: stroke.size * scale,
+        };
+        if (stroke.startX !== undefined) updated.startX = stroke.startX * scale;
+        if (stroke.startY !== undefined) updated.startY = stroke.startY * scale;
+        if (stroke.endX !== undefined) updated.endX = stroke.endX * scale;
+        if (stroke.endY !== undefined) updated.endY = stroke.endY * scale;
+        if (stroke.fontSize !== undefined) updated.fontSize = stroke.fontSize * scale;
+        return updated;
+      }));
+    }
+    drawWidthRef.current = currentWidth;
 
     [drawCanvasRef, drawOverlayCanvasRef].forEach(ref => {
       const canvas = ref.current;
@@ -1159,7 +1234,42 @@ export default function NoteEditor({
   const toggleDrawMode = () => {
     if (drawMode) {
       // Exiting draw mode — save drawing data
-      onUpdate(note.id, { drawingData: drawStrokes.length > 0 ? drawStrokes : null });
+      const container = drawContainerRef.current;
+      const rect = container ? container.getBoundingClientRect() : null;
+      const drawingData = drawStrokes.length > 0 ? {
+        strokes: drawStrokes,
+        canvasWidth: rect ? rect.width : 0,
+        canvasHeight: rect ? rect.height : 0
+      } : null;
+      onUpdate(note.id, { drawingData });
+      drawWidthRef.current = 0; // Reset width ref when exiting
+    } else {
+      // Entering draw mode — scale existing strokes to current container size
+      const container = drawContainerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const currentWidth = rect.width;
+        const savedWidth = savedCanvasSize.current?.width || 0;
+        if (savedWidth > 0 && currentWidth !== savedWidth) {
+          const scale = currentWidth / savedWidth;
+          // Scale existing strokes in drawStrokes state
+          setDrawStrokes(prev => prev.map(stroke => {
+            const scaledPoints = stroke.points.map(p => ({ x: p.x * scale, y: p.y * scale }));
+            const updated: InlineDrawStroke = {
+              ...stroke,
+              points: scaledPoints,
+              size: stroke.size * scale,
+            };
+            if (stroke.startX !== undefined) updated.startX = stroke.startX * scale;
+            if (stroke.startY !== undefined) updated.startY = stroke.startY * scale;
+            if (stroke.endX !== undefined) updated.endX = stroke.endX * scale;
+            if (stroke.endY !== undefined) updated.endY = stroke.endY * scale;
+            if (stroke.fontSize !== undefined) updated.fontSize = stroke.fontSize * scale;
+            return updated;
+          }));
+        }
+        drawWidthRef.current = currentWidth;
+      }
     }
     setDrawMode(!drawMode);
     setShowDrawColors(false);
@@ -2287,7 +2397,15 @@ export default function NoteEditor({
               )}
 
               {/* Content editable + inline drawing overlay */}
-              <div ref={drawContainerRef} className="relative">
+              <div
+                ref={drawContainerRef}
+                className="relative"
+                style={{
+                  minHeight: savedCanvasSize.current && containerWidth > 0
+                    ? `${savedCanvasSize.current.height * (containerWidth / savedCanvasSize.current.width)}px`
+                    : 'auto'
+                }}
+              >
                 {/* Content editable editor div */}
                 <div
                   ref={contentEditableRef}
@@ -2364,7 +2482,11 @@ export default function NoteEditor({
                 {/* Show existing drawing strokes as overlay when NOT in draw mode */}
                 {!drawMode && drawStrokes.length > 0 && (
                   <div className="absolute inset-0 pointer-events-none z-[3]">
-                    <DrawingPreview strokes={drawStrokes} />
+                    <DrawingPreview
+                      strokes={drawStrokes}
+                      originalWidth={savedCanvasSize.current?.width}
+                      originalHeight={savedCanvasSize.current?.height}
+                    />
                   </div>
                 )}
               </div>
