@@ -344,7 +344,7 @@ export default function MemoriesScreen() {
         p_id: partner.id,
         current_month: month,
         current_day: day,
-        limit_count: 6
+        limit_count: 25
       });
 
       if (error) throw error;
@@ -361,9 +361,9 @@ export default function MemoriesScreen() {
 
     // Fetch all three recap types in parallel
     const [lastMonthRes, lastWeekRes, lastYearMonthRes] = await Promise.allSettled([
-      supabase.rpc('get_last_month_recap', { u_id: user.id, p_id: partner.id, limit_count: 20 }),
-      supabase.rpc('get_last_week_recap',  { u_id: user.id, p_id: partner.id, limit_count: 20 }),
-      supabase.rpc('get_last_year_month_recap', { u_id: user.id, p_id: partner.id, current_month: currentMonth, limit_count: 20 }),
+      supabase.rpc('get_last_month_recap', { u_id: user.id, p_id: partner.id, limit_count: 25 }),
+      supabase.rpc('get_last_week_recap',  { u_id: user.id, p_id: partner.id, limit_count: 25 }),
+      supabase.rpc('get_last_year_month_recap', { u_id: user.id, p_id: partner.id, current_month: currentMonth, limit_count: 25 }),
     ]);
 
     if (lastMonthRes.status === 'fulfilled' && !lastMonthRes.value.error) {

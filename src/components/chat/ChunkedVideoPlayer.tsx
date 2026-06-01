@@ -29,6 +29,9 @@ interface ChunkedVideoPlayerProps {
   /** Total video duration in seconds. If provided, overrides the sum of chunk durations. */
   duration?: number;
   onEnded?: () => void;
+  hideControls?: boolean;
+  isPaused?: boolean;
+  muted?: boolean;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -49,6 +52,9 @@ export default function ChunkedVideoPlayer({
   autoPlay = false,
   duration,
   onEnded,
+  hideControls = false,
+  isPaused = false,
+  muted = false,
 }: ChunkedVideoPlayerProps) {
   /* ── Refs ────────────────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,9 +92,6 @@ export default function ChunkedVideoPlayer({
   const [videoAspect, setVideoAspect] = useState<number>(56.25);
   const [videoDuration, setVideoDuration] = useState(0);
 
-  /* ── Sync refs ───────────────────────────────────────────────────────── */
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
-
   /* ── Determine video URL + streaming progress ───────────────────────── */
   const videoUrl = useMemo(() => {
     const readyChunk = chunks.find(c => c.blobUrl);
@@ -96,6 +99,45 @@ export default function ChunkedVideoPlayer({
   }, [chunks]);
 
   const isReady = !!videoUrl;
+
+  /* ── Sync refs ───────────────────────────────────────────────────────── */
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+
+  // Sync external isPaused prop
+  useEffect(() => {
+    if (!hideControls) return;
+    const video = videoRef.current;
+    if (!video || !isReady) return;
+
+    if (isPaused) {
+      if (!video.paused) {
+        video.pause();
+        setIsPlaying(false);
+      }
+    } else {
+      if (!hasStarted) {
+        setHasStarted(true);
+      }
+      if (video.paused) {
+        video.play()
+          .then(() => {
+            setIsPlaying(true);
+            setIsBuffering(false);
+          })
+          .catch((e) => {
+            console.warn('[ChunkedVideoPlayer] External play failed:', e);
+            setIsBuffering(false);
+          });
+      }
+    }
+  }, [isPaused, isReady, hideControls, hasStarted]);
+
+  // Sync external muted prop
+  useEffect(() => {
+    if (muted !== undefined) {
+      setIsMuted(muted);
+    }
+  }, [muted]);
 
   /** 0-100: how much has been appended to the SourceBuffer */
   const bufferedPercent = useMemo(() => {
@@ -354,7 +396,7 @@ export default function ChunkedVideoPlayer({
       )}
 
       {/* ── Streaming progress overlay (while blocks are still downloading) ── */}
-      {isReady && !isFullyBuffered && !error && (
+      {isReady && !isFullyBuffered && !error && !hideControls && (
         <div
           className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-full"
           style={{
@@ -387,7 +429,7 @@ export default function ChunkedVideoPlayer({
             <img
               src={thumbnailUrl}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover opacity-40"
+              className={`absolute inset-0 w-full h-full ${hideControls ? 'object-contain' : 'object-cover opacity-40'}`}
             />
           )}
           <ChunkedVideoOverlay status="Fetching video..." />
@@ -398,33 +440,35 @@ export default function ChunkedVideoPlayer({
       {isReady && !hasStarted && !error && (
         <div
           className="absolute inset-0 z-10 flex items-center justify-center"
-          onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+          onClick={hideControls ? undefined : (e) => { e.stopPropagation(); togglePlay(); }}
         >
           {thumbnailUrl && (
             <img
               src={thumbnailUrl}
               alt=""
-              className="absolute inset-0 w-full h-full object-cover"
+              className={`absolute inset-0 w-full h-full ${hideControls ? 'object-contain' : 'object-cover'}`}
             />
           )}
-          <div className="absolute inset-0 bg-black/30" />
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="relative z-10 w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
-          >
-            <span
-              className="material-symbols-outlined text-white text-4xl"
-              style={{ marginLeft: 4 }}
+          {!hideControls && <div className="absolute inset-0 bg-black/30" />}
+          {!hideControls && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="relative z-10 w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center"
             >
-              play_arrow
-            </span>
-          </motion.div>
+              <span
+                className="material-symbols-outlined text-white text-4xl"
+                style={{ marginLeft: 4 }}
+              >
+                play_arrow
+              </span>
+            </motion.div>
+          )}
         </div>
       )}
 
       {/* ── Click-to-play/pause surface ────────────────────────────────── */}
-      {hasStarted && !error && (
+      {hasStarted && !error && !hideControls && (
         <div
           className="absolute inset-0"
           style={{ zIndex: 5 }}
@@ -436,7 +480,7 @@ export default function ChunkedVideoPlayer({
 
       {/* ── Paused icon (center) ───────────────────────────────────────── */}
       <AnimatePresence>
-        {hasStarted && !isPlaying && !isBuffering && !error && (
+        {hasStarted && !isPlaying && !isBuffering && !error && !hideControls && (
           <motion.div
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -458,7 +502,7 @@ export default function ChunkedVideoPlayer({
       </AnimatePresence>
 
       {/* ── Controls overlay ───────────────────────────────────────────── */}
-      {hasStarted && !error && (
+      {hasStarted && !error && !hideControls && (
         <motion.div
           animate={{ opacity: showControls || !isPlaying ? 1 : 0 }}
           transition={{ duration: 0.25 }}

@@ -32,7 +32,25 @@ interface MomentViewerProps {
 }
 
 // ── ChunkedVideoFetcher ──────────────────────────────────────────────────────
-function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration, partnerPublicKey, onEnded, isPaused, onTogglePause }: { messageId: string, thumbnailUrl?: string, duration?: number, partnerPublicKey: string, onEnded?: () => void, isPaused?: boolean, onTogglePause?: () => void }) {
+function ChunkedVideoFetcher({ 
+  messageId, 
+  thumbnailUrl, 
+  duration, 
+  partnerPublicKey, 
+  onEnded, 
+  isPaused, 
+  muted,
+  onTogglePause 
+}: { 
+  messageId: string, 
+  thumbnailUrl?: string, 
+  duration?: number, 
+  partnerPublicKey: string, 
+  onEnded?: () => void, 
+  isPaused?: boolean, 
+  muted?: boolean,
+  onTogglePause?: () => void 
+}) {
   const { chunks, getChunksForMessage, loadExistingChunks } = useVideoChunks(messageId);
 
   useEffect(() => {
@@ -70,6 +88,9 @@ function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration, partnerPublicK
         thumbnailUrl={thumbnailUrl} 
         duration={duration}
         autoPlay={!isPaused}
+        isPaused={isPaused}
+        muted={muted}
+        hideControls={true}
         onEnded={onEnded}
         className="w-full h-full max-h-full object-contain rounded-2xl shadow-2xl" 
       />
@@ -82,6 +103,7 @@ const PHOTO_DURATION = 3000; // 3 seconds for photos
 
 export default function MomentViewer({ moments, initialMomentIndex, partnerPublicKey, onClose }: MomentViewerProps) {
   const { getDecryptedBlob } = useMedia();
+  const { getChunksForMessage, loadExistingChunks } = useVideoChunks();
   const [currentMomentIdx, setCurrentMomentIdx] = useState(initialMomentIndex);
   const [currentItemIdx, setCurrentItemIdx] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -95,6 +117,29 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
   const currentItem = items[currentItemIdx];
   const prevMoment = currentMomentIdx > 0 ? moments[currentMomentIdx - 1] : null;
   const nextMoment = currentMomentIdx < moments.length - 1 ? moments[currentMomentIdx + 1] : null;
+
+  const isAvailable = !!(currentItem?.decryptedUrl || (currentItem?.type === 'video' && !currentItem?.media_url));
+  const [slideStartTime, setSlideStartTime] = useState<number>(Date.now());
+  const [remainingTime, setRemainingTime] = useState<number>(PHOTO_DURATION);
+  const [isMuted, setIsMuted] = useState(false);
+
+  // Sync standard video playback with isPaused state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isPaused) {
+      if (!video.paused) {
+        video.pause();
+      }
+    } else {
+      if (video.paused && isAvailable) {
+        video.play().catch(err => {
+          console.warn('[MomentViewer] Video play failed:', err);
+        });
+      }
+    }
+  }, [isPaused, isAvailable, currentItemIdx, currentMomentIdx]);
 
   // ── Decrypt items for visible moments ──────────────────────────────────────
   const decryptItem = useCallback(async (itemArg: MomentItem, momentId: string) => {
@@ -222,11 +267,83 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
     }
   }, [currentMomentIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── Background Video Pre-fetching ──────────────────────────────────────────
+  useEffect(() => {
+    if (!partnerPublicKey) return;
+
+    const prefetchVideos = async () => {
+      const staticItems = moments[currentMomentIdx].items;
+      const chunkedVideos = staticItems.filter(item => item.type === 'video' && !item.media_url);
+      if (chunkedVideos.length === 0) return;
+
+      const unbufferedIds = chunkedVideos
+        .map(v => v.id)
+        .filter(id => {
+          const chs = getChunksForMessage(id);
+          return !(chs && chs.some(c => c.isDecrypted && c.blobUrl));
+        });
+
+      if (unbufferedIds.length === 0) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('video_chunks')
+          .select('message_id, chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+          .in('message_id', unbufferedIds)
+          .order('chunk_index', { ascending: true });
+
+        if (error || !data) return;
+
+        const groupedChunks = new Map<string, typeof data>();
+        data.forEach(row => {
+          const list = groupedChunks.get(row.message_id) || [];
+          list.push(row);
+          groupedChunks.set(row.message_id, list);
+        });
+
+        const sortedIds = [...unbufferedIds].sort((a, b) => {
+          const idxA = staticItems.findIndex(i => i.id === a);
+          const idxB = staticItems.findIndex(i => i.id === b);
+          return idxA - idxB;
+        });
+
+        for (const id of sortedIds) {
+          const rows = groupedChunks.get(id);
+          if (rows && rows.length > 0) {
+            await loadExistingChunks(id, rows, partnerPublicKey);
+          }
+        }
+      } catch (err) {
+        console.error('[MomentViewer] Background pre-fetch error:', err);
+      }
+    };
+
+    prefetchVideos();
+  }, [currentMomentIdx, moments, partnerPublicKey, getChunksForMessage, loadExistingChunks]);
+
+  // Reset timer when slide becomes available
+  useEffect(() => {
+    if (!isAvailable) return;
+    const dur = currentItem?.type === 'video' ? (currentItem?.duration || 10) * 1000 : PHOTO_DURATION;
+    setRemainingTime(dur);
+    setSlideStartTime(Date.now());
+  }, [currentItemIdx, currentMomentIdx, isAvailable, currentItem?.type, currentItem?.duration]);
+
+  // Handle pause/resume time tracking
+  useEffect(() => {
+    if (isPaused) {
+      const elapsed = Date.now() - slideStartTime;
+      const nextRemaining = Math.max(0, remainingTime - elapsed);
+      setRemainingTime(nextRemaining);
+    } else {
+      setSlideStartTime(Date.now());
+    }
+  }, [isPaused]);
+
   // ── Auto-advance logic ─────────────────────────────────────────────────────
   useEffect(() => {
     if (isPaused) return;
-    const isChunked = currentItem?.type === 'video' && !currentItem?.media_url;
-    if (!currentItem?.decryptedUrl && !isChunked) return;
+    if (!isAvailable) return;
 
     if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
 
@@ -235,15 +352,15 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
       return;
     }
 
-    // For photos, auto-advance after 3 seconds
+    // For photos, auto-advance after remaining time
     autoAdvanceTimerRef.current = setTimeout(() => {
       advanceToNext();
-    }, PHOTO_DURATION);
+    }, remainingTime);
 
     return () => {
       if (autoAdvanceTimerRef.current) clearTimeout(autoAdvanceTimerRef.current);
     };
-  }, [currentItemIdx, currentMomentIdx, isPaused, currentItem?.decryptedUrl, currentItem?.type, currentItem?.media_url]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentItemIdx, currentMomentIdx, isPaused, isAvailable, remainingTime]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cleanup on unmount
   useEffect(() => {
@@ -325,85 +442,109 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[300] bg-black flex flex-col"
+      className="fixed inset-0 z-[300] bg-black flex flex-col select-none"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* ── Top Bar: Close + Moment Title ── */}
-      <div className="shrink-0 flex items-center gap-3 px-4 pt-5 pb-2 safe-top safe-pt z-10">
-        <button
-          onClick={onClose}
-          className="p-2 rounded-full bg-white/10 text-white/80 hover:bg-white/20 transition-all"
-        >
-          <span className="material-symbols-outlined text-xl">close</span>
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="font-serif italic text-sm text-[var(--gold)] truncate">{moment.title}</p>
-        </div>
-      </div>
+      <style>{`
+        @keyframes moment-progress-grow {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
 
-      {/* ── Progress Bar (segment per item) ── */}
-      <div className="shrink-0 flex gap-1 px-4 pb-2">
-        {progressSegments.map((status, i) => (
-          <div key={i} className="flex-1 h-[3px] rounded-full overflow-hidden bg-white/15">
-            {status === 1 && (
-              <div className="w-full h-full bg-white/80 rounded-full" />
-            )}
-            {status === -1 && (
-              <motion.div
-                className="h-full bg-white/80 rounded-full"
-                initial={{ width: '0%' }}
-                animate={{ width: '100%' }}
-                transition={{
-                  duration: currentItem?.type === 'video' ? (currentItem?.duration || 10) : PHOTO_DURATION / 1000,
-                  ease: 'linear',
-                }}
-                key={`progress-${currentItemIdx}-${currentMomentIdx}`}
-              />
-            )}
+      {/* ── Top Bar, Progress Bar, Thumbnail Bar (Stacked at the top) ── */}
+      <div className="shrink-0 flex flex-col z-20">
+        {/* Top Bar: Close + Moment Title */}
+        <div className="flex items-center gap-3 px-4 pt-5 pb-2 safe-top safe-pt">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full bg-white/10 text-white/80 hover:bg-white/20 transition-all"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+          <div className="flex-1 min-w-0">
+            <p className="font-serif italic text-sm text-[var(--gold)] truncate">{moment.title}</p>
           </div>
-        ))}
-      </div>
+          {/* Mute/Unmute button if current item is a video */}
+          {currentItem?.type === 'video' && (
+            <button
+              onClick={() => setIsMuted(m => !m)}
+              className="p-2 rounded-full bg-white/10 text-white/80 hover:bg-white/20 transition-all z-30"
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              <span className="material-symbols-outlined text-xl">
+                {isMuted ? 'volume_off' : 'volume_up'}
+              </span>
+            </button>
+          )}
+        </div>
 
-      {/* ── Thumbnail Bar ── */}
-      <div className="shrink-0 px-4 pb-3">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-          {items.map((item, i) => {
-            const isChunked = item.type === 'video' && !item.media_url;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentItemIdx(i)}
-                className={`shrink-0 w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${
-                  i === currentItemIdx
-                    ? 'border-[var(--gold)] scale-110 shadow-lg'
-                    : 'border-white/10 opacity-40 hover:opacity-70'
-                }`}
-              >
-                {item.decryptedUrl || isChunked ? (
-                  isChunked ? (
-                    item.decryptedUrl ? <img src={item.decryptedUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-black flex items-center justify-center"><span className="material-symbols-outlined text-[10px] text-white/50">play_arrow</span></div>
-                  ) : item.type === 'video' ? (
-                    <video src={item.decryptedUrl} className="w-full h-full object-cover" />
+        {/* Progress Bar (segment per item) */}
+        <div className="flex gap-1 px-4 pb-2">
+          {progressSegments.map((status, i) => (
+            <div key={i} className="flex-1 h-[3px] rounded-full overflow-hidden bg-white/15">
+              {status === 1 && (
+                <div className="w-full h-full bg-white/80 rounded-full" />
+              )}
+              {status === -1 && (
+                <div
+                  className="h-full bg-white/80 rounded-full"
+                  style={{
+                    width: '0%',
+                    animationName: 'moment-progress-grow',
+                    animationDuration: `${currentItem?.type === 'video' ? (currentItem?.duration || 10) : PHOTO_DURATION / 1000}s`,
+                    animationTimingFunction: 'linear',
+                    animationPlayState: isAvailable && !isPaused ? 'running' : 'paused',
+                    animationFillMode: 'forwards'
+                  }}
+                  key={`progress-${currentItemIdx}-${currentMomentIdx}`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Thumbnail Bar */}
+        <div className="px-4 pb-3">
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+            {items.map((item, i) => {
+              const isChunked = item.type === 'video' && !item.media_url;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentItemIdx(i)}
+                  className={`shrink-0 w-8 h-8 rounded-lg overflow-hidden border-2 transition-all ${
+                    i === currentItemIdx
+                      ? 'border-[var(--gold)] scale-110 shadow-lg'
+                      : 'border-white/10 opacity-40 hover:opacity-70'
+                  }`}
+                >
+                  {item.decryptedUrl || isChunked ? (
+                    isChunked ? (
+                      item.decryptedUrl ? <img src={item.decryptedUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-black flex items-center justify-center"><span className="material-symbols-outlined text-[10px] text-white/50">play_arrow</span></div>
+                    ) : item.type === 'video' ? (
+                      <video src={item.decryptedUrl} className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={item.decryptedUrl} alt="" className="w-full h-full object-cover" />
+                    )
                   ) : (
-                    <img src={item.decryptedUrl} alt="" className="w-full h-full object-cover" />
-                  )
-                ) : (
-                  <div className="w-full h-full bg-white/5 flex items-center justify-center">
-                    {item.loading
-                      ? <div className="w-3 h-3 border border-white/20 border-t-[var(--gold)] rounded-full animate-spin" />
-                      : <span className="material-symbols-outlined text-[10px] text-white/20">lock</span>
-                    }
-                  </div>
-                )}
-              </button>
-            );
-          })}
+                    <div className="w-full h-full bg-white/5 flex items-center justify-center">
+                      {item.loading
+                        ? <div className="w-3 h-3 border border-white/20 border-t-[var(--gold)] rounded-full animate-spin" />
+                        : <span className="material-symbols-outlined text-[10px] text-white/20">lock</span>
+                      }
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* ── Main Content Area ── */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+      {/* ── Main Media Area (flex-1 container) ── */}
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden z-10">
         {/* Previous Moment (side preview) */}
         {prevMoment && (
           <button
@@ -434,7 +575,7 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.2 }}
-            className="flex items-center justify-center w-full h-full px-16 md:px-28"
+            className="w-full h-full flex items-center justify-center"
           >
             {currentItem?.decryptedUrl || (currentItem?.type === 'video' && !currentItem?.media_url) ? (
               (currentItem.type === 'video' && !currentItem.media_url) ? (
@@ -445,6 +586,7 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
                   partnerPublicKey={partnerPublicKey}
                   onEnded={handleVideoEnded}
                   isPaused={isPaused}
+                  muted={isMuted}
                   onTogglePause={() => setIsPaused(p => !p)}
                 />
               ) : currentItem.type === 'video' ? (
@@ -454,16 +596,17 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
                   src={currentItem.decryptedUrl}
                   controls={false}
                   autoPlay={!isPaused}
+                  muted={isMuted}
                   playsInline
                   onEnded={handleVideoEnded}
-                  className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl cursor-pointer"
+                  className="w-full h-full object-contain cursor-pointer"
                   onClick={() => setIsPaused(p => !p)}
                 />
               ) : (
                 <img
                   src={currentItem.decryptedUrl}
                   alt=""
-                  className="max-w-full max-h-full rounded-2xl object-contain shadow-2xl"
+                  className="w-full h-full object-contain"
                 />
               )
             ) : (
@@ -498,30 +641,28 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
             <span className="text-[7px] text-white/20 font-serif italic hidden md:block truncate max-w-[80px]">{nextMoment.title}</span>
           </button>
         )}
+
+        {/* ── Bottom Controls (Positioned absolutely over the lower part of the media container) ── */}
+        <div className="absolute bottom-6 left-0 right-0 flex items-center justify-center z-30 pointer-events-none">
+          <button
+            onClick={() => setIsPaused(p => !p)}
+            className="p-3.5 rounded-full text-white/90 hover:text-white transition-all shadow-lg active:scale-95 pointer-events-auto"
+            style={{
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+            }}
+          >
+            <span className="material-symbols-outlined text-3xl">
+              {isPaused ? 'play_arrow' : 'pause'}
+            </span>
+          </button>
+        </div>
       </div>
 
-      {/* ── Bottom Controls: Pause/Play ── */}
-      <div className="shrink-0 flex items-center justify-center py-4 safe-bottom">
-        <button
-          onClick={() => {
-            setIsPaused(p => {
-              const next = !p;
-              if (videoRef.current) {
-                next ? videoRef.current.pause() : videoRef.current.play();
-              }
-              return next;
-            });
-          }}
-          className="p-3 rounded-full bg-white/10 backdrop-blur-md text-white/80 hover:bg-white/20 transition-all"
-        >
-          <span className="material-symbols-outlined text-2xl">
-            {isPaused ? 'play_arrow' : 'pause'}
-          </span>
-        </button>
-      </div>
-
-      {/* Date stamp */}
-      <div className="shrink-0 pb-4 text-center safe-bottom">
+      {/* ── Date stamp (Solid block at the bottom) ── */}
+      <div className="shrink-0 pb-6 pt-2 text-center bg-black z-20">
         {currentItem && (
           <span className="font-label text-[10px] uppercase tracking-widest text-white/30">
             {new Date(currentItem.created_at).toLocaleDateString('en-US', {

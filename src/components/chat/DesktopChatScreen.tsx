@@ -44,6 +44,8 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
   const [showPinDropdown, setShowPinDropdown] = useState(false);
   const pinDropdownRef = useRef<HTMLDivElement>(null);
+  const [showCallDropdown, setShowCallDropdown] = useState(false);
+  const callDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isDesktopCameraOpen, setIsDesktopCameraOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -52,15 +54,18 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
 
-  // Click outside listener for the pin dropdown
+  // Click outside listener for the dropdowns
   useEffect(() => {
     const handleClickOutside = (e: Event) => {
       if (pinDropdownRef.current && !pinDropdownRef.current.contains(e.target as Node)) {
         setShowPinDropdown(false);
       }
+      if (callDropdownRef.current && !callDropdownRef.current.contains(e.target as Node)) {
+        setShowCallDropdown(false);
+      }
     };
 
-    if (showPinDropdown) {
+    if (showPinDropdown || showCallDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
       document.addEventListener('pointerdown', handleClickOutside);
@@ -70,7 +75,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
       document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('pointerdown', handleClickOutside);
     };
-  }, [showPinDropdown]);
+  }, [showPinDropdown, showCallDropdown]);
 
   const {
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore,
@@ -560,11 +565,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {viewMode === 'chat' && (
-            <div className="absolute top-[96px] left-[56px] z-30 pointer-events-auto">
-              <StreakBadge variant="full" />
-            </div>
-          )}
+
           <AnimatePresence>
             {isDraggingOver && (
               <motion.div
@@ -623,8 +624,9 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
                 </div>
-                <p className="text-[10px] font-label tracking-[0.2em] text-aura-text-secondary uppercase mt-0.5">
+                <p className="text-[10px] font-label tracking-[0.2em] text-aura-text-secondary uppercase mt-0.5 flex items-center gap-1.5 flex-wrap">
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
+                  {viewMode === 'chat' && <StreakBadge variant="inline" />}
                 </p>
               </div>
             </div>
@@ -634,18 +636,32 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Mode</span>
                 </div>
               )}
-              <span 
-                className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
-                onClick={() => initiateCall(false)}
-              >
-                call
-              </span>
-              <span 
-                className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
-                onClick={() => initiateCall(true)}
-              >
-                videocam
-              </span>
+              <div className="relative" ref={callDropdownRef}>
+                <span 
+                  className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
+                  onClick={() => setShowCallDropdown(!showCallDropdown)}
+                >
+                  call
+                </span>
+                {showCallDropdown && (
+                  <div className="absolute right-0 top-full mt-4 w-48 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-2xl glass-panel z-[100] overflow-hidden py-1">
+                    <button
+                      onClick={() => { initiateCall(false); setShowCallDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">call</span>
+                      Voice Call
+                    </button>
+                    <button
+                      onClick={() => { initiateCall(true); setShowCallDropdown(false); }}
+                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5 border-t border-white/5"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">videocam</span>
+                      Video Call
+                    </button>
+                  </div>
+                )}
+              </div>
               {/* SnapCapture Button */}
               <button
                 onClick={() => snapCapture.initiateSnapCapture()}

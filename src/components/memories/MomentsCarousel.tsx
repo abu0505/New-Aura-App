@@ -194,19 +194,8 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
                 </div>
 
                 {/* Content */}
-                <div className="absolute inset-0 p-5 flex flex-col justify-between z-10">
-                  {/* Category/Type badge */}
-                  <div className="flex justify-between items-start">
-                    <span className="px-2.5 py-1 bg-black/40 border border-white/10 rounded-full text-[9px] font-label uppercase tracking-widest text-[var(--gold)] backdrop-blur-md">
-                      {moment.items[0]?.type === 'video' ? 'Video Moment' : 'Moment'}
-                    </span>
-                    {moment.items.length > 1 && (
-                      <span className="px-2.5 py-1 bg-black/40 border border-white/10 rounded-full text-[9px] font-label uppercase tracking-widest text-white/80 backdrop-blur-md flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[10px]">photo_library</span>
-                        {moment.items.length}
-                      </span>
-                    )}
-                  </div>
+                <div className="absolute inset-0 p-5 flex flex-col justify-end z-10">
+
 
                   {/* Title & metadata */}
                   <div>

@@ -42,19 +42,24 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const [viewMode, setViewMode] = useState<'chat' | 'pinned'>('chat');
   const [showPinDropdown, setShowPinDropdown] = useState(false);
   const pinDropdownRef = useRef<HTMLDivElement>(null);
+  const [showCallDropdown, setShowCallDropdown] = useState(false);
+  const callDropdownRef = useRef<HTMLDivElement>(null);
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const messageInputRef = useRef<any>(null); // Type imported from MessageInput if needed, using any for now to avoid circular deps if missing
 
-  // Click outside listener for the pin dropdown
+  // Click outside listener for the dropdowns
   useEffect(() => {
     const handleClickOutside = (e: Event) => {
       if (pinDropdownRef.current && !pinDropdownRef.current.contains(e.target as Node)) {
         setShowPinDropdown(false);
       }
+      if (callDropdownRef.current && !callDropdownRef.current.contains(e.target as Node)) {
+        setShowCallDropdown(false);
+      }
     };
 
-    if (showPinDropdown) {
+    if (showPinDropdown || showCallDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
       document.addEventListener('pointerdown', handleClickOutside);
@@ -64,7 +69,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       document.removeEventListener('touchstart', handleClickOutside);
       document.removeEventListener('pointerdown', handleClickOutside);
     };
-  }, [showPinDropdown]);
+  }, [showPinDropdown, showCallDropdown]);
 
   const { 
     messages, pinnedMessages, pinnedMessageDetails, replyMessageCache, loading, loadingMore, 
@@ -562,8 +567,9 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="flex flex-col min-w-0">
                 <span className="font-serif text-lg text-primary leading-tight truncate">{partner.display_name || 'Your Partner'}</span>
-                <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate">
+                <span className="text-[9px] font-label uppercase tracking-widest text-aura-text-secondary truncate flex items-center gap-1.5 flex-wrap">
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} compact />
+                  {viewMode === 'chat' && <StreakBadge variant="inline" />}
                 </span>
               </div>
             </div>
@@ -575,18 +581,32 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 <span className="text-[9px] uppercase tracking-widest text-red-200 font-bold">Offline</span>
               </div>
             )}
-            <button 
-              onClick={() => initiateCall(false)}
-              className="hover:text-primary transition-colors active:scale-90"
-            >
-              <span className="material-symbols-outlined">call</span>
-            </button>
-            <button 
-              onClick={() => initiateCall(true)}
-              className="hover:text-primary transition-colors active:scale-90"
-            >
-              <span className="material-symbols-outlined">videocam</span>
-            </button>
+            <div className="relative" ref={callDropdownRef}>
+              <button 
+                onClick={() => setShowCallDropdown(!showCallDropdown)}
+                className="hover:text-primary transition-colors active:scale-90 flex items-center justify-center p-1"
+              >
+                <span className="material-symbols-outlined">call</span>
+              </button>
+              {showCallDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-xl glass-panel z-[100] overflow-hidden py-1">
+                  <button
+                    onClick={() => { initiateCall(false); setShowCallDropdown(false); }}
+                    className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">call</span>
+                    Voice Call
+                  </button>
+                  <button
+                    onClick={() => { initiateCall(true); setShowCallDropdown(false); }}
+                    className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5 border-t border-white/5"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">videocam</span>
+                    Video Call
+                  </button>
+                </div>
+              )}
+            </div>
             {/* SnapCapture Button */}
             <button
               onClick={() => snapCapture.initiateSnapCapture()}
@@ -662,11 +682,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col relative overflow-hidden">
-          {viewMode === 'chat' && (
-            <div className="absolute top-4 left-4 z-30 pointer-events-auto">
-              <StreakBadge variant="compact" />
-            </div>
-          )}
+
           
           {viewMode === 'pinned' && (
             <div className="bg-primary/10 backdrop-blur-md border-b border-primary/20 px-4 py-3 flex items-center justify-between shadow-lg z-30 relative shrink-0">

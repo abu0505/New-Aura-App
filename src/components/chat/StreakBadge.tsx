@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStreak } from '../../contexts/StreakContext';
+import { Flame } from 'lucide-react';
 
 interface StreakBadgeProps {
-  /** 'compact' for mobile header pill, 'full' for desktop header */
-  variant?: 'compact' | 'full';
+  /** 'compact' for mobile header pill, 'full' for desktop header, 'inline' for header text */
+  variant?: 'compact' | 'full' | 'inline';
 }
 
 export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
@@ -18,6 +19,40 @@ export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
   const iWaitingForPartner = isAtRisk && mySnappedToday && !partnerSnappedToday;
   const partnerWaitingForMe = isAtRisk && !mySnappedToday && partnerSnappedToday;
   const neitherSnapped = !mySnappedToday && !partnerSnappedToday;
+
+  // ── INLINE VARIANT (header text display) ─────────────────────────────────────
+  if (variant === 'inline') {
+    return (
+      <AnimatePresence mode="wait">
+        <motion.span
+          key="inline-streak"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className={`flex items-center gap-1 font-bold ${
+            isAtRisk
+              ? partnerWaitingForMe
+                ? 'text-orange-400 animate-pulse'
+                : 'text-orange-500/70'
+              : 'text-primary'
+          }`}
+          title={
+            isAtRisk
+              ? partnerWaitingForMe
+                ? '⏳ Snap now to save your streak!'
+                : '⏳ Streak at risk!'
+              : bothSnapped
+              ? '🔥 Both snapped today!'
+              : '🔥 Snap to keep it alive!'
+          }
+        >
+          <span className="text-aura-text-secondary/40 select-none font-normal mx-1 text-sm">·</span>
+          <Flame className="w-[12px] h-[12px] fill-current" />
+          <span className="text-[12px] tracking-normal font-sans font-bold">{streakCount}</span>
+        </motion.span>
+      </AnimatePresence>
+    );
+  }
 
   if (variant === 'compact') {
     return (
@@ -87,7 +122,7 @@ export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
             transition={{ type: 'spring', damping: 15, stiffness: 200 }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 cursor-default"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 cursor-default text-primary"
             title={
               bothSnapped
                 ? `🔥 Both snapped today! ${streakCount} day streak`
@@ -99,12 +134,11 @@ export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
             }
           >
             <motion.span
-              className="text-base leading-none"
+              className="text-base leading-none flex items-center justify-center"
               animate={bothSnapped ? { scale: [1, 1.2, 1] } : {}}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
-              style={{ display: 'inline-block' }}
             >
-              🔥
+              <Flame className="w-4 h-4 fill-current" />
             </motion.span>
             <span className="text-[10px] font-bold text-primary font-label uppercase tracking-wider">
               {streakCount}
@@ -177,7 +211,7 @@ export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 cursor-default"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 cursor-default text-primary"
           title={
             bothSnapped
               ? `Both snapped today! 🔥 ${streakCount} day streak`
@@ -185,12 +219,11 @@ export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
           }
         >
           <motion.span
-            className="text-lg leading-none"
+            className="text-lg leading-none flex items-center justify-center"
             animate={bothSnapped ? { scale: [1, 1.2, 1] } : {}}
             transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 2 }}
-            style={{ display: 'inline-block' }}
           >
-            🔥
+            <Flame className="w-5 h-5 fill-current" />
           </motion.span>
           <span className="text-xs font-bold text-primary font-label uppercase tracking-wider">
             {streakCount} Days
@@ -203,3 +236,4 @@ export default function StreakBadge({ variant = 'compact' }: StreakBadgeProps) {
     </AnimatePresence>
   );
 }
+
