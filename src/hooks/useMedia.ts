@@ -1,6 +1,9 @@
 import { useState, useCallback } from 'react';
 import imageCompression from 'browser-image-compression';
-import { FFmpeg } from '@ffmpeg/ffmpeg';
+// ── PERF: FFmpeg is NOT imported at the top level anymore. ──
+// The compression functions are disabled. If re-enabled, use dynamic import():
+//   const { FFmpeg } = await import('@ffmpeg/ffmpeg');
+// This saves ~25MB WASM from the initial bundle.
 
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -29,7 +32,7 @@ export interface ProcessedMedia {
   size?: number;
 }
 
-let ffmpegInstance: FFmpeg | null = null;
+let ffmpegInstance: any = null;
 let ffmpegLoaded = false;
 
 // Global cache for decrypted blobs to save egress and decryption CPU
@@ -241,14 +244,15 @@ async function _compressVideoWithFFmpeg(
   onProgress: (p: number) => void
 ): Promise<File> {
   if (!ffmpegInstance) {
-    ffmpegInstance = new FFmpeg();
+    // @ts-ignore
+    ffmpegInstance = new (window as any).FFmpeg();
   }
   if (!ffmpegLoaded) {
     await ffmpegInstance.load();
     ffmpegLoaded = true;
   }
 
-  ffmpegInstance.on('progress', ({ progress }) => {
+  ffmpegInstance.on('progress', ({ progress }: any) => {
     onProgress(Math.round(progress * 100));
   });
 
@@ -570,7 +574,10 @@ export function useMedia() {
   }, []);
 
   const clearCache = useCallback(() => {
-    decryptedBlobCache.forEach((_, url) => URL.revokeObjectURL(url));
+    // Note: We only clear the Blob references from the cache.
+    // The blob URLs created by consumers (ChatBubble/MediaGridBubble via
+    // URL.createObjectURL) are managed by those components' own useEffect cleanups.
+    // We cannot revoke them here since we don't track them.
     decryptedBlobCache.clear();
   }, []);
 

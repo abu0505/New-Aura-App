@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useChatSettingsContext } from './ChatSettingsContext';
 
@@ -39,7 +39,7 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   // Listen for tab close/refresh to ensure it locks again automatically.
   // We keep `isUnlockedLocally` purely in React state, meaning a reload naturally destroys it.
   
-  const unlockApp = async (pin: string): Promise<boolean> => {
+  const unlockApp = useCallback(async (pin: string): Promise<boolean> => {
     if (!settings?.shared_pin) return true;
     const hashed = await hashPin(pin);
     if (hashed === settings.shared_pin) {
@@ -47,13 +47,13 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
       return true;
     }
     return false;
-  };
+  }, [settings?.shared_pin]);
 
-  const lockApp = () => {
+  const lockApp = useCallback(() => {
     setIsUnlockedLocally(false);
-  };
+  }, []);
 
-  const setAppPin = async (pin: string | null): Promise<boolean> => {
+  const setAppPin = useCallback(async (pin: string | null): Promise<boolean> => {
     if (pin === null) {
       // Remove PIN
       const { error } = await setSharedPin(null);
@@ -66,7 +66,7 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
       if (!error) setIsUnlockedLocally(true); // Automatically unlocked upon setting
       return !error;
     }
-  };
+  }, [setSharedPin]);
 
   // If the partner removes the pin remotely, we should unlock the app
   useEffect(() => {
@@ -75,8 +75,13 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
     }
   }, [hasAppPin, isUnlockedLocally, isLoading]);
 
+  // ═══ PERF: Memoize context value ═══
+  const contextValue = useMemo(() => ({
+    isLocked, hasAppPin, isLoading, unlockApp, setAppPin, lockApp
+  }), [isLocked, hasAppPin, isLoading, unlockApp, setAppPin, lockApp]);
+
   return (
-    <AppLockContext.Provider value={{ isLocked, hasAppPin, isLoading, unlockApp, setAppPin, lockApp }}>
+    <AppLockContext.Provider value={contextValue}>
       {children}
     </AppLockContext.Provider>
   );

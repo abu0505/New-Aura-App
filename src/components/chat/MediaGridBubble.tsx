@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import type { ChatMessage } from '../../hooks/useChat';
 import MediaViewer from './MediaViewer';
 import MessageContextMenu from './MessageContextMenu';
 import { AnimatePresence } from 'framer-motion';
-import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
+// ── PERF: Lazy-load EmojiPicker (~400KB) — only fetched when user opens full picker ──
+const LazyEmojiPicker = lazy(() => import('emoji-picker-react'));
+import { Theme, EmojiStyle } from 'emoji-picker-react';
 import PremiumEmoji from '../common/PremiumEmoji';
 import { useGarbageContext } from '../../contexts/GarbageContext';
 import { toast } from 'sonner';
@@ -340,23 +342,29 @@ function MediaGridBubble({
                   </div>
                 ) : (
                   <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
-                    <EmojiPicker
-                      theme={Theme.DARK}
-                      emojiStyle={EmojiStyle.APPLE}
-                      onEmojiClick={(emojiData) => {
-                        const newEmoji = messages[0].reaction === emojiData.emoji ? null : emojiData.emoji;
-                        onReact?.(messages[0].id, newEmoji);
-                        setInteractionType('none');
-                        setShowAllEmojis(false);
-                      }}
-                      lazyLoadEmojis={true}
-                      autoFocusSearch={false}
-                      searchPlaceHolder="Search emoji"
-                      previewConfig={{ showPreview: false }}
-                      skinTonesDisabled={true}
-                      width={300}
-                      height={400}
-                    />
+                    <Suspense fallback={
+                      <div className="w-full h-full flex items-center justify-center bg-aura-bg-elevated">
+                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      </div>
+                    }>
+                      <LazyEmojiPicker
+                        theme={Theme.DARK}
+                        emojiStyle={EmojiStyle.APPLE}
+                        onEmojiClick={(emojiData) => {
+                          const newEmoji = messages[0].reaction === emojiData.emoji ? null : emojiData.emoji;
+                          onReact?.(messages[0].id, newEmoji);
+                          setInteractionType('none');
+                          setShowAllEmojis(false);
+                        }}
+                        lazyLoadEmojis={true}
+                        autoFocusSearch={false}
+                        searchPlaceHolder="Search emoji"
+                        previewConfig={{ showPreview: false }}
+                        skinTonesDisabled={true}
+                        width={300}
+                        height={400}
+                      />
+                    </Suspense>
                   </div>
                 )}
               </div>

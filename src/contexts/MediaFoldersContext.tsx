@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { usePartner } from '../hooks/usePartner';
@@ -287,7 +287,8 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const value = {
+  // ═══ PERF: Memoize context value ═══
+  const value = useMemo(() => ({
     folders,
     loading,
     createFolder,
@@ -297,7 +298,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
     fetchFolderItems,
     renameFolder,
     refetch: fetchFolders,
-  };
+  }), [folders, loading, createFolder, deleteFolder, addItemsToFolder, removeItemFromFolder, fetchFolderItems, renameFolder, fetchFolders]);
 
   return (
     <MediaFoldersContext.Provider value={value}>

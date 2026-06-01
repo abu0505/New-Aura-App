@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
@@ -123,17 +123,20 @@ export function StreakProvider({ children }: { children: ReactNode }) {
     };
   }, [user?.id, applyRow]);
 
+  // ═══ PERF: Memoize context value ═══
+  const contextValue = useMemo(() => ({
+    streakId,
+    streakCount,
+    longestStreak,
+    streakAtRisk,
+    mySnappedToday,
+    partnerSnappedToday,
+    showCelebration,
+    setShowCelebration,
+  }), [streakId, streakCount, longestStreak, streakAtRisk, mySnappedToday, partnerSnappedToday, showCelebration]);
+
   return (
-    <StreakContext.Provider value={{
-      streakId,
-      streakCount,
-      longestStreak,
-      streakAtRisk,
-      mySnappedToday,
-      partnerSnappedToday,
-      showCelebration,
-      setShowCelebration,
-    }}>
+    <StreakContext.Provider value={contextValue}>
       {children}
     </StreakContext.Provider>
   );

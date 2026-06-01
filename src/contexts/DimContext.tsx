@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, type ReactNode } from 'react';
 
 interface DimContextType {
   dimLevel: number; // 0 to 0.9 (0 = no dim, 0.9 = very dim)
@@ -17,8 +17,11 @@ export function DimProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('app-dim-level', dimLevel.toString());
   }, [dimLevel]);
 
+  // ═══ PERF: Memoize context value ═══
+  const contextValue = useMemo(() => ({ dimLevel, setDimLevel }), [dimLevel]);
+
   return (
-    <DimContext.Provider value={{ dimLevel, setDimLevel }}>
+    <DimContext.Provider value={contextValue}>
       <div 
         className="fixed inset-0 pointer-events-none z-[9999] transition-opacity duration-300 bg-black"
         style={{ opacity: dimLevel }}

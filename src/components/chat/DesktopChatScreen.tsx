@@ -1,4 +1,4 @@
-import { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useLayoutEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useChat } from '../../hooks/useChat';
 import type { ChatMessage } from '../../hooks/useChat';
 import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
@@ -15,7 +15,8 @@ import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 import { AnimatePresence, motion } from 'framer-motion';
-import DesktopCameraStudio from './DesktopCameraStudio';
+// ── PERF: Lazy-load DesktopCameraStudio (37KB) — only loaded when user clicks camera ──
+const DesktopCameraStudio = lazy(() => import('./DesktopCameraStudio'));
 import { LastSeenStatus } from './LastSeenStatus';
 import { useCall } from '../../contexts/CallContext';
 import { useNotifications } from '../../contexts/NotificationContext';
@@ -502,6 +503,22 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
     }, 50);
   }, []);
 
+  // ═══ PERF: Pre-build a message lookup map for O(1) reply resolution ═══
+  const messageMap = useMemo(() => {
+    const map = new Map<string, ChatMessage>();
+    for (const m of messages) {
+      map.set(m.id, m);
+    }
+    return map;
+  }, [messages]);
+
+  // ═══ PERF: Stable conditional callbacks for chat vs pinned view ═══
+  const chatOnReact = useMemo(() => viewMode === 'chat' ? reactToMessage : undefined, [viewMode, reactToMessage]);
+  const chatOnEdit = useMemo(() => viewMode === 'chat' ? editMessage : undefined, [viewMode, editMessage]);
+  const chatOnReply = useMemo(() => viewMode === 'chat' ? handleReply : undefined, [viewMode, handleReply]);
+  const pinnedOnRedirect = useMemo(() => viewMode === 'pinned' ? handlePinnedRedirect : undefined, [viewMode, handlePinnedRedirect]);
+  const isPinned = viewMode === 'pinned';
+
   return (
     <>
       <style>{`
@@ -514,25 +531,27 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
 
       <div className="flex w-full h-full overflow-hidden absolute inset-0 text-aura-text-primary font-sans bg-background relative z-0">
 
-        <AnimatePresence>
-          {isDesktopCameraOpen && (
-            <DesktopCameraStudio
-              onClose={() => setIsDesktopCameraOpen(false)}
-              onSend={(file, _caption) => {
-                // Camera captures from DesktopCameraStudio — these count for streaks
-                if (messageInputRef.current) {
-                  messageInputRef.current.handleCameraFiles([file]);
-                }
-              }}
-              onGallerySelect={(files, _caption) => {
-                // Gallery selections — these do NOT count for streaks
-                if (messageInputRef.current) {
-                  messageInputRef.current.handleDroppedFiles(files);
-                }
-              }}
-            />
-          )}
-        </AnimatePresence>
+        <Suspense fallback={null}>
+          <AnimatePresence>
+            {isDesktopCameraOpen && (
+              <DesktopCameraStudio
+                onClose={() => setIsDesktopCameraOpen(false)}
+                onSend={(file, _caption) => {
+                  // Camera captures from DesktopCameraStudio — these count for streaks
+                  if (messageInputRef.current) {
+                    messageInputRef.current.handleCameraFiles([file]);
+                  }
+                }}
+                onGallerySelect={(files, _caption) => {
+                  // Gallery selections — these do NOT count for streaks
+                  if (messageInputRef.current) {
+                    messageInputRef.current.handleDroppedFiles(files);
+                  }
+                }}
+              />
+            )}
+          </AnimatePresence>
+        </Suspense>
 
         <div
           className={`flex-1 grid grid-rows-[auto_auto_1fr_auto] overflow-hidden transition-all duration-700 relative z-10 ${isSearchOpen ? 'blur-sm pointer-events-none' : ''}`}
@@ -815,11 +834,11 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                             <MediaGridBubble
                               messages={item}
                               partnerPublicKey={partner.public_key}
-                              onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                              onReact={chatOnReact}
                               isMine={firstMsg.sender_id === user?.id}
                               isFirst={isFirstInGroup}
                               isLast={isLastInGroup}
-                              onReply={viewMode === 'chat' ? handleReply : undefined}
+                              onReply={chatOnReply}
                               onPin={pinMessage}
                               quickEmojis={settings?.quick_emojis}
                             />
@@ -827,15 +846,15 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                             <ChatBubble
                               message={item}
                               partnerPublicKey={partner.public_key}
-                              onReact={viewMode === 'chat' ? reactToMessage : undefined}
-                              onEdit={viewMode === 'chat' ? editMessage : undefined}
+                              onReact={chatOnReact}
+                              onEdit={chatOnEdit}
                               onPin={pinMessage}
                               isFirst={isFirstInGroup}
                               isLast={isLastInGroup}
-                              isPinnedView={viewMode === 'pinned'}
-                              onRedirect={viewMode === 'pinned' ? handlePinnedRedirect : undefined}
-                              onReply={viewMode === 'chat' ? handleReply : undefined}
-                              repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
+                              isPinnedView={isPinned}
+                              onRedirect={pinnedOnRedirect}
+                              onReply={chatOnReply}
+                              repliedMessage={item.reply_to ? (messageMap.get(item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
                               onJumpToMessage={stableHandleJumpToMessage}
                               quickEmojis={settings?.quick_emojis}
                             />

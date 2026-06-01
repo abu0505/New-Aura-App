@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
 import { realtimeHub } from '../lib/realtimeHub';
@@ -109,7 +109,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => unsubscribe();
   }, [userId]);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     // Optimistic update
     setNotifications(prev => prev.map(n => 
       n.id === id ? { ...n, read_at: new Date().toISOString() } : n
@@ -119,19 +119,20 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       .from('notifications')
       .update({ read_at: new Date().toISOString() })
       .eq('id', id);
-  };
+  }, []);
 
-  const markAllAsRead = async () => {
-    const unreadIds = notifications.filter(n => !n.read_at).map(n => n.id);
-    if (unreadIds.length === 0) return;
-    
-    setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
-
-    await supabase
-      .from('notifications')
-      .update({ read_at: new Date().toISOString() })
-      .in('id', unreadIds);
-  };
+  const markAllAsRead = useCallback(async () => {
+    setNotifications(prev => {
+      const unreadIds = prev.filter(n => !n.read_at).map(n => n.id);
+      if (unreadIds.length === 0) return prev;
+      // Fire DB update
+      supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .in('id', unreadIds);
+      return prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() }));
+    });
+  }, []);
 
   /**
    * markReadBySenderId
@@ -139,26 +140,24 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
    * Called by chat screens when the user reads messages from a specific partner,
    * so the notification badge and inbox entry clear automatically.
    */
-  const markReadBySenderId = async (senderId: string) => {
-    const unreadFromSender = notifications.filter(
-      n => n.sender_id === senderId && !n.read_at
-    );
-    if (unreadFromSender.length === 0) return;
-
+  const markReadBySenderId = useCallback(async (senderId: string) => {
     const readAt = new Date().toISOString();
 
-    // Optimistic update
-    setNotifications(prev =>
-      prev.map(n =>
+    setNotifications(prev => {
+      const unreadFromSender = prev.filter(
+        n => n.sender_id === senderId && !n.read_at
+      );
+      if (unreadFromSender.length === 0) return prev;
+      // Fire DB update
+      supabase
+        .from('notifications')
+        .update({ read_at: readAt })
+        .in('id', unreadFromSender.map(n => n.id));
+      return prev.map(n =>
         n.sender_id === senderId && !n.read_at ? { ...n, read_at: readAt } : n
-      )
-    );
-
-    await supabase
-      .from('notifications')
-      .update({ read_at: readAt })
-      .in('id', unreadFromSender.map(n => n.id));
-  };
+      );
+    });
+  }, []);
 
   // 3. Listen to Service Worker postMessage
   useEffect(() => {
@@ -175,8 +174,13 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     return () => navigator.serviceWorker?.removeEventListener('message', handleMessage);
   }, []);
 
+  // ═══ PERF: Memoize context value to prevent unnecessary consumer re-renders ═══
+  const contextValue = useMemo(() => ({
+    notifications, unreadCount, markAsRead, markAllAsRead, markReadBySenderId
+  }), [notifications, unreadCount, markAsRead, markAllAsRead, markReadBySenderId]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead, markReadBySenderId }}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );

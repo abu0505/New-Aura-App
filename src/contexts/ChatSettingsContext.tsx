@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useMemo } from 'react';
 import { useChatSettings, type ChatSettings } from '../hooks/useChatSettings';
 
 interface ChatSettingsContextType {
@@ -14,8 +14,19 @@ const ChatSettingsContext = createContext<ChatSettingsContextType | null>(null);
 
 export function ChatSettingsProvider({ children }: { children: React.ReactNode }) {
   const chatSettings = useChatSettings();
+
+  // ═══ PERF: Memoize context value ═══
+  const value = useMemo(() => chatSettings, [
+    chatSettings.settings,
+    chatSettings.loading,
+    chatSettings.error,
+    chatSettings.updateSettings,
+    chatSettings.setSharedPin,
+    chatSettings.refreshSettings,
+  ]);
+
   return (
-    <ChatSettingsContext.Provider value={chatSettings}>
+    <ChatSettingsContext.Provider value={value}>
       {children}
     </ChatSettingsContext.Provider>
   );

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef, memo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import { useVideoChunks, type ReceivedChunk } from '../../hooks/useVideoChunks';
@@ -7,7 +7,9 @@ import MessageContextMenu from './MessageContextMenu';
 import MediaViewer from './MediaViewer';
 import AudioWaveformPlayer from './AudioWaveformPlayer';
 import ChunkedVideoOverlay from './ChunkedVideoOverlay';
-import EmojiPicker, { Theme, EmojiStyle } from 'emoji-picker-react';
+// ── PERF: Lazy-load EmojiPicker (~400KB) — only fetched when user opens full picker ──
+const LazyEmojiPicker = lazy(() => import('emoji-picker-react'));
+import { Theme, EmojiStyle } from 'emoji-picker-react';
 import LinkPreview from './LinkPreview';
 import PremiumEmoji, { EmojiText } from '../common/PremiumEmoji';
 import { useMediaFolders } from '../../hooks/useMediaFolders';
@@ -320,13 +322,22 @@ function ChatBubble({
   
   // Decrypt media for replied messages
   useEffect(() => {
-    if (repliedMessage?.media_url && repliedMessage?.media_key && repliedMessage?.media_nonce && partnerPublicKey && !repliedMessage?.is_deleted_for_everyone) {
+    if (!repliedMessage || repliedMessage.is_deleted_for_everyone || !partnerPublicKey) return;
+
+    // Detect if replied message is a chunked video (which has no media_url but has thumbnail_url)
+    const isChunked = repliedMessage.type === 'video' && !repliedMessage.media_url;
+    const targetUrl = isChunked ? repliedMessage.thumbnail_url : repliedMessage.media_url;
+    const targetKey = repliedMessage.media_key;
+    const targetNonce = repliedMessage.media_nonce;
+    const targetType = isChunked ? 'image' : repliedMessage.type; // thumbnail is always image
+
+    if (targetUrl && targetKey && targetNonce) {
       getDecryptedBlob(
-        repliedMessage.media_url, repliedMessage.media_key, repliedMessage.media_nonce, 
+        targetUrl, targetKey, targetNonce, 
         partnerPublicKey,
         repliedMessage.sender_public_key,
         undefined,
-        repliedMessage.type
+        targetType
       )
         .then(blob => {
           if (blob) {
@@ -341,12 +352,14 @@ function ChatBubble({
         URL.revokeObjectURL(repliedBlobUrlRef.current);
         repliedBlobUrlRef.current = null;
       }
+      setRepliedMediaUrl(null); // Reset when replied message changes
     };
   }, [
     repliedMessage?.id,
     partnerPublicKey,
     repliedMessage?.is_deleted_for_everyone,
     repliedMessage?.media_url,
+    repliedMessage?.thumbnail_url,
     repliedMessage?.media_key,
     repliedMessage?.media_nonce,
     repliedMessage?.type,
@@ -960,23 +973,29 @@ function ChatBubble({
                   </div>
                 ) : (
                   <div className="p-0 shadow-2xl rounded-2xl overflow-hidden border border-white/10 bg-aura-bg-elevated/95 backdrop-blur-md custom-emoji-picker-container" style={{ width: 300, height: 400 }} onClick={e => e.stopPropagation()}>
-                    <EmojiPicker 
-                      theme={Theme.DARK}
-                      emojiStyle={EmojiStyle.APPLE}
-                      onEmojiClick={(emojiData) => {
-                        const newEmoji = message.reaction === emojiData.emoji ? null : emojiData.emoji;
-                        onReact?.(message.id, newEmoji);
-                        setInteractionType('none');
-                        setShowAllEmojis(false);
-                      }}
-                      lazyLoadEmojis={true}
-                      autoFocusSearch={false}
-                      searchPlaceHolder="Search emoji"
-                      previewConfig={{ showPreview: false }}
-                      skinTonesDisabled={true}
-                      width={300}
-                      height={400}
-                    />
+                    <Suspense fallback={
+                      <div className="w-full h-full flex items-center justify-center bg-aura-bg-elevated">
+                        <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                      </div>
+                    }>
+                      <LazyEmojiPicker 
+                        theme={Theme.DARK}
+                        emojiStyle={EmojiStyle.APPLE}
+                        onEmojiClick={(emojiData) => {
+                          const newEmoji = message.reaction === emojiData.emoji ? null : emojiData.emoji;
+                          onReact?.(message.id, newEmoji);
+                          setInteractionType('none');
+                          setShowAllEmojis(false);
+                        }}
+                        lazyLoadEmojis={true}
+                        autoFocusSearch={false}
+                        searchPlaceHolder="Search emoji"
+                        previewConfig={{ showPreview: false }}
+                        skinTonesDisabled={true}
+                        width={300}
+                        height={400}
+                      />
+                    </Suspense>
                   </div>
                 )}
               </div>
@@ -1095,7 +1114,7 @@ function ChatBubble({
               ) : repliedMessage.type === 'video' ? (
                 repliedMediaUrl ? (
                   <div className="relative w-10 h-10 flex-shrink-0">
-                    <video src={repliedMediaUrl} className="w-full h-full rounded shadow-sm object-cover" />
+                    <img src={repliedMediaUrl} alt="video preview" className="w-full h-full rounded shadow-sm object-cover" />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
                       <span className="material-symbols-outlined text-white text-[14px]">play_circle</span>
                     </div>
@@ -1236,5 +1255,70 @@ function ChatBubble({
     </div>
   );
 }
+// ═══════════════════════════════════════════════════════════════════════════════
+// PERFORMANCE: Custom shallow comparator for React.memo
+// ═══════════════════════════════════════════════════════════════════════════════
+// Without this, ChatBubble re-renders on EVERY parent render (new message,
+// reaction on another bubble, typing indicator, etc.). This comparator only
+// allows a re-render when something THIS bubble actually displays has changed.
+function arePropsEqual(prev: ChatBubbleProps, next: ChatBubbleProps): boolean {
+  // Fast path: same message object reference means nothing changed
+  if (prev.message === next.message
+    && prev.repliedMessage === next.repliedMessage
+    && prev.partnerPublicKey === next.partnerPublicKey
+    && prev.isFirst === next.isFirst
+    && prev.isLast === next.isLast
+    && prev.isPinnedView === next.isPinnedView
+    && prev.quickEmojis === next.quickEmojis
+    // Callback refs — compare by reference (stable useCallback from parent)
+    && prev.onReact === next.onReact
+    && prev.onEdit === next.onEdit
+    && prev.onPin === next.onPin
+    && prev.onReply === next.onReply
+    && prev.onRedirect === next.onRedirect
+    && prev.onJumpToMessage === next.onJumpToMessage
+  ) {
+    return true;
+  }
 
-export default memo(ChatBubble);
+  const pm = prev.message;
+  const nm = next.message;
+
+  // Check only fields that affect visual output
+  if (pm.id !== nm.id) return false;
+  if (pm.decrypted_content !== nm.decrypted_content) return false;
+  if (pm.reaction !== nm.reaction) return false;
+  if (pm.is_read !== nm.is_read) return false;
+  if (pm.is_delivered !== nm.is_delivered) return false;
+  if (pm.is_edited !== nm.is_edited) return false;
+  if (pm.is_deleted_for_everyone !== nm.is_deleted_for_everyone) return false;
+  if (pm.is_deleted_for_sender !== nm.is_deleted_for_sender) return false;
+  if (pm.is_deleted_for_receiver !== nm.is_deleted_for_receiver) return false;
+  if (pm.is_uploading !== nm.is_uploading) return false;
+  if (pm.is_pending !== nm.is_pending) return false;
+  if (pm.is_send_failed !== nm.is_send_failed) return false;
+  if (pm.media_url !== nm.media_url) return false;
+  if (pm.media_key !== nm.media_key) return false;
+  if (pm.thumbnail_url !== nm.thumbnail_url) return false;
+  if (pm.thumbnail_local_url !== nm.thumbnail_local_url) return false;
+  if (pm.chunk_upload_status !== nm.chunk_upload_status) return false;
+  if (pm.decrypted_media_url !== nm.decrypted_media_url) return false;
+  if (pm.decryption_error !== nm.decryption_error) return false;
+
+  // Layout props
+  if (prev.isFirst !== next.isFirst) return false;
+  if (prev.isLast !== next.isLast) return false;
+  if (prev.isPinnedView !== next.isPinnedView) return false;
+  if (prev.partnerPublicKey !== next.partnerPublicKey) return false;
+
+  // Replied message — compare by id and content (not reference)
+  const pr = prev.repliedMessage;
+  const nr = next.repliedMessage;
+  if (pr?.id !== nr?.id) return false;
+  if (pr?.decrypted_content !== nr?.decrypted_content) return false;
+  if (pr?.is_deleted_for_everyone !== nr?.is_deleted_for_everyone) return false;
+
+  return true;
+}
+
+export default memo(ChatBubble, arePropsEqual);

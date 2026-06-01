@@ -481,6 +481,26 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     return pinnedMessagesData;
   }, [viewMode, messages, pinnedMessagesData]);
 
+  // ═══ PERF: Pre-build a message lookup map for O(1) reply resolution ═══
+  // Before this, every ChatBubble with a reply ran messages.find() — O(n) per bubble.
+  // With 500 messages, that's 250k comparisons per render cycle.
+  const messageMap = useMemo(() => {
+    const map = new Map<string, ChatMessage>();
+    for (const m of messages) {
+      map.set(m.id, m);
+    }
+    return map;
+  }, [messages]);
+
+  // ═══ PERF: Stable conditional callbacks for chat vs pinned view ═══
+  // Ternary expressions like `viewMode === 'chat' ? reactToMessage : undefined`
+  // create a new value each render, breaking React.memo on ChatBubble.
+  const chatOnReact = useMemo(() => viewMode === 'chat' ? reactToMessage : undefined, [viewMode, reactToMessage]);
+  const chatOnEdit = useMemo(() => viewMode === 'chat' ? editMessage : undefined, [viewMode, editMessage]);
+  const chatOnReply = useMemo(() => viewMode === 'chat' ? handleReply : undefined, [viewMode, handleReply]);
+  const pinnedOnRedirect = useMemo(() => viewMode === 'pinned' ? handlePinnedRedirect : undefined, [viewMode, handlePinnedRedirect]);
+  const isPinned = viewMode === 'pinned';
+
   return (
     <>
       <style>{`
@@ -764,11 +784,11 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                           <MediaGridBubble 
                             messages={item}
                             partnerPublicKey={partner.public_key}
-                            onReact={viewMode === 'chat' ? reactToMessage : undefined}
+                            onReact={chatOnReact}
                             isMine={firstMsg.sender_id === user?.id}
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
-                            onReply={viewMode === 'chat' ? handleReply : undefined}
+                            onReply={chatOnReply}
                             onPin={pinMessage}
                             quickEmojis={settings?.quick_emojis}
                           />
@@ -776,15 +796,15 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                           <ChatBubble 
                             message={item} 
                             partnerPublicKey={partner.public_key}
-                            onReact={viewMode === 'chat' ? reactToMessage : undefined}
-                            onEdit={viewMode === 'chat' ? editMessage : undefined}
+                            onReact={chatOnReact}
+                            onEdit={chatOnEdit}
                             onPin={pinMessage}
                             isFirst={isFirstInGroup}
                             isLast={isLastInGroup}
-                            isPinnedView={viewMode === 'pinned'}
-                            onRedirect={viewMode === 'pinned' ? handlePinnedRedirect : undefined}
-                            onReply={viewMode === 'chat' ? handleReply : undefined}
-                            repliedMessage={item.reply_to ? (messages.find(m => m.id === item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
+                            isPinnedView={isPinned}
+                            onRedirect={pinnedOnRedirect}
+                            onReply={chatOnReply}
+                            repliedMessage={item.reply_to ? (messageMap.get(item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
                             onJumpToMessage={stableHandleJumpToMessage}
                             quickEmojis={settings?.quick_emojis}
                           />

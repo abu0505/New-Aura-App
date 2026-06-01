@@ -211,13 +211,22 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
   // Decrypt media for reply preview
   useEffect(() => {
-    if (replyingTo?.media_url && replyingTo?.media_key && replyingTo?.media_nonce && partnerPublicKey && !replyingTo?.is_deleted_for_everyone) {
+    if (!replyingTo || replyingTo.is_deleted_for_everyone || !partnerPublicKey) return;
+
+    // Detect if replyingTo is a chunked video (which has no media_url but has thumbnail_url)
+    const isChunked = replyingTo.type === 'video' && !replyingTo.media_url;
+    const targetUrl = isChunked ? replyingTo.thumbnail_url : replyingTo.media_url;
+    const targetKey = replyingTo.media_key;
+    const targetNonce = replyingTo.media_nonce;
+    const targetType = isChunked ? 'image' : replyingTo.type; // thumbnail is always image
+
+    if (targetUrl && targetKey && targetNonce) {
       getDecryptedBlob(
-        replyingTo.media_url, replyingTo.media_key, replyingTo.media_nonce,
+        targetUrl, targetKey, targetNonce,
         partnerPublicKey,
         replyingTo.sender_public_key,
         undefined,
-        replyingTo.type
+        targetType
       )
         .then(blob => {
           if (blob) {
@@ -239,6 +248,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     partnerPublicKey,
     replyingTo?.is_deleted_for_everyone,
     replyingTo?.media_url,
+    replyingTo?.thumbnail_url,
     replyingTo?.media_key,
     replyingTo?.media_nonce,
     replyingTo?.type,
@@ -851,7 +861,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   ) : replyingTo.type === 'video' ? (
                     replyMediaUrl ? (
                       <div className="relative w-20 h-20 flex-shrink-0">
-                        <video src={replyMediaUrl} className="w-full h-full rounded shadow-md object-cover" />
+                        <img src={replyMediaUrl} alt="video preview" className="w-full h-full rounded shadow-md object-cover" />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 rounded">
                           <span className="material-symbols-outlined text-white text-[16px]">play_circle</span>
                         </div>

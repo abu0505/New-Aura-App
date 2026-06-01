@@ -140,7 +140,7 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
     const video = document.createElement('video');
     video.muted = true;
     video.playsInline = true;
-    video.preload = 'metadata';
+    video.preload = 'auto';
 
     const url = URL.createObjectURL(file);
 
@@ -188,9 +188,14 @@ export function generateVideoThumbnail(file: File): Promise<Blob | null> {
     };
 
     video.onloadedmetadata = () => {
-      // Try currentTime=0 first — most reliable for Android WebM recordings
-      // where seeking to 0.1s may hang if the media engine hasn't buffered enough.
-      video.currentTime = 0;
+      // Try currentTime=0.001 first — guarantees thatcurrentTime changes from 0 to 0.001,
+      // which triggers the onseeked event in all browsers.
+      video.currentTime = 0.001;
+    };
+
+    video.onloadeddata = () => {
+      // If the first frame is loaded without seeking, capture immediately
+      captureFrame();
     };
 
     video.onseeked = () => {
