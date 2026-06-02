@@ -136,6 +136,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const isBottomLocked = useRef(true);
   
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
+  const [showScrollDown, setShowScrollDown] = useState(false);
   const handleJumpToMessageRef = useRef<((id: string) => void) | null>(null);
 
   useLayoutEffect(() => {
@@ -217,6 +218,31 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
     if (hasMoreNewer && container.scrollHeight - container.scrollTop - container.clientHeight < 300) {
       loadMoreNewer();
+    }
+
+    const isFarFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight > 400;
+    setShowScrollDown(isFarFromBottom);
+  };
+
+  const handleJumpToLatest = async () => {
+    try {
+      if (hasMoreNewer) {
+        await jumpToLatest();
+      }
+      isBottomLocked.current = true;
+      const container = scrollContainerRef.current;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      
+      setTimeout(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      }, 150);
+    } catch (err) {
+      console.error("Error jumping to latest messages:", err);
     }
   };
 
@@ -844,10 +870,10 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           </div>
 
           {/* Jump to Latest Floating Button */}
-          {hasMoreNewer && viewMode === 'chat' && (
+          {(hasMoreNewer || showScrollDown) && viewMode === 'chat' && (
             <div className="absolute bottom-24 right-4 z-[100]">
               <button 
-                onClick={jumpToLatest} 
+                onClick={handleJumpToLatest} 
                 className="bg-primary text-background px-4 py-2 rounded-full shadow-lg font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-transform"
               >
                 <span className="material-symbols-outlined text-[16px]">arrow_downward</span>

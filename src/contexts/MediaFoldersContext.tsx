@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthContext';
-import { usePartner } from '../hooks/usePartner';
+import { usePartner, type PartnerProfile } from '../hooks/usePartner';
 import {
   encryptMessage,
   decryptMessage,
@@ -49,7 +49,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => { partnerRef.current = partner; }, [partner]);
 
-  const decryptFolderName = useCallback((folder: MediaFolder): string => {
+  const decryptFolderName = useCallback((folder: MediaFolder, currentPartner: PartnerProfile | null): string => {
     try {
       const myKeys = getStoredKeyPair();
       if (!myKeys || !folder.sender_public_key) return '[Encrypted Folder]';
@@ -66,7 +66,6 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
       // If decryption fails with sender key, try partner's current key
       try {
         const myKeys = getStoredKeyPair();
-        const currentPartner = partnerRef.current;
         if (!myKeys || !currentPartner?.public_key) return '[Encrypted Folder]';
 
         return decryptMessage(
@@ -81,8 +80,8 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
-  const fetchFolders = useCallback(async () => {
-    if (!userRef.current || !partnerRef.current) return;
+  const fetchFolders = useCallback(async (currUser = userRef.current, currPartner = partnerRef.current) => {
+    if (!currUser || !currPartner) return;
     setLoading(true);
 
     try {
@@ -113,7 +112,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
 
       const decryptedFolders = (foldersData || []).map(f => ({
         ...f,
-        name: decryptFolderName(f),
+        name: decryptFolderName(f, currPartner),
         item_count: itemCounts[f.id] || 0,
       }));
 
@@ -127,9 +126,30 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (user?.id && partner?.id) {
-      fetchFolders();
+      fetchFolders(user, partner);
     }
   }, [user?.id, partner?.id, fetchFolders]);
+
+  // Re-decrypt folder names if partner key becomes available
+  useEffect(() => {
+    if (!partner?.public_key || folders.length === 0) return;
+    
+    const hasEncrypted = folders.some(f => f.name === '[Encrypted Folder]');
+    if (hasEncrypted) {
+      setFolders(prev => prev.map(f => {
+        if (f.name === '[Encrypted Folder]') {
+          const decryptedName = decryptFolderName(f, partner);
+          if (decryptedName !== '[Encrypted Folder]') {
+            return {
+              ...f,
+              name: decryptedName
+            };
+          }
+        }
+        return f;
+      }));
+    }
+  }, [partner?.public_key, folders, decryptFolderName]);
 
   const createFolder = useCallback(async (name: string): Promise<string | null> => {
     const currentUser = userRef.current;
@@ -232,11 +252,26 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
 
       if (error) throw error;
 
-      setFolders(prev => prev.map(f =>
-        f.id === folderId
-          ? { ...f, item_count: Math.max(0, (f.item_count || 0) - 1) }
-          : f
-      ));
+      setFolders(prev => prev.map(f => {
+        if (f.id === folderId) {
+          const isCover = f.cover_message_id === messageId;
+          if (isCover) {
+            // Reset cover_message_id in supabase database
+            supabase
+              .from('media_folders')
+              .update({ cover_message_id: null })
+              .eq('id', folderId)
+              .then(); // fire-and-forget
+            return {
+              ...f,
+              item_count: Math.max(0, (f.item_count || 0) - 1),
+              cover_message_id: null
+            };
+          }
+          return { ...f, item_count: Math.max(0, (f.item_count || 0) - 1) };
+        }
+        return f;
+      }));
     } catch (err) {
       // Error removing item from folder
     }

@@ -11,7 +11,7 @@ interface FoldersPanelProps {
 }
 
 // Sub-component to handle decryption of a single folder's cover image
-function FolderCover({ messageId }: { messageId: string }) {
+function FolderCover({ folderId, initialMessageId }: { folderId: string; initialMessageId: string | null }) {
   const { getDecryptedBlob } = useMedia();
   const { partner } = usePartner();
   const [url, setUrl] = useState<string | null>(null);
@@ -22,26 +22,101 @@ function FolderCover({ messageId }: { messageId: string }) {
     const loadCover = async () => {
       if (!partner?.public_key) return;
       try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select('media_url, media_key, media_nonce')
-          .eq('id', messageId)
-          .single();
+        let targetMsg: {
+          id: string;
+          media_url: string | null;
+          media_key: string | null;
+          media_nonce: string | null;
+          type: string | null;
+          thumbnail_url: string | null;
+        } | null = null;
 
-        if (error || !data) throw error || new Error('No data');
+        // 1. Try loading from initialMessageId if provided
+        if (initialMessageId) {
+          const { data, error } = await supabase
+            .from('messages')
+            .select('id, media_url, media_key, media_nonce, type, thumbnail_url')
+            .eq('id', initialMessageId)
+            .single();
+
+          if (!error && data) {
+            targetMsg = data;
+          }
+        }
+
+        // 2. If no initial cover message, or if it failed to load, find the newest media in the folder
+        if (!targetMsg) {
+          const { data: folderItems, error: itemsError } = await supabase
+            .from('media_folder_items')
+            .select('message_id')
+            .eq('folder_id', folderId);
+
+          if (!itemsError && folderItems && folderItems.length > 0) {
+            const msgIds = folderItems.map(item => item.message_id);
+            
+            // Try to find the newest image or video first
+            const { data: imgVidMsgs } = await supabase
+              .from('messages')
+              .select('id, media_url, media_key, media_nonce, type, thumbnail_url')
+              .in('id', msgIds)
+              .in('type', ['image', 'video'])
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (imgVidMsgs && imgVidMsgs.length > 0) {
+              targetMsg = imgVidMsgs[0];
+            } else {
+              // Fallback to the newest message of any type
+              const { data: anyMsgs } = await supabase
+                .from('messages')
+                .select('id, media_url, media_key, media_nonce, type, thumbnail_url')
+                .in('id', msgIds)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+              if (anyMsgs && anyMsgs.length > 0) {
+                targetMsg = anyMsgs[0];
+              }
+            }
+
+            // Cache the resolved cover message ID in the database for future runs
+            if (targetMsg) {
+              supabase
+                .from('media_folders')
+                .update({ cover_message_id: targetMsg.id })
+                .eq('id', folderId)
+                .then();
+            }
+          }
+        }
+
+        if (!targetMsg) {
+          if (active) setLoading(false);
+          return;
+        }
+
+        const isChunked = targetMsg.type === 'video' && !targetMsg.media_url;
+        const decryptUrl = isChunked ? targetMsg.thumbnail_url : targetMsg.media_url;
+
+        if (!decryptUrl || !targetMsg.media_key || !targetMsg.media_nonce) {
+          throw new Error('Missing decryption parameters');
+        }
 
         const blob = await getDecryptedBlob(
-          data.media_url!,
-          data.media_key!,
-          data.media_nonce!,
-          partner.public_key
+          decryptUrl,
+          targetMsg.media_key,
+          targetMsg.media_nonce,
+          partner.public_key,
+          undefined,
+          undefined,
+          isChunked ? 'image' : targetMsg.type
         );
 
         if (blob && active) {
           setUrl(URL.createObjectURL(blob));
         }
       } catch (err) {
-        
+        // Silent error
       } finally {
         if (active) setLoading(false);
       }
@@ -52,7 +127,7 @@ function FolderCover({ messageId }: { messageId: string }) {
       active = false;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [messageId, partner?.public_key]);
+  }, [folderId, initialMessageId, partner?.public_key]);
 
   if (loading) {
     return (
@@ -96,12 +171,12 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
     }
   };
 
-  const getCoverHeight = () => {
+  const getCardHeight = () => {
     switch (layoutMode) {
-      case '2col': return 'h-40 sm:h-48';
-      case '3col': return 'h-28 sm:h-32';
-      case '4col': return 'h-24 sm:h-28';
-      default: return 'h-28';
+      case '2col': return 'h-48 sm:h-56';
+      case '3col': return 'h-36 sm:h-40';
+      case '4col': return 'h-32 sm:h-36';
+      default: return 'h-36';
     }
   };
 
@@ -271,21 +346,17 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
                 }}
                 whileHover={{ scale: 1.02 }}
                 onClick={() => onOpenFolder(folder)}
-                className="relative group bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden cursor-pointer hover:border-[rgba(var(--primary-rgb),_0.2)] transition-all"
+                className={`relative group bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden cursor-pointer hover:border-[rgba(var(--primary-rgb),_0.2)] transition-all ${getCardHeight()}`}
               >
                 {/* Cover area */}
-                <div className={`${getCoverHeight()} bg-gradient-to-br from-[rgba(var(--primary-rgb),_0.05)] to-[rgba(var(--primary-rgb),_0.1)] flex items-center justify-center overflow-hidden transition-all duration-500`}>
-                  {folder.cover_message_id ? (
-                    <FolderCover messageId={folder.cover_message_id} />
-                  ) : (
-                    <span className="material-symbols-outlined text-[48px] text-[rgba(var(--primary-rgb),_0.3)]">folder</span>
-                  )}
+                <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[rgba(var(--primary-rgb),_0.05)] to-[rgba(var(--primary-rgb),_0.1)] flex items-center justify-center overflow-hidden transition-all duration-500">
+                  <FolderCover folderId={folder.id} initialMessageId={folder.cover_message_id} />
                 </div>
 
-                {/* Info */}
-                <div className="p-3">
-                  <p className="text-sm text-white/80 font-medium truncate">{folder.name || 'Encrypted Folder'}</p>
-                  <p className="font-label text-[9px] uppercase tracking-widest text-[#998f81] mt-1">
+                {/* Info Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-black/45 backdrop-blur-md border-t border-white/5 z-10">
+                  <p className="text-xs text-white font-semibold truncate shadow-sm">{folder.name || 'Encrypted Folder'}</p>
+                  <p className="font-label text-[8px] uppercase tracking-widest text-white/60 mt-0.5">
                     {folder.item_count || 0} item{(folder.item_count || 0) !== 1 ? 's' : ''}
                   </p>
                 </div>
