@@ -96,6 +96,20 @@ const getPlainText = (html: string) => {
     .join('\n');
 };
 
+// Helper to convert hex color to rgba string
+const hexToRgbStr = (hex: string, alpha: number) => {
+  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+  if (result) {
+    const r = parseInt(result[1], 16);
+    const g = parseInt(result[2], 16);
+    const b = parseInt(result[3], 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return `rgba(255, 64, 64, ${alpha})`;
+};
+
 const ACCENT_COLORS = [
   { id: 'gold', hex: '#e6c487', label: 'Aura Gold' },
   { id: 'emerald', hex: '#6ECB8A', label: 'Emerald' },
@@ -119,6 +133,7 @@ interface NoteEditorProps {
   onToggleLabel: (noteId: string, label: string) => void;
   onAddLabel: (label: string) => void;
   onDeleteLabel: (label: string) => void;
+  isInline?: boolean;
 }
 
 type BottomPanel = 'none' | 'colors' | 'backgrounds' | 'mood' | 'labels' | 'more';
@@ -357,6 +372,7 @@ export default function NoteEditor({
   onToggleLabel,
   onAddLabel,
   onDeleteLabel,
+  isInline,
 }: NoteEditorProps) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
@@ -1059,7 +1075,7 @@ export default function NoteEditor({
               ctx.beginPath();
               ctx.moveTo(p1.x, p1.y);
               ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = `rgba(255, 64, 64, ${opacity})`;
+              ctx.strokeStyle = hexToRgbStr(drawColor, opacity);
               ctx.lineWidth = drawSize * 1.5;
               ctx.stroke();
             }
@@ -1075,7 +1091,7 @@ export default function NoteEditor({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [drawMode, drawSize, isDrawing, drawTool, drawInlineStroke]);
+  }, [drawMode, drawSize, isDrawing, drawTool, drawInlineStroke, drawColor]);
 
   // Pointer handlers for inline drawing
   const getDrawPos = (e: React.PointerEvent): { x: number; y: number } => {
@@ -1769,14 +1785,14 @@ export default function NoteEditor({
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center"
-      onClick={handleClose}
+      initial={!isInline ? { opacity: 0 } : undefined}
+      animate={!isInline ? { opacity: 1 } : undefined}
+      exit={!isInline ? { opacity: 0 } : undefined}
+      className={isInline ? "w-full h-full flex flex-col relative" : "fixed inset-0 z-[200] flex items-center justify-center"}
+      onClick={!isInline ? handleClose : undefined}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {!isInline && <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />}
 
       {/* Selection Tooltip */}
       {selectionDetails.show && (
@@ -1801,11 +1817,13 @@ export default function NoteEditor({
 
       {/* Editor card */}
       <motion.div
-        initial={{ scale: 0.92, opacity: 0, y: 30 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.92, opacity: 0, y: 30 }}
-        transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-        className="relative z-10 w-full max-w-lg mx-4 max-h-[95dvh] flex flex-col rounded-3xl overflow-hidden shadow-2xl"
+        initial={!isInline ? { scale: 0.92, opacity: 0, y: 30 } : undefined}
+        animate={!isInline ? { scale: 1, opacity: 1, y: 0 } : undefined}
+        exit={!isInline ? { scale: 0.92, opacity: 0, y: 30 } : undefined}
+        transition={!isInline ? { type: 'spring', damping: 28, stiffness: 350 } : undefined}
+        className={isInline 
+          ? "relative z-10 w-full h-full flex flex-col overflow-hidden" 
+          : "relative z-10 w-full max-w-lg lg:max-w-2xl mx-4 max-h-[95dvh] flex flex-col rounded-3xl overflow-hidden shadow-2xl"}
         style={{
           background: note.customColor || colorStyle.bg,
           border: `1px solid ${note.customColor ? `${note.customColor}44` : colorStyle.border}`,
@@ -1824,7 +1842,7 @@ export default function NoteEditor({
         )}
 
         {/* Header */}
-        <div className="relative z-[1] flex items-center justify-between px-4 pt-4 pb-2 shrink-0 gap-3">
+        <div className={`relative z-[1] flex items-center justify-between px-4 pb-2 shrink-0 gap-3 ${!isInline ? 'safe-top safe-pt' : 'pt-4'}`}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <button
               onClick={handleClose}
@@ -1865,6 +1883,418 @@ export default function NoteEditor({
             </button>
           </div>
         </div>
+
+        {/* Conditional Toolbar: Draw Mode vs Format Mode (Fixed below Header, outside scrollable container) */}
+        {!note.isChecklist && (
+          <div className="relative z-[2] px-4 pb-2 border-b border-white/5 bg-transparent shrink-0">
+            {drawMode ? (
+              /* ── DRAW MODE TOOLBAR ── */
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+                  {/* Tools from INLINE_TOOLS */}
+                  {INLINE_TOOLS.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setDrawTool(t.id);
+                        setShowDrawShapes(false);
+                        setShowDrawArrows(false);
+                        setShowDrawColors(false);
+                        setShowDrawSizes(false);
+                      }}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all shrink-0 ${drawTool === t.id
+                          ? 'bg-white/10 text-[var(--gold)]'
+                          : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                        }`}
+                      title={t.label}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{t.icon}</span>
+                      <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">{t.label}</span>
+                    </button>
+                  ))}
+
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  {/* Color toggle */}
+                  <button
+                    onClick={() => { setShowDrawColors(!showDrawColors); setShowDrawSizes(false); }}
+                    className={`p-1.5 rounded-lg transition-all shrink-0 ${showDrawColors ? 'bg-white/10' : 'hover:bg-white/5'
+                      }`}
+                    title="Color"
+                  >
+                    <div className="w-5 h-5 rounded-full border-2 border-white/20" style={{ backgroundColor: drawColor }} />
+                  </button>
+
+                  {/* Size toggle */}
+                  <button
+                    onClick={() => { setShowDrawSizes(!showDrawSizes); setShowDrawColors(false); setShowDrawShapes(false); setShowDrawArrows(false); }}
+                    className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawSizes ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                      }`}
+                    title="Size"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>line_weight</span>
+                    <span className="text-[9px] font-bold text-white/30">{drawSize}px</span>
+                  </button>
+
+                  {/* Shapes toggle */}
+                  <button
+                    onClick={() => { setShowDrawShapes(!showDrawShapes); setShowDrawColors(false); setShowDrawSizes(false); setShowDrawArrows(false); }}
+                    className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawShapes || SHAPE_TOOLS.some(t => t.id === drawTool) ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                      }`}
+                    title="Shapes"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>category</span>
+                    <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">Shapes</span>
+                  </button>
+
+                  {/* Arrows toggle */}
+                  <button
+                    onClick={() => { setShowDrawArrows(!showDrawArrows); setShowDrawColors(false); setShowDrawSizes(false); setShowDrawShapes(false); }}
+                    className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawArrows || ARROW_TOOLS.some(t => t.id === drawTool) ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
+                      }`}
+                    title="Arrows"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>trending_flat</span>
+                    <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">Arrows</span>
+                  </button>
+
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  {/* Undo */}
+                  <button
+                    onClick={drawUndo}
+                    disabled={drawUndoStack.length === 0}
+                    className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
+                    title="Undo"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>undo</span>
+                  </button>
+                  {/* Redo */}
+                  <button
+                    onClick={drawRedo}
+                    disabled={drawRedoStack.length === 0}
+                    className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
+                    title="Redo"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>redo</span>
+                  </button>
+                  {/* Clear */}
+                  <button
+                    onClick={drawClearAll}
+                    disabled={drawStrokes.length === 0}
+                    className="p-1.5 rounded-lg hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
+                    title="Clear All"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete_sweep</span>
+                  </button>
+
+                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                  {/* Done (exit draw mode) */}
+                  <button
+                    onClick={toggleDrawMode}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[var(--gold)] text-black text-[9px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition-all shrink-0"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check</span>
+                    Done
+                  </button>
+                </div>
+
+                {/* Color picker row */}
+                <AnimatePresence>
+                  {showDrawColors && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-2 pt-2 overflow-x-auto scrollbar-hide">
+                        {INLINE_DRAW_COLORS.map(c => (
+                          <button
+                            key={c.id}
+                            onClick={() => setDrawColor(c.hex)}
+                            className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 shrink-0 flex items-center justify-center ${drawColor === c.hex ? 'border-white scale-110 shadow-lg' : 'border-white/15'
+                              }`}
+                            style={{ backgroundColor: c.hex }}
+                            title={c.label}
+                          >
+                            {drawColor === c.hex && (
+                              <span className="material-symbols-outlined text-black/80" style={{ fontSize: '12px' }}>check</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Size picker row */}
+                <AnimatePresence>
+                  {showDrawSizes && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-3 pt-2 justify-center">
+                        {INLINE_DRAW_SIZES.map(s => (
+                          <button
+                            key={s}
+                            onClick={() => setDrawSize(s)}
+                            className={`flex items-center justify-center transition-all hover:scale-110 ${drawSize === s ? 'ring-2 ring-[var(--gold)] ring-offset-2 ring-offset-transparent' : ''
+                              } rounded-full`}
+                            title={`Size ${s}`}
+                          >
+                            <div
+                              className="rounded-full"
+                              style={{
+                                width: `${s * 2 + 6}px`,
+                                height: `${s * 2 + 6}px`,
+                                backgroundColor: drawColor,
+                              }}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Shapes picker row */}
+                <AnimatePresence>
+                  {showDrawShapes && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-2 pt-2 justify-center">
+                        {SHAPE_TOOLS.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setDrawTool(t.id)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${drawTool === t.id
+                                ? 'bg-white/10 text-[var(--gold)] ring-1 ring-[var(--gold)]/50'
+                                : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                              }`}
+                            title={t.label}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{t.icon}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{t.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Arrows picker row */}
+                <AnimatePresence>
+                  {showDrawArrows && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex items-center gap-2 pt-2 justify-center">
+                        {ARROW_TOOLS.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => setDrawTool(t.id)}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${drawTool === t.id
+                                ? 'bg-white/10 text-[var(--gold)] ring-1 ring-[var(--gold)]/50'
+                                : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                              }`}
+                            title={t.label}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{t.icon}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{t.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              /* ── FORMAT MODE TOOLBAR (original) ── */
+              <div ref={toolbarRef} className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+                <button
+                  type="button"
+                  onClick={() => handleFormat('bold')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.bold ? 'bg-white/15 text-[var(--gold)] font-bold' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Bold (Ctrl+B)"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_bold</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormat('italic')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.italic ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Italic (Ctrl+I)"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_italic</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormat('underline')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.underline ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Underline (Ctrl+U)"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_underlined</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormat('strikeThrough')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.strikeThrough ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Strikethrough"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_strikethrough</span>
+                </button>
+
+                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                <button
+                  type="button"
+                  onClick={() => handleBlockFormat('p')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.paragraph ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Normal Text"
+                >
+                  Txt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBlockFormat('h1')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h1 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Heading 1"
+                >
+                  H1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBlockFormat('h2')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h2 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Heading 2"
+                >
+                  H2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBlockFormat('h3')}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h3 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Heading 3"
+                >
+                  H3
+                </button>
+
+                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                <button
+                  type="button"
+                  onClick={() => handleFormat('insertUnorderedList')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.ul ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Bullet List"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_bulleted</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFormat('insertOrderedList')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.ol ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Numbered List"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_numbered</span>
+                </button>
+
+                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                <button
+                  type="button"
+                  onClick={() => handleBlockFormat('blockquote')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.blockquote ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Quote Block"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_quote</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBlockFormat('pre')}
+                  className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.code ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                    }`}
+                  title="Code Block"
+                >
+                  <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>code</span>
+                </button>
+
+                <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+                {/* Text Color Picker Trigger & Inline Color Selection */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowColorMenu(!showColorMenu)}
+                    className={`p-1.5 rounded-lg transition-colors flex items-center gap-0.5 ${showColorMenu ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+                      }`}
+                    title="Text Color"
+                  >
+                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_color_text</span>
+                    <span
+                      className="material-symbols-outlined block transition-transform duration-200"
+                      style={{ fontSize: '14px', transform: showColorMenu ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+                    >
+                      arrow_drop_down
+                    </span>
+                  </button>
+
+                  <AnimatePresence>
+                    {showColorMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8, x: -15 }}
+                        animate={{ opacity: 1, scale: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, x: -15 }}
+                        transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                        className="flex items-center gap-1.5 shrink-0 pl-1"
+                      >
+                        {[
+                          { name: 'Default', value: '#ffffff' },
+                          { name: 'Gold', value: '#D4AF37' },
+                          { name: 'Red', value: '#F28B82' },
+                          { name: 'Green', value: '#CCFF90' },
+                          { name: 'Blue', value: '#CBF0F8' },
+                          { name: 'Purple', value: '#D7AEFB' }
+                        ].map(c => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => handleTextColor(c.value)}
+                            className="w-6 h-6 rounded-full border border-white/20 hover:scale-115 active:scale-95 transition-all shrink-0 shadow-md"
+                            style={{ backgroundColor: c.value }}
+                            title={c.name}
+                          />
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Scrollable content */}
         <div className="relative z-[1] flex-1 overflow-y-auto px-4 mb-4 scrollbar-hide">
@@ -1988,413 +2418,7 @@ export default function NoteEditor({
                 }
               `}</style>
 
-              {/* ═══ CONDITIONAL TOOLBAR: Draw Mode vs Format Mode ═══ */}
-              {drawMode ? (
-                /* ── DRAW MODE TOOLBAR ── */
-                <div className="pb-2 mb-3 border-b border-white/5 shrink-0">
-                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
-                    {/* Tools from INLINE_TOOLS */}
-                    {INLINE_TOOLS.map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => {
-                          setDrawTool(t.id);
-                          setShowDrawShapes(false);
-                          setShowDrawArrows(false);
-                          setShowDrawColors(false);
-                          setShowDrawSizes(false);
-                        }}
-                        className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl transition-all shrink-0 ${drawTool === t.id
-                            ? 'bg-white/10 text-[var(--gold)]'
-                            : 'text-white/35 hover:text-white/60 hover:bg-white/5'
-                          }`}
-                        title={t.label}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>{t.icon}</span>
-                        <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">{t.label}</span>
-                      </button>
-                    ))}
 
-                    <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                    {/* Color toggle */}
-                    <button
-                      onClick={() => { setShowDrawColors(!showDrawColors); setShowDrawSizes(false); }}
-                      className={`p-1.5 rounded-lg transition-all shrink-0 ${showDrawColors ? 'bg-white/10' : 'hover:bg-white/5'
-                        }`}
-                      title="Color"
-                    >
-                      <div className="w-5 h-5 rounded-full border-2 border-white/20" style={{ backgroundColor: drawColor }} />
-                    </button>
-
-                    {/* Size toggle */}
-                    <button
-                      onClick={() => { setShowDrawSizes(!showDrawSizes); setShowDrawColors(false); setShowDrawShapes(false); setShowDrawArrows(false); }}
-                      className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawSizes ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
-                        }`}
-                      title="Size"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>line_weight</span>
-                      <span className="text-[9px] font-bold text-white/30">{drawSize}px</span>
-                    </button>
-
-                    {/* Shapes toggle */}
-                    <button
-                      onClick={() => { setShowDrawShapes(!showDrawShapes); setShowDrawColors(false); setShowDrawSizes(false); setShowDrawArrows(false); }}
-                      className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawShapes || SHAPE_TOOLS.some(t => t.id === drawTool) ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
-                        }`}
-                      title="Shapes"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>category</span>
-                      <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">Shapes</span>
-                    </button>
-
-                    {/* Arrows toggle */}
-                    <button
-                      onClick={() => { setShowDrawArrows(!showDrawArrows); setShowDrawColors(false); setShowDrawSizes(false); setShowDrawShapes(false); }}
-                      className={`p-1.5 rounded-lg transition-all shrink-0 flex items-center gap-1 ${showDrawArrows || ARROW_TOOLS.some(t => t.id === drawTool) ? 'bg-white/10 text-[var(--gold)]' : 'text-white/35 hover:text-white/60 hover:bg-white/5'
-                        }`}
-                      title="Arrows"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>trending_flat</span>
-                      <span className="text-[8px] font-bold uppercase tracking-wider hidden sm:inline">Arrows</span>
-                    </button>
-
-                    <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                    {/* Undo */}
-                    <button
-                      onClick={drawUndo}
-                      disabled={drawUndoStack.length === 0}
-                      className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
-                      title="Undo"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>undo</span>
-                    </button>
-                    {/* Redo */}
-                    <button
-                      onClick={drawRedo}
-                      disabled={drawRedoStack.length === 0}
-                      className="p-1.5 rounded-lg hover:bg-white/5 text-white/40 hover:text-white/70 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
-                      title="Redo"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>redo</span>
-                    </button>
-                    {/* Clear */}
-                    <button
-                      onClick={drawClearAll}
-                      disabled={drawStrokes.length === 0}
-                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-white/40 hover:text-red-400 transition-colors disabled:opacity-20 disabled:cursor-default shrink-0"
-                      title="Clear All"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete_sweep</span>
-                    </button>
-
-                    <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                    {/* Done (exit draw mode) */}
-                    <button
-                      onClick={toggleDrawMode}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[var(--gold)] text-black text-[9px] font-bold uppercase tracking-[0.12em] hover:brightness-110 transition-all shrink-0"
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>check</span>
-                      Done
-                    </button>
-                  </div>
-
-                  {/* Color picker row */}
-                  <AnimatePresence>
-                    {showDrawColors && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex items-center gap-2 pt-2 overflow-x-auto scrollbar-hide">
-                          {INLINE_DRAW_COLORS.map(c => (
-                            <button
-                              key={c.id}
-                              onClick={() => setDrawColor(c.hex)}
-                              className={`w-7 h-7 rounded-full border-2 transition-all hover:scale-110 shrink-0 flex items-center justify-center ${drawColor === c.hex ? 'border-white scale-110 shadow-lg' : 'border-white/15'
-                                }`}
-                              style={{ backgroundColor: c.hex }}
-                              title={c.label}
-                            >
-                              {drawColor === c.hex && (
-                                <span className="material-symbols-outlined text-black/80" style={{ fontSize: '12px' }}>check</span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Size picker row */}
-                  <AnimatePresence>
-                    {showDrawSizes && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex items-center gap-3 pt-2 justify-center">
-                          {INLINE_DRAW_SIZES.map(s => (
-                            <button
-                              key={s}
-                              onClick={() => setDrawSize(s)}
-                              className={`flex items-center justify-center transition-all hover:scale-110 ${drawSize === s ? 'ring-2 ring-[var(--gold)] ring-offset-2 ring-offset-transparent' : ''
-                                } rounded-full`}
-                              title={`Size ${s}`}
-                            >
-                              <div
-                                className="rounded-full"
-                                style={{
-                                  width: `${s * 2 + 6}px`,
-                                  height: `${s * 2 + 6}px`,
-                                  backgroundColor: drawColor,
-                                }}
-                              />
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Shapes picker row */}
-                  <AnimatePresence>
-                    {showDrawShapes && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex items-center gap-2 pt-2 justify-center">
-                          {SHAPE_TOOLS.map(t => (
-                            <button
-                              key={t.id}
-                              onClick={() => setDrawTool(t.id)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${drawTool === t.id
-                                  ? 'bg-white/10 text-[var(--gold)] ring-1 ring-[var(--gold)]/50'
-                                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                                }`}
-                              title={t.label}
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{t.icon}</span>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">{t.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Arrows picker row */}
-                  <AnimatePresence>
-                    {showDrawArrows && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex items-center gap-2 pt-2 justify-center">
-                          {ARROW_TOOLS.map(t => (
-                            <button
-                              key={t.id}
-                              onClick={() => setDrawTool(t.id)}
-                              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all ${drawTool === t.id
-                                  ? 'bg-white/10 text-[var(--gold)] ring-1 ring-[var(--gold)]/50'
-                                  : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                                }`}
-                              title={t.label}
-                            >
-                              <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>{t.icon}</span>
-                              <span className="text-[10px] font-bold uppercase tracking-wider">{t.label}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                /* ── FORMAT MODE TOOLBAR (original) ── */
-                <div ref={toolbarRef} className="flex items-center gap-1 pb-2 mb-3 border-b border-white/5 overflow-x-auto scrollbar-hide shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleFormat('bold')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.bold ? 'bg-white/15 text-[var(--gold)] font-bold' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Bold (Ctrl+B)"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_bold</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFormat('italic')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.italic ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Italic (Ctrl+I)"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_italic</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFormat('underline')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.underline ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Underline (Ctrl+U)"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_underlined</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFormat('strikeThrough')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.strikeThrough ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Strikethrough"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_strikethrough</span>
-                  </button>
-
-                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                  <button
-                    type="button"
-                    onClick={() => handleBlockFormat('p')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.paragraph ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Normal Text"
-                  >
-                    Txt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleBlockFormat('h1')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h1 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Heading 1"
-                  >
-                    H1
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleBlockFormat('h2')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h2 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Heading 2"
-                  >
-                    H2
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleBlockFormat('h3')}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shrink-0 ${activeStyles.h3 ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Heading 3"
-                  >
-                    H3
-                  </button>
-
-                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                  <button
-                    type="button"
-                    onClick={() => handleFormat('insertUnorderedList')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.ul ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Bullet List"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_bulleted</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFormat('insertOrderedList')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.ol ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Numbered List"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_list_numbered</span>
-                  </button>
-
-                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                  <button
-                    type="button"
-                    onClick={() => handleBlockFormat('blockquote')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.blockquote ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Quote Block"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_quote</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleBlockFormat('pre')}
-                    className={`p-1.5 rounded-lg transition-colors shrink-0 ${activeStyles.code ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                      }`}
-                    title="Code Block"
-                  >
-                    <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>code</span>
-                  </button>
-
-                  <div className="h-4 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-                  {/* Text Color Picker Trigger & Inline Color Selection */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowColorMenu(!showColorMenu)}
-                      className={`p-1.5 rounded-lg transition-colors flex items-center gap-0.5 ${showColorMenu ? 'bg-white/15 text-[var(--gold)]' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-                        }`}
-                      title="Text Color"
-                    >
-                      <span className="material-symbols-outlined block" style={{ fontSize: '18px' }}>format_color_text</span>
-                      <span
-                        className="material-symbols-outlined block transition-transform duration-200"
-                        style={{ fontSize: '14px', transform: showColorMenu ? 'rotate(-90deg)' : 'rotate(0deg)' }}
-                      >
-                        arrow_drop_down
-                      </span>
-                    </button>
-
-                    <AnimatePresence>
-                      {showColorMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8, x: -15 }}
-                          animate={{ opacity: 1, scale: 1, x: 0 }}
-                          exit={{ opacity: 0, scale: 0.8, x: -15 }}
-                          transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                          className="flex items-center gap-1.5 shrink-0 pl-1"
-                        >
-                          {[
-                            { name: 'Default', value: '#ffffff' },
-                            { name: 'Gold', value: '#D4AF37' },
-                            { name: 'Red', value: '#F28B82' },
-                            { name: 'Green', value: '#CCFF90' },
-                            { name: 'Blue', value: '#CBF0F8' },
-                            { name: 'Purple', value: '#D7AEFB' }
-                          ].map(c => (
-                            <button
-                              key={c.name}
-                              type="button"
-                              onClick={() => handleTextColor(c.value)}
-                              className="w-6 h-6 rounded-full border border-white/20 hover:scale-115 active:scale-95 transition-all shrink-0 shadow-md"
-                              style={{ backgroundColor: c.value }}
-                              title={c.name}
-                            />
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              )}
 
               {/* Content editable + inline drawing overlay */}
               <div
@@ -2496,9 +2520,9 @@ export default function NoteEditor({
 
 
           {/* Labels display */}
-          {note.labels.length > 0 && (
+          {note.labels.filter(l => l !== '__secret__').length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-4">
-              {note.labels.map(label => (
+              {note.labels.filter(l => l !== '__secret__').map(label => (
                 <span
                   key={label}
                   className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/5 text-white/50 border border-white/8 flex items-center gap-1"
@@ -2798,9 +2822,9 @@ export default function NoteEditor({
                           <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add</span>
                         </button>
                       </div>
-                      {labels.length > 0 && (
+                      {labels.filter(l => l !== '__secret__').length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
-                          {labels.map(label => {
+                          {labels.filter(l => l !== '__secret__').map(label => {
                             const isActive = note.labels.includes(label);
                             return (
                               <div

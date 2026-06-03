@@ -34,6 +34,8 @@ interface FolderBrowserProps {
   getFolderPath: (folderId: string | null) => NoteFolder[];
   showNewFolder: boolean;
   setShowNewFolder: (show: boolean) => void;
+  isSecretModeActive?: boolean;
+  onToggleFolderSecret?: (folderId: string, makeSecret: boolean) => void;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -52,6 +54,8 @@ export default function FolderBrowser({
   getFolderPath,
   showNewFolder,
   setShowNewFolder,
+  isSecretModeActive = false,
+  onToggleFolderSecret,
 }: FolderBrowserProps) {
   const [newFolderName, setNewFolderName] = useState('');
   const [newFolderColor, setNewFolderColor] = useState('#e6c487');
@@ -241,6 +245,30 @@ export default function FolderBrowser({
                           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>edit</span>
                           Rename
                         </button>
+                        {isSecretModeActive && onToggleFolderSecret && (
+                          <>
+                            <button
+                              onClick={() => {
+                                onToggleFolderSecret(folder.id, true);
+                                setContextMenuId(null);
+                              }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-purple-400 hover:bg-white/5 transition-colors font-semibold"
+                            >
+                              <span className="material-symbols-outlined text-purple-400" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>lock</span>
+                              Make Secret
+                            </button>
+                            <button
+                              onClick={() => {
+                                onToggleFolderSecret(folder.id, false);
+                                setContextMenuId(null);
+                              }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-white/60 hover:bg-white/5 transition-colors"
+                            >
+                              <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>lock_open</span>
+                              Make Normal
+                            </button>
+                          </>
+                        )}
                         <button
                           onClick={() => {
                             if (window.confirm(`Delete folder "${folder.name}" and all sub-folders? Notes will be moved to root.`)) {

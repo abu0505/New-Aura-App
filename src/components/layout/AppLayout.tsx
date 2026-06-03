@@ -16,6 +16,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [forceNav, setForceNav] = useState(false);
   const [hideNav, setHideNav] = useState(false);
+  const [shrinkNav, setShrinkNav] = useState(false);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -31,17 +32,23 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
       setHideNav(false);
       setForceNav(true);
     };
+    const handleShrink = () => setShrinkNav(true);
+    const handleExpand = () => setShrinkNav(false);
     
     window.addEventListener('resize', handleResize);
     document.addEventListener('toggle-nav', handleToggle);
     document.addEventListener('hide-global-nav', handleHide);
     document.addEventListener('show-global-nav', handleShow);
+    document.addEventListener('shrink-global-nav', handleShrink);
+    document.addEventListener('expand-global-nav', handleExpand);
     
     return () => {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('toggle-nav', handleToggle);
       document.removeEventListener('hide-global-nav', handleHide);
       document.removeEventListener('show-global-nav', handleShow);
+      document.removeEventListener('shrink-global-nav', handleShrink);
+      document.removeEventListener('expand-global-nav', handleExpand);
     };
   }, []);
 
@@ -133,61 +140,77 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
 
   if (isDesktop) {
     return (
-      <div className="fixed inset-0 bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans overflow-hidden grid grid-cols-[240px_1fr]">
+      <div className={`fixed inset-0 bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans overflow-hidden grid transition-all duration-300 ${shrinkNav ? 'grid-cols-[64px_1fr]' : 'grid-cols-[240px_1fr]'}`}>
         {/* Sidebar Navigation */}
-        <aside className="h-full w-full bg-[var(--bg-primary)] flex flex-col py-12 px-6 gap-12 z-50 border-r border-white/10 overflow-y-auto scrollbar-hide">
+        <aside className={`h-full w-full bg-[var(--bg-primary)] flex flex-col py-12 gap-12 z-50 border-r border-white/10 overflow-y-auto scrollbar-hide transition-all duration-300 ${shrinkNav ? 'px-2 items-center' : 'px-6'}`}>
           <div className="flex items-center mb-8 shrink-0">
-            <span className="text-3xl font-serif italic text-[var(--gold)] tracking-[0.2em]">AURA</span>
+            {shrinkNav ? (
+              <span className="text-xl font-serif italic text-[var(--gold)] tracking-widest text-center">A</span>
+            ) : (
+              <span className="text-3xl font-serif italic text-[var(--gold)] tracking-[0.2em]">AURA</span>
+            )}
           </div>
 
-          <nav className="flex flex-col gap-8 flex-grow">
+          <nav className={`flex flex-col gap-8 flex-grow ${shrinkNav ? 'items-center w-full' : ''}`}>
             <button
               onClick={() => onTabChange('chat')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'chat' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              title="Chat"
             >
               <span className="material-symbols-outlined text-2xl">chat_bubble</span>
-              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>
+              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>}
             </button>
             <button
               onClick={() => onTabChange('stories')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'stories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'stories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              title="Stories"
             >
               <span className="material-symbols-outlined text-2xl">auto_stories</span>
-              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Stories</span>
+              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Stories</span>}
             </button>
 
             <button
               onClick={() => onTabChange('memories')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'memories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'memories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              title="Memories"
             >
               <span className="material-symbols-outlined text-2xl">photo_library</span>
-              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Memories</span>
+              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Memories</span>}
             </button>
             <button
               onClick={() => onTabChange('notes')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'notes' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'notes' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              title="Notes"
             >
               <span className="material-symbols-outlined text-2xl">sticky_note_2</span>
-              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>
+              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>}
             </button>
             <button
               onClick={() => onTabChange('settings')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 px-4 rounded-full group ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+              title="Settings"
             >
               <span className="material-symbols-outlined text-2xl">settings</span>
-              <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Settings</span>
+              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Settings</span>}
             </button>
           </nav>
 
-          <div className="mt-auto pt-6 flex flex-col gap-6 shrink-0 border-t border-white/5">
+          <div className={`mt-auto pt-6 flex flex-col gap-6 shrink-0 border-t border-white/5 ${shrinkNav ? 'items-center w-full' : ''}`}>
             {/* Streak Badge — reads from context */}
-            <SidebarStreakBadge />
+            {!shrinkNav && <SidebarStreakBadge />}
+            {shrinkNav && (
+               <div className="flex flex-col items-center justify-center gap-1" title={`${streakCount} Days`}>
+                  <span className="text-lg leading-none">🔥</span>
+                  <span className="font-sans text-[8px] font-bold text-[var(--gold)]">{streakCount}</span>
+               </div>
+            )}
             <button 
               onClick={signOut}
-              className="flex items-center gap-4 text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)] px-4 transition-colors w-full"
+              className={`flex items-center gap-4 text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)] transition-colors ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4 w-full'}`}
+              title="Sign Out"
             >
               <span className="material-symbols-outlined text-xl">logout</span>
-              <span className="font-sans text-[10px] font-bold tracking-widest uppercase">Sign Out</span>
+              {!shrinkNav && <span className="font-sans text-[10px] font-bold tracking-widest uppercase">Sign Out</span>}
             </button>
           </div>
         </aside>

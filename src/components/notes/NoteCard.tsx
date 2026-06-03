@@ -44,6 +44,8 @@ interface NoteCardProps {
   isSelected?: boolean;
   onSelect?: (id: string) => void;
   selectionMode?: boolean;
+  isSecretModeActive?: boolean;
+  onToggleSecret?: (id: string) => void;
 }
 
 function NoteCard({
@@ -57,6 +59,8 @@ function NoteCard({
   isSelected,
   onSelect,
   selectionMode,
+  isSecretModeActive = false,
+  onToggleSecret,
 }: NoteCardProps) {
   const [showActions, setShowActions] = useState(false);
   const [decryptedBg, setDecryptedBg] = useState<string | null>(null);
@@ -297,9 +301,9 @@ function NoteCard({
           )}
 
           {/* Labels */}
-          {note.labels.length > 0 && (
+          {note.labels.filter(l => l !== '__secret__').length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
-              {note.labels.slice(0, 3).map(label => (
+              {note.labels.filter(l => l !== '__secret__').slice(0, 3).map(label => (
                 <span
                   key={label}
                   className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-white/5 text-white/40 border border-white/5"
@@ -307,8 +311,8 @@ function NoteCard({
                   {label}
                 </span>
               ))}
-              {note.labels.length > 3 && (
-                <span className="text-[9px] text-white/25 self-center">+{note.labels.length - 3}</span>
+              {note.labels.filter(l => l !== '__secret__').length > 3 && (
+                <span className="text-[9px] text-white/25 self-center">+{note.labels.filter(l => l !== '__secret__').length - 3}</span>
               )}
             </div>
           )}
@@ -347,6 +351,21 @@ function NoteCard({
             push_pin
           </span>
         )}
+
+        {/* Lock indicator for secret notes */}
+        {note.labels.includes('__secret__') && (
+          <span
+            className="absolute top-2 right-2 material-symbols-outlined text-purple-400"
+            style={{ 
+              fontSize: '14px', 
+              fontVariationSettings: "'FILL' 1",
+              marginRight: note.isPinned ? '18px' : '0px'
+            }}
+            title="Secret Note"
+          >
+            lock
+          </span>
+        )}
       </div>
 
       {/* Hover actions (desktop) */}
@@ -383,6 +402,19 @@ function NoteCard({
             >
               <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: note.isPinned ? "'FILL' 1" : '' }}>push_pin</span>
             </button>
+            {isSecretModeActive && onToggleSecret && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleSecret(note.id); }}
+                className={`flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 transition-colors shrink-0 ${
+                  note.labels.includes('__secret__') ? 'text-purple-400 hover:text-purple-300' : 'text-white/40 hover:text-white/70'
+                }`}
+                title={note.labels.includes('__secret__') ? 'Make Normal' : 'Make Secret'}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1" }}>
+                  {note.labels.includes('__secret__') ? 'lock_open' : 'lock'}
+                </span>
+              </button>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onTrash(note.id); }}
               className="flex items-center justify-center w-8 h-8 rounded-full hover:bg-white/10 text-white/40 hover:text-red-400/70 transition-colors shrink-0"

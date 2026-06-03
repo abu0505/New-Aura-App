@@ -5,6 +5,9 @@ import { useFolders } from '../../hooks/useFolders';
 import NoteCard from './NoteCard';
 import NoteEditor from './NoteEditor';
 import FolderBrowser from './FolderBrowser';
+import FolderTree from './FolderTree';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
+import { hashPin } from '../../contexts/AppLockContext';
 
 export default function NotesScreen() {
   const {
@@ -30,6 +33,8 @@ export default function NotesScreen() {
   const viewMode = 'grid';
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [filter, setFilter] = useState<NoteFilter>('all');
+  const { settings } = useChatSettingsContext();
+  const [isSecretModeActive, setIsSecretModeActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -42,6 +47,37 @@ export default function NotesScreen() {
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const quickContentRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [sidebarWidth, setSidebarWidth] = useState(260);
+  const isDraggingSidebar = useRef(false);
+
+  useEffect(() => {
+    if (isDesktop && editingNote) {
+      document.dispatchEvent(new CustomEvent('shrink-global-nav'));
+    } else {
+      document.dispatchEvent(new CustomEvent('expand-global-nav'));
+    }
+    return () => {
+      document.dispatchEvent(new CustomEvent('expand-global-nav'));
+    };
+  }, [isDesktop, editingNote]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingSidebar.current) return;
+      const newWidth = Math.max(200, Math.min(e.clientX - 64, 600)); // 64px is shrunk nav width
+      setSidebarWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      isDraggingSidebar.current = false;
+      document.body.style.cursor = 'default';
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   // ── Folders ──
   const {
@@ -59,11 +95,29 @@ export default function NotesScreen() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Check search query for PIN to unlock Secret Mode
+  useEffect(() => {
+    const checkSecretPin = async () => {
+      if (!searchQuery.trim() || !settings?.shared_pin) return;
+      const hashed = await hashPin(searchQuery.trim());
+      if (hashed === settings.shared_pin) {
+        setIsSecretModeActive(true);
+        setSearchQuery(''); // Clear query to hide the PIN!
+      }
+    };
+    checkSecretPin();
+  }, [searchQuery, settings?.shared_pin]);
+
 
 
   // Filter + search notes
   const filteredNotes = useMemo(() => {
     let filtered = notes;
+
+    // Apply secret filter
+    if (!isSecretModeActive) {
+      filtered = filtered.filter(n => !n.labels.includes('__secret__'));
+    }
 
     // Apply filter
     if (filter === 'all') {
@@ -92,7 +146,40 @@ export default function NotesScreen() {
     }
 
     return filtered;
-  }, [notes, filter, searchQuery, currentFolderId]);
+  }, [notes, filter, searchQuery, currentFolderId, isSecretModeActive]);
+
+  // Desktop tree view notes (should NOT filter by currentFolderId)
+  const treeNotes = useMemo(() => {
+    let filtered = notes;
+
+    // Apply secret filter
+    if (!isSecretModeActive) {
+      filtered = filtered.filter(n => !n.labels.includes('__secret__'));
+    }
+
+    // Apply filter
+    if (filter === 'all') {
+      filtered = filtered.filter(n => !n.isTrashed);
+    } else if (filter === 'trash') {
+      filtered = filtered.filter(n => n.isTrashed);
+    } else {
+      // Label filter
+      filtered = filtered.filter(n => !n.isTrashed && n.labels.includes(filter));
+    }
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q) ||
+        n.checklist.some(i => i.text.toLowerCase().includes(q)) ||
+        n.labels.some(l => l.toLowerCase().includes(q))
+      );
+    }
+
+    return filtered;
+  }, [notes, filter, searchQuery, isSecretModeActive]);
 
   // Split pinned and unpinned
   const pinnedNotes = useMemo(() => filteredNotes.filter(n => n.isPinned), [filteredNotes]);
@@ -100,9 +187,12 @@ export default function NotesScreen() {
 
   // Handle note creation (in current folder)
   const handleCreateNote = useCallback(() => {
-    const note = createNote({ folderId: currentFolderId });
+    const note = createNote({ 
+      folderId: currentFolderId,
+      labels: isSecretModeActive ? ['__secret__'] : []
+    });
     setEditingNote(note);
-  }, [createNote, currentFolderId]);
+  }, [createNote, currentFolderId, isSecretModeActive]);
 
   const handleQuickAdd = () => {
     if (!quickTitle.trim() && !quickContent.trim()) {
@@ -113,6 +203,7 @@ export default function NotesScreen() {
       title: quickTitle.trim(),
       content: quickContent.trim(),
       folderId: currentFolderId,
+      labels: isSecretModeActive ? ['__secret__'] : []
     });
     setQuickTitle('');
     setQuickContent('');
@@ -121,9 +212,43 @@ export default function NotesScreen() {
   };
 
   const handleCreateChecklist = () => {
-    const note = createNote({ isChecklist: true, checklist: [{ id: crypto.randomUUID(), text: '', checked: false }], folderId: currentFolderId });
+    const note = createNote({ 
+      isChecklist: true, 
+      checklist: [{ id: crypto.randomUUID(), text: '', checked: false }], 
+      folderId: currentFolderId,
+      labels: isSecretModeActive ? ['__secret__'] : []
+    });
     setEditingNote(note);
   };
+
+  const handleToggleSecret = useCallback((noteId: string) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    const isSecret = note.labels.includes('__secret__');
+    const newLabels = isSecret
+      ? note.labels.filter(l => l !== '__secret__')
+      : [...note.labels, '__secret__'];
+    updateNote(noteId, { labels: newLabels });
+  }, [notes, updateNote]);
+
+  const handleToggleFolderSecret = useCallback((folderId: string, makeSecret: boolean) => {
+    const getFolderIdsRecursive = (fId: string): string[] => {
+      const children = folders.filter(f => f.parentId === fId);
+      return [fId, ...children.flatMap(c => getFolderIdsRecursive(c.id))];
+    };
+
+    const targetFolderIds = getFolderIdsRecursive(folderId);
+    const notesToUpdate = notes.filter(n => n.folderId && targetFolderIds.includes(n.folderId) && !n.isTrashed);
+
+    notesToUpdate.forEach(note => {
+      const isSecret = note.labels.includes('__secret__');
+      if (makeSecret && !isSecret) {
+        updateNote(note.id, { labels: [...note.labels, '__secret__'] });
+      } else if (!makeSecret && isSecret) {
+        updateNote(note.id, { labels: note.labels.filter(l => l !== '__secret__') });
+      }
+    });
+  }, [notes, folders, updateNote]);
 
   // Selection
   const handleSelect = useCallback((id: string) => {
@@ -174,8 +299,212 @@ export default function NotesScreen() {
       className="w-full h-full bg-[var(--bg-primary)] flex flex-col font-sans overflow-hidden relative"
       onClick={() => document.dispatchEvent(new CustomEvent('hide-global-nav'))}
     >
+      {/* Secret Vault Top Banner */}
+      {isSecretModeActive && (
+        <div className="px-4 pb-2 pt-6 bg-purple-950/80 border-b border-purple-500/20 flex items-center justify-between shrink-0 backdrop-blur-md z-30 safe-top safe-pt">
+          <div className="flex items-center gap-2 text-purple-300">
+            <span className="material-symbols-outlined animate-pulse text-purple-400 font-variation-settings-fill" style={{ fontSize: '16px' }}>lock</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-300">Secret Vault Active</span>
+          </div>
+          <button
+            onClick={() => setIsSecretModeActive(false)}
+            className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[9px] font-bold uppercase tracking-wider transition-all"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>logout</span>
+            Exit Vault
+          </button>
+        </div>
+      )}
+
+      {/* If Desktop & Editing, show split pane with folder tree. Otherwise, normal view. */}
+      {isDesktop && currentEditingNote ? (
+        <div className="flex w-full h-full overflow-hidden relative bg-[var(--bg-primary)]">
+          {/* Resizable Sidebar */}
+          <div 
+            style={{ width: sidebarWidth }} 
+            className="h-full flex flex-col border-r border-white/5 bg-zinc-950/40 shrink-0 relative"
+          >
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0">
+               {isSecretModeActive ? (
+                 <div className="flex items-center gap-1.5 text-[var(--gold)]">
+                   <span className="material-symbols-outlined animate-pulse text-[var(--gold)] font-variation-settings-fill" style={{ fontSize: '18px' }}>lock</span>
+                   <h2 className="font-serif italic text-lg text-[var(--gold)]">Vault</h2>
+                 </div>
+               ) : (
+                 <h2 className="font-serif italic text-lg text-[var(--gold)]">Explorer</h2>
+               )}
+               
+               <div className="flex items-center gap-1">
+                 {isSecretModeActive && (
+                   <button
+                     onClick={() => setIsSecretModeActive(false)}
+                     className="px-2 py-1 bg-[var(--gold)] text-black rounded-lg text-[9px] font-bold uppercase tracking-wider hover:brightness-110 transition-all shrink-0"
+                     title="Exit Vault"
+                   >
+                     Exit
+                   </button>
+                 )}
+                 <button onClick={() => setEditingNote(null)} className="p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white transition-colors">
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+                 </button>
+               </div>
+            </div>
+
+            {/* Sidebar Search */}
+            <div className="p-3 border-b border-white/5 shrink-0">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-white/40">
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>search</span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search notes..."
+                  className="flex-1 bg-transparent text-xs text-white/80 placeholder:text-white/20 focus:outline-none"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="p-0.5 rounded text-white/30 hover:text-white/60">
+                    <span className="material-symbols-outlined block" style={{ fontSize: '14px' }}>close</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Links & Filters */}
+            <div className="p-2 border-b border-white/5 shrink-0 flex flex-col gap-0.5">
+               <button
+                 onClick={() => { setFilter('all'); setCurrentFolderId(null); }}
+                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs font-medium transition-colors ${filter === 'all' ? 'bg-white/10 text-[var(--gold)] font-semibold' : 'hover:bg-white/5 text-white/60'}`}
+               >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>notes</span>
+                  <span>All Notes</span>
+               </button>
+               <button
+                 onClick={() => { setFilter('trash'); setCurrentFolderId(null); }}
+                 className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs font-medium transition-colors ${filter === 'trash' ? 'bg-white/10 text-red-400 font-semibold' : 'hover:bg-white/5 text-white/60'}`}
+               >
+                  <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>delete</span>
+                  <span>Trash</span>
+                  {notes.filter(n => n.isTrashed).length > 0 && (
+                    <span className="ml-auto px-1.5 py-0.5 text-[9px] font-bold rounded-full bg-red-500/20 text-red-400">
+                      {notes.filter(n => n.isTrashed).length}
+                    </span>
+                  )}
+               </button>
+               
+               {/* Labels Section */}
+               {labels.filter(l => l !== '__secret__').length > 0 && (
+                 <div className="mt-1.5">
+                   <div className="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider text-white/30">Labels</div>
+                   <div className="flex flex-wrap gap-1 px-1 py-0.5">
+                     {labels.filter(l => l !== '__secret__').map(l => (
+                       <button
+                         key={l}
+                         onClick={() => setFilter(filter === l ? 'all' : l)}
+                         className={`px-2 py-0.5 rounded text-[10px] border transition-all ${filter === l ? 'bg-[var(--gold)]/20 text-[var(--gold)] border-[var(--gold)]/30' : 'border-white/10 text-white/50 hover:border-white/25 hover:text-white'}`}
+                       >
+                         {l}
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+               )}
+            </div>
+            
+            {/* Sidebar Content (Folders Tree / Trash List) */}
+            <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
+               {filter === 'trash' ? (
+                 /* Trash flat list in sidebar */
+                 <div className="flex flex-col gap-0.5">
+                   <div className="flex items-center justify-between px-2 mb-2 shrink-0">
+                     <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-red-400/60">
+                       Trash Bin
+                     </span>
+                     {notes.filter(n => n.isTrashed).length > 0 && (
+                       <button
+                         onClick={emptyTrash}
+                         className="text-[9px] font-bold uppercase text-red-400 hover:text-red-300 hover:bg-red-500/10 px-2 py-1 rounded"
+                       >
+                         Empty Trash
+                       </button>
+                     )}
+                   </div>
+                   {notes.filter(n => n.isTrashed).map(n => {
+                     const isSelected = currentEditingNote?.id === n.id;
+                     return (
+                       <button
+                         key={n.id}
+                         onClick={() => handleOpenNote(n)}
+                         className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left transition-colors ${isSelected ? 'bg-red-500/15 text-red-400 border border-red-500/20' : 'hover:bg-white/5 text-white/60'}`}
+                       >
+                         <span className="material-symbols-outlined shrink-0" style={{ fontSize: '16px' }}>{n.isChecklist ? 'checklist' : 'sticky_note_2'}</span>
+                         <span className="text-xs font-medium truncate flex-1">{n.title || 'Untitled'}</span>
+                       </button>
+                     );
+                   })}
+                   {notes.filter(n => n.isTrashed).length === 0 && (
+                     <div className="px-2 py-6 text-xs text-white/20 text-center italic">Trash is empty</div>
+                   )}
+                 </div>
+               ) : (
+                 /* Hierarchical FolderTree */
+                 <FolderTree
+                   folders={folders}
+                   notes={treeNotes}
+                   currentEditingNoteId={currentEditingNote?.id ?? null}
+                   onSelectNote={handleOpenNote}
+                   onCreateFolder={createFolder}
+                   onCreateNote={(folderId) => {
+                     const note = createNote({ 
+                       folderId,
+                       labels: isSecretModeActive ? ['__secret__'] : []
+                     });
+                     setEditingNote(note);
+                   }}
+                   onUpdateFolder={updateFolder}
+                   onDeleteFolder={deleteFolder}
+                   onTrashNote={trashNote}
+                   isFiltering={searchQuery.trim().length > 0 || (filter !== 'all' && filter !== 'trash')}
+                   isSecretModeActive={isSecretModeActive}
+                   onToggleFolderSecret={handleToggleFolderSecret}
+                 />
+               )}
+            </div>
+
+            {/* Resize Handle */}
+            <div 
+              className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-[var(--gold)]/50 transition-colors z-10"
+              onMouseDown={() => {
+                isDraggingSidebar.current = true;
+                document.body.style.cursor = 'col-resize';
+              }}
+            />
+          </div>
+
+          {/* Right side NoteEditor */}
+          <div className="flex-1 min-w-0 relative h-full bg-black/10">
+            <NoteEditor
+              key={currentEditingNote.id}
+              note={currentEditingNote}
+              onUpdate={updateNote}
+              onClose={() => setEditingNote(null)}
+              onTrash={trashNote}
+              onDuplicate={duplicateNote}
+              onTogglePin={togglePin}
+              onAddChecklistItem={addChecklistItem}
+              onUpdateChecklistItem={updateChecklistItem}
+              onRemoveChecklistItem={removeChecklistItem}
+              labels={labels}
+              onToggleLabel={toggleNoteLabel}
+              onAddLabel={addLabel}
+              onDeleteLabel={removeLabel}
+              isInline={true}
+            />
+          </div>
+        </div>
+      ) : (
+      <>
       {/* ═══ HEADER ═══ */}
-      <header className="px-4 pt-6 pb-4 flex flex-col gap-3 border-b border-white/5 bg-black/20 shrink-0 safe-top safe-pt">
+      <header className={`px-4 pt-6 pb-4 flex flex-col gap-3 border-b border-white/5 bg-black/20 shrink-0 ${!isSecretModeActive ? 'safe-top safe-pt' : ''}`}>
         {selectionMode ? (
           /* Selection header */
           <div className="flex items-center justify-between">
@@ -316,7 +645,7 @@ export default function NotesScreen() {
                 </button>
               ))}
               {/* Label filters */}
-              {labels.map(label => (
+              {labels.filter(l => l !== '__secret__').map(label => (
                 <button
                   key={label}
                   onClick={() => setFilter(filter === label ? 'all' : label)}
@@ -417,6 +746,8 @@ export default function NotesScreen() {
                 getFolderPath={getFolderPath}
                 showNewFolder={showNewFolder}
                 setShowNewFolder={setShowNewFolder}
+                isSecretModeActive={isSecretModeActive}
+                onToggleFolderSecret={handleToggleFolderSecret}
               />
             )
             }
@@ -481,6 +812,8 @@ export default function NotesScreen() {
                               isSelected={selectedIds.has(note.id)}
                               onSelect={handleSelect}
                               selectionMode={selectionMode}
+                              isSecretModeActive={isSecretModeActive}
+                              onToggleSecret={handleToggleSecret}
                             />
                           </div>
                         ))}
@@ -499,6 +832,8 @@ export default function NotesScreen() {
                               isSelected={selectedIds.has(note.id)}
                               onSelect={handleSelect}
                               selectionMode={selectionMode}
+                              isSecretModeActive={isSecretModeActive}
+                              onToggleSecret={handleToggleSecret}
                             />
                           ))}
                         </AnimatePresence>
@@ -533,6 +868,8 @@ export default function NotesScreen() {
                               isSelected={selectedIds.has(note.id)}
                               onSelect={handleSelect}
                               selectionMode={selectionMode}
+                              isSecretModeActive={isSecretModeActive}
+                              onToggleSecret={handleToggleSecret}
                             />
                           </div>
                         ))}
@@ -553,6 +890,8 @@ export default function NotesScreen() {
                               isSelected={selectedIds.has(note.id)}
                               onSelect={handleSelect}
                               selectionMode={selectionMode}
+                              isSecretModeActive={isSecretModeActive}
+                              onToggleSecret={handleToggleSecret}
                             />
                           ))}
                         </AnimatePresence>
@@ -619,7 +958,7 @@ export default function NotesScreen() {
 
       {/* ═══ NOTE EDITOR MODAL ═══ */}
       <AnimatePresence>
-        {currentEditingNote && (
+        {currentEditingNote && !isDesktop && (
           <NoteEditor
             key={currentEditingNote.id}
             note={currentEditingNote}
@@ -638,6 +977,8 @@ export default function NotesScreen() {
           />
         )}
       </AnimatePresence>
+      </>
+      )}
     </div>
   );
 }
