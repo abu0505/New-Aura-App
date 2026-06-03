@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -66,6 +67,9 @@ const TOOLS: { id: DrawTool; icon: string; label: string }[] = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
+  const { settings } = useChatSettingsContext();
+  const appAccentColor = settings?.accent_color || '#e6c487';
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,7 +85,7 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
   const [showSizePicker, setShowSizePicker] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [textPos, setTextPos] = useState<{ x: number; y: number } | null>(null);
-  const [laserPoints, setLaserPoints] = useState<{ x: number; y: number; time: number }[]>([]);
+  const laserPointsRef = useRef<{ x: number; y: number; time: number }[]>([]);
 
   const currentStrokeRef = useRef<DrawStroke | null>(null);
   const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -224,51 +228,76 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
 
   // ── Laser pointer animation ───────────────────────────────────────
   useEffect(() => {
-    if (tool !== 'laser' || laserPoints.length === 0) return;
+    if (tool !== 'laser') return;
 
     const overlayCanvas = overlayCanvasRef.current;
     if (!overlayCanvas) return;
     const ctx = overlayCanvas.getContext('2d');
     if (!ctx) return;
-    const { w, h } = getCanvasSize();
+
+    // App accent gold — glow colour; white — core line
+    const GLOW_COLOR = color === '#ffffff' ? appAccentColor : color;
+    const CORE_COLOR = '#FFFFFF';
+    const LIFESPAN   = 1000;
 
     let animFrame: number;
     const animate = () => {
       const now = Date.now();
-      const active = laserPoints.filter(p => now - p.time < 1200);
+      laserPointsRef.current = laserPointsRef.current.filter(p => now - p.time < LIFESPAN);
+      const points = laserPointsRef.current;
 
+      const { w, h } = getCanvasSize();
       ctx.clearRect(0, 0, w, h);
 
-      if (active.length > 1) {
-        for (let i = 1; i < active.length; i++) {
-          const age = (now - active[i].time) / 1200;
-          const alpha = Math.max(0, 1 - age);
-          ctx.strokeStyle = `rgba(255, 50, 50, ${alpha})`;
-          ctx.lineWidth = 3 * (1 - age * 0.5);
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          ctx.shadowColor = 'rgba(255, 50, 50, 0.8)';
-          ctx.shadowBlur = 8;
+      if (points.length >= 2) {
+        // Fade is driven by the NEWEST point so the trail stays fully bright
+        // while the pointer is moving and fades 1 s after it stops.
+        const newestAge = now - points[points.length - 1].time;
+        const alpha = Math.max(0, 1 - newestAge / LIFESPAN);
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.lineCap  = 'round';
+        ctx.lineJoin = 'round';
+
+        // Helper: build the entire trail as ONE continuous path.
+        // Stroking once means shadowBlur is applied once to the whole
+        // shape — not per-segment — so the glow never multiplies at joints.
+        const buildFullPath = () => {
           ctx.beginPath();
-          ctx.moveTo(active[i - 1].x, active[i - 1].y);
-          ctx.lineTo(active[i].x, active[i].y);
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-        }
+          ctx.moveTo(points[0].x, points[0].y);
+          for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+          }
+        };
+
+        // Pass 1 — wide gold glow (shadow applied once to the full path)
+        buildFullPath();
+        ctx.strokeStyle = GLOW_COLOR;
+        ctx.lineWidth   = size * 3;
+        ctx.shadowColor = GLOW_COLOR;
+        ctx.shadowBlur  = 18;
+        ctx.stroke();
+
+        // Pass 2 — tight bright core (no shadow so it stays sharp white)
+        buildFullPath();
+        ctx.strokeStyle = CORE_COLOR;
+        ctx.lineWidth   = size * 0.9;
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur  = 0;
+        ctx.stroke();
+
+        ctx.restore();
       }
 
-      if (active.length > 0) {
-        setLaserPoints(active);
-        animFrame = requestAnimationFrame(animate);
-      } else {
-        ctx.clearRect(0, 0, w, h);
-        setLaserPoints([]);
-      }
+
+
+      animFrame = requestAnimationFrame(animate);
     };
 
     animFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrame);
-  }, [tool, laserPoints, getCanvasSize]);
+  }, [tool, size, color, appAccentColor, getCanvasSize]);
 
   // ── Pointer event handlers ─────────────────────────────────────────
   const getPos = (e: React.PointerEvent | React.TouchEvent): { x: number; y: number } => {
@@ -291,7 +320,8 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
     const pos = getPos(e);
 
     if (tool === 'laser') {
-      setLaserPoints([{ ...pos, time: Date.now() }]);
+      laserPointsRef.current = [{ ...pos, time: Date.now() }];
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       return;
     }
 
@@ -333,7 +363,7 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
     const pos = getPos(e);
 
     if (tool === 'laser') {
-      setLaserPoints(prev => [...prev, { ...pos, time: Date.now() }]);
+      laserPointsRef.current.push({ ...pos, time: Date.now() });
       return;
     }
 

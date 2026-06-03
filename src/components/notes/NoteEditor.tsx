@@ -8,6 +8,7 @@ import nacl from 'tweetnacl';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { supabase } from '../../lib/supabase';
+import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INLINE DRAWING TYPES & CONSTANTS
@@ -37,7 +38,6 @@ const INLINE_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
   { id: 'highlighter', icon: 'ink_highlighter', label: 'Highlighter' },
   { id: 'eraser', icon: 'ink_eraser', label: 'Eraser' },
   { id: 'text', icon: 'text_fields', label: 'Text' },
-  { id: 'laser', icon: 'flare', label: 'Laser' },
 ];
 
 const SHAPE_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
@@ -96,19 +96,6 @@ const getPlainText = (html: string) => {
     .join('\n');
 };
 
-// Helper to convert hex color to rgba string
-const hexToRgbStr = (hex: string, alpha: number) => {
-  const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-  const fullHex = hex.replace(shorthandRegex, (_, r, g, b) => r + r + g + g + b + b);
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
-  if (result) {
-    const r = parseInt(result[1], 16);
-    const g = parseInt(result[2], 16);
-    const b = parseInt(result[3], 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  }
-  return `rgba(255, 64, 64, ${alpha})`;
-};
 
 const ACCENT_COLORS = [
   { id: 'gold', hex: '#e6c487', label: 'Aura Gold' },
@@ -374,6 +361,9 @@ export default function NoteEditor({
   onDeleteLabel,
   isInline,
 }: NoteEditorProps) {
+  const { settings } = useChatSettingsContext();
+  const appAccentColor = settings?.accent_color || '#e6c487';
+
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [bottomPanel, setBottomPanel] = useState<BottomPanel>('none');
@@ -1046,10 +1036,15 @@ export default function NoteEditor({
     if (!drawMode) return;
     let animationFrameId: number;
 
+    // App accent gold — glow colour; white — core line
+    const GLOW_COLOR = drawColor === '#ffffff' ? appAccentColor : drawColor;
+    const CORE_COLOR = '#FFFFFF';
+    const LIFESPAN   = 1000;
+
     const animateLaser = () => {
       const now = Date.now();
-      // Keep points from last 300ms
-      laserPointsRef.current = laserPointsRef.current.filter(p => now - p.time < 300);
+      laserPointsRef.current = laserPointsRef.current.filter(p => now - p.time < LIFESPAN);
+      const points = laserPointsRef.current;
 
       const overlayCanvas = drawOverlayCanvasRef.current;
       if (overlayCanvas) {
@@ -1063,23 +1058,49 @@ export default function NoteEditor({
             drawInlineStroke(ctx, currentDrawStrokeRef.current);
           }
 
-          // Render laser points
-          if (laserPointsRef.current.length > 0) {
-            ctx.lineCap = 'round';
+          // Render laser trail
+          if (points.length >= 2) {
+            // Fade driven by the NEWEST point: full brightness while drawing,
+            // fades 1 s after the pointer stops moving.
+            const newestAge = now - points[points.length - 1].time;
+            const alpha = Math.max(0, 1 - newestAge / LIFESPAN);
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.lineCap  = 'round';
             ctx.lineJoin = 'round';
-            for (let i = 0; i < laserPointsRef.current.length - 1; i++) {
-              const p1 = laserPointsRef.current[i];
-              const p2 = laserPointsRef.current[i + 1];
-              const age = now - p1.time;
-              const opacity = Math.max(0, 1 - age / 300);
+
+            // Build the ENTIRE trail as one continuous path.
+            // shadowBlur is applied once to the whole shape,
+            // never accumulating at segment joints.
+            const buildFullPath = () => {
               ctx.beginPath();
-              ctx.moveTo(p1.x, p1.y);
-              ctx.lineTo(p2.x, p2.y);
-              ctx.strokeStyle = hexToRgbStr(drawColor, opacity);
-              ctx.lineWidth = drawSize * 1.5;
-              ctx.stroke();
-            }
+              ctx.moveTo(points[0].x, points[0].y);
+              for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+              }
+            };
+
+            // Pass 1 — wide gold glow
+            buildFullPath();
+            ctx.strokeStyle = GLOW_COLOR;
+            ctx.lineWidth   = drawSize * 3;
+            ctx.shadowColor = GLOW_COLOR;
+            ctx.shadowBlur  = 18;
+            ctx.stroke();
+
+            // Pass 2 — sharp white core (shadow disabled so it stays clean)
+            buildFullPath();
+            ctx.strokeStyle = CORE_COLOR;
+            ctx.lineWidth   = drawSize * 0.9;
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur  = 0;
+            ctx.stroke();
+
+            ctx.restore();
           }
+
+
         }
       }
 
@@ -1091,7 +1112,8 @@ export default function NoteEditor({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [drawMode, drawSize, isDrawing, drawTool, drawInlineStroke, drawColor]);
+  }, [drawMode, drawSize, isDrawing, drawTool, drawInlineStroke, drawColor, appAccentColor]);
+
 
   // Pointer handlers for inline drawing
   const getDrawPos = (e: React.PointerEvent): { x: number; y: number } => {
@@ -1112,7 +1134,11 @@ export default function NoteEditor({
       return;
     }
 
-    if (drawTool === 'laser') return;
+    if (drawTool === 'laser') {
+      laserPointsRef.current = [{ ...pos, time: Date.now() }];
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      return;
+    }
 
     // Save state for undo
     setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
@@ -1247,7 +1273,8 @@ export default function NoteEditor({
     setDrawStrokes([]);
   };
 
-  const toggleDrawMode = () => {
+  const toggleDrawMode = (isLaser: boolean | React.MouseEvent = false) => {
+    const actualIsLaser = typeof isLaser === 'boolean' ? isLaser : false;
     if (drawMode) {
       // Exiting draw mode — save drawing data
       const container = drawContainerRef.current;
@@ -1260,6 +1287,10 @@ export default function NoteEditor({
       onUpdate(note.id, { drawingData });
       drawWidthRef.current = 0; // Reset width ref when exiting
     } else {
+      // If active tool was laser and we are entering normal draw mode, set it to pen
+      if (!actualIsLaser && drawTool === 'laser') {
+        setDrawTool('pen');
+      }
       // Entering draw mode — scale existing strokes to current container size
       const container = drawContainerRef.current;
       if (container) {
@@ -1290,6 +1321,19 @@ export default function NoteEditor({
     setDrawMode(!drawMode);
     setShowDrawColors(false);
     setShowDrawSizes(false);
+  };
+
+  const toggleLaserMode = () => {
+    if (drawMode) {
+      if (drawTool === 'laser') {
+        toggleDrawMode(true);
+      } else {
+        setDrawTool('laser');
+      }
+    } else {
+      setDrawTool('laser');
+      toggleDrawMode(true);
+    }
   };
 
   // Keyboard shortcuts for draw mode
@@ -2938,11 +2982,19 @@ export default function NoteEditor({
               </button>
               <button
                 onClick={toggleDrawMode}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${drawMode ? 'text-[var(--gold)] bg-white/10' : 'text-white/40 hover:text-[var(--gold)]'
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${drawMode && drawTool !== 'laser' ? 'text-[var(--gold)] bg-white/10' : 'text-white/40 hover:text-[var(--gold)]'
                   }`}
-                title={drawMode ? 'Exit Draw Mode' : 'Draw on Note'}
+                title={drawMode && drawTool !== 'laser' ? 'Exit Draw Mode' : 'Draw on Note'}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>draw</span>
+              </button>
+              <button
+                onClick={toggleLaserMode}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${drawMode && drawTool === 'laser' ? 'text-[var(--gold)] bg-white/10' : 'text-white/40 hover:text-[var(--gold)]'
+                  }`}
+                title={drawMode && drawTool === 'laser' ? 'Exit Laser Mode' : 'Laser Pointer'}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>flare</span>
               </button>
             </div>
 
