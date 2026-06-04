@@ -35,6 +35,18 @@ export default function NotesScreen() {
   const [filter, setFilter] = useState<NoteFilter>('all');
   const { settings } = useChatSettingsContext();
   const [isSecretModeActive, setIsSecretModeActive] = useState(false);
+  const [isStealthActive, setIsStealthActive] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
+  });
+
+  useEffect(() => {
+    const handleStealthChange = () => {
+      setIsStealthActive(localStorage.getItem('aura_stealth_mode') === 'true');
+    };
+    window.addEventListener('stealth-mode-change', handleStealthChange);
+    return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -94,6 +106,17 @@ export default function NotesScreen() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Check search query for stealth mode toggle code "jinga"
+  useEffect(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (query === 'jinga') {
+      const isCurrentlyStealth = localStorage.getItem('aura_stealth_mode') === 'true';
+      localStorage.setItem('aura_stealth_mode', String(!isCurrentlyStealth));
+      window.dispatchEvent(new Event('stealth-mode-change'));
+      setSearchQuery(''); // Clear query so the code disappears
+    }
+  }, [searchQuery]);
 
   // Check search query for PIN to unlock Secret Mode
   useEffect(() => {
@@ -537,15 +560,17 @@ export default function NotesScreen() {
                     transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                     className="flex items-center gap-2 overflow-hidden shrink-0"
                   >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        document.dispatchEvent(new CustomEvent('toggle-nav'));
-                      }}
-                      className="p-2 -ml-2 rounded-full lg:hidden text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center shrink-0"
-                    >
-                      <span className="material-symbols-outlined text-xl">arrow_back</span>
-                    </button>
+                    {!isStealthActive && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          document.dispatchEvent(new CustomEvent('toggle-nav'));
+                        }}
+                        className="p-2 -ml-2 rounded-full lg:hidden text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center shrink-0"
+                      >
+                        <span className="material-symbols-outlined text-xl">arrow_back</span>
+                      </button>
+                    )}
                     <div className="shrink-0">
                       <h1 className="font-serif italic text-2xl text-[var(--gold)] whitespace-nowrap">Notes</h1>
                      <p className="font-label text-[9px] uppercase tracking-[0.2em] text-[#998f81] whitespace-nowrap">

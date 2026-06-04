@@ -30,8 +30,21 @@ export function AppLockProvider({ children }: { children: ReactNode }) {
   const [isUnlockedLocally, setIsUnlockedLocally] = useState<boolean>(false);
 
   // If a shared pin is present but we haven't unlocked it locally, it's locked.
+  // Exception: If Stealth Mode is active, bypass the lock to look like a simple notes app.
   const hasAppPin = !!settings?.shared_pin;
-  const isLocked = hasAppPin && !isUnlockedLocally;
+  const [isStealth, setIsStealth] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
+  });
+
+  useEffect(() => {
+    const handleStealthChange = () => {
+      setIsStealth(localStorage.getItem('aura_stealth_mode') === 'true');
+    };
+    window.addEventListener('stealth-mode-change', handleStealthChange);
+    return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
+  }, []);
+
+  const isLocked = hasAppPin && !isUnlockedLocally && !isStealth;
 
   // Distinguish between 'no settings' (new user) and 'settings failed to load' (error)
   const isLoading = settingsLoading || (settingsError && !settings);

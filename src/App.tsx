@@ -37,7 +37,22 @@ function InnerApp({
   partner,
 }: any) {
   const { streakCount, showCelebration, setShowCelebration } = useStreak();
-  const [activeTab, setActiveTab] = useState<Tab>('chat');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
+    return isStealth ? 'notes' : 'chat';
+  });
+
+  // Listen for stealth mode changes to sync state
+  useEffect(() => {
+    const handleStealthChange = () => {
+      const isStealth = localStorage.getItem('aura_stealth_mode') === 'true';
+      if (isStealth) {
+        setActiveTab('notes');
+      }
+    };
+    window.addEventListener('stealth-mode-change', handleStealthChange);
+    return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
+  }, []);
   
   // ═══════════════════════════════════════════════════════════════════
   // ONLINE STATUS — WhatsApp Architecture
@@ -173,7 +188,8 @@ function InnerApp({
   useEffect(() => {
     const handleSwitchTab = (e: any) => {
       if (e.detail && typeof e.detail === 'string') {
-        if (isLocked) {
+        const isStealth = localStorage.getItem('aura_stealth_mode') === 'true';
+        if (isLocked || isStealth) {
            // Prevent switching 
            return;
         }
@@ -185,7 +201,8 @@ function InnerApp({
   }, [isLocked]);
 
   const handleTabChangeWrapper = (tab: Tab) => {
-    if (isLocked) {
+    const isStealth = localStorage.getItem('aura_stealth_mode') === 'true';
+    if (isLocked || isStealth) {
       return; 
     }
     setActiveTab(tab);
@@ -203,21 +220,27 @@ function InnerApp({
   // (showing partner name/avatar) and auto-focusing its input before the lock screen appears.
   // IMPORTANT: This must be AFTER all hooks to avoid violating Rules of Hooks.
   if (isLoading) {
+    const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center z-[100]">
         <div className="text-center">
           <h1
-            className="font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse"
-            style={{
+            className={isStealth 
+              ? "font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse text-[var(--gold)]" 
+              : "font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse"
+            }
+            style={isStealth ? undefined : {
               background: 'linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
-            AURA
+            {isStealth ? 'NOTES' : 'AURA'}
           </h1>
-          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40 animate-pulse">Securing app...</p>
+          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40 animate-pulse">
+            {isStealth ? 'Loading notes...' : 'Securing app...'}
+          </p>
         </div>
       </div>
     );
@@ -341,21 +364,27 @@ export default function App() {
 
   // Loading state
   if (loading) {
+    const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
     return (
       <div className="fixed inset-0 bg-background flex items-center justify-center">
         <div className="text-center">
           <h1
-            className="font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse"
-            style={{
+            className={isStealth 
+              ? "font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse text-[var(--gold)]" 
+              : "font-serif italic text-4xl font-semibold tracking-[0.2em] mb-2 animate-pulse"
+            }
+            style={isStealth ? undefined : {
               background: 'linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
           >
-            AURA
+            {isStealth ? 'NOTES' : 'AURA'}
           </h1>
-          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40">Welcome to Aura</p>
+          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/40 animate-pulse">
+            {isStealth ? 'Loading notes...' : 'Welcome to Aura'}
+          </p>
         </div>
       </div>
     );

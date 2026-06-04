@@ -17,6 +17,17 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
   const [forceNav, setForceNav] = useState(false);
   const [hideNav, setHideNav] = useState(false);
   const [shrinkNav, setShrinkNav] = useState(false);
+  const [isStealthActive, setIsStealthActive] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
+  });
+
+  useEffect(() => {
+    const handleStealthChange = () => {
+      setIsStealthActive(localStorage.getItem('aura_stealth_mode') === 'true');
+    };
+    window.addEventListener('stealth-mode-change', handleStealthChange);
+    return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
@@ -140,80 +151,82 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
 
   if (isDesktop) {
     return (
-      <div className={`fixed inset-0 bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans overflow-hidden grid transition-all duration-300 ${shrinkNav ? 'grid-cols-[64px_1fr]' : 'grid-cols-[240px_1fr]'}`}>
+      <div className={`fixed inset-0 bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans overflow-hidden grid transition-all duration-300 ${isStealthActive ? 'grid-cols-1' : shrinkNav ? 'grid-cols-[64px_1fr]' : 'grid-cols-[240px_1fr]'}`}>
         {/* Sidebar Navigation */}
-        <aside className={`h-full w-full bg-[var(--bg-primary)] flex flex-col py-12 gap-12 z-50 border-r border-white/10 overflow-y-auto scrollbar-hide transition-all duration-300 ${shrinkNav ? 'px-2 items-center' : 'px-6'}`}>
-          <div className="flex items-center mb-8 shrink-0">
-            {shrinkNav ? (
-              <span className="text-xl font-serif italic text-[var(--gold)] tracking-widest text-center">A</span>
-            ) : (
-              <span className="text-3xl font-serif italic text-[var(--gold)] tracking-[0.2em]">AURA</span>
-            )}
-          </div>
+        {!isStealthActive && (
+          <aside className={`h-full w-full bg-[var(--bg-primary)] flex flex-col py-12 gap-12 z-50 border-r border-white/10 overflow-y-auto scrollbar-hide transition-all duration-300 ${shrinkNav ? 'px-2 items-center' : 'px-6'}`}>
+            <div className="flex items-center mb-8 shrink-0">
+              {shrinkNav ? (
+                <span className="text-xl font-serif italic text-[var(--gold)] tracking-widest text-center">A</span>
+              ) : (
+                <span className="text-3xl font-serif italic text-[var(--gold)] tracking-[0.2em]">AURA</span>
+              )}
+            </div>
 
-          <nav className={`flex flex-col gap-8 flex-grow ${shrinkNav ? 'items-center w-full' : ''}`}>
-            <button
-              onClick={() => onTabChange('chat')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-              title="Chat"
-            >
-              <span className="material-symbols-outlined text-2xl">chat_bubble</span>
-              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>}
-            </button>
-            <button
-              onClick={() => onTabChange('stories')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'stories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-              title="Stories"
-            >
-              <span className="material-symbols-outlined text-2xl">auto_stories</span>
-              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Stories</span>}
-            </button>
+            <nav className={`flex flex-col gap-8 flex-grow ${shrinkNav ? 'items-center w-full' : ''}`}>
+              <button
+                onClick={() => onTabChange('chat')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Chat"
+              >
+                <span className="material-symbols-outlined text-2xl">chat_bubble</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>}
+              </button>
+              <button
+                onClick={() => onTabChange('stories')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'stories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Stories"
+              >
+                <span className="material-symbols-outlined text-2xl">auto_stories</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Stories</span>}
+              </button>
 
-            <button
-              onClick={() => onTabChange('memories')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'memories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-              title="Memories"
-            >
-              <span className="material-symbols-outlined text-2xl">photo_library</span>
-              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Memories</span>}
-            </button>
-            <button
-              onClick={() => onTabChange('notes')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'notes' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-              title="Notes"
-            >
-              <span className="material-symbols-outlined text-2xl">sticky_note_2</span>
-              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>}
-            </button>
-            <button
-              onClick={() => onTabChange('settings')}
-              className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-              title="Settings"
-            >
-              <span className="material-symbols-outlined text-2xl">settings</span>
-              {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Settings</span>}
-            </button>
-          </nav>
+              <button
+                onClick={() => onTabChange('memories')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'memories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Memories"
+              >
+                <span className="material-symbols-outlined text-2xl">photo_library</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Memories</span>}
+              </button>
+              <button
+                onClick={() => onTabChange('notes')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'notes' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Notes"
+              >
+                <span className="material-symbols-outlined text-2xl">sticky_note_2</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>}
+              </button>
+              <button
+                onClick={() => onTabChange('settings')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Settings"
+              >
+                <span className="material-symbols-outlined text-2xl">settings</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Settings</span>}
+              </button>
+            </nav>
 
-          <div className={`mt-auto pt-6 flex flex-col gap-6 shrink-0 border-t border-white/5 ${shrinkNav ? 'items-center w-full' : ''}`}>
-            {/* Streak Badge — reads from context */}
-            {!shrinkNav && <SidebarStreakBadge />}
-            {shrinkNav && (
-               <div className="flex flex-col items-center justify-center gap-1" title={`${streakCount} Days`}>
-                  <span className="text-lg leading-none">🔥</span>
-                  <span className="font-sans text-[8px] font-bold text-[var(--gold)]">{streakCount}</span>
-               </div>
-            )}
-            <button 
-              onClick={signOut}
-              className={`flex items-center gap-4 text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)] transition-colors ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4 w-full'}`}
-              title="Sign Out"
-            >
-              <span className="material-symbols-outlined text-xl">logout</span>
-              {!shrinkNav && <span className="font-sans text-[10px] font-bold tracking-widest uppercase">Sign Out</span>}
-            </button>
-          </div>
-        </aside>
+            <div className={`mt-auto pt-6 flex flex-col gap-6 shrink-0 border-t border-white/5 ${shrinkNav ? 'items-center w-full' : ''}`}>
+              {/* Streak Badge — reads from context */}
+              {!shrinkNav && <SidebarStreakBadge />}
+              {shrinkNav && (
+                 <div className="flex flex-col items-center justify-center gap-1" title={`${streakCount} Days`}>
+                    <span className="text-lg leading-none">🔥</span>
+                    <span className="font-sans text-[8px] font-bold text-[var(--gold)]">{streakCount}</span>
+                 </div>
+              )}
+              <button 
+                onClick={signOut}
+                className={`flex items-center gap-4 text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)] transition-colors ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4 w-full'}`}
+                title="Sign Out"
+              >
+                <span className="material-symbols-outlined text-xl">logout</span>
+                {!shrinkNav && <span className="font-sans text-[10px] font-bold tracking-widest uppercase">Sign Out</span>}
+              </button>
+            </div>
+          </aside>
+        )}
 
         {/* Main Content Area */}
         <main className="relative h-full w-full overflow-hidden">
@@ -232,52 +245,54 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
       </main>
 
       {/* Bottom Navigation Bar */}
-      <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${((activeTab === 'chat' || activeTab === 'memories' || activeTab === 'notes') && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
-        {/* Chat */}
-        <button
-          onClick={() => changeTab('chat')}
-          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'chat' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-        >
-          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'chat' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'chat' ? "'FILL' 1" : "" }}>chat_bubble</span>
-          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Chat</span>
-        </button>
+      {!isStealthActive && (
+        <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${((activeTab === 'chat' || activeTab === 'memories' || activeTab === 'notes') && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
+          {/* Chat */}
+          <button
+            onClick={() => changeTab('chat')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'chat' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'chat' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'chat' ? "'FILL' 1" : "" }}>chat_bubble</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Chat</span>
+          </button>
 
-        {/* Stories */}
-        <button
-          onClick={() => changeTab('stories')}
-          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'stories' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-        >
-          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'stories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'stories' ? "'FILL' 1" : "" }}>auto_stories</span>
-          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Stories</span>
-        </button>
+          {/* Stories */}
+          <button
+            onClick={() => changeTab('stories')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'stories' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'stories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'stories' ? "'FILL' 1" : "" }}>auto_stories</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Stories</span>
+          </button>
 
-        {/* Memories */}
-        <button
-          onClick={() => changeTab('memories')}
-          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'memories' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-        >
-          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'memories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'memories' ? "'FILL' 1" : "" }}>photo_library</span>
-          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Memories</span>
-        </button>
+          {/* Memories */}
+          <button
+            onClick={() => changeTab('memories')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'memories' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'memories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'memories' ? "'FILL' 1" : "" }}>photo_library</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Memories</span>
+          </button>
 
-        {/* Notes */}
-        <button
-          onClick={() => changeTab('notes')}
-          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'notes' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-        >
-          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'notes' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'notes' ? "'FILL' 1" : "" }}>sticky_note_2</span>
-          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Notes</span>
-        </button>
+          {/* Notes */}
+          <button
+            onClick={() => changeTab('notes')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'notes' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'notes' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'notes' ? "'FILL' 1" : "" }}>sticky_note_2</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Notes</span>
+          </button>
 
-        {/* Settings */}
-        <button
-          onClick={() => changeTab('settings')}
-          className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'settings' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-        >
-          <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'settings' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'settings' ? "'FILL' 1" : "" }}>settings</span>
-          <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Settings</span>
-        </button>
-      </nav>
+          {/* Settings */}
+          <button
+            onClick={() => changeTab('settings')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'settings' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'settings' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'settings' ? "'FILL' 1" : "" }}>settings</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Settings</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
