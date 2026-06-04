@@ -64,6 +64,17 @@ function NoteCard({
 }: NoteCardProps) {
   const [showActions, setShowActions] = useState(false);
   const [decryptedBg, setDecryptedBg] = useState<string | null>(null);
+  const [isStealthActive, setIsStealthActive] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
+  });
+
+  useEffect(() => {
+    const handleStealthChange = () => {
+      setIsStealthActive(localStorage.getItem('aura_stealth_mode') === 'true');
+    };
+    window.addEventListener('stealth-mode-change', handleStealthChange);
+    return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
+  }, []);
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
 
@@ -188,9 +199,11 @@ function NoteCard({
       style={{
         background: note.customColor || colorStyle.bg,
         border: `1px solid ${note.customColor ? `${note.customColor}44` : colorStyle.border}`,
-        backgroundImage: decryptedBg
-          ? `linear-gradient(rgba(12, 12, 20, 0.5), rgba(12, 12, 20, 0.65)), url(${decryptedBg})`
-          : (bgPattern.pattern || undefined),
+        backgroundImage: isStealthActive
+          ? undefined
+          : decryptedBg
+            ? `linear-gradient(rgba(12, 12, 20, 0.5), rgba(12, 12, 20, 0.65)), url(${decryptedBg})`
+            : (bgPattern.pattern || undefined),
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
@@ -206,7 +219,7 @@ function NoteCard({
       }}
     >
       {/* Mood gradient overlay */}
-      {moodStyle && !decryptedBg && note.background === 'none' && (
+      {moodStyle && !decryptedBg && note.background === 'none' && !isStealthActive && (
         <div
           className="absolute inset-0 pointer-events-none rounded-2xl"
           style={{ backgroundImage: moodStyle.gradient }}

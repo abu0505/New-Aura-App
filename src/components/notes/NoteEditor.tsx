@@ -14,7 +14,7 @@ import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 // INLINE DRAWING TYPES & CONSTANTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-type InlineDrawTool = 'pen' | 'highlighter' | 'eraser' | 'arrow' | 'double-arrow' | 'line' | 'rect' | 'circle' | 'text' | 'laser';
+type InlineDrawTool = 'pen' | 'highlighter' | 'eraser' | 'arrow' | 'double-arrow' | 'line' | 'rect' | 'circle' | 'text' | 'laser' | 'hand';
 
 interface InlineDrawStroke {
   id: string;
@@ -34,10 +34,11 @@ interface InlineDrawStroke {
 }
 
 const INLINE_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
-  { id: 'pen', icon: 'edit', label: 'Pen' },
-  { id: 'highlighter', icon: 'ink_highlighter', label: 'Highlighter' },
-  { id: 'eraser', icon: 'ink_eraser', label: 'Eraser' },
-  { id: 'text', icon: 'text_fields', label: 'Text' },
+  { id: 'pen',         icon: 'edit',            label: 'Pen'   },
+  { id: 'highlighter', icon: 'ink_highlighter', label: 'HL'    },
+  { id: 'eraser',      icon: 'ink_eraser',      label: 'Erase' },
+  { id: 'text',        icon: 'text_fields',     label: 'Text'  },
+  { id: 'hand',        icon: 'back_hand',       label: 'Pan'   },
 ];
 
 const SHAPE_TOOLS: { id: InlineDrawTool; icon: string; label: string }[] = [
@@ -365,6 +366,18 @@ export default function NoteEditor({
   const appAccentColor = settings?.accent_color || '#e6c487';
 
   const [title, setTitle] = useState(note.title);
+  const [isStealthActive, setIsStealthActive] = useState(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
+  });
+
+  useEffect(() => {
+    const handleStealthChange = () => {
+      setIsStealthActive(localStorage.getItem('aura_stealth_mode') === 'true');
+    };
+    window.addEventListener('stealth-mode-change', handleStealthChange);
+    return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
+  }, []);
+
   const [content, setContent] = useState(note.content);
   const [bottomPanel, setBottomPanel] = useState<BottomPanel>('none');
   const [newLabelText, setNewLabelText] = useState('');
@@ -406,6 +419,65 @@ export default function NoteEditor({
   const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
   const drawStrokesRef = useRef(drawStrokes);
   useEffect(() => { drawStrokesRef.current = drawStrokes; }, [drawStrokes]);
+
+  // ── Inline Drawing Camera (infinite canvas) ──────────────────────────────
+  const inlineCamRef       = useRef({ x: 0, y: 0, scale: 1 });
+  const [inlineCamera, setInlineCamera] = useState({ x: 0, y: 0, scale: 1 });
+  const inlineIsPanningRef = useRef(false);
+  const inlinePanStartRef  = useRef({ clientX: 0, clientY: 0, camX: 0, camY: 0 });
+  const inlineLastTouchRef = useRef<{ cx: number; cy: number; dist: number } | null>(null);
+  const drawToolRef        = useRef<InlineDrawTool>('pen');
+  useEffect(() => { drawToolRef.current = drawTool; }, [drawTool]);
+  const drawColorRef = useRef(drawColor);
+  useEffect(() => { drawColorRef.current = drawColor; }, [drawColor]);
+  const drawSizeRef = useRef(drawSize);
+  useEffect(() => { drawSizeRef.current = drawSize; }, [drawSize]);
+  const isInlineDrawingRef = useRef(false);
+
+  const applyInlineCamera = useCallback((cam: { x: number; y: number; scale: number }) => {
+    inlineCamRef.current = cam;
+    setInlineCamera({ ...cam });
+  }, []);
+
+  const inlineScreenToWorld = useCallback((sx: number, sy: number) => {
+    const { x, y, scale } = inlineCamRef.current;
+    return { x: (sx - x) / scale, y: (sy - y) / scale };
+  }, []);
+
+  const inlineZoomAtPoint = useCallback((newScale: number, sx: number, sy: number) => {
+    const clamped = Math.min(20, Math.max(0.05, newScale));
+    const { x, y, scale } = inlineCamRef.current;
+    const wx = (sx - x) / scale;
+    const wy = (sy - y) / scale;
+    applyInlineCamera({ x: sx - wx * clamped, y: sy - wy * clamped, scale: clamped });
+  }, [applyInlineCamera]);
+
+  const inlineFitToContent = useCallback(() => {
+    if (drawStrokesRef.current.length === 0) { applyInlineCamera({ x: 0, y: 0, scale: 1 }); return; }
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    drawStrokesRef.current.forEach(s => {
+      s.points.forEach(p => { minX = Math.min(minX, p.x); minY = Math.min(minY, p.y); maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y); });
+      if (s.startX !== undefined) {
+        minX = Math.min(minX, s.startX, s.endX ?? s.startX);
+        minY = Math.min(minY, s.startY ?? 0, s.endY ?? s.startY ?? 0);
+        maxX = Math.max(maxX, s.startX, s.endX ?? s.startX);
+        maxY = Math.max(maxY, s.startY ?? 0, s.endY ?? s.startY ?? 0);
+      }
+    });
+    if (!isFinite(minX)) { applyInlineCamera({ x: 0, y: 0, scale: 1 }); return; }
+    const container = drawContainerRef.current;
+    if (!container) return;
+    const { width: w, height: h } = container.getBoundingClientRect();
+    const pad = 40;
+    const cW = maxX - minX || 1;
+    const cH = maxY - minY || 1;
+    const newScale = Math.min(2, (w - pad * 2) / cW, (h - pad * 2) / cH);
+    applyInlineCamera({
+      x: w / 2 - ((minX + maxX) / 2) * newScale,
+      y: h / 2 - ((minY + maxY) / 2) * newScale,
+      scale: newScale,
+    });
+  }, [applyInlineCamera]);
 
   const savedCanvasSize = useRef<{ width: number; height: number } | null>(null);
   useEffect(() => {
@@ -857,41 +929,20 @@ export default function NoteEditor({
   // INLINE DRAWING: Canvas setup, pointer handlers, rendering
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // Setup / resize the inline drawing canvas
+  // Setup / resize the inline drawing canvas (world-coord strokes never need pixel-scaling)
   const resizeDrawCanvas = useCallback(() => {
     const container = drawContainerRef.current;
     if (!container) return;
 
     const rect = container.getBoundingClientRect();
-    const currentWidth = rect.width;
     const dpr = window.devicePixelRatio || 1;
-
-    // Scale strokes if width changed while in draw mode
-    if (drawWidthRef.current > 0 && drawWidthRef.current !== currentWidth) {
-      const scale = currentWidth / drawWidthRef.current;
-      setDrawStrokes(prev => prev.map(stroke => {
-        const scaledPoints = stroke.points.map(p => ({ x: p.x * scale, y: p.y * scale }));
-        const updated: InlineDrawStroke = {
-          ...stroke,
-          points: scaledPoints,
-          size: stroke.size * scale,
-        };
-        if (stroke.startX !== undefined) updated.startX = stroke.startX * scale;
-        if (stroke.startY !== undefined) updated.startY = stroke.startY * scale;
-        if (stroke.endX !== undefined) updated.endX = stroke.endX * scale;
-        if (stroke.endY !== undefined) updated.endY = stroke.endY * scale;
-        if (stroke.fontSize !== undefined) updated.fontSize = stroke.fontSize * scale;
-        return updated;
-      }));
-    }
-    drawWidthRef.current = currentWidth;
 
     [drawCanvasRef, drawOverlayCanvasRef].forEach(ref => {
       const canvas = ref.current;
       if (!canvas) return;
-      canvas.width = rect.width * dpr;
+      canvas.width  = rect.width  * dpr;
       canvas.height = rect.height * dpr;
-      canvas.style.width = `${rect.width}px`;
+      canvas.style.width  = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       const ctx = canvas.getContext('2d');
       if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -995,7 +1046,32 @@ export default function NoteEditor({
     ctx.restore();
   }, []);
 
-  // Redraw all strokes
+  // ── Inline dot grid (Excalidraw style) ────────────────────────────────
+  const drawInlineDotGrid = useCallback((ctx: CanvasRenderingContext2D, w: number, h: number) => {
+    const cam = inlineCamRef.current;
+    const gs = 40;
+    const worldLeft   = -cam.x / cam.scale;
+    const worldTop    = -cam.y / cam.scale;
+    const worldRight  = (w - cam.x) / cam.scale;
+    const worldBottom = (h - cam.y) / cam.scale;
+    const startX = Math.floor(worldLeft  / gs) * gs;
+    const startY = Math.floor(worldTop   / gs) * gs;
+    const dotR  = Math.max(0.6, Math.min(2, cam.scale));
+    const alpha = Math.min(0.25, Math.max(0.04, cam.scale * 0.12));
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    for (let wx = startX; wx <= worldRight  + gs; wx += gs) {
+      for (let wy = startY; wy <= worldBottom + gs; wy += gs) {
+        const sx = wx * cam.scale + cam.x;
+        const sy = wy * cam.scale + cam.y;
+        if (sx < -4 || sx > w + 4 || sy < -4 || sy > h + 4) continue;
+        ctx.beginPath();
+        ctx.arc(sx, sy, dotR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }, []);
+
+  // Redraw all strokes (with infinite-canvas camera transform)
   const redrawInlineCanvas = useCallback(() => {
     const canvas = drawCanvasRef.current;
     const container = drawContainerRef.current;
@@ -1006,10 +1082,19 @@ export default function NoteEditor({
     const rect = container.getBoundingClientRect();
     ctx.clearRect(0, 0, rect.width, rect.height);
 
+    // Draw dot grid (screen space, camera-aware)
+    drawInlineDotGrid(ctx, rect.width, rect.height);
+
+    // Apply camera transform; draw all strokes in world space
+    const cam = inlineCamRef.current;
+    ctx.save();
+    ctx.translate(cam.x, cam.y);
+    ctx.scale(cam.scale, cam.scale);
     drawStrokesRef.current.forEach(stroke => {
       drawInlineStroke(ctx, stroke);
     });
-  }, [drawInlineStroke]);
+    ctx.restore();
+  }, [drawInlineStroke, drawInlineDotGrid]);
 
   // Resize & redraw when entering draw mode or strokes change
   // Resize canvas when entering draw mode or on window resize ONLY — do NOT depend on
@@ -1024,19 +1109,18 @@ export default function NoteEditor({
     }
   }, [drawMode, resizeDrawCanvas, redrawInlineCanvas]);
 
-  // Redraw (without resize) whenever strokes state changes — e.g. after pointer-up commits a stroke
+  // Redraw (without resize) whenever strokes or camera change
   useEffect(() => {
     if (drawMode) {
       redrawInlineCanvas();
     }
-  }, [drawStrokes, drawMode, redrawInlineCanvas]);
+  }, [drawStrokes, inlineCamera, drawMode, redrawInlineCanvas]);
 
-  // Laser animation loop
+  // Laser animation loop (camera-aware)
   useEffect(() => {
     if (!drawMode) return;
     let animationFrameId: number;
 
-    // App accent gold — glow colour; white — core line
     const GLOW_COLOR = drawColor === '#ffffff' ? appAccentColor : drawColor;
     const CORE_COLOR = '#FFFFFF';
     const LIFESPAN   = 1000;
@@ -1053,15 +1137,19 @@ export default function NoteEditor({
           const rect = overlayCanvas.getBoundingClientRect();
           ctx.clearRect(0, 0, rect.width, rect.height);
 
-          // Render current shape preview if it's active
+          const cam = inlineCamRef.current;
+
+          // Render current shape preview with camera transform
           if (isDrawing && currentDrawStrokeRef.current && ['arrow', 'double-arrow', 'line', 'rect', 'circle'].includes(drawTool)) {
+            ctx.save();
+            ctx.translate(cam.x, cam.y);
+            ctx.scale(cam.scale, cam.scale);
             drawInlineStroke(ctx, currentDrawStrokeRef.current);
+            ctx.restore();
           }
 
-          // Render laser trail
+          // Render laser trail with camera transform (laser points are world coords)
           if (points.length >= 2) {
-            // Fade driven by the NEWEST point: full brightness while drawing,
-            // fades 1 s after the pointer stops moving.
             const newestAge = now - points[points.length - 1].time;
             const alpha = Math.max(0, 1 - newestAge / LIFESPAN);
 
@@ -1069,19 +1157,15 @@ export default function NoteEditor({
             ctx.globalAlpha = alpha;
             ctx.lineCap  = 'round';
             ctx.lineJoin = 'round';
+            ctx.translate(cam.x, cam.y);
+            ctx.scale(cam.scale, cam.scale);
 
-            // Build the ENTIRE trail as one continuous path.
-            // shadowBlur is applied once to the whole shape,
-            // never accumulating at segment joints.
             const buildFullPath = () => {
               ctx.beginPath();
               ctx.moveTo(points[0].x, points[0].y);
-              for (let i = 1; i < points.length; i++) {
-                ctx.lineTo(points[i].x, points[i].y);
-              }
+              for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
             };
 
-            // Pass 1 — wide gold glow
             buildFullPath();
             ctx.strokeStyle = GLOW_COLOR;
             ctx.lineWidth   = drawSize * 3;
@@ -1089,7 +1173,6 @@ export default function NoteEditor({
             ctx.shadowBlur  = 18;
             ctx.stroke();
 
-            // Pass 2 — sharp white core (shadow disabled so it stays clean)
             buildFullPath();
             ctx.strokeStyle = CORE_COLOR;
             ctx.lineWidth   = drawSize * 0.9;
@@ -1099,8 +1182,6 @@ export default function NoteEditor({
 
             ctx.restore();
           }
-
-
         }
       }
 
@@ -1108,31 +1189,42 @@ export default function NoteEditor({
     };
 
     animateLaser();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
+    return () => cancelAnimationFrame(animationFrameId);
   }, [drawMode, drawSize, isDrawing, drawTool, drawInlineStroke, drawColor, appAccentColor]);
 
 
-  // Pointer handlers for inline drawing
-  const getDrawPos = (e: React.PointerEvent): { x: number; y: number } => {
+  // Pointer helpers: screen pos (for UI) and world pos (for strokes)
+  const getDrawScreenPos = (e: React.PointerEvent): { x: number; y: number } => {
     const canvas = drawCanvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   };
 
+  const getDrawPos = (e: React.PointerEvent): { x: number; y: number } => {
+    const sp = getDrawScreenPos(e);
+    return inlineScreenToWorld(sp.x, sp.y); // returns WORLD coords
+  };
+
   const handleDrawPointerDown = (e: React.PointerEvent) => {
     if (!drawMode) return;
-    setIsDrawing(true);
-    const pos = getDrawPos(e);
 
-    if (drawTool === 'text') {
-      setTextPos(pos);
-      setIsDrawing(false);
+    // Middle-mouse or hand tool → pan
+    if (e.button === 1 || drawToolRef.current === 'hand') {
+      inlineIsPanningRef.current = true;
+      inlinePanStartRef.current = { clientX: e.clientX, clientY: e.clientY, camX: inlineCamRef.current.x, camY: inlineCamRef.current.y };
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
       return;
     }
+
+    if (drawTool === 'text') {
+      setTextPos(getDrawScreenPos(e)); // screen coords for UI overlay
+      return;
+    }
+
+    isInlineDrawingRef.current = true;
+    setIsDrawing(true);
+    const pos = getDrawPos(e); // WORLD coords
 
     if (drawTool === 'laser') {
       laserPointsRef.current = [{ ...pos, time: Date.now() }];
@@ -1140,7 +1232,6 @@ export default function NoteEditor({
       return;
     }
 
-    // Save state for undo
     setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
     setDrawRedoStack([]);
 
@@ -1150,8 +1241,8 @@ export default function NoteEditor({
         id: crypto.randomUUID(),
         tool: drawTool,
         points: [],
-        color: drawColor,
-        size: drawSize,
+        color: drawColorRef.current,
+        size: drawSizeRef.current,
         opacity: 1,
         startX: pos.x,
         startY: pos.y,
@@ -1163,8 +1254,8 @@ export default function NoteEditor({
         id: crypto.randomUUID(),
         tool: drawTool,
         points: [pos],
-        color: drawColor,
-        size: drawSize,
+        color: drawColorRef.current,
+        size: drawSizeRef.current,
         opacity: drawTool === 'highlighter' ? 0.35 : 1,
       };
     }
@@ -1173,8 +1264,16 @@ export default function NoteEditor({
   };
 
   const handleDrawPointerMove = (e: React.PointerEvent) => {
+    // Handle panning (even when not drawing)
+    if (inlineIsPanningRef.current) {
+      const dx = e.clientX - inlinePanStartRef.current.clientX;
+      const dy = e.clientY - inlinePanStartRef.current.clientY;
+      applyInlineCamera({ x: inlinePanStartRef.current.camX + dx, y: inlinePanStartRef.current.camY + dy, scale: inlineCamRef.current.scale });
+      return;
+    }
+
     if (!isDrawing) return;
-    const pos = getDrawPos(e);
+    const pos = getDrawPos(e); // WORLD coords
 
     if (drawTool === 'laser') {
       laserPointsRef.current.push({ ...pos, time: Date.now() });
@@ -1189,26 +1288,32 @@ export default function NoteEditor({
     } else {
       currentDrawStrokeRef.current.points.push(pos);
 
-      // Draw everything: saved strokes + current stroke on main canvas
       const canvas = drawCanvasRef.current;
       if (canvas) {
         const ctx = canvas.getContext('2d');
         if (ctx) {
           redrawInlineCanvas();
+          // Draw current stroke in world space with camera transform
+          const cam = inlineCamRef.current;
+          ctx.save();
+          ctx.translate(cam.x, cam.y);
+          ctx.scale(cam.scale, cam.scale);
           drawInlineStroke(ctx, currentDrawStrokeRef.current);
+          ctx.restore();
         }
       }
     }
   };
 
   const handleDrawPointerUp = () => {
+    inlineIsPanningRef.current = false;
     if (!isDrawing) return;
     setIsDrawing(false);
+    isInlineDrawingRef.current = false;
 
     if (drawTool === 'laser') return;
 
     if (currentDrawStrokeRef.current) {
-      // Allow saving shape if moved, or single-point dot for pen
       const stroke = currentDrawStrokeRef.current;
       currentDrawStrokeRef.current = null;
       setDrawStrokes(prev => [...prev, stroke]);
@@ -1226,8 +1331,78 @@ export default function NoteEditor({
     }
   };
 
+  // Scroll-wheel zoom + two-finger pan/pinch on inline canvas
+  useEffect(() => {
+    const canvas = drawCanvasRef.current;
+    if (!canvas || !drawMode) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      if (e.ctrlKey || e.metaKey) {
+        const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+        inlineZoomAtPoint(inlineCamRef.current.scale * factor, mx, my);
+      } else {
+        const { x, y, scale } = inlineCamRef.current;
+        applyInlineCamera({ x: x - e.deltaX, y: y - e.deltaY, scale });
+      }
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const t1 = e.touches[0], t2 = e.touches[1];
+        inlineLastTouchRef.current = {
+          cx: (t1.clientX + t2.clientX) / 2,
+          cy: (t1.clientY + t2.clientY) / 2,
+          dist: Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY),
+        };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && inlineLastTouchRef.current) {
+        e.preventDefault();
+        const t1 = e.touches[0], t2 = e.touches[1];
+        const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+        const cx = (t1.clientX + t2.clientX) / 2;
+        const cy = (t1.clientY + t2.clientY) / 2;
+        const rect = canvas.getBoundingClientRect();
+        const scx = cx - rect.left;
+        const scy = cy - rect.top;
+        const dx = cx - inlineLastTouchRef.current.cx;
+        const dy = cy - inlineLastTouchRef.current.cy;
+        const scaleFactor = dist / inlineLastTouchRef.current.dist;
+        const newScale = Math.min(20, Math.max(0.05, inlineCamRef.current.scale * scaleFactor));
+        const cam = inlineCamRef.current;
+        const wx = (scx - cam.x) / cam.scale;
+        const wy = (scy - cam.y) / cam.scale;
+        applyInlineCamera({ x: scx - wx * newScale + dx, y: scy - wy * newScale + dy, scale: newScale });
+        inlineLastTouchRef.current = { cx, cy, dist };
+      }
+    };
+
+    const onTouchEnd = () => { inlineLastTouchRef.current = null; };
+
+    canvas.addEventListener('wheel', onWheel, { passive: false });
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    canvas.addEventListener('touchend',   onTouchEnd);
+    return () => {
+      canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('touchstart', onTouchStart);
+      canvas.removeEventListener('touchmove',  onTouchMove);
+      canvas.removeEventListener('touchend',   onTouchEnd);
+    };
+  }, [drawMode, applyInlineCamera, inlineZoomAtPoint]);
+
   const handleTextSubmit = () => {
     if (!textInput.trim() || !textPos) return;
+
+    // textPos is in screen coords; convert to world coords for stroke storage
+    const worldPos = inlineScreenToWorld(textPos.x, textPos.y);
 
     setDrawUndoStack(prev => [...prev, [...drawStrokesRef.current]]);
     setDrawRedoStack([]);
@@ -1239,8 +1414,8 @@ export default function NoteEditor({
       color: drawColor,
       size: drawSize,
       opacity: 1,
-      startX: textPos.x,
-      startY: textPos.y,
+      startX: worldPos.x,
+      startY: worldPos.y,
       text: textInput,
       fontSize: drawSize * 5,
     };
@@ -1839,7 +2014,7 @@ export default function NoteEditor({
       {!isInline && <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />}
 
       {/* Selection Tooltip */}
-      {selectionDetails.show && (
+      {selectionDetails.show && !isStealthActive && (
         <div
           className="fixed z-[300] -translate-x-1/2 flex items-center bg-zinc-950/95 backdrop-blur-md border border-white/10 rounded-full px-3.5 py-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)] pointer-events-auto"
           style={{
@@ -1871,9 +2046,11 @@ export default function NoteEditor({
         style={{
           background: note.customColor || colorStyle.bg,
           border: `1px solid ${note.customColor ? `${note.customColor}44` : colorStyle.border}`,
-          backgroundImage: decryptedBg
-            ? `linear-gradient(rgba(12, 12, 20, 0.5), rgba(12, 12, 20, 0.65)), url(${decryptedBg})`
-            : (bgPattern.pattern || undefined),
+          backgroundImage: isStealthActive
+            ? undefined
+            : decryptedBg
+              ? `linear-gradient(rgba(12, 12, 20, 0.5), rgba(12, 12, 20, 0.65)), url(${decryptedBg})`
+              : (bgPattern.pattern || undefined),
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backdropFilter: 'blur(40px)',
@@ -1881,7 +2058,7 @@ export default function NoteEditor({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mood gradient overlay */}
-        {moodStyle && !decryptedBg && note.background === 'none' && (
+        {moodStyle && !decryptedBg && note.background === 'none' && !isStealthActive && (
           <div className="absolute inset-0 pointer-events-none rounded-3xl" style={{ backgroundImage: moodStyle.gradient }} />
         )}
 
@@ -2341,7 +2518,7 @@ export default function NoteEditor({
         )}
 
         {/* Scrollable content */}
-        <div className="relative z-[1] flex-1 overflow-y-auto px-4 mb-4 scrollbar-hide">
+        <div className="relative z-[1] flex-1 overflow-y-auto px-4 mb-4 scrollbar-hide flex flex-col">
 
           {/* Content or Checklist */}
           {note.isChecklist ? (
@@ -2467,11 +2644,15 @@ export default function NoteEditor({
               {/* Content editable + inline drawing overlay */}
               <div
                 ref={drawContainerRef}
-                className="relative"
+                className="relative flex-1 flex flex-col"
                 style={{
-                  minHeight: savedCanvasSize.current && containerWidth > 0
-                    ? `${savedCanvasSize.current.height * (containerWidth / savedCanvasSize.current.width)}px`
-                    : 'auto'
+                  minHeight: drawMode
+                    ? (savedCanvasSize.current && containerWidth > 0
+                      ? `${Math.max(500, savedCanvasSize.current.height * (containerWidth / savedCanvasSize.current.width))}px`
+                      : '100%')
+                    : (savedCanvasSize.current && containerWidth > 0
+                      ? `${savedCanvasSize.current.height * (containerWidth / savedCanvasSize.current.width)}px`
+                      : 'auto')
                 }}
               >
                 {/* Content editable editor div */}
@@ -2495,7 +2676,10 @@ export default function NoteEditor({
                     <canvas
                       ref={drawCanvasRef}
                       className="absolute inset-0 z-[5]"
-                      style={{ touchAction: 'none', cursor: drawTool === 'eraser' ? 'crosshair' : drawTool === 'text' ? 'text' : 'default' }}
+                      style={{
+                        touchAction: 'none',
+                        cursor: drawTool === 'hand' ? 'grab' : drawTool === 'eraser' ? 'cell' : drawTool === 'text' ? 'text' : 'crosshair',
+                      }}
                       onPointerDown={handleDrawPointerDown}
                       onPointerMove={handleDrawPointerMove}
                       onPointerUp={handleDrawPointerUp}
@@ -2544,6 +2728,53 @@ export default function NoteEditor({
                         </motion.div>
                       )}
                     </AnimatePresence>
+
+                    {/* Zoom controls (bottom-right corner of canvas) */}
+                    <div className="absolute bottom-3 right-3 z-[10] flex items-center gap-0.5 bg-black/50 backdrop-blur-md border border-white/10 rounded-xl px-1 py-1 shadow-xl">
+                      <button
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); const c = drawContainerRef.current; if (!c) return; const { width: w, height: h } = c.getBoundingClientRect(); inlineZoomAtPoint(inlineCamRef.current.scale / 1.25, w / 2, h / 2); }}
+                        className="w-6 h-6 rounded-lg hover:bg-white/10 text-white/40 hover:text-white/70 transition-all flex items-center justify-center"
+                        title="Zoom Out"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>remove</span>
+                      </button>
+                      <button
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); applyInlineCamera({ x: 0, y: 0, scale: 1 }); }}
+                        className="min-w-[38px] text-[9px] font-bold tabular-nums text-white/40 hover:text-white/70 transition-colors text-center px-1 rounded-lg hover:bg-white/10"
+                        title="Reset (100%)"
+                      >
+                        {Math.round(inlineCamera.scale * 100)}%
+                      </button>
+                      <button
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); const c = drawContainerRef.current; if (!c) return; const { width: w, height: h } = c.getBoundingClientRect(); inlineZoomAtPoint(inlineCamRef.current.scale * 1.25, w / 2, h / 2); }}
+                        className="w-6 h-6 rounded-lg hover:bg-white/10 text-white/40 hover:text-white/70 transition-all flex items-center justify-center"
+                        title="Zoom In"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '15px' }}>add</span>
+                      </button>
+                      <div className="w-px h-3 bg-white/15 mx-0.5" />
+                      <button
+                        onPointerDown={e => e.stopPropagation()}
+                        onClick={e => { e.stopPropagation(); inlineFitToContent(); }}
+                        className="w-6 h-6 rounded-lg hover:bg-white/10 text-white/40 hover:text-white/70 transition-all flex items-center justify-center"
+                        title="Fit to Content"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: '13px' }}>fit_screen</span>
+                      </button>
+                    </div>
+
+                    {/* Pan mode badge */}
+                    {drawTool === 'hand' && (
+                      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[10] pointer-events-none">
+                        <div className="flex items-center gap-1 bg-[var(--gold)]/15 border border-[var(--gold)]/25 text-[var(--gold)] text-[9px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full backdrop-blur-sm">
+                          <span className="material-symbols-outlined" style={{ fontSize: '12px' }}>back_hand</span>
+                          Pan
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -2672,7 +2903,7 @@ export default function NoteEditor({
                   )}
 
                   {/* Backgrounds panel */}
-                  {bottomPanel === 'backgrounds' && (
+                  {bottomPanel === 'backgrounds' && !isStealthActive && (
                     <div>
                       <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mb-3">Background</p>
 
@@ -2948,14 +3179,16 @@ export default function NoteEditor({
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>palette</span>
               </button>
-              <button
-                onClick={() => togglePanel('backgrounds')}
-                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'backgrounds' ? 'text-[var(--gold)]' : 'text-white/40'
-                  }`}
-                title="Backgrounds"
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>image</span>
-              </button>
+              {!isStealthActive && (
+                <button
+                  onClick={() => togglePanel('backgrounds')}
+                  className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'backgrounds' ? 'text-[var(--gold)]' : 'text-white/40'
+                    }`}
+                  title="Backgrounds"
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>image</span>
+                </button>
+              )}
               <button
                 onClick={() => togglePanel('mood')}
                 className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${bottomPanel === 'mood' ? 'text-[var(--gold)]' : 'text-white/40'
