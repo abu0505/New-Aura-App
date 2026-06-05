@@ -127,7 +127,7 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => scrollBy(-1)}
-              className="absolute left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors opacity-0 group-hover/carousel:opacity-100 hidden md:flex"
+              className="absolute left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-transparent hover:bg-white/5 border border-white/5 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-colors opacity-0 group-hover/carousel:opacity-100 hidden md:flex"
             >
               <span className="material-symbols-outlined text-[20px]">arrow_back_ios_new</span>
             </motion.button>
@@ -142,7 +142,7 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               onClick={() => scrollBy(1)}
-              className="absolute right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-black/60 hover:bg-black/80 border border-white/10 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors opacity-0 group-hover/carousel:opacity-100 hidden md:flex"
+              className="absolute right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-transparent hover:bg-white/5 border border-white/5 text-white rounded-full flex items-center justify-center backdrop-blur-sm transition-colors opacity-0 group-hover/carousel:opacity-100 hidden md:flex"
             >
               <span className="material-symbols-outlined text-[20px]">arrow_forward_ios</span>
             </motion.button>

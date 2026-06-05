@@ -117,7 +117,6 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
   const [strokes, setStrokes]           = useState<DrawStroke[]>(drawingData || []);
   const [undoStack, setUndoStack]       = useState<DrawStroke[][]>([]);
   const [redoStack, setRedoStack]       = useState<DrawStroke[][]>([]);
-  const [isDrawing, setIsDrawing]       = useState(false);
   const isDrawingRef                    = useRef(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showSizePicker,  setShowSizePicker]  = useState(false);
@@ -526,7 +525,6 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
     }
 
     isDrawingRef.current = true;
-    setIsDrawing(true);
     const pos = getWorldPos(e); // ← WORLD coords stored
 
     if (toolRef.current === 'laser') {
@@ -622,7 +620,6 @@ function DrawingCanvas({ drawingData, onSave, onClose }: DrawingCanvasProps) {
     isPanningRef.current = false;
     if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
-    setIsDrawing(false);
 
     if (toolRef.current === 'laser') return;
 

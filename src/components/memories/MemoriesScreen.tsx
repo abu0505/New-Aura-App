@@ -36,6 +36,7 @@ export default function MemoriesScreen() {
   const [lastMonthItems, setLastMonthItems] = useState<MemoryItem[]>([]);
   const [lastWeekItems, setLastWeekItems] = useState<MemoryItem[]>([]);
   const [lastYearMonthItems, setLastYearMonthItems] = useState<MemoryItem[]>([]);
+  const [randomShuffleItems, setRandomShuffleItems] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -348,7 +349,8 @@ export default function MemoriesScreen() {
       });
 
       if (error) throw error;
-      const filtered = (data as MemoryItem[]).filter(item => (item.type as string) !== 'gif');
+      const items = (data as MemoryItem[]) ?? [];
+      const filtered = items.filter(item => (item.type as string) !== 'gif');
       setThrowbacks(filtered);
     } catch (err) {
       
@@ -359,11 +361,12 @@ export default function MemoriesScreen() {
     if (!user || !partner) return;
     const currentMonth = new Date().getMonth() + 1; // 1-indexed
 
-    // Fetch all three recap types in parallel
-    const [lastMonthRes, lastWeekRes, lastYearMonthRes] = await Promise.allSettled([
+    // Fetch all recap types in parallel
+    const [lastMonthRes, lastWeekRes, lastYearMonthRes, randomShuffleRes] = await Promise.allSettled([
       supabase.rpc('get_last_month_recap', { u_id: user.id, p_id: partner.id, limit_count: 25 }),
       supabase.rpc('get_last_week_recap',  { u_id: user.id, p_id: partner.id, limit_count: 25 }),
       supabase.rpc('get_last_year_month_recap', { u_id: user.id, p_id: partner.id, current_month: currentMonth, limit_count: 25 }),
+      supabase.rpc('get_random_shuffle_recap', { u_id: user.id, p_id: partner.id, limit_count: 25 }),
     ]);
 
     if (lastMonthRes.status === 'fulfilled' && !lastMonthRes.value.error) {
@@ -377,6 +380,10 @@ export default function MemoriesScreen() {
     if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error) {
       const items = (lastYearMonthRes.value.data as MemoryItem[]) ?? [];
       setLastYearMonthItems(items.filter(item => (item.type as string) !== 'gif'));
+    }
+    if (randomShuffleRes.status === 'fulfilled' && !randomShuffleRes.value.error) {
+      const items = (randomShuffleRes.value.data as MemoryItem[]) ?? [];
+      setRandomShuffleItems(items.filter(item => (item.type as string) !== 'gif'));
     }
   };
 
@@ -869,14 +876,14 @@ export default function MemoriesScreen() {
               
               const momentGroups: MomentGroup[] = [];
               
-              if (lastMonthItems.length > 0) {
+              if (randomShuffleItems.length > 0) {
                 momentGroups.push({
-                  id: 'last-month',
-                  title: `${lastMonthName} in Review`,
-                  badge: 'Last Month',
-                  iconName: 'calendar_month',
-                  accentColor: '#60a5fa',
-                  items: lastMonthItems,
+                  id: 'random-shuffle',
+                  title: 'Daily Shuffle',
+                  badge: 'Random Shuffle',
+                  iconName: 'shuffle',
+                  accentColor: '#fb7185',
+                  items: randomShuffleItems,
                 });
               }
               if (lastWeekItems.length > 0) {
@@ -887,6 +894,16 @@ export default function MemoriesScreen() {
                   iconName: 'date_range',
                   accentColor: '#a78bfa',
                   items: lastWeekItems,
+                });
+              }
+              if (lastMonthItems.length > 0) {
+                momentGroups.push({
+                  id: 'last-month',
+                  title: `${lastMonthName} in Review`,
+                  badge: 'Last Month',
+                  iconName: 'calendar_month',
+                  accentColor: '#60a5fa',
+                  items: lastMonthItems,
                 });
               }
               if (lastYearMonthItems.length > 0) {
