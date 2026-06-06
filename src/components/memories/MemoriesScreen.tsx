@@ -35,7 +35,6 @@ export default function MemoriesScreen() {
   const [throwbacks, setThrowbacks] = useState<MemoryItem[]>([]);
   const [lastMonthItems, setLastMonthItems] = useState<MemoryItem[]>([]);
   const [lastWeekItems, setLastWeekItems] = useState<MemoryItem[]>([]);
-  const [lastYearMonthItems, setLastYearMonthItems] = useState<MemoryItem[]>([]);
   const [randomShuffleItems, setRandomShuffleItems] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
@@ -359,13 +358,11 @@ export default function MemoriesScreen() {
 
   const fetchRecaps = async () => {
     if (!user || !partner) return;
-    const currentMonth = new Date().getMonth() + 1; // 1-indexed
 
     // Fetch all recap types in parallel
-    const [lastMonthRes, lastWeekRes, lastYearMonthRes, randomShuffleRes] = await Promise.allSettled([
+    const [lastMonthRes, lastWeekRes, randomShuffleRes] = await Promise.allSettled([
       supabase.rpc('get_last_month_recap', { u_id: user.id, p_id: partner.id, limit_count: 25 }),
       supabase.rpc('get_last_week_recap',  { u_id: user.id, p_id: partner.id, limit_count: 25 }),
-      supabase.rpc('get_last_year_month_recap', { u_id: user.id, p_id: partner.id, current_month: currentMonth, limit_count: 25 }),
       supabase.rpc('get_random_shuffle_recap', { u_id: user.id, p_id: partner.id, limit_count: 25 }),
     ]);
 
@@ -376,10 +373,6 @@ export default function MemoriesScreen() {
     if (lastWeekRes.status === 'fulfilled' && !lastWeekRes.value.error) {
       const items = (lastWeekRes.value.data as MemoryItem[]) ?? [];
       setLastWeekItems(items.filter(item => (item.type as string) !== 'gif'));
-    }
-    if (lastYearMonthRes.status === 'fulfilled' && !lastYearMonthRes.value.error) {
-      const items = (lastYearMonthRes.value.data as MemoryItem[]) ?? [];
-      setLastYearMonthItems(items.filter(item => (item.type as string) !== 'gif'));
     }
     if (randomShuffleRes.status === 'fulfilled' && !randomShuffleRes.value.error) {
       const items = (randomShuffleRes.value.data as MemoryItem[]) ?? [];
@@ -871,8 +864,6 @@ export default function MemoriesScreen() {
               const now = new Date();
               const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1)
                 .toLocaleDateString('en-US', { month: 'long' });
-              const lastYearNum = now.getFullYear() - 1;
-              const currentMonthName = now.toLocaleDateString('en-US', { month: 'long' });
               
               const momentGroups: MomentGroup[] = [];
               
@@ -904,16 +895,6 @@ export default function MemoriesScreen() {
                   iconName: 'calendar_month',
                   accentColor: '#60a5fa',
                   items: lastMonthItems,
-                });
-              }
-              if (lastYearMonthItems.length > 0) {
-                momentGroups.push({
-                  id: 'last-year-month',
-                  title: `${currentMonthName} ${lastYearNum}`,
-                  badge: 'Last Year · This Month',
-                  iconName: 'history',
-                  accentColor: '#34d399',
-                  items: lastYearMonthItems,
                 });
               }
               if (throwbacks.length > 0) {

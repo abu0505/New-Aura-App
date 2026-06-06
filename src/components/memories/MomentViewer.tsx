@@ -92,6 +92,8 @@ function ChunkedVideoFetcher({
         muted={muted}
         hideControls={true}
         onEnded={onEnded}
+        loop={true}
+        messageId={messageId}
         className="w-full h-full max-h-full object-contain rounded-2xl shadow-2xl" 
       />
     </div>

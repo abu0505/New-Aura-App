@@ -16,7 +16,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ReceivedChunk } from '../../hooks/useVideoChunks';
+import { clearVideoChunksError } from '../../hooks/useVideoChunks';
 import ChunkedVideoOverlay from './ChunkedVideoOverlay';
+import { supabase } from '../../lib/supabase';
+import { toast } from 'sonner';
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
 
@@ -32,6 +35,8 @@ interface ChunkedVideoPlayerProps {
   hideControls?: boolean;
   isPaused?: boolean;
   muted?: boolean;
+  loop?: boolean;
+  messageId?: string;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -55,6 +60,8 @@ export default function ChunkedVideoPlayer({
   hideControls = false,
   isPaused = false,
   muted = false,
+  loop = false,
+  messageId,
 }: ChunkedVideoPlayerProps) {
   /* ── Refs ────────────────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -87,16 +94,25 @@ export default function ChunkedVideoPlayer({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
+  const [isLooping, setIsLooping] = useState(loop);
   const [volume] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [videoAspect, setVideoAspect] = useState<number>(56.25);
   const [videoDuration, setVideoDuration] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragFraction, setDragFraction] = useState(0);
 
   /* ── Determine video URL + streaming progress ───────────────────────── */
   const videoUrl = useMemo(() => {
     const readyChunk = chunks.find(c => c.blobUrl);
     return readyChunk?.blobUrl ?? null;
   }, [chunks]);
+
+  const chunkError = useMemo(() => {
+    return chunks.find(c => c.error)?.error ?? null;
+  }, [chunks]);
+
+  const activeError = error || chunkError;
 
   const isReady = !!videoUrl;
 
@@ -139,13 +155,7 @@ export default function ChunkedVideoPlayer({
     }
   }, [muted]);
 
-  /** 0-100: how much has been appended to the SourceBuffer */
-  const bufferedPercent = useMemo(() => {
-    return chunks[0]?.bufferedPercent ?? 0;
-  }, [chunks]);
 
-  /** True once all blocks have been appended (endOfStream called) */
-  const isFullyBuffered = bufferedPercent >= 100;
 
   /* ── Total duration ──────────────────────────────────────────────────── */
   const totalDuration = useMemo(() => {
@@ -198,6 +208,19 @@ export default function ChunkedVideoPlayer({
     if (v) { v.volume = volume; v.muted = isMuted; }
   }, [volume, isMuted]);
 
+  // Sync loop state to the video element
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) { v.loop = isLooping; }
+  }, [isLooping]);
+
+  // Automatically enable loop when entering fullscreen mode
+  useEffect(() => {
+    if (isFullscreen) {
+      setIsLooping(true);
+    }
+  }, [isFullscreen]);
+
   /* ── Fullscreen listener ────────────────────────────────────────────── */
   useEffect(() => {
     const h = () => setIsFullscreen(!!document.fullscreenElement);
@@ -222,7 +245,7 @@ export default function ChunkedVideoPlayer({
   /* ═══════════════════════════════════════════════════════════════════════ */
 
   const togglePlay = useCallback(() => {
-    if (error) return;
+    if (activeError) return;
     const v = videoRef.current;
     if (!v) return;
 
@@ -238,17 +261,9 @@ export default function ChunkedVideoPlayer({
       v.play().catch(() => {});
       setIsPlaying(true);
     }
-  }, [hasStarted, error]);
+  }, [hasStarted, activeError]);
 
-  const seekTo = useCallback((fraction: number) => {
-    const v = videoRef.current;
-    if (!v) return;
-    const dur = v.duration || totalDuration;
-    if (!isFinite(dur) || dur <= 0) return;
-    const target = fraction * dur;
-    v.currentTime = Math.max(0, Math.min(target, dur));
-    setCurrentTime(v.currentTime);
-  }, [totalDuration]);
+
 
   const getFraction = useCallback((clientX: number) => {
     const bar = progressRef.current;
@@ -260,26 +275,95 @@ export default function ChunkedVideoPlayer({
   const handleProgressDown = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      seekTo(getFraction(e.clientX));
+      const fraction = getFraction(e.clientX);
+      setIsDragging(true);
+      setDragFraction(fraction);
 
-      const onMove = (ev: MouseEvent) => seekTo(getFraction(ev.clientX));
+      const v = videoRef.current;
+      if (v) {
+        const dur = v.duration || totalDuration;
+        if (isFinite(dur) && dur > 0) {
+          const target = fraction * dur;
+          v.currentTime = Math.max(0, Math.min(target, dur));
+          setCurrentTime(v.currentTime);
+        }
+      }
+
+      const onMove = (ev: MouseEvent) => {
+        const f = getFraction(ev.clientX);
+        setDragFraction(f);
+        const video = videoRef.current;
+        if (video) {
+          const dur = video.duration || totalDuration;
+          if (isFinite(dur) && dur > 0) {
+            const target = f * dur;
+            video.currentTime = Math.max(0, Math.min(target, dur));
+            setCurrentTime(video.currentTime);
+          }
+        }
+      };
+
       const onUp = () => {
+        setIsDragging(false);
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
       };
+
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    [seekTo, getFraction],
+    [getFraction, totalDuration],
   );
 
-  const handleProgressTouch = useCallback(
+  const handleProgressTouchStart = useCallback(
     (e: React.TouchEvent) => {
       e.stopPropagation();
       const touch = e.touches[0];
-      if (touch) seekTo(getFraction(touch.clientX));
+      if (!touch) return;
+      const fraction = getFraction(touch.clientX);
+      setIsDragging(true);
+      setDragFraction(fraction);
+
+      const v = videoRef.current;
+      if (v) {
+        const dur = v.duration || totalDuration;
+        if (isFinite(dur) && dur > 0) {
+          const target = fraction * dur;
+          v.currentTime = Math.max(0, Math.min(target, dur));
+          setCurrentTime(v.currentTime);
+        }
+      }
     },
-    [seekTo, getFraction],
+    [getFraction, totalDuration]
+  );
+
+  const handleProgressTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      e.stopPropagation();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const fraction = getFraction(touch.clientX);
+      setDragFraction(fraction);
+
+      const v = videoRef.current;
+      if (v) {
+        const dur = v.duration || totalDuration;
+        if (isFinite(dur) && dur > 0) {
+          const target = fraction * dur;
+          v.currentTime = Math.max(0, Math.min(target, dur));
+          setCurrentTime(v.currentTime);
+        }
+      }
+    },
+    [getFraction, totalDuration]
+  );
+
+  const handleProgressTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      e.stopPropagation();
+      setIsDragging(false);
+    },
+    []
   );
 
   const toggleFS = useCallback(() => {
@@ -306,6 +390,7 @@ export default function ChunkedVideoPlayer({
 
   const effectiveDuration = totalDuration;
   const progressFraction = effectiveDuration > 0 ? currentTime / effectiveDuration : 0;
+  const currentFraction = isDragging ? dragFraction : progressFraction;
   const bufferFraction = effectiveDuration > 0 ? bufferedEnd / effectiveDuration : 0;
 
   return (
@@ -322,6 +407,7 @@ export default function ChunkedVideoPlayer({
       {/* ── Video element ────────────────────────────────────────────────── */}
       <video
         ref={videoRef}
+        loop={isLooping}
         playsInline
         preload="auto"
         onTimeUpdate={() => {
@@ -378,49 +464,53 @@ export default function ChunkedVideoPlayer({
       />
 
       {/* ── Error Overlay ────────────────────────────────────────────────── */}
-      {error && (
+      {activeError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center z-50 bg-black/90 backdrop-blur-md">
           <span className="material-symbols-outlined text-red-500 text-5xl mb-3">error</span>
           <p className="text-white font-medium text-sm leading-relaxed mb-2">Playback Error</p>
           <p className="text-white/70 text-xs font-mono bg-black/50 p-3 rounded-lg overflow-y-auto max-h-[100px] max-w-[90%] whitespace-pre-wrap">
-            {error}
+            {activeError}
           </p>
-          <button
-            onClick={() => setError(null)}
-            className="mt-3 px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest"
-            style={{ background: 'var(--gold, #e4b45a)', color: '#000' }}
-          >
-            Retry
-          </button>
+          <div className="flex items-center gap-3 mt-3">
+            <button
+              onClick={() => {
+                setError(null);
+                if (messageId) {
+                  clearVideoChunksError(messageId);
+                }
+              }}
+              className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest active:scale-95 transition-all"
+              style={{ background: 'var(--gold, #e4b45a)', color: '#000' }}
+            >
+              Retry
+            </button>
+            {messageId && (
+              <button
+                onClick={async () => {
+                  if (confirm('Are you sure you want to delete this failed video message?')) {
+                    try {
+                      const { error } = await supabase.from('messages').delete().eq('id', messageId);
+                      if (error) throw error;
+                      toast.success('Message deleted successfully');
+                    } catch (err) {
+                      console.error('Failed to delete message:', err);
+                      toast.error('Failed to delete message');
+                    }
+                  }
+                }}
+                className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-widest bg-red-600 hover:bg-red-700 text-white active:scale-95 transition-all"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── Streaming progress overlay (while blocks are still downloading) ── */}
-      {isReady && !isFullyBuffered && !error && !hideControls && (
-        <div
-          className="absolute top-2 right-2 flex items-center gap-1.5 px-2 py-1 rounded-full"
-          style={{
-            zIndex: 25,
-            background: 'rgba(0,0,0,0.55)',
-            backdropFilter: 'blur(6px)',
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            className="w-3 h-3 rounded-full border border-t-transparent animate-spin"
-            style={{ borderColor: 'var(--gold, #e4b45a)', borderTopColor: 'transparent' }}
-          />
-          <span
-            className="text-[10px] font-semibold tabular-nums"
-            style={{ color: 'var(--gold-light, #f5d48a)' }}
-          >
-            {bufferedPercent}%
-          </span>
-        </div>
-      )}
+
 
       {/* ── Loading overlay (video URL not yet available) ─────────────────── */}
-      {!isReady && !error && (
+      {!isReady && !activeError && (
         <div
           className="absolute inset-0 z-20 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
@@ -437,7 +527,7 @@ export default function ChunkedVideoPlayer({
       )}
 
       {/* ── Poster / play button (before first play) ─────────────────── */}
-      {isReady && !hasStarted && !error && (
+      {isReady && !hasStarted && !activeError && (
         <div
           className="absolute inset-0 z-10 flex items-center justify-center"
           onClick={hideControls ? undefined : (e) => { e.stopPropagation(); togglePlay(); }}
@@ -468,7 +558,7 @@ export default function ChunkedVideoPlayer({
       )}
 
       {/* ── Click-to-play/pause surface ────────────────────────────────── */}
-      {hasStarted && !error && !hideControls && (
+      {hasStarted && !activeError && !hideControls && (
         <div
           className="absolute inset-0"
           style={{ zIndex: 5 }}
@@ -480,7 +570,7 @@ export default function ChunkedVideoPlayer({
 
       {/* ── Paused icon (center) ───────────────────────────────────────── */}
       <AnimatePresence>
-        {hasStarted && !isPlaying && !isBuffering && !error && !hideControls && (
+        {hasStarted && !isPlaying && !isBuffering && !activeError && !hideControls && (
           <motion.div
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -502,7 +592,7 @@ export default function ChunkedVideoPlayer({
       </AnimatePresence>
 
       {/* ── Controls overlay ───────────────────────────────────────────── */}
-      {hasStarted && !error && !hideControls && (
+      {hasStarted && !activeError && !hideControls && (
         <motion.div
           animate={{ opacity: showControls || !isPlaying ? 1 : 0 }}
           transition={{ duration: 0.25 }}
@@ -521,7 +611,9 @@ export default function ChunkedVideoPlayer({
             className="relative w-full h-[3px] rounded-full mb-2 cursor-pointer group hover:h-[5px] transition-all"
             style={{ background: 'rgba(255,255,255,0.15)' }}
             onMouseDown={handleProgressDown}
-            onTouchMove={handleProgressTouch}
+            onTouchStart={handleProgressTouchStart}
+            onTouchMove={handleProgressTouchMove}
+            onTouchEnd={handleProgressTouchEnd}
           >
             {/* Buffer bar */}
             <div
@@ -536,9 +628,8 @@ export default function ChunkedVideoPlayer({
             <div
               className="absolute top-0 h-full rounded-full"
               style={{
-                width: `${progressFraction * 100}%`,
+                width: `${currentFraction * 100}%`,
                 background: 'var(--gold, #e4b45a)',
-                transition: 'width 0.1s linear',
               }}
             />
 
@@ -546,7 +637,7 @@ export default function ChunkedVideoPlayer({
             <div
               className="absolute top-1/2 w-3.5 h-3.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
               style={{
-                left: `${progressFraction * 100}%`,
+                left: `${currentFraction * 100}%`,
                 transform: 'translate(-50%, -50%)',
                 background: 'var(--gold, #e4b45a)',
                 boxShadow: '0 0 6px rgba(0,0,0,0.5)',
@@ -572,6 +663,17 @@ export default function ChunkedVideoPlayer({
             </span>
 
             <div className="flex-1" />
+
+            {/* Loop / Unloop */}
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsLooping(l => !l); }}
+              className="text-white/75 hover:text-white transition-colors p-1"
+              title={isLooping ? "Disable Loop" : "Enable Loop"}
+            >
+              <span className={`material-symbols-outlined text-lg ${isLooping ? 'text-[var(--gold,#e4b45a)]' : ''}`}>
+                repeat
+              </span>
+            </button>
 
             {/* Volume */}
             <button

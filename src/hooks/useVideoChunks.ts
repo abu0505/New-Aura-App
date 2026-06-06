@@ -39,6 +39,7 @@ import {
   getStoredKeyPair,
   decryptFileKeyWithFallback,
   decodeBase64,
+  encodeBase64,
 } from '../lib/encryption';
 import { deriveBlockNonce } from '../utils/videoChunker';
 
@@ -57,6 +58,7 @@ export interface ReceivedChunk {
   isDecrypted: boolean;     // true = MSE is ready / video can play
   duration?: number;
   bufferedPercent: number;  // 0-100 — how much has been appended to SourceBuffer
+  error?: string | null;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -117,6 +119,8 @@ interface StoreEntry {
    * cannot be reused by a second <video> element (e.g., fullscreen viewer).
    */
   decryptedBlocks: Map<number, Uint8Array>;
+  /** Optional error message if playback/decryption/download fails */
+  error?: string | null;
 }
 
 const videoStore = new Map<string, StoreEntry>();
@@ -157,6 +161,7 @@ function storeEntryToChunks(messageId: string): ReceivedChunk[] {
     isDecrypted: effectiveUrl !== null, // URL exists = player can attach
     duration: e.duration,
     bufferedPercent,
+    error: e.error || null,
   }];
 }
 
@@ -220,34 +225,46 @@ function unwrapSymmetricKey(
   const myKeyPair = getStoredKeyPair();
   if (!myKeyPair) return null;
 
+  const myPubB64 = encodeBase64(myKeyPair.publicKey);
   const parts = packedKey.split('|');
-  for (const packed of parts) {
+  LOG(`unwrapSymmetricKey: ${parts.length} part(s), partnerPub=${partnerPublicKey.slice(0,8)}…, myPub=${myPubB64.slice(0,8)}…`);
+
+  for (let pi = 0; pi < parts.length; pi++) {
+    const packed = parts[pi];
     const colonIdx = packed.indexOf(':');
     if (colonIdx === -1) continue;
     const keyNonce = packed.slice(0, colonIdx);
     const encryptedKey = packed.slice(colonIdx + 1);
     if (!keyNonce || !encryptedKey) continue;
 
-    // Try as receiver (partner is sender)
+    // Try with partner's public key (works for BOTH sender and receiver
+    // because NaCl box DH: encrypt(theirPub, mySec) == decrypt(theirPub, mySec))
     try {
       const key = decryptFileKeyWithFallback(
         encryptedKey, keyNonce,
         decodeBase64(partnerPublicKey),
         myKeyPair.secretKey
       );
-      if (key) return key;
+      if (key) {
+        LOG(`unwrapSymmetricKey: SUCCESS with partnerPub on part[${pi}]`);
+        return key;
+      }
     } catch { /* try next */ }
 
-    // Try as sender (watching my own video after page reload)
+    // Try with my own public key (sender self-wrapped part)
     try {
       const key = decryptFileKeyWithFallback(
         encryptedKey, keyNonce,
         myKeyPair.publicKey,
         myKeyPair.secretKey
       );
-      if (key) return key;
+      if (key) {
+        LOG(`unwrapSymmetricKey: SUCCESS with myPub (self-wrap) on part[${pi}]`);
+        return key;
+      }
     } catch { /* try next */ }
   }
+  ERR(`unwrapSymmetricKey: ALL parts failed! packedKey length=${packedKey.length}`);
   return null;
 }
 
@@ -400,7 +417,13 @@ async function processBlock(
   } catch (err) {
     ERR(`Block ${chunkIndex}: permanently failed, removing from processedIndices for potential retry`);
     // Allow retry by removing from processedIndices
-    entry.processedIndices.delete(chunkIndex);
+    const currentEntry = videoStore.get(messageId);
+    if (currentEntry) {
+      currentEntry.processedIndices.delete(chunkIndex);
+      currentEntry.error = 'Video decryption failed. The decryption key or file may be corrupted.';
+      videoStore.set(messageId, { ...currentEntry });
+      notifyAll();
+    }
     return;
   }
 
@@ -619,6 +642,50 @@ export function useVideoChunks(messageId?: string) {
       const packedKey   = rows[0]?.chunk_key ?? '';
       const duration    = rows[0]?.duration ?? 0;
 
+      let entry = videoStore.get(msgId);
+      if (!entry) {
+        entry = {
+          blobUrl: null,
+          reusableBlobUrl: null,
+          duration,
+          isComplete: false,
+          receivedCount: 0,
+          totalChunks,
+          chunkKey: packedKey,
+          baseNonce,
+          partnerPublicKey,
+          mediaSource: null,
+          sourceBuffer: null,
+          appendQueue: new Map(),
+          nextAppendIndex: 0,
+          isAppending: false,
+          mimeType: null,
+          mseInitialised: false,
+          processedIndices: new Set(),
+          blobFallbackBlocks: null,
+          useBlobFallback: false,
+          decryptedBlocks: new Map(),
+        };
+        videoStore.set(msgId, entry);
+      } else {
+        // Reset error on reload/retry attempt
+        entry.error = null;
+        entry.processedIndices.clear();
+        entry.receivedCount = 0;
+        if (entry.blobFallbackBlocks) {
+          entry.blobFallbackBlocks.clear();
+        }
+        videoStore.set(msgId, entry);
+      }
+
+      if (rows.length < totalChunks) {
+        WARN(`loadExistingChunks: msg=${msgId} has only ${rows.length}/${totalChunks} chunks in DB. Incomplete upload.`);
+        entry.error = 'Video upload was incomplete. Some parts are missing.';
+        videoStore.set(msgId, { ...entry });
+        notifyAll();
+        return;
+      }
+
       // Process blocks with a rolling parallel window (max 6 concurrent downloads)
       // This is faster than batch-sequential because we start the next block
       // as soon as any slot frees up, rather than waiting for a full batch of 6.
@@ -657,4 +724,18 @@ export function useVideoChunks(messageId?: string) {
   );
 
   return { chunks, getChunksForMessage, loadExistingChunks, isChunkedVideo };
+}
+
+export function clearVideoChunksError(messageId: string) {
+  const entry = videoStore.get(messageId);
+  if (entry) {
+    entry.error = null;
+    entry.processedIndices.clear();
+    entry.receivedCount = 0;
+    if (entry.blobFallbackBlocks) {
+      entry.blobFallbackBlocks.clear();
+    }
+    videoStore.set(messageId, { ...entry });
+    notifyAll();
+  }
 }

@@ -84,6 +84,8 @@ function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration }: { messageId:
       thumbnailUrl={thumbnailUrl} 
       duration={duration}
       autoPlay
+      loop={true}
+      messageId={messageId}
       className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
     />
   );
@@ -273,6 +275,21 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
     };
   }, []);
 
+  // Auto-loop when entering fullscreen for the standard video player
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const video = videoRef.current;
+      if (video && document.fullscreenElement === video) {
+        console.log('[MediaViewer] Standard video entered fullscreen — enabling auto-loop');
+        video.loop = true;
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (allMedia && currentIndex < allMedia.length - 1) {
@@ -408,9 +425,9 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
                       onClick={(e) => e.stopPropagation()}
-                      className="fixed md:absolute top-20 md:top-full left-0 right-0 mx-auto md:left-auto md:right-0 md:mx-0 mt-0 md:mt-2 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-3 shadow-2xl flex flex-col gap-2 z-[10001]"
+                      className="fixed md:absolute top-20 md:top-full left-0 right-0 mx-auto md:left-auto md:right-0 md:mx-0 mt-0 md:mt-2 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl pl-3 pt-3 pb-3 pr-0 shadow-2xl flex flex-col gap-2 z-[10001]"
                     >
-                      <div className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1 px-1">Add to Folder</div>
+                      <div className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1 px-1 pr-3">Add to Folder</div>
                       
                       <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-1">
                         {folders.map(folder => (
@@ -424,13 +441,13 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                           </button>
                         ))}
                         {folders.length === 0 && (
-                          <div className="text-xs text-white/40 px-2 py-1 italic">No folders yet</div>
+                          <div className="text-xs text-white/40 px-2 py-1 italic pr-3">No folders yet</div>
                         )}
                       </div>
                       
-                      <div className="h-px bg-white/10 my-1" />
+                      <div className="h-px bg-white/10 my-1 mr-3" />
                       
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 pr-3">
                         <input
                           type="text"
                           placeholder="New folder name..."
@@ -668,6 +685,8 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                   thumbnailUrl={thumbnailUrl || currentMedia.url} 
                   duration={duration}
                   autoPlay
+                  loop={true}
+                  messageId={messageId || currentMedia.id}
                   className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
                 />
               ) : currentMedia.id ? (
@@ -693,6 +712,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                 src={currentMedia.url}
                 controls
                 autoPlay
+                loop={true}
                 playsInline
                 preload="auto"
                 onCanPlay={handleVideoCanPlay}
