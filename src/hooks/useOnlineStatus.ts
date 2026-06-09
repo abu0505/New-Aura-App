@@ -38,6 +38,7 @@ export function useOnlineStatus(
   const currentPageRef = useRef<string | undefined>(undefined);
   const jwtTokenRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastDbStatusRef = useRef<boolean | null>(null);
 
   // Keep refs fresh
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user?.id]);
@@ -62,19 +63,23 @@ export function useOnlineStatus(
 
   // ── DB update (async, for when React is running) ──────────────────────
   const setDbStatus = async (userId: string, online: boolean) => {
+    if (lastDbStatusRef.current === online) return;
     try {
+      lastDbStatusRef.current = online;
       const update: Record<string, unknown> = {
         is_online: online,
         last_seen: new Date().toISOString()
       };
       await supabase.from('profiles').update(update).eq('id', userId);
     } catch (err) {
-      
+      // Revert ref on failure so we try again next time
+      lastDbStatusRef.current = null;
     }
   };
 
   // ── Offline beacon (fire-and-forget, survives tab close) ──────────────
   const fireOfflineBeacon = (uid: string) => {
+    if (lastDbStatusRef.current === false) return;
     const jwt = jwtTokenRef.current;
     if (!jwt) return;
 
@@ -82,6 +87,7 @@ export function useOnlineStatus(
     const apiKey = (supabase as any).supabaseKey;
 
     try {
+      lastDbStatusRef.current = false;
       fetch(url, {
         method: 'PATCH',
         headers: {
@@ -96,7 +102,9 @@ export function useOnlineStatus(
         }),
         keepalive: true,
       });
-    } catch { /* best-effort */ }
+    } catch {
+      lastDbStatusRef.current = null;
+    }
   };
 
   // ── Event listeners (mount once, use refs for fresh values) ───────────
