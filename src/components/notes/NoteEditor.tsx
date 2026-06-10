@@ -9,6 +9,13 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { supabase } from '../../lib/supabase';
 import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Underline from '@tiptap/extension-underline';
+import Placeholder from '@tiptap/extension-placeholder';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Color } from '@tiptap/extension-color';
+import { Extension } from '@tiptap/core';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INLINE DRAWING TYPES & CONSTANTS
@@ -127,84 +134,168 @@ interface NoteEditorProps {
 type BottomPanel = 'none' | 'colors' | 'backgrounds' | 'mood' | 'labels' | 'more';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// LIVE MARKDOWN RENDERING (Typora-style)
 // ═══════════════════════════════════════════════════════════════════════════════
-//
-// When the user types markdown (e.g., **bold**, *italic*, ## heading) and
-// presses Enter or moves the cursor away, the current line auto-renders.
-// When the cursor comes back to that line, it shows raw markdown again.
-//
-// Implementation: We work at the block/line level. On 'input' and 'keyup',
-// we check the current paragraph. If cursor is NOT inside a rendered block,
-// we render it. If cursor IS inside a rendered block, we un-render it.
+// TIPTAP MARKDOWN RENDERING & HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Markdown patterns to detect and render inline
-const MD_INLINE_RULES: { pattern: RegExp; replace: string }[] = [
+const escapeHtml = (text: string) => {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+const renderInlineMarkdown = (text: string): string => {
+  let rendered = escapeHtml(text);
+
   // Bold: **text** or __text__
-  { pattern: /\*\*(.+?)\*\*/g, replace: '<strong>$1</strong>' },
-  { pattern: /__(.+?)__/g, replace: '<strong>$1</strong>' },
+  rendered = rendered.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  rendered = rendered.replace(/__(.+?)__/g, '<strong>$1</strong>');
+
   // Italic: *text* or _text_
-  { pattern: /(?<![*_])\*(?![*])(.+?)(?<![*])\*(?![*_])/g, replace: '<em>$1</em>' },
-  { pattern: /(?<![*_])_(?![_])(.+?)(?<![_])_(?![*_])/g, replace: '<em>$1</em>' },
+  rendered = rendered.replace(/(?<![*_])\*(?![*])(.+?)(?<![*])\*(?![*_])/g, '<em>$1</em>');
+  rendered = rendered.replace(/(?<![*_])\_(?![_])(.+?)(?<![_])\_(?![*_])/g, '<em>$1</em>');
+
   // Strikethrough: ~~text~~
-  { pattern: /~~(.+?)~~/g, replace: '<del>$1</del>' },
+  rendered = rendered.replace(/~~(.+?)~~/g, '<del>$1</del>');
+
   // Inline code: `code`
-  { pattern: /`([^`]+)`/g, replace: '<code style="background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:4px;font-family:monospace;font-size:0.8em;color:#4ade80;">$1</code>' },
+  rendered = rendered.replace(/`([^`]+)`/g, '<code>$1</code>');
+
   // Highlight: ==text==
-  { pattern: /==(.+?)==/g, replace: '<mark style="background:rgba(255,213,79,0.25);color:#FFD54F;padding:1px 3px;border-radius:3px;">$1</mark>' },
-];
+  rendered = rendered.replace(/==(.+?)==/g, '<mark>$1</mark>');
 
-// Block-level patterns (applied to entire paragraph text)
-const MD_BLOCK_RULES: { pattern: RegExp; tag: string; attrs?: string }[] = [
-  { pattern: /^### (.+)$/, tag: 'h3' },
-  { pattern: /^## (.+)$/, tag: 'h2' },
-  { pattern: /^# (.+)$/, tag: 'h1' },
-  { pattern: /^> (.+)$/, tag: 'blockquote' },
-  { pattern: /^---$/, tag: 'hr' },
-];
+  return rendered;
+};
 
-// Convert a line of raw markdown text into rendered HTML
-// Returns blockTag when the element's tag itself should change (e.g. p → h2)
-const renderMarkdownLine = (text: string): { html: string; isBlock: boolean; blockTag?: string } => {
-  // Check block-level patterns
-  for (const rule of MD_BLOCK_RULES) {
-    const match = text.match(rule.pattern);
-    if (match) {
-      if (rule.tag === 'hr') {
-        return { html: '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.1);margin:8px 0;">', isBlock: true };
-      }
-      let inner = match[1];
-      // Apply inline rules to the captured content
-      for (const inlineRule of MD_INLINE_RULES) {
-        inner = inner.replace(inlineRule.pattern, inlineRule.replace);
-      }
-      // Return inner HTML only — the caller will change the element's tag
-      return { html: inner, isBlock: true, blockTag: rule.tag };
-    }
+const processBlockMarkdown = (editor: any, pos: number): boolean => {
+  const { state } = editor;
+  const { doc } = state;
+  const $pos = doc.resolve(pos);
+  const parentNode = $pos.parent;
+
+  // We only parse paragraphs for block-level markdown conversion
+  if (parentNode.type.name !== 'paragraph') {
+    return false;
   }
 
-  // Apply inline rules only
-  let rendered = text;
-  let changed = false;
-  for (const rule of MD_INLINE_RULES) {
-    const newText = rendered.replace(rule.pattern, rule.replace);
-    if (newText !== rendered) changed = true;
-    rendered = newText;
+  const text = parentNode.textContent;
+  if (!text) return false;
+
+  const start = $pos.before();
+  const end = $pos.after();
+
+  // 1. Check block rules
+  // Heading 1
+  let match = text.match(/^# (.+)$/);
+  if (match) {
+    const html = `<h1>${renderInlineMarkdown(match[1])}</h1>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
   }
 
-  return { html: rendered, isBlock: changed };
+  // Heading 2
+  match = text.match(/^## (.+)$/);
+  if (match) {
+    const html = `<h2>${renderInlineMarkdown(match[1])}</h2>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
+  }
+
+  // Heading 3
+  match = text.match(/^### (.+)$/);
+  if (match) {
+    const html = `<h3>${renderInlineMarkdown(match[1])}</h3>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
+  }
+
+  // Blockquote
+  match = text.match(/^> (.+)$/);
+  if (match) {
+    const html = `<blockquote>${renderInlineMarkdown(match[1])}</blockquote>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
+  }
+
+  // Bullet list
+  match = text.match(/^[-*] (.+)$/);
+  if (match) {
+    const html = `<ul><li>${renderInlineMarkdown(match[1])}</li></ul>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
+  }
+
+  // Ordered list
+  match = text.match(/^1\. (.+)$/);
+  if (match) {
+    const html = `<ol><li>${renderInlineMarkdown(match[1])}</li></ol>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
+  }
+
+  // Code block
+  match = text.match(/^```([\s\S]*?)```$/s) || text.match(/^```([\s\S]*?)$/s);
+  if (match) {
+    const codeContent = match[1] || '';
+    const html = `<pre><code>${escapeHtml(codeContent)}</code></pre>`;
+    editor.commands.insertContentAt({ from: start, to: end }, html);
+    return true;
+  }
+
+  // 2. Check inline-only rules
+  const html = renderInlineMarkdown(text);
+  if (html !== text) {
+    const pHtml = `<p>${html}</p>`;
+    editor.commands.insertContentAt({ from: start, to: end }, pHtml);
+    return true;
+  }
+
+  return false;
 };
 
-// Check if a paragraph element contains rendered markdown (has HTML children beyond text)
-const isRenderedMarkdown = (el: HTMLElement): boolean => {
-  return el.hasAttribute('data-md-rendered');
-};
+const EnterKeyHandler = Extension.create({
+  name: 'enterKeyHandler',
+  addKeyboardShortcuts() {
+    return {
+      Enter: ({ editor }) => {
+        const { state } = editor;
+        const { selection } = state;
+        const { $from } = selection;
 
-// Get raw markdown from a rendered element
-const getRawMarkdown = (el: HTMLElement): string => {
-  return el.getAttribute('data-md-raw') || el.textContent || '';
-};
+        // Case 1: Cursor is in a code block
+        if ($from.parent.type.name === 'codeBlock') {
+          const textContent = $from.parent.textContent;
+          const posInNode = selection.from - $from.start();
+          const textBeforeCursor = textContent.slice(0, posInNode);
+          const lastLine = textBeforeCursor.split('\n').pop() || '';
+
+          if (lastLine.trim() === '```') {
+            // Exit code block when user types ``` and presses Enter
+            const from = selection.from - lastLine.length;
+            const to = selection.from;
+
+            editor.chain()
+              .deleteRange({ from, to })
+              .exitCode()
+              .run();
+
+            return true;
+          }
+          return false;
+        }
+
+        // Case 2: Cursor is in standard paragraph or other block
+        processBlockMarkdown(editor, selection.from);
+        
+        // Return false to let default Enter key handling (splitBlock) run
+        return false;
+      },
+    };
+  },
+});
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // DRAWING PREVIEW (mini canvas)
@@ -381,7 +472,6 @@ export default function NoteEditor({
   const [content, setContent] = useState(note.content);
   const [bottomPanel, setBottomPanel] = useState<BottomPanel>('none');
   const [newLabelText, setNewLabelText] = useState('');
-  const contentEditableRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -516,6 +606,144 @@ export default function NoteEditor({
     ul: false,
     ol: false,
   });
+
+  const updateActiveStyles = useCallback((editorInstance: any) => {
+    if (!editorInstance) return;
+    setActiveStyles({
+      bold: editorInstance.isActive('bold'),
+      italic: editorInstance.isActive('italic'),
+      underline: editorInstance.isActive('underline'),
+      strikeThrough: editorInstance.isActive('strike'),
+      paragraph: editorInstance.isActive('paragraph'),
+      h1: editorInstance.isActive('heading', { level: 1 }),
+      h2: editorInstance.isActive('heading', { level: 2 }),
+      h3: editorInstance.isActive('heading', { level: 3 }),
+      blockquote: editorInstance.isActive('blockquote'),
+      code: editorInstance.isActive('codeBlock'),
+      ul: editorInstance.isActive('bulletList'),
+      ol: editorInstance.isActive('orderedList'),
+    });
+  }, []);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Placeholder.configure({
+        placeholder: 'Note',
+      }),
+      TextStyle,
+      Color,
+      EnterKeyHandler,
+    ],
+    content: note.content || '',
+    editorProps: {
+      attributes: {
+        class: 'ProseMirror rich-editor focus:outline-none min-h-[150px] leading-relaxed',
+      },
+      handleKeyDown: (view, event) => {
+        if (event.key === 'Tab') {
+          const { state } = view;
+          const { selection } = state;
+          const { $from } = selection;
+
+          // Don't intercept Tab inside code block or if selection is not empty (standard behavior)
+          if (!selection.empty || $from.parent.type.name === 'codeBlock') {
+            return false;
+          }
+
+          // Check if inside a list item to allow nested list indentation (sinkListItem)
+          let isListItem = false;
+          let depth = $from.depth;
+          while (depth > 0) {
+            if ($from.node(depth).type.name === 'listItem') {
+              isListItem = true;
+              break;
+            }
+            depth--;
+          }
+          if (isListItem) {
+            return false;
+          }
+
+          event.preventDefault();
+
+          if ($from.parent.type.name === 'paragraph') {
+            const textContent = $from.parent.textContent;
+            const posInNode = selection.from - $from.start();
+            const textBeforeCursor = textContent.slice(0, posInNode);
+
+            // Check if the text before cursor is a markdown prefix
+            let matched = false;
+            let html = '';
+            
+            if (textBeforeCursor === '-' || textBeforeCursor === '*') {
+              html = '<ul><li></li></ul>';
+              matched = true;
+            } else if (textBeforeCursor === '1.') {
+              html = '<ol><li></li></ol>';
+              matched = true;
+            } else if (textBeforeCursor === '#') {
+              html = '<h1></h1>';
+              matched = true;
+            } else if (textBeforeCursor === '##') {
+              html = '<h2></h2>';
+              matched = true;
+            } else if (textBeforeCursor === '###') {
+              html = '<h3></h3>';
+              matched = true;
+            } else if (textBeforeCursor === '>') {
+              html = '<blockquote></blockquote>';
+              matched = true;
+            }
+
+            if (matched) {
+              const start = $from.before();
+              const end = $from.after();
+              if (editor) {
+                editor.commands.insertContentAt({ from: start, to: end }, html);
+                editor.commands.focus();
+              }
+              return true;
+            }
+          }
+
+          // Default: Insert 4 spaces
+          if (editor) {
+            editor.commands.insertContent('    ');
+          }
+          return true;
+        }
+
+        return false;
+      }
+    },
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      setContent(html);
+      debouncedSave({ title, content: html });
+    },
+    onSelectionUpdate: ({ editor }) => {
+      updateActiveStyles(editor);
+    },
+    onTransaction: ({ editor }) => {
+      updateActiveStyles(editor);
+    },
+  });
+
+  const lastNoteIdRef = useRef(note.id);
+  useEffect(() => {
+    if (editor && note.id !== lastNoteIdRef.current) {
+      lastNoteIdRef.current = note.id;
+      editor.commands.setContent(note.content || '');
+    }
+  }, [note.id, editor]);
+
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!drawMode);
+    }
+  }, [drawMode, editor]);
 
   const colorStyle = NOTE_COLORS[note.color];
   const bgPattern = NOTE_BACKGROUNDS[note.background];
@@ -1524,30 +1752,6 @@ export default function NoteEditor({
     return () => window.removeEventListener('keydown', handleKey);
   }, [drawMode, drawUndo, drawRedo]);
 
-  // Initialize contentEditable content on mount
-  useEffect(() => {
-    if (contentEditableRef.current && !note.isChecklist) {
-      contentEditableRef.current.innerHTML = note.content || '';
-    }
-  }, []);
-
-  const updateActiveStyles = useCallback(() => {
-    if (typeof document === 'undefined') return;
-    setActiveStyles({
-      bold: document.queryCommandState('bold'),
-      italic: document.queryCommandState('italic'),
-      underline: document.queryCommandState('underline'),
-      strikeThrough: document.queryCommandState('strikeThrough'),
-      paragraph: document.queryCommandValue('formatBlock') === 'p' || document.queryCommandValue('formatBlock') === 'div' || !document.queryCommandValue('formatBlock'),
-      h1: document.queryCommandValue('formatBlock') === 'h1',
-      h2: document.queryCommandValue('formatBlock') === 'h2',
-      h3: document.queryCommandValue('formatBlock') === 'h3',
-      blockquote: document.queryCommandValue('formatBlock') === 'blockquote',
-      code: document.queryCommandValue('formatBlock') === 'pre',
-      ul: document.queryCommandState('insertUnorderedList'),
-      ol: document.queryCommandState('insertOrderedList'),
-    });
-  }, []);
 
   const [selectionDetails, setSelectionDetails] = useState<{
     text: string;
@@ -1557,7 +1761,9 @@ export default function NoteEditor({
   }>({ text: '', x: 0, y: 0, show: false });
 
   const handleSelectionChange = useCallback(() => {
-    updateActiveStyles();
+    if (editor) {
+      updateActiveStyles(editor);
+    }
 
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed || selection.toString().trim() === '') {
@@ -1568,9 +1774,10 @@ export default function NoteEditor({
     const selectedText = selection.toString();
 
     if (
-      contentEditableRef.current &&
-      (contentEditableRef.current.contains(selection.anchorNode) ||
-        contentEditableRef.current.contains(selection.focusNode))
+      editor &&
+      editor.view.dom &&
+      (editor.view.dom.contains(selection.anchorNode) ||
+        editor.view.dom.contains(selection.focusNode))
     ) {
       try {
         const range = selection.getRangeAt(0);
@@ -1607,7 +1814,7 @@ export default function NoteEditor({
     } else {
       setSelectionDetails(prev => prev.show ? { ...prev, show: false } : prev);
     }
-  }, [updateActiveStyles]);
+  }, [editor, updateActiveStyles]);
 
   useEffect(() => {
     document.addEventListener('selectionchange', handleSelectionChange);
@@ -1677,263 +1884,60 @@ export default function NoteEditor({
     }
   };
 
-  // Focus title if empty, else focus content
+  // Focus title if empty, else focus editor
   useEffect(() => {
     setTimeout(() => {
       if (!note.title && titleRef.current) {
         titleRef.current.focus();
-      } else if (contentEditableRef.current) {
-        contentEditableRef.current.focus();
-        const el = contentEditableRef.current;
-        const range = document.createRange();
-        const sel = window.getSelection();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        sel?.removeAllRanges();
-        sel?.addRange(range);
+      } else if (editor) {
+        editor.commands.focus('end');
       }
     }, 100);
-  }, []);
+  }, [editor]);
 
-  const handleFormat = (command: string, value: string = '') => {
-    document.execCommand(command, false, value);
-    contentEditableRef.current?.focus();
-    updateActiveStyles();
+  const handleFormat = (command: string) => {
+    if (!editor) return;
+    if (command === 'bold') {
+      editor.chain().focus().toggleBold().run();
+    } else if (command === 'italic') {
+      editor.chain().focus().toggleItalic().run();
+    } else if (command === 'underline') {
+      editor.chain().focus().toggleUnderline().run();
+    } else if (command === 'strikeThrough') {
+      editor.chain().focus().toggleStrike().run();
+    } else if (command === 'insertUnorderedList') {
+      editor.chain().focus().toggleBulletList().run();
+    } else if (command === 'insertOrderedList') {
+      editor.chain().focus().toggleOrderedList().run();
+    }
   };
 
   const handleBlockFormat = (tag: string) => {
-    const currentBlock = document.queryCommandValue('formatBlock');
-    const targetTag = currentBlock === tag ? 'p' : tag;
-    document.execCommand('formatBlock', false, `<${targetTag}>`);
-    contentEditableRef.current?.focus();
-    updateActiveStyles();
+    if (!editor) return;
+    if (tag === 'p') {
+      editor.chain().focus().setParagraph().run();
+    } else if (tag === 'h1') {
+      editor.chain().focus().toggleHeading({ level: 1 }).run();
+    } else if (tag === 'h2') {
+      editor.chain().focus().toggleHeading({ level: 2 }).run();
+    } else if (tag === 'h3') {
+      editor.chain().focus().toggleHeading({ level: 3 }).run();
+    } else if (tag === 'blockquote') {
+      editor.chain().focus().toggleBlockquote().run();
+    } else if (tag === 'pre') {
+      editor.chain().focus().toggleCodeBlock().run();
+    }
   };
 
   const handleTextColor = (color: string) => {
-    document.execCommand('foreColor', false, color);
+    if (!editor) return;
+    editor.chain().focus().setColor(color).run();
     setShowColorMenu(false);
-    contentEditableRef.current?.focus();
-    updateActiveStyles();
   };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter') {
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) return;
-      const range = selection.getRangeAt(0);
-      const node = range.startContainer;
-
-      let currentElement: HTMLElement | null = node.nodeType === Node.ELEMENT_NODE ? (node as HTMLElement) : node.parentElement;
-
-      while (currentElement && currentElement !== contentEditableRef.current) {
-        const tagName = currentElement.tagName.toLowerCase();
-
-        if (tagName === 'pre') {
-          const textVal = currentElement.textContent || '';
-          if (textVal.replace(/\u200B/g, '').trim() === '') {
-            e.preventDefault();
-            document.execCommand('formatBlock', false, '<p>');
-            updateActiveStyles();
-            return;
-          }
-
-          let isLineEmpty = false;
-
-          if (node.nodeType === Node.TEXT_NODE) {
-            const offset = range.startOffset;
-            const textContent = node.textContent || '';
-            if (offset > 0) {
-              if (textContent[offset - 1] === '\n') {
-                isLineEmpty = true;
-              }
-            } else {
-              let prev = node.previousSibling;
-              while (prev && prev.nodeType === Node.TEXT_NODE && prev.textContent === '') {
-                prev = prev.previousSibling;
-              }
-              if (!prev || (prev.nodeType === Node.ELEMENT_NODE && (prev as HTMLElement).tagName.toLowerCase() === 'br') || (prev.nodeType === Node.TEXT_NODE && prev.textContent?.endsWith('\n'))) {
-                isLineEmpty = true;
-              }
-            }
-          } else if (node.nodeType === Node.ELEMENT_NODE) {
-            const offset = range.startOffset;
-            const childNodes = node.childNodes;
-            if (offset === 0) {
-              isLineEmpty = true;
-            } else {
-              let prev: ChildNode | null = childNodes[offset - 1] || null;
-              while (prev && prev.nodeType === Node.TEXT_NODE && prev.textContent === '') {
-                prev = prev.previousSibling;
-              }
-              if (!prev || (prev.nodeType === Node.ELEMENT_NODE && (prev as HTMLElement).tagName.toLowerCase() === 'br') || (prev.nodeType === Node.TEXT_NODE && prev.textContent?.endsWith('\n'))) {
-                isLineEmpty = true;
-              }
-            }
-          }
-
-          if (isLineEmpty) {
-            const clone = range.cloneRange();
-            clone.selectNodeContents(currentElement);
-            clone.setStart(range.endContainer, range.endOffset);
-            const isNearEnd = clone.toString().trim() === '';
-
-            if (isNearEnd) {
-              e.preventDefault();
-
-              let html = currentElement.innerHTML;
-              html = html.replace(/(<br\s*\/?>|\n|\s)+$/, '');
-              currentElement.innerHTML = html;
-
-              const p = document.createElement('p');
-              p.innerHTML = '<br>';
-              currentElement.parentNode?.insertBefore(p, currentElement.nextSibling);
-
-              const newRange = document.createRange();
-              const newSelection = window.getSelection();
-              newRange.selectNodeContents(p);
-              newRange.collapse(true);
-              newSelection?.removeAllRanges();
-              newSelection?.addRange(newRange);
-
-              updateActiveStyles();
-              return;
-            }
-          }
-          break;
-        }
-
-        if (tagName === 'blockquote' || tagName === 'li') {
-          const text = (currentElement.textContent || '').replace(/\u200B/g, '').trim();
-          if (text === '') {
-            e.preventDefault();
-
-            // If it's a list item (li), turn off list mode
-            if (tagName === 'li') {
-              const isOL = document.queryCommandState('insertOrderedList');
-              if (isOL) {
-                document.execCommand('insertOrderedList', false);
-              } else {
-                document.execCommand('insertUnorderedList', false);
-              }
-            } else {
-              // Convert blockquote block to paragraph
-              document.execCommand('formatBlock', false, '<p>');
-            }
-
-            updateActiveStyles();
-            return;
-          }
-          break;
-        }
-        currentElement = currentElement.parentElement;
-      }
-    }
-  };
-
-  // ═══ LIVE MARKDOWN: Render/un-render paragraphs based on cursor ═══
-  const handleLiveMarkdown = useCallback(() => {
-    const editor = contentEditableRef.current;
-    if (!editor || note.isChecklist) return;
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-
-    const range = selection.getRangeAt(0);
-    const cursorNode = range.startContainer;
-    const cursorOffset = range.startOffset;
-
-    // Find the block-level element the cursor is in
-    let cursorBlock: HTMLElement | null = null;
-    let node: Node | null = cursorNode;
-    while (node && node !== editor) {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        const el = node as HTMLElement;
-        const tag = el.tagName.toLowerCase();
-        if (['p', 'div', 'h1', 'h2', 'h3', 'blockquote', 'pre', 'li'].includes(tag)) {
-          cursorBlock = el;
-          break;
-        }
-      }
-      node = node.parentNode;
-    }
-
-    // Process all direct children of the editor
-    // Use a snapshot since we may modify the DOM
-    const children = Array.from(editor.children);
-    for (const child of children) {
-      const el = child as HTMLElement;
-
-      if (el === cursorBlock) {
-        // Cursor IS in this block: un-render to show raw markdown
-        if (isRenderedMarkdown(el)) {
-          const raw = getRawMarkdown(el);
-
-          // Create a fresh <p> with raw text (regardless of current tag)
-          const p = document.createElement('p');
-          p.textContent = raw;
-          el.replaceWith(p);
-
-          // Restore cursor position in the new element
-          try {
-            const newRange = document.createRange();
-            const textNode = p.firstChild || p;
-            const maxOffset = textNode.textContent?.length || 0;
-            newRange.setStart(textNode, Math.min(cursorOffset, maxOffset));
-            newRange.collapse(true);
-            selection.removeAllRanges();
-            selection.addRange(newRange);
-          } catch (e) { /* safe */ }
-
-          // Update cursorBlock reference to the new element
-          cursorBlock = p;
-        }
-      } else {
-        // Cursor is NOT in this block: try to render markdown
-        if (!isRenderedMarkdown(el)) {
-          const rawText = el.textContent || '';
-          if (!rawText.trim()) continue;
-
-          const { html, isBlock, blockTag } = renderMarkdownLine(rawText);
-          if (isBlock || html !== rawText) {
-            if (blockTag) {
-              // Block-level: change the element's tag (e.g., <p> → <h2>)
-              const newEl = document.createElement(blockTag);
-              newEl.setAttribute('data-md-raw', rawText);
-              newEl.setAttribute('data-md-rendered', 'true');
-              newEl.innerHTML = html;
-              el.replaceWith(newEl);
-            } else {
-              // Inline-only: keep the same element, just update innerHTML
-              el.setAttribute('data-md-raw', rawText);
-              el.setAttribute('data-md-rendered', 'true');
-              el.innerHTML = html;
-            }
-          }
-        }
-      }
-    }
-  }, [note.isChecklist]);
-
-  // Debounced live markdown on cursor movement / input
-  const mdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerLiveMarkdown = useCallback(() => {
-    if (mdTimerRef.current) clearTimeout(mdTimerRef.current);
-    mdTimerRef.current = setTimeout(handleLiveMarkdown, 80);
-  }, [handleLiveMarkdown]);
-
-  useEffect(() => {
-    return () => { if (mdTimerRef.current) clearTimeout(mdTimerRef.current); };
-  }, []);
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
     debouncedSave({ title: val, content });
-  };
-
-  const handleContentChange = (val: string) => {
-    setContent(val);
-    debouncedSave({ title, content: val });
-    triggerLiveMarkdown();
   };
 
   const togglePanel = (panel: BottomPanel) => {
@@ -1966,8 +1970,8 @@ export default function NoteEditor({
       onUpdate(note.id, { isChecklist: false, content: text, checklist: [] });
       setContent(text);
       setTimeout(() => {
-        if (contentEditableRef.current) {
-          contentEditableRef.current.innerHTML = text;
+        if (editor) {
+          editor.commands.setContent(text);
         }
       }, 50);
     }
@@ -2563,6 +2567,10 @@ export default function NoteEditor({
             <>
               {/* Rich editor stylesheet */}
               <style>{`
+                .rich-editor {
+                  outline: none;
+                  min-height: 150px;
+                }
                 .rich-editor h1 {
                   font-family: serif;
                   font-size: 1.25rem;
@@ -2615,6 +2623,21 @@ export default function NoteEditor({
                   overflow-x: auto;
                   border: 1px solid rgba(255, 255, 255, 0.05);
                 }
+                .rich-editor pre code {
+                  background: transparent;
+                  padding: 0;
+                  border-radius: 0;
+                  color: inherit;
+                  font-size: inherit;
+                }
+                .rich-editor code {
+                  background: rgba(255, 255, 255, 0.1);
+                  padding: 2px 6px;
+                  border-radius: 4px;
+                  font-family: monospace;
+                  font-size: inherit;
+                  color: var(--gold);
+                }
                 .rich-editor ul {
                   list-style-type: disc;
                   padding-left: 1.25rem;
@@ -2630,12 +2653,17 @@ export default function NoteEditor({
                   color: rgba(255, 255, 255, 0.7);
                   margin-bottom: 0.25rem;
                 }
-                .rich-editor:empty:before {
-                  content: attr(placeholder);
+                .rich-editor li p {
+                  margin: 0;
+                  display: inline;
+                }
+                .rich-editor p.is-empty::before,
+                .rich-editor p.is-editor-empty::before {
+                  content: attr(data-placeholder);
                   color: rgba(255, 255, 255, 0.2);
-                  cursor: text;
+                  float: left;
+                  height: 0;
                   pointer-events: none;
-                  display: block;
                 }
               `}</style>
 
@@ -2656,18 +2684,10 @@ export default function NoteEditor({
                 }}
               >
                 {/* Content editable editor div */}
-                <div
-                  ref={contentEditableRef}
-                  contentEditable={!drawMode}
-                  suppressContentEditableWarning
-                  onInput={(e) => handleContentChange(e.currentTarget.innerHTML)}
-                  onKeyUp={() => { updateActiveStyles(); triggerLiveMarkdown(); }}
-                  onClick={() => { if (!drawMode) { updateActiveStyles(); triggerLiveMarkdown(); } }}
-                  onKeyDown={handleKeyDown}
-                  className={`rich-editor w-full bg-transparent text-[var(--text-primary)] text-sm placeholder:text-white/20 focus:outline-none min-h-[150px] leading-relaxed ${drawMode ? 'cursor-default pointer-events-none select-none' : 'cursor-text'
+                <EditorContent
+                  editor={editor}
+                  className={`w-full bg-transparent text-[var(--text-primary)] text-sm focus:outline-none min-h-[150px] leading-relaxed ${drawMode ? 'cursor-default pointer-events-none select-none' : 'cursor-text'
                     }`}
-                  style={{ outline: 'none' }}
-                  {...{ placeholder: "Note" }}
                 />
 
                 {/* Inline drawing canvas overlay */}
