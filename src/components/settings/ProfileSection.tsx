@@ -8,6 +8,8 @@ import { uploadToCloudinary } from '../../lib/cloudinary';
 import imageCompression from 'browser-image-compression';
 import EncryptedImage from '../common/EncryptedImage';
 import ImageCropperModal from '../common/ImageCropperModal';
+import MemoryImagePicker from '../common/MemoryImagePicker';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfileSection() {
   const { user, refreshUser } = useAuth();
@@ -16,6 +18,9 @@ export default function ProfileSection() {
   const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name || '');
   const [uploading, setUploading] = useState(false);
   const [selectedImageToCrop, setSelectedImageToCrop] = useState<string | null>(null);
+  const [showSourceOptions, setShowSourceOptions] = useState(false);
+  const [showMemoryPicker, setShowMemoryPicker] = useState(false);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nameUpdateInProgress = useRef(false);
 
@@ -44,7 +49,17 @@ export default function ProfileSection() {
   };
 
   const handleAvatarClick = () => {
+    setShowSourceOptions(true);
+  };
+
+  const handleDeviceUpload = () => {
+    setShowSourceOptions(false);
     fileInputRef.current?.click();
+  };
+
+  const handleChooseFromMemories = () => {
+    setShowSourceOptions(false);
+    setShowMemoryPicker(true);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +74,11 @@ export default function ProfileSection() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleMemorySelect = (blob: Blob) => {
+    const fileUrl = URL.createObjectURL(blob);
+    setSelectedImageToCrop(fileUrl);
   };
 
   const handleCropComplete = async (croppedFile: File) => {
@@ -202,6 +222,52 @@ export default function ProfileSection() {
           </div>
         </div>
       </div>
+
+      {/* Source Options Dialog */}
+      <AnimatePresence>
+        {showSourceOptions && (
+          <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowSourceOptions(false)}>
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-[var(--bg-secondary)] border border-white/10 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+            >
+              <h3 className="font-serif italic text-lg text-[var(--gold)] mb-4 text-center">Update Profile Picture</h3>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleDeviceUpload}
+                  className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 text-white text-sm font-medium tracking-wide flex items-center justify-center gap-2 transition-all"
+                >
+                  <span className="material-symbols-outlined text-lg">upload</span>
+                  Upload from Device
+                </button>
+                <button
+                  onClick={handleChooseFromMemories}
+                  className="w-full py-3 rounded-2xl bg-[var(--gold)] text-black font-bold text-sm tracking-wide flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg shadow-[var(--gold)]/15"
+                >
+                  <span className="material-symbols-outlined text-lg">photo_library</span>
+                  Choose from Memories
+                </button>
+                <button
+                  onClick={() => setShowSourceOptions(false)}
+                  className="w-full py-3 rounded-2xl border border-white/10 text-white/60 text-sm font-medium hover:bg-white/5 transition-all mt-2"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Memory Picker */}
+      <MemoryImagePicker
+        isOpen={showMemoryPicker}
+        onClose={() => setShowMemoryPicker(false)}
+        onSelect={handleMemorySelect}
+      />
 
       {selectedImageToCrop && (
         <ImageCropperModal

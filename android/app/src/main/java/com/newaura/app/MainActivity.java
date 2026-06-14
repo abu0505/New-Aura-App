@@ -20,8 +20,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        // Register native camera plugin BEFORE super.onCreate so it's available immediately
+        // Register native plugins BEFORE super.onCreate so they're available immediately
         registerPlugin(NativeCameraXPlugin.class);
+        registerPlugin(BackgroundUploadPlugin.class);
 
         super.onCreate(savedInstanceState);
 

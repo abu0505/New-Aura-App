@@ -5,6 +5,7 @@ import SecuritySection from './SecuritySection';
 import NotificationSettings from './NotificationSettings';
 import StorageSection from './StorageSection';
 import AutocompleteSettings from './AutocompleteSettings';
+import GeminiSettings from './GeminiSettings';
 
 /**
  * SettingsScreen - Refactored for AURA Phase 7 & 8
@@ -30,6 +31,9 @@ export default function SettingsScreen() {
         
         {/* Auto Complete Customization */}
         <AutocompleteSettings />
+
+        {/* Gemini AI Quota Diagnostics */}
+        <GeminiSettings />
 
         {/* Notifications Management */}
         <NotificationSettings />

@@ -7,6 +7,7 @@ import type { Database } from '../integrations/supabase/types';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { toast } from 'sonner';
+import { isNativeUploadAvailable, enqueueTextMessage as nativeEnqueueTextMessage } from '../lib/backgroundUpload';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -844,9 +845,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       .is('read_at', null)
       .then();
 
-    const { error } = await supabase
-      .from('messages')
-      .insert({
+    const dbInsertPayload = {
         id: optimisticMsg.id,
         sender_id: user.id,
         receiver_id: partnerId,
@@ -858,7 +857,28 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         media_nonce: media?.media_nonce || null,
         reply_to: replyToId || null,
         sender_public_key: myPublicKeyStr,
-      });
+    };
+
+    // ── NATIVE BACKGROUND PATH ──────────────────────────────────────────
+    // On Android native, route DB insert through WorkManager so it
+    // completes even if the user closes the app right after pressing Send.
+    if (isNativeUploadAvailable()) {
+      console.log('[useChat] Native background available — enqueuing text message to WorkManager');
+      const enqueued = await nativeEnqueueTextMessage(dbInsertPayload, true);
+      if (enqueued) {
+        // Mark as no longer pending — WorkManager guarantees delivery
+        setMessages(prev => prev.map(m =>
+          m.id === optimisticMsg.id ? { ...m, is_pending: false } : m
+        ));
+        return;
+      }
+      // If native enqueue failed, fall through to JS path
+      console.warn('[useChat] Native enqueue failed — falling back to JS path');
+    }
+
+    const { error } = await supabase
+      .from('messages')
+      .insert(dbInsertPayload);
 
     if (error) {
       console.error('[❌ SEND MSG] Insert failed:', {
@@ -1045,22 +1065,38 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       .is('read_at', null)
       .then();
 
+    const mediaDbPayload = {
+      id: tempId,
+      sender_id: user.id,
+      receiver_id: partnerId,
+      encrypted_content: ciphertext,
+      nonce: nonce,
+      type: media.type,
+      media_url: media.url,
+      media_key: media.media_key,
+      media_nonce: media.media_nonce,
+      reply_to: replyToId || null,
+      sender_public_key: myPublicKeyStr,
+      is_camera_capture: isCameraCapture || false,
+    };
+
+    // ── NATIVE BACKGROUND PATH ──────────────────────────────────────────
+    if (isNativeUploadAvailable()) {
+      console.log('[useChat] Native background available — enqueuing media message to WorkManager');
+      const enqueued = await nativeEnqueueTextMessage(mediaDbPayload, true);
+      if (enqueued) {
+        // Mark as no longer pending — WorkManager guarantees delivery
+        setMessages(prev => prev.map(m =>
+          m.id === tempId ? { ...m, is_pending: false } : m
+        ));
+        return;
+      }
+      console.warn('[useChat] Native enqueue failed — falling back to JS path');
+    }
+
     const { error } = await supabase
       .from('messages')
-      .insert({
-        id: tempId,
-        sender_id: user.id,
-        receiver_id: partnerId,
-        encrypted_content: ciphertext,
-        nonce: nonce,
-        type: media.type,
-        media_url: media.url,
-        media_key: media.media_key,
-        media_nonce: media.media_nonce,
-        reply_to: replyToId || null,
-        sender_public_key: myPublicKeyStr,
-        is_camera_capture: isCameraCapture || false,
-      } as any);
+      .insert(mediaDbPayload as any);
 
     if (error) {
       console.error('[❌ SEND MEDIA MSG] Insert failed:', {
@@ -1232,7 +1268,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       )
     );
 
-    const { error } = await supabase.from('messages').insert({
+    const videoDbPayload = {
       id: tempId,
       sender_id: user.id,
       receiver_id: partnerId,
@@ -1247,7 +1283,19 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       reply_to: replyToId || null,
       sender_public_key: myPublicKeyStr,
       is_camera_capture: isCameraCapture || false,
-    } as any);
+    };
+
+    // ── NATIVE BACKGROUND PATH ──────────────────────────────────────────
+    if (isNativeUploadAvailable()) {
+      console.log('[useChat] Native background available — enqueuing chunked video message to WorkManager');
+      const enqueued = await nativeEnqueueTextMessage(videoDbPayload, true);
+      if (enqueued) {
+        return; // WorkManager guarantees delivery
+      }
+      console.warn('[useChat] Native enqueue failed — falling back to JS path');
+    }
+
+    const { error } = await supabase.from('messages').insert(videoDbPayload as any);
 
     if (error) {
       

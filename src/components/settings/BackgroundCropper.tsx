@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
+import MemoryImagePicker from '../common/MemoryImagePicker';
 
 interface BackgroundCropperProps {
   onCancel: () => void;
@@ -59,6 +60,7 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
   const [desktopCroppedAreaPixels, setDesktopCroppedAreaPixels] = useState<Area | null>(null);
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [memoryPickerTarget, setMemoryPickerTarget] = useState<'mobile' | 'desktop' | null>(null);
 
   const handleMobileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +78,19 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
     reader.onload = () => setDesktopImageSrc(reader.result as string);
     reader.readAsDataURL(file);
     e.target.value = '';
+  };
+
+  const handleMemorySelect = (blob: Blob) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (memoryPickerTarget === 'mobile') {
+        setMobileImageSrc(reader.result as string);
+      } else if (memoryPickerTarget === 'desktop') {
+        setDesktopImageSrc(reader.result as string);
+      }
+      setMemoryPickerTarget(null);
+    };
+    reader.readAsDataURL(blob);
   };
 
   const onCropCompleteMobile = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
@@ -149,14 +164,24 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
                 onCropComplete={onCropCompleteMobile}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center gap-4 text-white/50">
+              <div className="flex flex-col items-center justify-center gap-4 text-white/50 p-4">
                 <span className="material-symbols-outlined text-4xl">smartphone</span>
                 <p className="text-sm font-label uppercase tracking-widest">No Image for Mobile</p>
-                <label className="relative mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
-                  <span className="material-symbols-outlined text-sm">upload</span>
-                  Upload Mobile Background
-                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleMobileUpload} />
-                </label>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <label className="relative cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
+                    <span className="material-symbols-outlined text-sm">upload</span>
+                    Upload Mobile Background
+                    <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleMobileUpload} />
+                  </label>
+                  <button 
+                    onClick={() => setMemoryPickerTarget('mobile')}
+                    className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">photo_library</span>
+                    Choose from Memories
+                  </button>
+                </div>
               </div>
             )
           ) : (
@@ -171,7 +196,7 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
                 onCropComplete={onCropCompleteDesktop}
               />
             ) : (
-              <div className="flex flex-col items-center justify-center gap-4 text-white/50">
+              <div className="flex flex-col items-center justify-center gap-4 text-white/50 p-4">
                 <span className="material-symbols-outlined text-4xl">desktop_windows</span>
                 <p className="text-sm font-label uppercase tracking-widest">No Image for Desktop</p>
                 {mobileImageSrc && (
@@ -183,11 +208,21 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
                     Use Mobile Image
                   </button>
                 )}
-                <label className="relative mt-2 cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
-                  <span className="material-symbols-outlined text-sm">upload</span>
-                  Upload Desktop Background
-                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleDesktopUpload} />
-                </label>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
+                  <label className="relative cursor-pointer px-6 py-3 rounded-full bg-[var(--gold)]/20 text-[var(--gold)] hover:bg-[var(--gold)]/30 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
+                    <span className="material-symbols-outlined text-sm">upload</span>
+                    Upload Desktop Background
+                    <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleDesktopUpload} />
+                  </label>
+                  <button 
+                    onClick={() => setMemoryPickerTarget('desktop')}
+                    className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">photo_library</span>
+                    Choose from Memories
+                  </button>
+                </div>
               </div>
             )
           )}
@@ -203,12 +238,19 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
               {activeTab === 'mobile' ? 'Set the background for mobile devices (9:16).' : 'Set the background for desktop screens (16:9).'}
             </p>
             {activeTab === 'mobile' && mobileImageSrc && (
-               <div className="mt-4 flex items-center gap-4">
+               <div className="mt-4 flex flex-wrap items-center gap-4">
                   <label className="relative cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
                     <span className="material-symbols-outlined text-sm">image</span>
-                    Change Image
+                    Change from Device
                     <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleMobileUpload} />
                   </label>
+                  <button 
+                    onClick={() => setMemoryPickerTarget('mobile')}
+                    className="px-4 py-2 rounded-lg border border-white/10 text-white/80 hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">photo_library</span>
+                    Change from Memories
+                  </button>
                   <button 
                     onClick={() => setMobileImageSrc(null)}
                     className="text-white/40 hover:text-red-400 text-xs font-label uppercase tracking-widest transition-colors flex items-center gap-1"
@@ -219,12 +261,19 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
                </div>
             )}
             {activeTab === 'desktop' && desktopImageSrc && (
-              <div className="mt-4 flex items-center gap-4">
+              <div className="mt-4 flex flex-wrap items-center gap-4">
                 <label className="relative cursor-pointer px-4 py-2 rounded-lg border border-[var(--gold)]/30 text-[var(--gold)] hover:bg-[var(--gold)]/10 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2 overflow-hidden">
                   <span className="material-symbols-outlined text-sm">image</span>
-                  Change Image
+                  Change from Device
                   <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleDesktopUpload} />
                 </label>
+                <button 
+                  onClick={() => setMemoryPickerTarget('desktop')}
+                  className="px-4 py-2 rounded-lg border border-white/10 text-white/80 hover:bg-white/5 transition-colors text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">photo_library</span>
+                  Change from Memories
+                </button>
                 <button 
                   onClick={() => setDesktopImageSrc(null)}
                   className="text-white/40 hover:text-red-400 text-xs font-label uppercase tracking-widest transition-colors flex items-center gap-1"
@@ -262,6 +311,13 @@ export default function BackgroundCropper({ onCancel, onSave }: BackgroundCroppe
           </div>
         </div>
       </div>
+
+      {/* Memories Picker popup */}
+      <MemoryImagePicker
+        isOpen={memoryPickerTarget !== null}
+        onClose={() => setMemoryPickerTarget(null)}
+        onSelect={handleMemorySelect}
+      />
     </div>
   );
 }

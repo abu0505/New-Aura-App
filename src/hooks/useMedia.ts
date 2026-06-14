@@ -19,6 +19,7 @@ import { usePartner } from './usePartner';
 import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb } from '../utils/videoChunker';
 import nacl from 'tweetnacl';
 import { supabase } from '../lib/supabase';
+import { isNativeUploadAvailable, enqueueChunkedUpload as nativeEnqueueChunkedUpload } from '../lib/backgroundUpload';
 
 export interface ProcessedMedia {
   url: string;
@@ -663,62 +664,105 @@ export function useMedia() {
       // We insert the DB row right after upload (not after ALL uploads),
       // so receiver gets realtime events as each block finishes — streaming!
 
-      const uploadBlock = async (data: Uint8Array): Promise<string> => {
-        const formData = new FormData();
-        formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.enc');
-        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-        const res = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
-          { method: 'POST', body: formData }
-        );
-        if (!res.ok) {
-          let errText = '';
-          try { errText = await res.text(); } catch {}
-          throw new Error(`Cloudinary upload failed (HTTP ${res.status}): ${errText}`);
+      // ── NATIVE BACKGROUND PATH ─────────────────────────────────────────
+      // On Android native, encrypt all blocks in JS, then hand off to
+      // WorkManager for upload + DB insert. This survives app kill.
+      if (isNativeUploadAvailable()) {
+        console.log('[useMedia] Native background upload available — encrypting all blocks...');
+        onStatusChange('Encrypting video...');
+
+        const encryptedChunks: Uint8Array[] = [];
+        for (let i = 0; i < totalChunks; i++) {
+          const blockNonce = deriveBlockNonce(baseNonce, i);
+          const encryptedBlock = nacl.secretbox(blocks[i].data, blockNonce, fileKey);
+          if (!encryptedBlock) throw new Error(`Encryption failed for block ${i}`);
+          encryptedChunks.push(encryptedBlock);
         }
-        return (await res.json()).secure_url as string;
-      };
 
-      const encryptAndUploadAndInsert = async (blockIndex: number) => {
-        // 1. Derive unique nonce for this block
-        const blockNonce = deriveBlockNonce(baseNonce, blockIndex);
-        // 2. Encrypt THIS block independently
-        const encryptedBlock = nacl.secretbox(
-          blocks[blockIndex].data,
-          blockNonce,
-          fileKey
+        onStatusChange('Queuing background upload...');
+        const enqueued = await nativeEnqueueChunkedUpload(
+          encryptedChunks,
+          messageId,
+          totalChunks,
+          packedKey,
+          baseNonceB64,
+          Math.round(videoDuration!),
+          senderId,
+          receiverId,
         );
-        if (!encryptedBlock) throw new Error(`Encryption failed for block ${blockIndex}`);
-        // 3. Upload encrypted block
-        onStatusChange(`Uploading ${blockIndex + 1}/${totalChunks}...`);
-        const chunkUrl = await uploadBlock(encryptedBlock);
-        // 4. IMMEDIATELY insert DB row → triggers realtime on receiver
-        console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' uploaded → ' + chunkUrl + ' | inserting DB row...');
-        const { error } = await supabase.from('video_chunks').insert({
-          message_id: messageId,
-          chunk_index: blockIndex,
-          total_chunks: totalChunks,
-          chunk_url: chunkUrl,
-          chunk_key: packedKey,      // same for all — key is video-level
-          chunk_nonce: baseNonceB64, // base nonce — receiver derives per-block nonce
-          duration: Math.round(videoDuration!),
-          sender_id: senderId,
-          receiver_id: receiverId,
-        });
-        if (error) throw new Error(`DB insert failed for block ${blockIndex}: ${error.message}`);
-        console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' DB row inserted ✓');
-      };
 
-      // Parallel upload with limit 5
-      const PARALLEL_LIMIT = 5;
-      const activeTasks = new Set<Promise<void>>();
-      for (let i = 0; i < totalChunks; i++) {
-        const task = encryptAndUploadAndInsert(i);
-        activeTasks.add(task);
-        task.finally(() => activeTasks.delete(task));
-        if (activeTasks.size >= PARALLEL_LIMIT) await Promise.race(activeTasks);
+        if (enqueued) {
+          console.log('[useMedia] All ' + totalChunks + ' chunks enqueued to native WorkManager ✓');
+          onStatusChange('Uploading in background...');
+        } else {
+          console.warn('[useMedia] Native enqueue failed — falling back to JS upload path');
+          // Fall through to JS path below
+          await jsUploadPath();
+        }
+      } else {
+        // ── WEB FALLBACK PATH (original JS fetch-based uploads) ──────────
+        await jsUploadPath();
       }
-      await Promise.all(activeTasks);
+
+      // Extracted JS upload path into a function for reuse as fallback
+      async function jsUploadPath() {
+        const uploadBlock = async (data: Uint8Array): Promise<string> => {
+          const formData = new FormData();
+          formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.enc');
+          formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+          const res = await fetch(
+            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
+            { method: 'POST', body: formData }
+          );
+          if (!res.ok) {
+            let errText = '';
+            try { errText = await res.text(); } catch {}
+            throw new Error(`Cloudinary upload failed (HTTP ${res.status}): ${errText}`);
+          }
+          return (await res.json()).secure_url as string;
+        };
+
+        const encryptAndUploadAndInsert = async (blockIndex: number) => {
+          // 1. Derive unique nonce for this block
+          const blockNonce = deriveBlockNonce(baseNonce, blockIndex);
+          // 2. Encrypt THIS block independently
+          const encryptedBlock = nacl.secretbox(
+            blocks[blockIndex].data,
+            blockNonce,
+            fileKey
+          );
+          if (!encryptedBlock) throw new Error(`Encryption failed for block ${blockIndex}`);
+          // 3. Upload encrypted block
+          onStatusChange(`Uploading ${blockIndex + 1}/${totalChunks}...`);
+          const chunkUrl = await uploadBlock(encryptedBlock);
+          // 4. IMMEDIATELY insert DB row → triggers realtime on receiver
+          console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' uploaded → ' + chunkUrl + ' | inserting DB row...');
+          const { error } = await supabase.from('video_chunks').insert({
+            message_id: messageId,
+            chunk_index: blockIndex,
+            total_chunks: totalChunks,
+            chunk_url: chunkUrl,
+            chunk_key: packedKey,      // same for all — key is video-level
+            chunk_nonce: baseNonceB64, // base nonce — receiver derives per-block nonce
+            duration: Math.round(videoDuration!),
+            sender_id: senderId,
+            receiver_id: receiverId,
+          });
+          if (error) throw new Error(`DB insert failed for block ${blockIndex}: ${error.message}`);
+          console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' DB row inserted ✓');
+        };
+
+        // Parallel upload with limit 4 (prevent connection saturation)
+        const PARALLEL_LIMIT = 4;
+        const activeTasks = new Set<Promise<void>>();
+        for (let i = 0; i < totalChunks; i++) {
+          const task = encryptAndUploadAndInsert(i);
+          activeTasks.add(task);
+          task.finally(() => activeTasks.delete(task));
+          if (activeTasks.size >= PARALLEL_LIMIT) await Promise.race(activeTasks);
+        }
+        await Promise.all(activeTasks);
+      }
 
       onStatusChange('Done');
       console.log('[useMedia] processAndUploadChunked COMPLETE msg=' + messageId + ' totalChunks=' + totalChunks);

@@ -14,6 +14,7 @@ import FolderView from './FolderView';
 import MomentsCarousel from './MomentsCarousel';
 import type { MomentGroup } from './MomentViewer';
 import TimelineScrubber from './TimelineScrubber';
+import RomanticCollages from './RomanticCollages';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -917,6 +918,11 @@ export default function MemoriesScreen() {
                 />
               );
             })()}
+
+            {/* ── Romantic Antique Collages ── */}
+            {!selectionMode && filter === 'all' && (
+              <RomanticCollages />
+            )}
 
             <div
               className="flex flex-col gap-6"

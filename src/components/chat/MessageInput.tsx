@@ -91,6 +91,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const lastCursorPosRef = useRef<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyBlobUrlRef = useRef<string | null>(null);
+  const uploadUsedSlotsRef = useRef<number>(0);
+  const uploadWaitersRef = useRef<Array<() => void>>([]);
   const { processAndUpload, getDecryptedBlob, processAndUploadChunked, generateVideoThumbnailFromFile } = useMedia();
 
   const getVideoDurationLocally = async (file: File): Promise<number> => {
@@ -570,23 +572,19 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     const TOTAL_SLOTS = 6;
     const IMAGE_SLOTS = 4; // images get priority access to these many slots
 
-    // Semaphore: tracks how many slots are currently occupied
-    let usedSlots = 0;
-    const waiters: Array<() => void> = []; // queue of tasks waiting for a free slot
-
     const acquireSlot = (): Promise<void> => new Promise(resolve => {
-      if (usedSlots < TOTAL_SLOTS) {
-        usedSlots++;
+      if (uploadUsedSlotsRef.current < TOTAL_SLOTS) {
+        uploadUsedSlotsRef.current++;
         resolve();
       } else {
-        waiters.push(() => { usedSlots++; resolve(); });
+        uploadWaitersRef.current.push(() => { uploadUsedSlotsRef.current++; resolve(); });
       }
     });
 
     const releaseSlot = () => {
-      usedSlots--;
+      uploadUsedSlotsRef.current--;
       // Wake the next waiting task (if any)
-      const next = waiters.shift();
+      const next = uploadWaitersRef.current.shift();
       if (next) next();
     };
 

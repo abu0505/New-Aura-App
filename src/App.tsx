@@ -10,6 +10,7 @@ const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration
 const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
 const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen'));
 const NotesScreen = lazy(() => import('./components/notes/NotesScreen'));
+const GamesScreen = lazy(() => import('./components/games/GamesScreen'));
 import AppLayout from './components/layout/AppLayout';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -288,6 +289,9 @@ function InnerApp({
           </div>
           <div className={activeTab === 'notes' ? 'h-full w-full' : 'hidden'}>
             <NotesScreen />
+          </div>
+          <div className={activeTab === 'games' ? 'h-full w-full' : 'hidden'}>
+            <GamesScreen />
           </div>
 
           <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>

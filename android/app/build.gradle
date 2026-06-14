@@ -57,6 +57,11 @@ dependencies {
 
     // Guava ListenableFuture adapter (required by CameraX ExtensionsManager)
     implementation "androidx.concurrent:concurrent-futures-ktx:1.2.0"
+
+    // ─── WorkManager (Background Upload System) ─────────────────────────────
+    // Enables uploads to survive app kill/close using Android's guaranteed
+    // background execution framework. Same approach used by WhatsApp/Telegram.
+    implementation "androidx.work:work-runtime-ktx:2.10.1"
 }
 
 apply from: 'capacitor.build.gradle'

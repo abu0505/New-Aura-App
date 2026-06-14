@@ -198,6 +198,14 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
                 {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>}
               </button>
               <button
+                onClick={() => onTabChange('games')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'games' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Games"
+              >
+                <span className="material-symbols-outlined text-2xl">sports_esports</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Games</span>}
+              </button>
+              <button
                 onClick={() => onTabChange('settings')}
                 className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Settings"
@@ -281,6 +289,15 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
           >
             <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'notes' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'notes' ? "'FILL' 1" : "" }}>sticky_note_2</span>
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Notes</span>
+          </button>
+
+          {/* Games */}
+          <button
+            onClick={() => changeTab('games')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'games' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'games' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'games' ? "'FILL' 1" : "" }}>sports_esports</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Games</span>
           </button>
 
           {/* Settings */}
