@@ -11,7 +11,7 @@ export default function CustomScrapbookLayout({
   images,
   onImageClick,
 }: CustomScrapbookLayoutProps) {
-  const { gridSize, frames } = config;
+  const { gridSize, frames, bgColor } = config;
 
   return (
     <div
@@ -20,7 +20,7 @@ export default function CustomScrapbookLayout({
         display: 'grid',
         gridTemplateColumns: `repeat(${gridSize}, 1fr)`,
         gridTemplateRows: `repeat(${gridSize}, 1fr)`,
-        background: '#f4f0e6',
+        background: bgColor || '#f4f0e6',
       }}
     >
       {frames.map((frame, idx) => {

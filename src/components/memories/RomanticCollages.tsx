@@ -84,7 +84,7 @@ export default function RomanticCollages() {
     const fetchLayouts = async () => {
       const { data } = await supabase
         .from('custom_collage_layouts')
-        .select('id, grid_size, frames')
+        .select('id, grid_size, frames, bg_color')
         .eq('user_id', user.id)
         .eq('partner_id', partner.id)
         .order('created_at', { ascending: true })
@@ -92,7 +92,11 @@ export default function RomanticCollages() {
       if (data) {
         setCustomLayouts(data.map(row => ({
           id: row.id,
-          config: { gridSize: row.grid_size, frames: row.frames as CollageLayoutConfig['frames'] }
+          config: {
+            gridSize: row.grid_size,
+            frames: row.frames as CollageLayoutConfig['frames'],
+            bgColor: row.bg_color || '#f4f0e6'
+          }
         })));
       }
     };
@@ -105,7 +109,13 @@ export default function RomanticCollages() {
     if (customLayouts.length >= 5) return;
     const { data, error } = await supabase
       .from('custom_collage_layouts')
-      .insert({ user_id: user.id, partner_id: partner.id, grid_size: config.gridSize, frames: config.frames })
+      .insert({
+        user_id: user.id,
+        partner_id: partner.id,
+        grid_size: config.gridSize,
+        frames: config.frames,
+        bg_color: config.bgColor || '#f4f0e6'
+      })
       .select('id')
       .single();
     if (!error && data) {
@@ -580,7 +590,13 @@ export default function RomanticCollages() {
               onClick={() => setViewerCardIndex(3 + idx)}
               whileHover={{ y: -4, scale: 1.01 }}
               transition={{ type: 'spring', damping: 20 }}
-              className="w-[300px] sm:w-[340px] aspect-[3/4] flex-shrink-0 snap-start relative rounded-[2.5rem] bg-[#f4f0e6] border border-[#e8dfc7] shadow-xl overflow-hidden p-0 group cursor-pointer hover:border-[#c9a96e]/40 transition-colors duration-300"
+              className="w-[300px] sm:w-[340px] aspect-[3/4] flex-shrink-0 snap-start relative rounded-[2.5rem] shadow-xl overflow-hidden p-0 group cursor-pointer hover:border-[#c9a96e]/40 transition-colors duration-300"
+              style={{
+                background: card.layoutConfig?.bgColor || '#f4f0e6',
+                border: (card.layoutConfig?.bgColor && ['#14141d', '#1e1212', '#121e16'].includes(card.layoutConfig.bgColor))
+                  ? '1px solid rgba(255, 255, 255, 0.08)'
+                  : '1px solid #e8dfc7'
+              }}
             >
               <div className="absolute inset-0 bg-[radial-gradient(#d3c69f_1px,transparent_1px)] [background-size:16px_16px] opacity-20 pointer-events-none" />
               <div className="absolute top-4 right-6 text-[#9a8656] font-serif italic text-[10px] tracking-widest opacity-60 z-30">Custom. {String(idx + 1).padStart(2, '0')}</div>

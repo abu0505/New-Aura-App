@@ -313,6 +313,35 @@ export interface Database {
           created_at?: string
         }
       }
+      custom_collage_layouts: {
+        Row: {
+          id: string
+          user_id: string
+          partner_id: string
+          grid_size: number
+          frames: Json
+          bg_color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          partner_id: string
+          grid_size: number
+          frames: Json
+          bg_color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          partner_id?: string
+          grid_size?: number
+          frames?: Json
+          bg_color?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

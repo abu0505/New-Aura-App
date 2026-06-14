@@ -258,7 +258,9 @@ function CardCoverPreview({ card }: { card: CollageCard }) {
   if (!first) return <div className="w-full h-full bg-white/5 rounded-xl" />;
 
   const bg =
-    card.type === 'scrapbook'
+    card.type === 'custom' && card.layoutConfig?.bgColor
+      ? card.layoutConfig.bgColor
+      : card.type === 'scrapbook'
       ? '#f4f0e6'
       : card.type === 'polaroid'
       ? '#1a1a24'
@@ -412,7 +414,9 @@ export default function CollageViewer({ cards, initialCardIndex, onClose }: Coll
   }, [onClose, nextCard, prevCard]);
 
   const cardBg =
-    card.type === 'scrapbook'
+    card.type === 'custom' && card.layoutConfig?.bgColor
+      ? card.layoutConfig.bgColor
+      : card.type === 'scrapbook'
       ? '#f4f0e6'
       : card.type === 'polaroid'
       ? '#14141d'
@@ -423,6 +427,10 @@ export default function CollageViewer({ cards, initialCardIndex, onClose }: Coll
       ? '1px solid #e8dfc7'
       : card.type === 'polaroid'
       ? '1px solid rgba(255,255,255,0.06)'
+      : card.type === 'custom' && card.layoutConfig?.bgColor
+      ? (['#14141d', '#1e1212', '#121e16'].includes(card.layoutConfig.bgColor)
+        ? '1px solid rgba(255,255,255,0.08)'
+        : '1px solid #e8dfc7')
       : '1px solid #2f1f1f';
 
   const touchStartX = useRef<number | null>(null);

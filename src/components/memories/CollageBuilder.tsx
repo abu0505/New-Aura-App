@@ -14,6 +14,7 @@ export interface CollageFrame {
 export interface CollageLayoutConfig {
   gridSize: number;
   frames: CollageFrame[];
+  bgColor?: string;
 }
 
 interface CollageBuilderProps {
@@ -26,7 +27,104 @@ function genId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function isLightColor(hex: string) {
+  if (!hex || hex.length < 7) return true;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luma > 180;
+}
+
+function hexToHsv(hex: string): { h: number; s: number; v: number } {
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  const s = max === 0 ? 0 : d / max;
+  const v = max;
+
+  if (max !== min) {
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), v: Math.round(v * 100) };
+}
+
+function hsvToHex(h: number, s: number, v: number): string {
+  s /= 100;
+  v /= 100;
+  const i = Math.floor(h / 60) % 6;
+  const f = h / 60 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  let r = 0, g = 0, b = 0;
+  switch (i) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+  const toHex = (c: number) => {
+    const hex = Math.round(c * 255).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  let r = 0, g = 0, b = 0;
+  if (hex.length === 4) {
+    r = parseInt(hex[1] + hex[1], 16);
+    g = parseInt(hex[2] + hex[2], 16);
+    b = parseInt(hex[3] + hex[3], 16);
+  } else if (hex.length === 7) {
+    r = parseInt(hex.slice(1, 3), 16);
+    g = parseInt(hex.slice(3, 5), 16);
+    b = parseInt(hex.slice(5, 7), 16);
+  }
+  return { r, g, b };
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  const toHex = (c: number) => {
+    const hex = Math.max(0, Math.min(255, c)).toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  };
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
 const GRID_SIZES = [30, 50, 75, 100];
+const BG_COLORS = [
+  { name: 'Warm Cream', value: '#f4f0e6', isLight: true },
+  { name: 'Soft Ivory', value: '#faf8f5', isLight: true },
+  { name: 'True White', value: '#ffffff', isLight: true },
+  { name: 'Pastel Rose', value: '#f5ebe6', isLight: true },
+  { name: 'Soft Mint', value: '#e8ece1', isLight: true },
+  { name: 'Midnight Dark', value: '#14141d', isLight: false },
+  { name: 'Warm Chocolate', value: '#1e1212', isLight: false },
+  { name: 'Deep Forest', value: '#121e16', isLight: false },
+];
 const FRAME_COLORS = [
   'rgba(212,175,55,0.25)',
   'rgba(99,102,241,0.22)',
@@ -40,6 +138,8 @@ const FRAME_COLORS = [
 export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps) {
   const [gridSize, setGridSize] = useState(50);
   const [frames, setFrames] = useState<CollageFrame[]>([]);
+  const [bgColor, setBgColor] = useState('#f4f0e6');
+  const [showColorPicker, setShowColorPicker] = useState(false);
   const [dragging, setDragging] = useState<{ colStart: number; rowStart: number; colEnd: number; rowEnd: number } | null>(null);
   
   // Selection and Resize state
@@ -65,6 +165,21 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
   } | null>(null);
   const [copiedFrame, setCopiedFrame] = useState<Omit<CollageFrame, 'id'> | null>(null);
 
+  const [isMobile, setIsMobile] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
+
+  // Check mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      setIsPanelOpen(!mobile);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const gridRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
 
@@ -77,9 +192,9 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
 
 
 
-  // ── Grid cell from mouse position ──
+  // ── Grid cell from pointer position ──
   const getCellFromEvent = useCallback((
-    e: React.MouseEvent | MouseEvent,
+    e: React.MouseEvent | MouseEvent | React.PointerEvent | PointerEvent,
     clamp = false
   ): { col: number; row: number } | null => {
     if (!gridRef.current) return null;
@@ -97,11 +212,11 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
     return { col, row };
   }, [gridSize]);
 
-  // ── Resize Mousemove/Mouseup Handler ──
+  // ── Resize Pointermove/Pointerup Handler ──
   useEffect(() => {
     if (!resizing) return;
 
-    const handleMouseMoveGlobal = (e: MouseEvent) => {
+    const handleMouseMoveGlobal = (e: PointerEvent) => {
       const cell = getCellFromEvent(e, true);
       if (!cell) return;
 
@@ -143,20 +258,20 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       setResizing(null);
     };
 
-    window.addEventListener('mousemove', handleMouseMoveGlobal);
-    window.addEventListener('mouseup', handleMouseUpGlobal);
+    window.addEventListener('pointermove', handleMouseMoveGlobal);
+    window.addEventListener('pointerup', handleMouseUpGlobal);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMoveGlobal);
-      window.removeEventListener('mouseup', handleMouseUpGlobal);
+      window.removeEventListener('pointermove', handleMouseMoveGlobal);
+      window.removeEventListener('pointerup', handleMouseUpGlobal);
     };
   }, [resizing, gridSize, getCellFromEvent]);
 
-  // ── Move Mousemove/Mouseup Handler ──
+  // ── Move Pointermove/Pointerup Handler ──
   useEffect(() => {
     if (!moving) return;
 
-    const handleMouseMoveGlobal = (e: MouseEvent) => {
+    const handleMouseMoveGlobal = (e: PointerEvent) => {
       const cell = getCellFromEvent(e, true);
       if (!cell) return;
 
@@ -200,17 +315,17 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       setMoving(null);
     };
 
-    window.addEventListener('mousemove', handleMouseMoveGlobal);
-    window.addEventListener('mouseup', handleMouseUpGlobal);
+    window.addEventListener('pointermove', handleMouseMoveGlobal);
+    window.addEventListener('pointerup', handleMouseUpGlobal);
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMoveGlobal);
-      window.removeEventListener('mouseup', handleMouseUpGlobal);
+      window.removeEventListener('pointermove', handleMouseMoveGlobal);
+      window.removeEventListener('pointerup', handleMouseUpGlobal);
     };
   }, [moving, gridSize, getCellFromEvent]);
 
   const handleResizeStart = (
-    e: React.MouseEvent,
+    e: React.PointerEvent,
     frameId: string,
     handle: 't' | 'b' | 'l' | 'r' | 'tl' | 'tr' | 'bl' | 'br'
   ) => {
@@ -234,7 +349,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
     });
   };
 
-  const handleFrameMouseDown = (e: React.MouseEvent, frameId: string) => {
+  const handleFrameMouseDown = (e: React.PointerEvent, frameId: string) => {
     e.stopPropagation();
     e.preventDefault();
     setSelectedFrameId(frameId);
@@ -256,24 +371,38 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
     });
   };
 
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  const handleMouseDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
     setSelectedFrameId(null);
     const cell = getCellFromEvent(e);
     if (!cell) return;
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {
+      console.error('Failed to set pointer capture:', err);
+    }
+
     isDraggingRef.current = true;
     setDragging({ colStart: cell.col, rowStart: cell.row, colEnd: cell.col, rowEnd: cell.row });
   }, [getCellFromEvent]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.PointerEvent) => {
     if (!isDraggingRef.current || !dragging) return;
     const cell = getCellFromEvent(e);
     if (!cell) return;
     setDragging(prev => prev ? { ...prev, colEnd: cell.col, rowEnd: cell.row } : null);
   }, [dragging, getCellFromEvent]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = useCallback((e: React.PointerEvent) => {
     if (!isDraggingRef.current || !dragging) return;
     isDraggingRef.current = false;
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {
+      // ignore
+    }
 
     const colStart = Math.min(dragging.colStart, dragging.colEnd);
     const colEnd = Math.max(dragging.colStart, dragging.colEnd) + 1;
@@ -353,8 +482,8 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
 
   const handleSave = useCallback(() => {
     if (frames.length === 0) return;
-    onSave({ gridSize, frames });
-  }, [frames, gridSize, onSave]);
+    onSave({ gridSize, frames, bgColor });
+  }, [frames, gridSize, bgColor, onSave]);
 
   const handleGridSizeChange = (size: number) => {
     setGridSize(size);
@@ -489,13 +618,13 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-[var(--gold)]">dashboard_customize</span>
           <div>
-            <h2 className="text-white font-semibold text-base leading-tight">Collage Builder</h2>
-            <p className="text-white/40 text-xs">Drag on the grid to place image frames</p>
+            <h2 className="text-white font-semibold text-sm md:text-base leading-tight">Collage Builder</h2>
+            <p className="text-white/40 text-xs hidden sm:block">Drag on the grid to place image frames</p>
           </div>
         </div>
 
-        {/* Grid Size Selector */}
-        <div className="flex items-center gap-2">
+        {/* Grid Size Selector (Desktop/Tablet) */}
+        <div className="hidden md:flex items-center gap-2">
           <span className="text-white/40 text-xs mr-1">Grid</span>
           {GRID_SIZES.map(size => (
             <button
@@ -512,58 +641,20 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
           ))}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          <span className={`text-xs font-mono px-2 py-0.5 rounded ${frames.length > 0 ? 'text-[var(--gold)] bg-[var(--gold)]/10' : 'text-white/30'}`}>
-            {frames.length} frame{frames.length !== 1 ? 's' : ''} placed
-          </span>
-          {selectedFrameId && (
-            <>
-              <button
-                onClick={() => centerFrame(selectedFrameId)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/8 text-white/80 hover:bg-white/15 hover:text-white transition-all border border-white/8 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[13px]">filter_center_focus</span>
-                Center
-              </button>
-              <button
-                onClick={() => handleCopy(selectedFrameId)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/8 text-white/80 hover:bg-white/15 hover:text-white transition-all border border-white/8 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-[13px]">content_copy</span>
-                Copy
-              </button>
-            </>
-          )}
-          {copiedFrame && (
+        {/* Header Actions (Toggle Panel for Mobile + Close Button) */}
+        <div className="flex items-center gap-2.5">
+          {isMobile && (
             <button
-              onClick={handlePaste}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[var(--gold)]/10 text-[var(--gold)] hover:bg-[var(--gold)]/20 transition-all border border-[var(--gold)]/20 active:scale-95"
+              onClick={() => setIsPanelOpen(prev => !prev)}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+                isPanelOpen 
+                  ? 'bg-[var(--gold)] text-[#0d0d14]' 
+                  : 'bg-white/8 text-white/50 hover:text-white'
+              }`}
             >
-              <span className="material-symbols-outlined text-[13px]">content_paste</span>
-              Paste
+              <span className="material-symbols-outlined text-[20px]">tune</span>
             </button>
           )}
-          {frames.length > 0 && (
-            <button
-              onClick={() => setFrames([])}
-              className="text-xs text-white/40 hover:text-red-400 transition-colors px-2 py-1 rounded"
-            >
-              Clear all
-            </button>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={frames.length === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-              frames.length > 0
-                ? 'bg-[var(--gold)] text-[#0d0d14] hover:brightness-110 active:scale-95'
-                : 'bg-white/8 text-white/30 cursor-not-allowed'
-            }`}
-          >
-            <span className="material-symbols-outlined text-base">check</span>
-            Save Layout
-          </button>
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full bg-white/8 hover:bg-white/15 text-white/50 hover:text-white flex items-center justify-center transition-all"
@@ -574,8 +665,255 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       </div>
 
       {/* ── Main Grid Area ── */}
-      <div className="flex-1 flex items-center justify-center p-8 overflow-hidden">
-        <div className="relative aspect-[3/4] h-full max-h-full" style={{ maxWidth: 'calc(100% * 3/4)' }}>
+      <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+        {/* Backdrop overlay for mobile drawer setting */}
+        {isMobile && isPanelOpen && (
+          <div 
+            onClick={() => setIsPanelOpen(false)} 
+            className="fixed inset-0 bg-black/60 z-[550] backdrop-blur-sm transition-opacity duration-200"
+          />
+        )}
+
+        {/* Floating Actions Panel */}
+        <AnimatePresence>
+          {isPanelOpen && (
+            <motion.div
+              initial={isMobile ? { x: '100%' } : { opacity: 0, scale: 0.95 }}
+              animate={isMobile ? { x: 0 } : { opacity: 1, scale: 1 }}
+              exit={isMobile ? { x: '100%' } : { opacity: 0, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className={
+                isMobile
+                  ? "fixed top-0 right-0 h-full w-[280px] z-[600] bg-[#13131e] border-l border-white/10 p-6 shadow-2xl flex flex-col gap-4 overflow-y-auto text-left"
+                  : "absolute top-6 right-6 z-40 bg-[#13131e]/90 backdrop-blur-md border border-white/10 p-4 rounded-2xl w-48 shadow-2xl flex flex-col gap-3 text-left"
+              }
+            >
+              {isMobile && (
+                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-1">
+                  <span className="text-white font-semibold text-sm">Editor Settings</span>
+                  <button
+                    onClick={() => setIsPanelOpen(false)}
+                    className="w-8 h-8 rounded-full bg-white/5 text-white/50 flex items-center justify-center hover:bg-white/10"
+                  >
+                    <span className="material-symbols-outlined text-lg">close</span>
+                  </button>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                <span className="text-white/40 text-[10px] font-mono uppercase tracking-wider">Canvas</span>
+                <span className="text-[10px] font-mono text-[var(--gold)] bg-[var(--gold)]/10 px-2 py-0.5 rounded">
+                  {frames.length}/10 Frames
+                </span>
+              </div>
+
+              {/* Background Color Selector */}
+              <div className="flex flex-col gap-2.5 border-b border-white/5 pb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-white/40 text-[10px] font-mono uppercase tracking-wider">Background</span>
+                  <span className="text-[10px] font-mono text-[var(--gold)] font-medium">
+                    {bgColor.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Preset circles */}
+                <div className="grid grid-cols-5 gap-1.5">
+                  {BG_COLORS.map(color => {
+                    const isSelected = bgColor.toLowerCase() === color.value.toLowerCase();
+                    return (
+                      <button
+                        key={color.value}
+                        onClick={() => setBgColor(color.value)}
+                        className={`w-7.5 h-7.5 rounded-full border transition-all duration-200 relative flex items-center justify-center cursor-pointer active:scale-90 hover:scale-105 ${
+                          isSelected 
+                            ? 'border-[var(--gold)] ring-2 ring-[var(--gold)]/20 scale-110 shadow-lg shadow-[var(--gold)]/10' 
+                            : 'border-white/10 hover:border-white/30'
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      >
+                        {isSelected && (
+                          <span 
+                            className="material-symbols-outlined text-[13px] font-bold"
+                            style={{ color: color.isLight ? '#0d0d14' : '#ffffff' }}
+                          >
+                            check
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom Color Selector (Quick Circle Trigger) */}
+                  {(() => {
+                    const isCurated = BG_COLORS.some(c => c.value.toLowerCase() === bgColor.toLowerCase());
+                    const customTextLight = isLightColor(bgColor);
+                    return (
+                      <div 
+                        onClick={() => setShowColorPicker(true)}
+                        className={`w-7.5 h-7.5 rounded-full border transition-all duration-200 relative flex items-center justify-center cursor-pointer active:scale-90 hover:scale-105 ${
+                          !isCurated 
+                            ? 'border-[var(--gold)] ring-2 ring-[var(--gold)]/20 scale-110 shadow-lg shadow-[var(--gold)]/15' 
+                            : 'border-white/10 hover:border-white/30'
+                        }`}
+                        style={{ 
+                          background: !isCurated 
+                            ? bgColor 
+                            : 'conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)' 
+                        }}
+                        title="Choose custom color"
+                      >
+                        {!isCurated ? (
+                          <span 
+                            className="material-symbols-outlined text-[13px] font-bold pointer-events-none"
+                            style={{ color: customTextLight ? '#0d0d14' : '#ffffff' }}
+                          >
+                            check
+                          </span>
+                        ) : (
+                          <span className="material-symbols-outlined text-[13px] text-white/70 pointer-events-none">
+                            palette
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Custom Color Selector Wide Pill Bar */}
+                {(() => {
+                  const isCurated = BG_COLORS.some(c => c.value.toLowerCase() === bgColor.toLowerCase());
+                  return (
+                    <div 
+                      onClick={() => setShowColorPicker(true)}
+                      className="relative group/picker w-full"
+                    >
+                      <div 
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all duration-300 text-left bg-white/3 hover:bg-white/6 cursor-pointer ${
+                          !isCurated 
+                            ? 'border-[var(--gold)]/40 shadow-md shadow-[var(--gold)]/5' 
+                            : 'border-white/8 hover:border-white/12'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 pointer-events-none">
+                          <span className="material-symbols-outlined text-sm text-[var(--gold)] opacity-80 group-hover/picker:opacity-100 transition-opacity">
+                            color_lens
+                          </span>
+                          <span className="text-white/70 text-[11px] font-medium group-hover/picker:text-white transition-colors">
+                            Custom Picker
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 pointer-events-none">
+                          <span className="text-[9px] font-mono text-white/50 uppercase bg-black/25 px-1.5 py-0.5 rounded border border-white/5">
+                            {bgColor.toUpperCase()}
+                          </span>
+                          <div 
+                            className="w-4 h-4 rounded-md border border-white/10" 
+                            style={{ backgroundColor: bgColor }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Grid Size Selector (Mobile only) */}
+              {isMobile && (
+                <div className="flex flex-col gap-2 border-b border-white/5 pb-3">
+                  <span className="text-white/40 text-[10px] font-mono uppercase tracking-wider">Grid Size</span>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {GRID_SIZES.map(size => (
+                      <button
+                        key={size}
+                        onClick={() => handleGridSizeChange(size)}
+                        className={`py-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200 ${
+                          gridSize === size
+                            ? 'bg-[var(--gold)] text-[#0d0d14]'
+                            : 'bg-white/8 text-white/50 hover:bg-white/15 hover:text-white'
+                        }`}
+                      >
+                        {size}×{size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Save Layout Button */}
+              <button
+                onClick={handleSave}
+                disabled={frames.length === 0}
+                className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
+                  frames.length > 0
+                    ? 'bg-[var(--gold)] text-[#0d0d14] hover:brightness-110 active:scale-95 shadow-lg shadow-[var(--gold)]/10'
+                    : 'bg-white/5 text-white/30 cursor-not-allowed'
+                }`}
+              >
+                <span className="material-symbols-outlined text-[16px]">check</span>
+                Save Layout
+              </button>
+
+              {/* Clear All Button */}
+              {frames.length > 0 && (
+                <button
+                  onClick={() => setFrames([])}
+                  className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors border border-red-500/20 active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
+                  Clear all
+                </button>
+              )}
+
+              {/* Selected Frame Controls */}
+              {selectedFrameId && (() => {
+                const idx = frames.findIndex(f => f.id === selectedFrameId);
+                if (idx === -1) return null;
+                return (
+                  <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
+                    <span className="text-white/40 text-[9px] font-mono uppercase tracking-wider">Frame #{idx + 1}</span>
+                    <button
+                      onClick={() => centerFrame(selectedFrameId)}
+                      className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all border border-white/8 active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">filter_center_focus</span>
+                      Center
+                    </button>
+                    <button
+                      onClick={() => handleCopy(selectedFrameId)}
+                      className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all border border-white/8 active:scale-95"
+                    >
+                      <span className="material-symbols-outlined text-[15px]">content_copy</span>
+                      Copy
+                    </button>
+                  </div>
+                );
+              })()}
+
+              {/* Clipboard Paste Controls */}
+              {copiedFrame && (
+                <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
+                  <span className="text-white/40 text-[9px] font-mono uppercase tracking-wider">Clipboard</span>
+                  <button
+                    onClick={handlePaste}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--gold)]/10 text-[var(--gold)] hover:bg-[var(--gold)]/20 transition-all border border-[var(--gold)]/20 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[15px]">content_paste</span>
+                    Paste
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div 
+          className="relative aspect-[3/4] w-full md:h-full max-h-full"
+          style={{ 
+            maxWidth: isMobile ? 'calc(100vw - 32px)' : 'calc((100vh - 180px) * 3/4)',
+            maxHeight: isMobile ? 'calc((100vw - 32px) * 4/3)' : 'calc(100vh - 180px)'
+          }}
+        >
           {/* Corner labels */}
           <div className="absolute -top-5 -left-1 text-[10px] text-white/25 font-mono">0,0</div>
           <div className="absolute -top-5 -right-1 text-[10px] text-white/25 font-mono">{gridSize},0</div>
@@ -585,7 +923,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
           {/* Grid canvas */}
           <div
             ref={gridRef}
-            className="absolute inset-0 cursor-crosshair rounded-2xl overflow-hidden border border-white/10"
+            className="absolute inset-0 cursor-crosshair rounded-2xl overflow-hidden border border-white/10 touch-none"
             style={{
               backgroundImage: `
                 linear-gradient(to right, rgba(154,134,86,0.20) 1px, transparent 1px),
@@ -594,12 +932,20 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                 linear-gradient(to bottom, rgba(154,134,86,0.06) 1px, transparent 1px)
               `,
               backgroundSize: `${100 / (gridSize / 10)}% ${100 / (gridSize / 10)}%, ${100 / (gridSize / 10)}% ${100 / (gridSize / 10)}%, ${100 / gridSize}% ${100 / gridSize}%, ${100 / gridSize}% ${100 / gridSize}%`,
-              background: '#1a1a26',
+              backgroundColor: bgColor,
               backgroundRepeat: 'repeat',
+              touchAction: 'none'
             }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
+            onPointerDown={handleMouseDown}
+            onPointerMove={handleMouseMove}
+            onPointerUp={handleMouseUp}
+            onPointerCancel={(e) => {
+              try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              } catch (err) {}
+              isDraggingRef.current = false;
+              setDragging(null);
+            }}
             onMouseLeave={() => {
               if (isDraggingRef.current) {
                 isDraggingRef.current = false;
@@ -640,11 +986,11 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
               return (
                 <div
                   key={f.id}
-                  onMouseDown={(e) => handleFrameMouseDown(e, f.id)}
-                  className={`absolute rounded-[3px] flex items-start justify-between p-1.5 group/frame transition-all duration-150 ${
+                  onPointerDown={(e) => handleFrameMouseDown(e, f.id)}
+                  className={`absolute rounded-[3px] flex items-start justify-between p-1.5 group/frame transition-all duration-150 touch-none ${
                     isSelected ? 'ring-2 ring-white/20' : ''
                   }`}
-                  style={frameToStyle(f, idx)}
+                  style={{ ...frameToStyle(f, idx), touchAction: 'none' }}
                 >
                   {/* Frame number badge */}
                   <div className="flex items-center gap-1 pointer-events-none">
@@ -654,13 +1000,13 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                   </div>
                   {/* Delete button */}
                   <button
-                    onMouseDown={(e) => { e.stopPropagation(); deleteFrame(f.id); }}
+                    onPointerDown={(e) => { e.stopPropagation(); deleteFrame(f.id); }}
                     className="w-5 h-5 rounded-full bg-black/40 text-white/60 hover:text-white hover:bg-red-500/60 flex items-center justify-center transition-all opacity-0 group-hover/frame:opacity-100 z-10"
                   >
                     <span className="material-symbols-outlined text-[11px]">close</span>
                   </button>
                   {/* Size label */}
-                  <div className="absolute bottom-1 right-1.5 text-[9px] font-mono text-white/40 pointer-events-none">
+                  <div className="absolute bottom-1 left-1.5 text-[9px] font-mono text-white/40 pointer-events-none">
                     {f.colEnd - f.colStart}×{f.rowEnd - f.rowStart}
                   </div>
 
@@ -672,14 +1018,14 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                       }`}
                     >
                       <button
-                        onMouseDown={(e) => { e.stopPropagation(); centerFrame(f.id); }}
+                        onPointerDown={(e) => { e.stopPropagation(); centerFrame(f.id); }}
                         className="px-1.5 py-0.5 rounded hover:bg-[var(--gold)] hover:text-[#0d0d14] text-white/90 text-[10px] font-semibold flex items-center gap-1 transition-all"
                       >
                         <span className="material-symbols-outlined text-[11px] leading-none">filter_center_focus</span>
                         Center
                       </button>
                       <button
-                        onMouseDown={(e) => { e.stopPropagation(); handleCopy(f.id); }}
+                        onPointerDown={(e) => { e.stopPropagation(); handleCopy(f.id); }}
                         className="px-1.5 py-0.5 rounded hover:bg-[var(--gold)] hover:text-[#0d0d14] text-white/90 text-[10px] font-semibold flex items-center gap-1 transition-all"
                       >
                         <span className="material-symbols-outlined text-[11px] leading-none">content_copy</span>
@@ -693,44 +1039,44 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                     <>
                       {/* Corner Handles */}
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'tl')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'tl')}
                         className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full cursor-nwse-resize z-40 shadow-lg transition-transform hover:scale-125 border-2"
                         style={{ borderColor: handleBorderColor }}
                       />
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'tr')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'tr')}
                         className="absolute top-0 right-0 translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full cursor-nesw-resize z-40 shadow-lg transition-transform hover:scale-125 border-2"
                         style={{ borderColor: handleBorderColor }}
                       />
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'bl')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'bl')}
                         className="absolute bottom-0 left-0 -translate-x-1/2 translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full cursor-nesw-resize z-40 shadow-lg transition-transform hover:scale-125 border-2"
                         style={{ borderColor: handleBorderColor }}
                       />
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'br')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'br')}
                         className="absolute bottom-0 right-0 translate-x-1/2 translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full cursor-nwse-resize z-40 shadow-lg transition-transform hover:scale-125 border-2"
                         style={{ borderColor: handleBorderColor }}
                       />
 
                       {/* Edge Handles */}
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 't')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 't')}
                         className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-2 bg-white rounded-full cursor-ns-resize z-40 shadow-md transition-transform hover:scale-125 border"
                         style={{ borderColor: handleBorderColor }}
                       />
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'b')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'b')}
                         className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-4 h-2 bg-white rounded-full cursor-ns-resize z-40 shadow-md transition-transform hover:scale-125 border"
                         style={{ borderColor: handleBorderColor }}
                       />
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'l')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'l')}
                         className="absolute top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 w-2 h-4 bg-white rounded-full cursor-ew-resize z-40 shadow-md transition-transform hover:scale-125 border"
                         style={{ borderColor: handleBorderColor }}
                       />
                       <div
-                        onMouseDown={(e) => handleResizeStart(e, f.id, 'r')}
+                        onPointerDown={(e) => handleResizeStart(e, f.id, 'r')}
                         className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-2 h-4 bg-white rounded-full cursor-ew-resize z-40 shadow-md transition-transform hover:scale-125 border"
                         style={{ borderColor: handleBorderColor }}
                       />
@@ -758,7 +1104,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                     border: '1.5px dashed rgba(212,175,55,0.7)',
                   }}
                 >
-                  <span className="absolute top-1 left-1.5 text-[9px] font-mono text-[var(--gold)]/80">
+                  <span className="absolute bottom-1 left-1.5 text-[9px] font-mono text-[var(--gold)]/80">
                     {colEnd - colStart}×{rowEnd - rowStart}
                   </span>
                 </div>
@@ -776,7 +1122,256 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
   );
 
   return createPortal(
-    <AnimatePresence>{content}</AnimatePresence>,
+    <>
+      <AnimatePresence>{content}</AnimatePresence>
+      <AnimatePresence>
+        {showColorPicker && (
+          <CustomColorPickerModal
+            initialColor={bgColor}
+            onClose={() => setShowColorPicker(false)}
+            onChange={(newHex) => setBgColor(newHex)}
+          />
+        )}
+      </AnimatePresence>
+    </>,
     document.body
+  );
+}
+
+// ── CustomColorPickerModal Component ──────────────────────────────────────────
+interface CustomColorPickerModalProps {
+  initialColor: string;
+  onClose: () => void;
+  onChange: (color: string) => void;
+}
+
+function CustomColorPickerModal({ initialColor, onClose, onChange }: CustomColorPickerModalProps) {
+  const [hsv, setHsv] = useState(() => hexToHsv(initialColor));
+  const svRef = useRef<HTMLDivElement>(null);
+  const hueRef = useRef<HTMLDivElement>(null);
+
+  const currentHex = hsvToHex(hsv.h, hsv.s, hsv.v);
+  const { r, g, b } = hexToRgb(currentHex);
+
+  const updateHsv = (newHsv: Partial<{ h: number; s: number; v: number }>) => {
+    setHsv(prev => {
+      const updated = { ...prev, ...newHsv };
+      onChange(hsvToHex(updated.h, updated.s, updated.v));
+      return updated;
+    });
+  };
+
+  // Saturation/Value Dragging
+  const handleSvPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    handleSvMove(e);
+  };
+
+  const handleSvMove = (e: React.PointerEvent | PointerEvent) => {
+    if (!svRef.current) return;
+    const rect = svRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
+    const s = Math.round((x / rect.width) * 100);
+    const v = Math.round((1 - y / rect.height) * 100);
+    updateHsv({ s, v });
+  };
+
+  const handleSvPointerMove = (e: React.PointerEvent) => {
+    if (e.buttons > 0) {
+      handleSvMove(e);
+    }
+  };
+
+  // Hue Dragging
+  const handleHuePointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    handleHueMove(e);
+  };
+
+  const handleHueMove = (e: React.PointerEvent | PointerEvent) => {
+    if (!hueRef.current) return;
+    const rect = hueRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+    const h = Math.round((x / rect.width) * 360);
+    updateHsv({ h: h === 360 ? 0 : h });
+  };
+
+  const handleHuePointerMove = (e: React.PointerEvent) => {
+    if (e.buttons > 0) {
+      handleHueMove(e);
+    }
+  };
+
+  // Input Value Syncs
+  const handleRgbChange = (channel: 'r' | 'g' | 'b', valStr: string) => {
+    const cleanVal = valStr.replace(/\D/g, '');
+    const num = Math.min(255, parseInt(cleanVal) || 0);
+    const newR = channel === 'r' ? num : r;
+    const newG = channel === 'g' ? num : g;
+    const newB = channel === 'b' ? num : b;
+    const hex = rgbToHex(newR, newG, newB);
+    setHsv(hexToHsv(hex));
+    onChange(hex);
+  };
+
+  const handleHexChange = (hexStr: string) => {
+    let cleanHex = hexStr;
+    if (!cleanHex.startsWith('#')) {
+      cleanHex = '#' + cleanHex;
+    }
+    if (cleanHex.length <= 7) {
+      if (cleanHex.length === 7 && /^#[0-9A-Fa-f]{6}$/.test(cleanHex)) {
+        setHsv(hexToHsv(cleanHex));
+        onChange(cleanHex);
+      }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[700] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/60 backdrop-blur-[4px]"
+      />
+
+      {/* Popover Card */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 15 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 15 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+        className="relative bg-[#13131e] border border-white/10 rounded-[2rem] p-5 w-full max-w-[280px] shadow-2xl flex flex-col gap-4 select-none z-10"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between pb-1">
+          <span className="text-white font-semibold text-sm font-serif italic tracking-wide">Custom Color</span>
+          <button 
+            onClick={onClose}
+            className="w-7 h-7 rounded-full bg-white/5 text-white/50 flex items-center justify-center hover:bg-white/10 hover:text-white transition-all active:scale-95"
+          >
+            <span className="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+
+        {/* Saturation/Value Area */}
+        <div 
+          ref={svRef}
+          onPointerDown={handleSvPointerDown}
+          onPointerMove={handleSvPointerMove}
+          className="w-full aspect-[4/3] rounded-2xl relative overflow-hidden cursor-crosshair border border-white/5 touch-none"
+          style={{
+            backgroundColor: `hsl(${hsv.h}, 100%, 50%)`,
+            backgroundImage: `
+              linear-gradient(to top, #000, transparent),
+              linear-gradient(to right, #fff, transparent)
+            `,
+          }}
+        >
+          {/* SV Selector dot */}
+          <div 
+            className="absolute w-4 h-4 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white shadow-lg pointer-events-none"
+            style={{
+              left: `${hsv.s}%`,
+              bottom: `${hsv.v}%`,
+              backgroundColor: currentHex,
+              boxShadow: '0 2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.2)'
+            }}
+          />
+        </div>
+
+        {/* Hue rainbow slider */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex justify-between items-center text-[10px] text-white/40 font-mono">
+            <span>HUE</span>
+            <span>{hsv.h}°</span>
+          </div>
+          <div 
+            ref={hueRef}
+            onPointerDown={handleHuePointerDown}
+            onPointerMove={handleHuePointerMove}
+            className="w-full h-4 rounded-full relative cursor-ew-resize border border-white/5 touch-none"
+            style={{
+              background: 'linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%)'
+            }}
+          >
+            {/* Hue Selector handle */}
+            <div 
+              className="absolute w-4 h-4 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full border-2 border-white shadow-md pointer-events-none"
+              style={{
+                left: `${(hsv.h / 360) * 100}%`,
+                backgroundColor: `hsl(${hsv.h}, 100%, 50%)`
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Inputs section */}
+        <div className="flex flex-col gap-2">
+          {/* HEX Input */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-white/40 w-8">HEX</span>
+            <input 
+              type="text"
+              value={currentHex.toUpperCase()}
+              onChange={(e) => handleHexChange(e.target.value)}
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-mono text-white text-center focus:border-[var(--gold)]/50 focus:outline-none transition-colors"
+            />
+          </div>
+
+          {/* RGB Inputs */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono text-white/40 w-8">RGB</span>
+            <div className="flex-1 grid grid-cols-3 gap-2">
+              <div className="flex flex-col items-center gap-0.5">
+                <input 
+                  type="text"
+                  value={r}
+                  onChange={(e) => handleRgbChange('r', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-1 text-xs font-mono text-white text-center focus:border-[var(--gold)]/50 focus:outline-none transition-colors"
+                />
+                <span className="text-[8px] font-mono text-white/30">R</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <input 
+                  type="text"
+                  value={g}
+                  onChange={(e) => handleRgbChange('g', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-1 text-xs font-mono text-white text-center focus:border-[var(--gold)]/50 focus:outline-none transition-colors"
+                />
+                <span className="text-[8px] font-mono text-white/30">G</span>
+              </div>
+              <div className="flex flex-col items-center gap-0.5">
+                <input 
+                  type="text"
+                  value={b}
+                  onChange={(e) => handleRgbChange('b', e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-1 text-xs font-mono text-white text-center focus:border-[var(--gold)]/50 focus:outline-none transition-colors"
+                />
+                <span className="text-[8px] font-mono text-white/30">B</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Done Button */}
+        <button 
+          onClick={onClose}
+          className="w-full py-2.5 rounded-xl bg-[var(--gold)] text-[#0d0d14] text-xs font-bold active:scale-[0.98] transition-all hover:brightness-110 shadow-lg shadow-[var(--gold)]/10 mt-1"
+        >
+          Apply Color
+        </button>
+      </motion.div>
+    </div>
   );
 }
