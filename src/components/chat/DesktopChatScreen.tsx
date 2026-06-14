@@ -26,6 +26,7 @@ import StreakBadge from './StreakBadge';
 import SnapCaptureOverlay from './SnapCaptureOverlay';
 import SnapCaptureConsentModal from './SnapCaptureConsentModal';
 import type { useSnapCapture } from '../../hooks/useSnapCapture';
+import { toast } from 'sonner';
 
 
 
@@ -49,6 +50,30 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [isDesktopCameraOpen, setIsDesktopCameraOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isAfkActive, setIsAfkActive] = useState(() => {
+    return localStorage.getItem('aura_afk_mode') === 'true';
+  });
+
+  useEffect(() => {
+    const handleAfkChange = (e: any) => {
+      setIsAfkActive(e.detail);
+    };
+    window.addEventListener('afk-mode-change', handleAfkChange);
+    return () => window.removeEventListener('afk-mode-change', handleAfkChange);
+  }, []);
+
+  const toggleAfkMode = () => {
+    const newVal = !isAfkActive;
+    localStorage.setItem('aura_afk_mode', String(newVal));
+    setIsAfkActive(newVal);
+    window.dispatchEvent(new CustomEvent('afk-mode-change', { detail: newVal }));
+    if (newVal) {
+      toast.success('Study Mode (AFK) is active. You will stay online even in the background!');
+    } else {
+      toast.success('Study Mode (AFK) deactivated.');
+    }
+    setShowPinDropdown(false);
+  };
 
   const messageInputRef = useRef<MessageInputHandle>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -624,7 +649,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   className="w-full h-full object-cover opacity-30"
                   placeholder=""
                 />
-                <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" />
+                <div className="absolute inset-0 backdrop-blur-[2px]" style={{ backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
               </div>
             )}
           </div>
@@ -751,6 +776,18 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                       >
                         <span className="material-symbols-outlined text-[18px]">library_add_check</span>
                         Combined Pinned Messages
+                      </button>
+                      <button
+                        onClick={toggleAfkMode}
+                        className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center justify-between border-t border-white/5 text-aura-text-primary hover:bg-white/5"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                          <span>Study / AFK Mode</span>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${isAfkActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-aura-text-secondary border border-white/10'}`}>
+                          {isAfkActive ? 'Active' : 'Off'}
+                        </span>
                       </button>
                     </div>
                   </>

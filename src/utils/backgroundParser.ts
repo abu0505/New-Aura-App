@@ -9,18 +9,20 @@ export const getBackgroundData = (settings: ChatSettings | null | undefined, isD
       const keys = settings.background_key ? JSON.parse(settings.background_key) : {};
       const nonces = settings.background_nonce ? JSON.parse(settings.background_nonce) : {};
 
-      if (isDesktop && urls.desktop) {
+      const primaryType = isDesktop ? 'desktop' : 'mobile';
+      const fallbackType = isDesktop ? 'mobile' : 'desktop';
+
+      if (urls[primaryType]) {
         return {
-          url: urls.desktop,
-          key: keys.desktop ? JSON.stringify(keys.desktop) : null,
-          nonce: nonces.desktop ? JSON.stringify(nonces.desktop) : null,
+          url: urls[primaryType],
+          key: keys[primaryType] ? JSON.stringify(keys[primaryType]) : null,
+          nonce: nonces[primaryType] ? JSON.stringify(nonces[primaryType]) : null,
         };
-      }
-      if (!isDesktop && urls.mobile) {
-         return {
-          url: urls.mobile,
-          key: keys.mobile ? JSON.stringify(keys.mobile) : null,
-          nonce: nonces.mobile ? JSON.stringify(nonces.mobile) : null,
+      } else if (urls[fallbackType]) {
+        return {
+          url: urls[fallbackType],
+          key: keys[fallbackType] ? JSON.stringify(keys[fallbackType]) : null,
+          nonce: nonces[fallbackType] ? JSON.stringify(nonces[fallbackType]) : null,
         };
       }
     }

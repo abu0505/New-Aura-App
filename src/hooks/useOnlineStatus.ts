@@ -128,7 +128,13 @@ export function useOnlineStatus(
       if (!uid) return;
       clearTimeout(visTimer);
 
+      const isAfk = localStorage.getItem('aura_afk_mode') === 'true';
+
       if (document.visibilityState === 'hidden') {
+        if (isAfk) {
+          // Keep tracking in AFK/Study Mode, do not untrack or beacon offline
+          return;
+        }
         // Immediately untrack from presence (instant for partner)
         untrackMyStatus();
         // Fire DB beacon after 3s — longer window prevents false "just seen"
@@ -159,7 +165,13 @@ export function useOnlineStatus(
         if (!uid) return;
         clearTimeout(visTimer);
 
+        const isAfk = localStorage.getItem('aura_afk_mode') === 'true';
+
         if (!isActive) {
+          if (isAfk) {
+            // Keep tracking in AFK/Study Mode on native app backgrounding
+            return;
+          }
           untrackMyStatus();
           // 3s delay on native too — prevents false offline on brief foreground loss
           visTimer = setTimeout(() => fireOfflineBeacon(uid), 3000);
