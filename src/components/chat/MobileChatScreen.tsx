@@ -583,15 +583,16 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" style={getBackgroundStyle()}>
           {bgData?.url?.startsWith('http') && (
             <div className="absolute inset-0">
-               <EncryptedImage 
-                url={bgData.url}
-                encryptionKey={bgData.key}
-                nonce={bgData.nonce}
-                alt="Chat Background"
-                style={{ opacity: bgOpacity }}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)`, backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
+                <div className="w-full h-full" style={{ opacity: bgOpacity }}>
+                  <EncryptedImage 
+                    url={bgData.url}
+                    encryptionKey={bgData.key}
+                    nonce={bgData.nonce}
+                    alt="Chat Background"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)`, backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
             </div>
           )}
         </div>
