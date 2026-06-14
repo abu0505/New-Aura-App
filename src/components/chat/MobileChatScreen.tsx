@@ -518,6 +518,8 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   };
 
   const bgData = getBackgroundData(settings, false);
+  const bgOpacity = settings?.bg_opacity ?? 0.30;
+  const bgBlur = settings?.bg_blur_amount ?? 2;
 
   const filteredPinnedMessages = pinnedMessages.filter(p => {
     if (pinFilter === 'me') return p.pinned_by === user?.id;
@@ -586,9 +588,10 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 encryptionKey={bgData.key}
                 nonce={bgData.nonce}
                 alt="Chat Background"
-                className="w-full h-full object-cover opacity-30"
+                style={{ opacity: bgOpacity }}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 backdrop-blur-[2px]" style={{ backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
+              <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)`, backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
             </div>
           )}
         </div>

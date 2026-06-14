@@ -19,6 +19,8 @@ export interface ChatSettings {
   quick_emojis: string[];
   notification_alias: string | null;
   notification_bodies: string[] | null;
+  bg_opacity: number | null;
+  bg_blur_amount: number | null;
 }
 
 export function useChatSettings() {
@@ -31,7 +33,7 @@ export function useChatSettings() {
     if (!user) return;
     const { data } = await supabase
       .from('chat_settings')
-      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,tab_badge_enabled,push_notifications_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies')
+      .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,tab_badge_enabled,push_notifications_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies,bg_opacity,bg_blur_amount')
       .eq('user_id', user.id)
       .single();
     if (data) setSettings(data);
@@ -43,7 +45,7 @@ export function useChatSettings() {
     const fetchSettings = async () => {
       const { data, error } = await supabase
         .from('chat_settings')
-        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,tab_badge_enabled,push_notifications_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies')
+        .select('id,user_id,background_url,background_key,background_nonce,notification_enabled,tab_badge_enabled,push_notifications_enabled,updated_at,shared_pin,accent_color,true_dark_mode,quick_emojis,notification_alias,notification_bodies,bg_opacity,bg_blur_amount')
         .eq('user_id', user.id)
         .single();
 
