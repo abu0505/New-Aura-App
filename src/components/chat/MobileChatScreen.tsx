@@ -592,7 +592,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)`, backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
+                <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)` }} />
             </div>
           )}
         </div>

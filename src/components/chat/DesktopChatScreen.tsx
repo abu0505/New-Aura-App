@@ -653,7 +653,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                     placeholder=""
                   />
                 </div>
-                <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)`, backgroundColor: 'rgba(var(--background-rgb), 0.6)' }} />
+                 <div className="absolute inset-0" style={{ backdropFilter: `blur(${bgBlur}px)` }} />
               </div>
             )}
           </div>
