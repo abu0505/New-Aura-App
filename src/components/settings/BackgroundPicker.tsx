@@ -14,7 +14,7 @@ const PRESETS = [
 ];
 
 export default function BackgroundPicker() {
-  const { settings, refreshSettings } = useChatSettingsContext();
+  const { settings, refreshSettings, updateSettings } = useChatSettingsContext();
   const [uploading, setUploading] = useState(false);
   const [optimisticBg, setOptimisticBg] = useState<string | undefined | null>(undefined);
   const [toast, setToast] = useState<{ message: string, isError: boolean } | null>(null);
@@ -177,6 +177,52 @@ export default function BackgroundPicker() {
           )}
         </button>
       </div>
+
+      {/* Background Image Controls */}
+      {currentBg && !['none', 'silk', 'stars', 'gold'].includes(currentBg) && (
+        <div className="mb-8 p-6 rounded-[2rem] bg-black/20 border border-white/5 space-y-6">
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-white/70 text-lg">image</span>
+            <span className="font-label text-[11px] uppercase tracking-[0.2em] text-white font-bold">Background Image</span>
+          </div>
+
+          {/* Opacity */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/70 font-bold">Image Opacity</span>
+              <span className="text-[10px] text-white/50">{Math.round((settings?.bg_opacity ?? 0.30) * 100)}%</span>
+            </div>
+            <input
+              type="range"
+              min="0.05"
+              max="1"
+              step="0.05"
+              value={settings?.bg_opacity ?? 0.30}
+              onChange={(e) => updateSettings({ bg_opacity: parseFloat(e.target.value) })}
+              className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#38bdf8]"
+            />
+            <span className="text-[9px] text-white/40 italic">How visible the background image is</span>
+          </div>
+
+          {/* Blur */}
+          <div className="flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/70 font-bold">Blur Intensity</span>
+              <span className="text-[10px] text-white/50">{settings?.bg_blur_amount ?? 2}px</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="20"
+              step="0.5"
+              value={settings?.bg_blur_amount ?? 2}
+              onChange={(e) => updateSettings({ bg_blur_amount: parseFloat(e.target.value) })}
+              className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[#38bdf8]"
+            />
+            <span className="text-[9px] text-white/40 italic">Frosted glass effect on the background</span>
+          </div>
+        </div>
+      )}
 
       <p className="text-[10px] text-white/30 italic leading-relaxed">
         Custom backgrounds are end-to-end encrypted. Your partner's app will automatically mirror your chosen theme.
