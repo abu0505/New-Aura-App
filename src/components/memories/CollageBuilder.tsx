@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import { createPortal } from 'react-dom';
+import { useMediaFolders } from '../../hooks/useMediaFolders';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface CollageFrame {
@@ -9,13 +10,22 @@ export interface CollageFrame {
   colEnd: number;
   rowStart: number;
   rowEnd: number;
+  borderRadius?: number;
+  zIndex?: number;
 }
 
 export interface CollageLayoutConfig {
   gridSize: number;
   frames: CollageFrame[];
   bgColor?: string;
+  imageSources?: {
+    folders: string[];
+    includeFavorites: boolean;
+    includeMemories: boolean;
+  };
+  borderRadius?: number;
 }
+
 
 interface CollageBuilderProps {
   onSave: (config: CollageLayoutConfig) => void;
@@ -136,14 +146,36 @@ const FRAME_COLORS = [
 
 // ── CollageBuilder ─────────────────────────────────────────────────────────────
 export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps) {
+  const { folders } = useMediaFolders();
   const [gridSize, setGridSize] = useState(50);
   const [frames, setFrames] = useState<CollageFrame[]>([]);
   const [bgColor, setBgColor] = useState('#f4f0e6');
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [dragging, setDragging] = useState<{ colStart: number; rowStart: number; colEnd: number; rowEnd: number } | null>(null);
   
+  const [imageSources, setImageSources] = useState<{
+    folders: string[];
+    includeFavorites: boolean;
+    includeMemories: boolean;
+  }>({
+    folders: [],
+    includeFavorites: true,
+    includeMemories: true,
+  });
+  const [isSourcesExpanded, setIsSourcesExpanded] = useState(false);
+  const [isChangingRadius, setIsChangingRadius] = useState(false);
+  const [isDrawerExpanded, setIsDrawerExpanded] = useState(false);
+  const dragControls = useDragControls();
+
   // Selection and Resize state
   const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+
+  // Reset drawer state when selection changes
+  useEffect(() => {
+    if (selectedFrameId) {
+      setIsDrawerExpanded(false);
+    }
+  }, [selectedFrameId]);
   const [resizing, setResizing] = useState<{
     frameId: string;
     handle: 't' | 'b' | 'l' | 'r' | 'tl' | 'tr' | 'bl' | 'br';
@@ -164,6 +196,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
     startRow: number;
   } | null>(null);
   const [copiedFrame, setCopiedFrame] = useState<Omit<CollageFrame, 'id'> | null>(null);
+  const selectedFrame = frames.find(f => f.id === selectedFrameId);
 
   const [isMobile, setIsMobile] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
@@ -420,7 +453,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       return;
     }
 
-    const newFrame = { id: genId(), colStart, colEnd, rowStart, rowEnd };
+    const newFrame = { id: genId(), colStart, colEnd, rowStart, rowEnd, borderRadius: 4, zIndex: 10 + frames.length };
     setFrames(prev => [...prev, newFrame]);
     setSelectedFrameId(newFrame.id); // Auto-select newly created frame
     setDragging(null);
@@ -453,6 +486,39 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
     }));
   }, [gridSize]);
 
+  const moveLayer = useCallback((frameId: string, direction: 'front' | 'back' | 'forward' | 'backward') => {
+    setFrames(prev => {
+      // Assign explicit zIndices if missing
+      const list = prev.map((f, idx) => ({
+        ...f,
+        zIndex: f.zIndex !== undefined ? f.zIndex : 10 + idx
+      }));
+
+      const sorted = [...list].sort((a, b) => a.zIndex - b.zIndex);
+      const targetIdx = sorted.findIndex(f => f.id === frameId);
+      if (targetIdx === -1) return prev;
+
+      const [targetFrame] = sorted.splice(targetIdx, 1);
+
+      if (direction === 'front') {
+        sorted.push(targetFrame);
+      } else if (direction === 'back') {
+        sorted.unshift(targetFrame);
+      } else if (direction === 'forward') {
+        const newIdx = Math.min(sorted.length, targetIdx + 1);
+        sorted.splice(newIdx, 0, targetFrame);
+      } else if (direction === 'backward') {
+        const newIdx = Math.max(0, targetIdx - 1);
+        sorted.splice(newIdx, 0, targetFrame);
+      }
+
+      return sorted.map((f, idx) => ({
+        ...f,
+        zIndex: 10 + idx
+      }));
+    });
+  }, []);
+
   const handleCopy = useCallback((frameId: string) => {
     const frame = frames.find(f => f.id === frameId);
     if (!frame) return;
@@ -461,6 +527,8 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       colEnd: frame.colEnd,
       rowStart: frame.rowStart,
       rowEnd: frame.rowEnd,
+      borderRadius: frame.borderRadius,
+      zIndex: frame.zIndex,
     });
   }, [frames]);
 
@@ -474,6 +542,8 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       colEnd: copiedFrame.colEnd,
       rowStart: copiedFrame.rowStart,
       rowEnd: copiedFrame.rowEnd,
+      borderRadius: copiedFrame.borderRadius,
+      zIndex: 10 + frames.length,
     };
 
     setFrames(prev => [...prev, newFrame]);
@@ -482,8 +552,8 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
 
   const handleSave = useCallback(() => {
     if (frames.length === 0) return;
-    onSave({ gridSize, frames, bgColor });
-  }, [frames, gridSize, bgColor, onSave]);
+    onSave({ gridSize, frames, bgColor, imageSources });
+  }, [frames, gridSize, bgColor, imageSources, onSave]);
 
   const handleGridSizeChange = (size: number) => {
     setGridSize(size);
@@ -588,7 +658,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
   }, [onClose, selectedFrameId, copiedFrame, frames, handleCopy, handlePaste, centerFrame, deleteFrame, gridSize]);
 
   // ── Percentage positions for frame preview overlay ──
-  const frameToStyle = (f: { id?: string; colStart: number; colEnd: number; rowStart: number; rowEnd: number }, idx: number) => {
+  const frameToStyle = (f: { id?: string; colStart: number; colEnd: number; rowStart: number; rowEnd: number; zIndex?: number }, idx: number) => {
     const left = ((f.colStart - 1) / gridSize) * 100;
     const top = ((f.rowStart - 1) / gridSize) * 100;
     const width = ((f.colEnd - f.colStart) / gridSize) * 100;
@@ -602,7 +672,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
       background: FRAME_COLORS[idx % FRAME_COLORS.length],
       border: `2px solid ${FRAME_COLORS[idx % FRAME_COLORS.length].replace('0.25', '0.8').replace('0.22', '0.8').replace('0.20', '0.8')}`,
       boxShadow: isSelected ? '0 0 0 2px rgba(255, 255, 255, 0.45), 0 12px 28px rgba(0,0,0,0.5)' : 'none',
-      zIndex: isSelected ? 30 : 10,
+      zIndex: isSelected ? 30 : (f.zIndex !== undefined ? f.zIndex : 10 + idx),
     };
   };
 
@@ -641,20 +711,8 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
           ))}
         </div>
 
-        {/* Header Actions (Toggle Panel for Mobile + Close Button) */}
+        {/* Header Actions (Close Button) */}
         <div className="flex items-center gap-2.5">
-          {isMobile && (
-            <button
-              onClick={() => setIsPanelOpen(prev => !prev)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-95 ${
-                isPanelOpen 
-                  ? 'bg-[var(--gold)] text-[#0d0d14]' 
-                  : 'bg-white/8 text-white/50 hover:text-white'
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">tune</span>
-            </button>
-          )}
           <button
             onClick={onClose}
             className="w-9 h-9 rounded-full bg-white/8 hover:bg-white/15 text-white/50 hover:text-white flex items-center justify-center transition-all"
@@ -666,6 +724,22 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
 
       {/* ── Main Grid Area ── */}
       <div className="flex-1 relative flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+        {/* Mobile Sidebar Toggle Floating Button */}
+        {isMobile && (
+          <button
+            onClick={() => setIsPanelOpen(prev => !prev)}
+            className={`absolute top-4 left-4 z-[560] w-10 h-10 rounded-full flex items-center justify-center shadow-lg border backdrop-blur-md transition-all duration-300 active:scale-95 ${
+              isPanelOpen 
+                ? 'bg-[var(--gold)] text-[#0d0d14] border-[var(--gold)]/20' 
+                : 'bg-[#13131e]/90 text-[var(--gold)] border-white/10'
+            }`}
+            title={isPanelOpen ? "Close panel" : "Open panel"}
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              {isPanelOpen ? 'left_panel_close' : 'left_panel_open'}
+            </span>
+          </button>
+        )}
         {/* Backdrop overlay for mobile drawer setting */}
         {isMobile && isPanelOpen && (
           <div 
@@ -678,64 +752,119 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
         <AnimatePresence>
           {isPanelOpen && (
             <motion.div
-              initial={isMobile ? { x: '100%' } : { opacity: 0, scale: 0.95 }}
-              animate={isMobile ? { x: 0 } : { opacity: 1, scale: 1 }}
-              exit={isMobile ? { x: '100%' } : { opacity: 0, scale: 0.95 }}
+              initial={isMobile ? { x: '-100%' } : { opacity: 0, x: -20 }}
+              animate={isMobile ? { x: 0 } : { opacity: 1, x: 0 }}
+              exit={isMobile ? { x: '-100%' } : { opacity: 0, x: -20 }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className={
                 isMobile
-                  ? "fixed top-0 right-0 h-full w-[280px] z-[600] bg-[#13131e] border-l border-white/10 p-6 shadow-2xl flex flex-col gap-4 overflow-y-auto text-left"
-                  : "absolute top-6 right-6 z-40 bg-[#13131e]/90 backdrop-blur-md border border-white/10 p-4 rounded-2xl w-48 shadow-2xl flex flex-col gap-3 text-left"
+                  ? "fixed top-0 left-0 h-full w-[300px] z-[600] bg-[#13131e]/95 backdrop-blur-3xl border-r border-white/5 p-6 shadow-2xl flex flex-col gap-6 overflow-y-auto text-left scrollbar-hide"
+                  : "absolute top-6 left-6 bottom-6 z-40 bg-[#13131e]/90 backdrop-blur-2xl border border-white/5 rounded-[2.5rem] p-6 w-[320px] shadow-2xl flex flex-col gap-6 overflow-y-auto text-left scrollbar-hide"
               }
             >
-              {isMobile && (
-                <div className="flex items-center justify-between border-b border-white/10 pb-3 mb-1">
-                  <span className="text-white font-semibold text-sm">Editor Settings</span>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-serif italic text-xl text-white">Collage</h3>
+                  <p className="font-label text-[10px] uppercase tracking-widest text-white/50">Builder Settings</p>
+                </div>
+                {isMobile && (
                   <button
                     onClick={() => setIsPanelOpen(false)}
-                    className="w-8 h-8 rounded-full bg-white/5 text-white/50 flex items-center justify-center hover:bg-white/10"
+                    className="w-10 h-10 rounded-full bg-white/5 text-white/50 flex items-center justify-center hover:bg-white/10 transition-colors"
                   >
-                    <span className="material-symbols-outlined text-lg">close</span>
+                    <span className="material-symbols-outlined">close</span>
                   </button>
+                )}
+              </div>
+
+              {/* Selected Frame Layer Arrangement */}
+              {!isMobile && (
+                <div>
+                  <div className="flex justify-between items-end mb-2">
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold block">Arrangement</span>
+                  <span className="text-[10px] text-[var(--gold)] font-mono font-bold">
+                    {selectedFrameId && selectedFrame ? `Layer ${selectedFrame.zIndex !== undefined ? selectedFrame.zIndex - 9 : frames.findIndex(f => f.id === selectedFrameId) + 1}` : 'No Selection'}
+                  </span>
+                </div>
+                <div className={`grid grid-cols-4 gap-2 transition-opacity duration-300 ${!selectedFrameId ? 'opacity-40' : ''}`}>
+                  <button
+                    disabled={!selectedFrameId}
+                    onClick={() => selectedFrameId && moveLayer(selectedFrameId, 'front')}
+                    className="flex flex-col items-center justify-center gap-1 py-3 rounded-2xl text-[8px] font-bold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-all border border-white/5 active:scale-95 disabled:cursor-not-allowed"
+                    title="Bring to Front"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">flip_to_front</span>
+                    Front
+                  </button>
+                  <button
+                    disabled={!selectedFrameId}
+                    onClick={() => selectedFrameId && moveLayer(selectedFrameId, 'forward')}
+                    className="flex flex-col items-center justify-center gap-1 py-3 rounded-2xl text-[8px] font-bold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-all border border-white/5 active:scale-95 disabled:cursor-not-allowed"
+                    title="Bring Forward"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+                    Up
+                  </button>
+                  <button
+                    disabled={!selectedFrameId}
+                    onClick={() => selectedFrameId && moveLayer(selectedFrameId, 'backward')}
+                    className="flex flex-col items-center justify-center gap-1 py-3 rounded-2xl text-[8px] font-bold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-all border border-white/5 active:scale-95 disabled:cursor-not-allowed"
+                    title="Send Backward"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">arrow_downward</span>
+                    Down
+                  </button>
+                  <button
+                    disabled={!selectedFrameId}
+                    onClick={() => selectedFrameId && moveLayer(selectedFrameId, 'back')}
+                    className="flex flex-col items-center justify-center gap-1 py-3 rounded-2xl text-[8px] font-bold bg-white/5 text-white/70 hover:bg-white/10 hover:text-white transition-all border border-white/5 active:scale-95 disabled:cursor-not-allowed"
+                    title="Send to Back"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">flip_to_back</span>
+                    Back
+                  </button>
+                  </div>
                 </div>
               )}
 
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <span className="text-white/40 text-[10px] font-mono uppercase tracking-wider">Canvas</span>
-                <span className="text-[10px] font-mono text-[var(--gold)] bg-[var(--gold)]/10 px-2 py-0.5 rounded">
-                  {frames.length}/10 Frames
+              <div className="flex items-center justify-between p-4 rounded-3xl bg-white/5 border border-transparent">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Canvas Limit</span>
+                <span className="text-[10px] text-[var(--gold)] bg-[var(--gold)]/10 px-2 py-1 rounded-full font-bold tracking-widest">
+                  {frames.length}/10
                 </span>
               </div>
 
               {/* Background Color Selector */}
-              <div className="flex flex-col gap-2.5 border-b border-white/5 pb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/40 text-[10px] font-mono uppercase tracking-wider">Background</span>
-                  <span className="text-[10px] font-mono text-[var(--gold)] font-medium">
-                    {bgColor.toUpperCase()}
+              <div>
+                <div className="flex justify-between items-end mb-4">
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold block">Background</span>
+                  <span className="text-[9px] text-[var(--gold)] italic font-mono uppercase tracking-widest">
+                    {bgColor}
                   </span>
                 </div>
 
                 {/* Preset circles */}
-                <div className="grid grid-cols-5 gap-1.5">
+                <div className="grid grid-cols-6 gap-2 mb-3">
                   {BG_COLORS.map(color => {
                     const isSelected = bgColor.toLowerCase() === color.value.toLowerCase();
                     return (
                       <button
                         key={color.value}
                         onClick={() => setBgColor(color.value)}
-                        className={`w-7.5 h-7.5 rounded-full border transition-all duration-200 relative flex items-center justify-center cursor-pointer active:scale-90 hover:scale-105 ${
-                          isSelected 
-                            ? 'border-[var(--gold)] ring-2 ring-[var(--gold)]/20 scale-110 shadow-lg shadow-[var(--gold)]/10' 
-                            : 'border-white/10 hover:border-white/30'
+                        className={`w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer relative transition-all mx-auto flex items-center justify-center ${
+                          isSelected ? 'scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'
                         }`}
-                        style={{ backgroundColor: color.value }}
+                        style={{ 
+                          backgroundColor: color.value,
+                          boxShadow: isSelected ? `0 0 15px ${color.value}66` : 'none',
+                          border: isSelected ? `2px solid white` : '2px solid transparent'
+                        }}
                         title={color.name}
                       >
                         {isSelected && (
                           <span 
-                            className="material-symbols-outlined text-[13px] font-bold"
-                            style={{ color: color.isLight ? '#0d0d14' : '#ffffff' }}
+                            className="material-symbols-outlined text-[15px] font-bold"
+                            style={{ color: color.isLight ? '#000' : '#fff' }}
                           >
                             check
                           </span>
@@ -744,162 +873,287 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                     );
                   })}
 
-                  {/* Custom Color Selector (Quick Circle Trigger) */}
+                  {/* Custom Color Selector */}
                   {(() => {
                     const isCurated = BG_COLORS.some(c => c.value.toLowerCase() === bgColor.toLowerCase());
                     const customTextLight = isLightColor(bgColor);
                     return (
-                      <div 
+                      <button 
                         onClick={() => setShowColorPicker(true)}
-                        className={`w-7.5 h-7.5 rounded-full border transition-all duration-200 relative flex items-center justify-center cursor-pointer active:scale-90 hover:scale-105 ${
-                          !isCurated 
-                            ? 'border-[var(--gold)] ring-2 ring-[var(--gold)]/20 scale-110 shadow-lg shadow-[var(--gold)]/15' 
-                            : 'border-white/10 hover:border-white/30'
+                        className={`w-8 h-8 md:w-9 md:h-9 rounded-full cursor-pointer relative transition-all mx-auto flex items-center justify-center ${
+                          !isCurated ? 'scale-110' : 'hover:scale-105 opacity-80 hover:opacity-100'
                         }`}
                         style={{ 
-                          background: !isCurated 
-                            ? bgColor 
-                            : 'conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)' 
+                          background: !isCurated ? bgColor : 'conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red)',
+                          boxShadow: !isCurated ? `0 0 15px ${bgColor}66` : 'none',
+                          border: !isCurated ? `2px solid white` : '2px solid transparent'
                         }}
                         title="Choose custom color"
                       >
                         {!isCurated ? (
                           <span 
-                            className="material-symbols-outlined text-[13px] font-bold pointer-events-none"
-                            style={{ color: customTextLight ? '#0d0d14' : '#ffffff' }}
+                            className="material-symbols-outlined text-[15px] font-bold"
+                            style={{ color: customTextLight ? '#000' : '#fff' }}
                           >
                             check
                           </span>
                         ) : (
-                          <span className="material-symbols-outlined text-[13px] text-white/70 pointer-events-none">
+                          <span className="material-symbols-outlined text-[15px] text-white/90">
                             palette
                           </span>
                         )}
-                      </div>
+                      </button>
                     );
                   })()}
                 </div>
+              </div>
 
-                {/* Custom Color Selector Wide Pill Bar */}
-                {(() => {
-                  const isCurated = BG_COLORS.some(c => c.value.toLowerCase() === bgColor.toLowerCase());
-                  return (
-                    <div 
-                      onClick={() => setShowColorPicker(true)}
-                      className="relative group/picker w-full"
+              {/* Frame Corners (Border Radius) Selector */}
+              {!isMobile && (
+                <div>
+                  <div className="flex justify-between items-end mb-2">
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold block">Frame Corners</span>
+                  <span className="text-[10px] text-[var(--gold)] font-mono font-bold">
+                    {selectedFrameId && selectedFrame ? `${selectedFrame.borderRadius !== undefined ? selectedFrame.borderRadius : 4}px` : 'No Frame Selected'}
+                  </span>
+                </div>
+                <div className={`flex items-center gap-3 bg-white/5 border border-white/5 p-4 rounded-3xl transition-opacity duration-300 ${!selectedFrameId ? 'opacity-40' : ''}`}>
+                  <span className="material-symbols-outlined text-[18px] text-white/40">rounded_corner</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="2"
+                    disabled={!selectedFrameId}
+                    value={selectedFrameId && selectedFrame ? (selectedFrame.borderRadius !== undefined ? selectedFrame.borderRadius : 4) : 4}
+                    onPointerDown={() => setIsChangingRadius(true)}
+                    onPointerUp={() => setIsChangingRadius(false)}
+                    onChange={(e) => {
+                      const newRadius = Number(e.target.value);
+                      setFrames(prev => prev.map(f => {
+                        if (f.id === selectedFrameId) {
+                          return { ...f, borderRadius: newRadius };
+                        }
+                        return f;
+                      }));
+                    }}
+                    className="flex-1 accent-[var(--gold)] bg-white/10 h-1 rounded-lg cursor-pointer appearance-none outline-none disabled:cursor-not-allowed"
+                  />
+                </div>
+                  {!selectedFrameId && (
+                    <p className="text-[9px] text-white/30 italic mt-1.5 px-2">Select a frame on the canvas to adjust its corners.</p>
+                  )}
+                </div>
+              )}
+
+              {/* Photo Sources Selector */}
+              <div>
+                <div 
+                  onClick={() => setIsSourcesExpanded(!isSourcesExpanded)}
+                  className="flex items-center justify-between p-4 rounded-3xl cursor-pointer transition-all border bg-white/5 border-transparent hover:bg-white/10 group mb-2"
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold group-hover:text-[var(--gold)] transition-colors">Photo Sources</span>
+                    <span className="text-[9px] text-[var(--gold)] italic truncate max-w-[150px]">
+                      {(() => {
+                        const parts = [];
+                        if (imageSources.includeMemories) parts.push("Memories");
+                        if (imageSources.includeFavorites) parts.push("Favorites");
+                        if (imageSources.folders.length > 0) parts.push(`${imageSources.folders.length} Folder${imageSources.folders.length > 1 ? 's' : ''}`);
+                        return parts.join(", ") || "None";
+                      })()}
+                    </span>
+                  </div>
+                  <span className={`material-symbols-outlined text-[20px] text-white/50 transition-transform duration-300 ${isSourcesExpanded ? 'rotate-180' : ''}`}>
+                    keyboard_arrow_down
+                  </span>
+                </div>
+                
+                <AnimatePresence>
+                  {isSourcesExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeInOut' }}
+                      className="overflow-hidden"
                     >
-                      <div 
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border transition-all duration-300 text-left bg-white/3 hover:bg-white/6 cursor-pointer ${
-                          !isCurated 
-                            ? 'border-[var(--gold)]/40 shadow-md shadow-[var(--gold)]/5' 
-                            : 'border-white/8 hover:border-white/12'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 pointer-events-none">
-                          <span className="material-symbols-outlined text-sm text-[var(--gold)] opacity-80 group-hover/picker:opacity-100 transition-opacity">
-                            color_lens
-                          </span>
-                          <span className="text-white/70 text-[11px] font-medium group-hover/picker:text-white transition-colors">
-                            Custom Picker
-                          </span>
+                      <div className="flex flex-col gap-3 pt-2 pb-2">
+                        {/* Memories Switch */}
+                        <div
+                          onClick={() => setImageSources(prev => {
+                            const next = { ...prev, includeMemories: !prev.includeMemories };
+                            if (!next.includeMemories && !next.includeFavorites && next.folders.length === 0) return prev;
+                            return next;
+                          })}
+                          className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+                            imageSources.includeMemories ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60 hover:opacity-80'
+                          }`}
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold flex items-center gap-2">
+                              <span className="material-symbols-outlined text-[14px]">photo_library</span>
+                              Memories
+                            </span>
+                          </div>
+                          <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${imageSources.includeMemories ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+                            <div className={`absolute top-1 w-3 h-3 rounded-full transition-all duration-500 ${imageSources.includeMemories ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 pointer-events-none">
-                          <span className="text-[9px] font-mono text-white/50 uppercase bg-black/25 px-1.5 py-0.5 rounded border border-white/5">
-                            {bgColor.toUpperCase()}
-                          </span>
-                          <div 
-                            className="w-4 h-4 rounded-md border border-white/10" 
-                            style={{ backgroundColor: bgColor }}
-                          />
+
+                        {/* Favorites Switch */}
+                        <div
+                          onClick={() => setImageSources(prev => {
+                            const next = { ...prev, includeFavorites: !prev.includeFavorites };
+                            if (!next.includeMemories && !next.includeFavorites && next.folders.length === 0) return prev;
+                            return next;
+                          })}
+                          className={`flex justify-between items-center p-4 rounded-3xl cursor-pointer transition-all border ${
+                            imageSources.includeFavorites ? 'bg-[var(--gold)]/5 border-[var(--gold)]/20' : 'bg-white/5 border-transparent opacity-60 hover:opacity-80'
+                          }`}
+                        >
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold flex items-center gap-2">
+                              <span className="material-symbols-outlined text-[14px]">favorite</span>
+                              Favorites
+                            </span>
+                          </div>
+                          <div className={`w-10 h-5 rounded-full relative transition-all duration-500 ${imageSources.includeFavorites ? 'bg-[var(--gold)]' : 'bg-black/40'}`}>
+                            <div className={`absolute top-1 w-3 h-3 rounded-full transition-all duration-500 ${imageSources.includeFavorites ? 'right-1 bg-black shadow-glow' : 'left-1 bg-white/20'}`} />
+                          </div>
                         </div>
+
+                        {/* Folders List */}
+                        {folders.length > 0 && (
+                          <div className="mt-2 bg-black/20 rounded-3xl p-3 border border-white/5">
+                            <span className="text-[9px] text-white/40 uppercase tracking-[0.2em] font-bold block mb-3 px-2">Specific Folders</span>
+                            <div className="max-h-[140px] overflow-y-auto flex flex-col gap-2 scrollbar-hide pr-1">
+                              {folders.map(folder => {
+                                const isSelected = imageSources.folders.includes(folder.id);
+                                return (
+                                  <div
+                                    key={folder.id}
+                                    onClick={() => {
+                                      setImageSources(prev => {
+                                        const nextFolders = isSelected
+                                          ? prev.folders.filter(id => id !== folder.id)
+                                          : [...prev.folders, folder.id];
+                                        const next = { ...prev, folders: nextFolders };
+                                        if (!next.includeMemories && !next.includeFavorites && next.folders.length === 0) return prev;
+                                        return next;
+                                      });
+                                    }}
+                                    className={`flex justify-between items-center p-3 rounded-2xl cursor-pointer transition-all duration-300 ${
+                                      isSelected ? 'bg-[var(--gold)]/10 text-[var(--gold)] shadow-inner shadow-[var(--gold)]/5' : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2.5 truncate">
+                                      <span className={`material-symbols-outlined text-[16px] flex-shrink-0 ${isSelected ? 'text-[var(--gold)]' : 'text-white/40'}`}>
+                                        {isSelected ? 'folder_open' : 'folder'}
+                                      </span>
+                                      <span className="text-[10px] uppercase tracking-[0.1em] font-bold truncate">{folder.name}</span>
+                                    </div>
+                                    <span className={`material-symbols-outlined text-[16px] transition-all duration-300 ${isSelected ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}>
+                                      check_circle
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  );
-                })()}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Grid Size Selector (Mobile only) */}
               {isMobile && (
-                <div className="flex flex-col gap-2 border-b border-white/5 pb-3">
-                  <span className="text-white/40 text-[10px] font-mono uppercase tracking-wider">Grid Size</span>
-                  <div className="grid grid-cols-2 gap-1.5">
+                <div>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold block mb-4">Grid Size</span>
+                  <div className="grid grid-cols-2 gap-2">
                     {GRID_SIZES.map(size => (
                       <button
                         key={size}
                         onClick={() => handleGridSizeChange(size)}
-                        className={`py-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200 ${
+                        className={`py-3 rounded-[1.25rem] text-[11px] uppercase tracking-widest font-bold transition-all duration-300 border ${
                           gridSize === size
-                            ? 'bg-[var(--gold)] text-[#0d0d14]'
-                            : 'bg-white/8 text-white/50 hover:bg-white/15 hover:text-white'
+                            ? 'bg-[var(--gold)]/10 text-[var(--gold)] border-[var(--gold)]/20'
+                            : 'bg-white/5 text-white/50 border-transparent hover:bg-white/10 hover:text-white'
                         }`}
                       >
-                        {size}×{size}
+                        {size} × {size}
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Save Layout Button */}
-              <button
-                onClick={handleSave}
-                disabled={frames.length === 0}
-                className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  frames.length > 0
-                    ? 'bg-[var(--gold)] text-[#0d0d14] hover:brightness-110 active:scale-95 shadow-lg shadow-[var(--gold)]/10'
-                    : 'bg-white/5 text-white/30 cursor-not-allowed'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[16px]">check</span>
-                Save Layout
-              </button>
-
-              {/* Clear All Button */}
-              {frames.length > 0 && (
+              <div className="space-y-3 pt-2 mt-auto">
+                {/* Save Layout Button */}
                 <button
-                  onClick={() => setFrames([])}
-                  className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-semibold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors border border-red-500/20 active:scale-95"
+                  onClick={handleSave}
+                  disabled={frames.length === 0}
+                  className={`flex items-center justify-center gap-2 w-full py-4 rounded-3xl text-[11px] uppercase tracking-[0.15em] font-bold transition-all duration-500 ${
+                    frames.length > 0
+                      ? 'bg-white text-black hover:scale-[1.02] active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)]'
+                      : 'bg-white/5 text-white/30 cursor-not-allowed'
+                  }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
-                  Clear all
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  Save Collage
                 </button>
-              )}
+
+                {/* Clear All Button */}
+                {frames.length > 0 && (
+                  <button
+                    onClick={() => setFrames([])}
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-3xl text-[10px] uppercase tracking-[0.15em] font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors border border-red-500/20 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">delete_sweep</span>
+                    Clear Canvas
+                  </button>
+                )}
+              </div>
 
               {/* Selected Frame Controls */}
-              {selectedFrameId && (() => {
+              {selectedFrameId && !isMobile && (() => {
                 const idx = frames.findIndex(f => f.id === selectedFrameId);
                 if (idx === -1) return null;
                 return (
-                  <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
-                    <span className="text-white/40 text-[9px] font-mono uppercase tracking-wider">Frame #{idx + 1}</span>
-                    <button
-                      onClick={() => centerFrame(selectedFrameId)}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all border border-white/8 active:scale-95"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">filter_center_focus</span>
-                      Center
-                    </button>
-                    <button
-                      onClick={() => handleCopy(selectedFrameId)}
-                      className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all border border-white/8 active:scale-95"
-                    >
-                      <span className="material-symbols-outlined text-[15px]">content_copy</span>
-                      Copy
-                    </button>
+                  <div className="mt-2 pt-6 border-t border-white/5 flex flex-col gap-3">
+                    <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold block text-center">Selected Frame</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => centerFrame(selectedFrameId)}
+                        className="flex flex-col items-center justify-center gap-1 py-3 rounded-3xl text-[9px] uppercase tracking-widest font-bold bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all border border-white/5 active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">filter_center_focus</span>
+                        Center
+                      </button>
+                      <button
+                        onClick={() => handleCopy(selectedFrameId)}
+                        className="flex flex-col items-center justify-center gap-1 py-3 rounded-3xl text-[9px] uppercase tracking-widest font-bold bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all border border-white/5 active:scale-95"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 );
               })()}
 
               {/* Clipboard Paste Controls */}
               {copiedFrame && (
-                <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
-                  <span className="text-white/40 text-[9px] font-mono uppercase tracking-wider">Clipboard</span>
+                <div className="mt-2 pt-6 border-t border-white/5 flex flex-col gap-3">
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-[var(--gold)] font-bold block text-center">Clipboard Ready</span>
                   <button
                     onClick={handlePaste}
-                    className="flex items-center gap-2 w-full px-3 py-2 rounded-xl text-xs font-semibold bg-[var(--gold)]/10 text-[var(--gold)] hover:bg-[var(--gold)]/20 transition-all border border-[var(--gold)]/20 active:scale-95"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-3xl text-[10px] uppercase tracking-[0.15em] font-bold bg-[var(--gold)]/10 text-[var(--gold)] hover:bg-[var(--gold)]/20 transition-all border border-[var(--gold)]/20 active:scale-95"
                   >
-                    <span className="material-symbols-outlined text-[15px]">content_paste</span>
-                    Paste
+                    <span className="material-symbols-outlined text-[16px]">content_paste</span>
+                    Paste Frame
                   </button>
                 </div>
               )}
@@ -907,10 +1161,139 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
           )}
         </AnimatePresence>
 
+        {/* Mobile Bottom Edit Panel for Selected Frame */}
+        <AnimatePresence>
+          {isMobile && selectedFrameId && !isPanelOpen && (() => {
+            const selectedFrame = frames.find(f => f.id === selectedFrameId);
+            if (!selectedFrame) return null;
+            return (
+              <motion.div
+                drag="y"
+                dragListener={false}
+                dragControls={dragControls}
+                dragConstraints={isDrawerExpanded ? { top: 0, bottom: 230 } : { top: -230, bottom: 0 }}
+                dragElastic={0.1}
+                variants={{
+                  collapsed: { y: 230 },
+                  expanded: { y: 0 }
+                }}
+                initial="collapsed"
+                animate={isDrawerExpanded ? "expanded" : "collapsed"}
+                exit="collapsed"
+                onDragEnd={(_, info) => {
+                  if (isDrawerExpanded) {
+                    if (info.offset.y > 50 || info.velocity.y > 300) {
+                      setIsDrawerExpanded(false);
+                    }
+                  } else {
+                    if (info.offset.y < -50 || info.velocity.y < -300) {
+                      setIsDrawerExpanded(true);
+                    }
+                  }
+                }}
+                transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+                className="fixed bottom-0 left-0 right-0 h-[290px] z-[550] bg-[#13131e]/95 backdrop-blur-3xl border-t border-white/10 rounded-t-[2.5rem] px-5 pt-2 pb-8 shadow-[0_-20px_40px_rgba(0,0,0,0.5)] flex flex-col gap-4 overflow-hidden"
+              >
+                {/* Drag handle header */}
+                <div
+                  onPointerDown={(e) => dragControls.start(e)}
+                  onClick={() => setIsDrawerExpanded(!isDrawerExpanded)}
+                  className="w-full py-2 flex flex-col items-center cursor-grab active:cursor-grabbing touch-none select-none"
+                >
+                  <div className="w-12 h-1.5 bg-white/15 rounded-full mb-3 transition-colors hover:bg-white/30" />
+                  <div className="flex items-center justify-between w-full px-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] uppercase tracking-[0.2em] text-white font-bold">Edit Frame</span>
+                      <span className="material-symbols-outlined text-[16px] text-white/50 transition-transform duration-300" style={{ transform: isDrawerExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                        keyboard_arrow_up
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-[var(--gold)] font-mono font-bold bg-[var(--gold)]/10 px-2 py-0.5 rounded-full">
+                      Layer {selectedFrame.zIndex !== undefined ? selectedFrame.zIndex - 9 : frames.findIndex(f => f.id === selectedFrameId) + 1}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Arrangement */}
+                <div className="grid grid-cols-4 gap-2">
+                  <button
+                    onClick={() => moveLayer(selectedFrameId, 'front')}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl text-[9px] font-bold bg-white/5 text-white/70 hover:bg-white/10 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">flip_to_front</span>
+                    Front
+                  </button>
+                  <button
+                    onClick={() => moveLayer(selectedFrameId, 'forward')}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl text-[9px] font-bold bg-white/5 text-white/70 hover:bg-white/10 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                    Up
+                  </button>
+                  <button
+                    onClick={() => moveLayer(selectedFrameId, 'backward')}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl text-[9px] font-bold bg-white/5 text-white/70 hover:bg-white/10 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                    Down
+                  </button>
+                  <button
+                    onClick={() => moveLayer(selectedFrameId, 'back')}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-2xl text-[9px] font-bold bg-white/5 text-white/70 hover:bg-white/10 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[18px]">flip_to_back</span>
+                    Back
+                  </button>
+                </div>
+
+                {/* Center & Copy */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => centerFrame(selectedFrameId)}
+                    className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-bold bg-white/5 text-white/80 hover:bg-white/10 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">filter_center_focus</span>
+                    Center
+                  </button>
+                  <button
+                    onClick={() => handleCopy(selectedFrameId)}
+                    className="flex items-center justify-center gap-2 py-3 rounded-2xl text-[10px] font-bold bg-white/5 text-white/80 hover:bg-white/10 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                    Copy
+                  </button>
+                </div>
+
+                {/* Border Radius Slider */}
+                <div className="bg-white/5 border border-white/5 p-3.5 rounded-2xl flex items-center gap-3 mt-1">
+                  <span className="material-symbols-outlined text-[18px] text-white/40">rounded_corner</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="30"
+                    step="2"
+                    value={selectedFrame.borderRadius !== undefined ? selectedFrame.borderRadius : 4}
+                    onPointerDown={() => setIsChangingRadius(true)}
+                    onPointerUp={() => setIsChangingRadius(false)}
+                    onChange={(e) => {
+                      const newRadius = Number(e.target.value);
+                      setFrames(prev => prev.map(f => f.id === selectedFrameId ? { ...f, borderRadius: newRadius } : f));
+                    }}
+                    className="flex-1 accent-[var(--gold)] bg-white/10 h-1 rounded-lg cursor-pointer appearance-none outline-none"
+                  />
+                  <span className="text-[10px] text-[var(--gold)] font-mono w-6 text-right">
+                    {selectedFrame.borderRadius !== undefined ? selectedFrame.borderRadius : 4}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>
+
         <div 
-          className="relative aspect-[3/4] w-full md:h-full max-h-full"
+          className="relative aspect-[3/4] md:aspect-square w-full md:h-full max-h-full"
           style={{ 
-            maxWidth: isMobile ? 'calc(100vw - 32px)' : 'calc((100vh - 180px) * 3/4)',
+            maxWidth: isMobile ? 'calc(100vw - 32px)' : 'calc(100vh - 180px)',
             maxHeight: isMobile ? 'calc((100vw - 32px) * 4/3)' : 'calc(100vh - 180px)'
           }}
         >
@@ -987,31 +1370,42 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                 <div
                   key={f.id}
                   onPointerDown={(e) => handleFrameMouseDown(e, f.id)}
-                  className={`absolute rounded-[3px] flex items-start justify-between p-1.5 group/frame transition-all duration-150 touch-none ${
-                    isSelected ? 'ring-2 ring-white/20' : ''
+                  className={`absolute flex items-start justify-between p-1.5 group/frame transition-all duration-150 touch-none ${
+                    isSelected && !isChangingRadius ? 'ring-2 ring-white/20' : ''
                   }`}
-                  style={{ ...frameToStyle(f, idx), touchAction: 'none' }}
+                  style={{ 
+                    ...frameToStyle(f, idx), 
+                    borderRadius: `${f.borderRadius !== undefined ? f.borderRadius : 4}px`, 
+                    boxShadow: isSelected && !isChangingRadius ? '0 0 0 2px rgba(255, 255, 255, 0.45), 0 12px 28px rgba(0,0,0,0.5)' : 'none',
+                    touchAction: 'none' 
+                  }}
                 >
                   {/* Frame number badge */}
-                  <div className="flex items-center gap-1 pointer-events-none">
-                    <span className="text-[10px] font-mono font-bold text-white/80 bg-black/30 px-1.5 py-0.5 rounded leading-none">
-                      {idx + 1}
-                    </span>
-                  </div>
+                  {!isChangingRadius && (
+                    <div className="flex items-center gap-1 pointer-events-none">
+                      <span className="text-[10px] font-mono font-bold text-white/80 bg-black/30 px-1.5 py-0.5 rounded leading-none">
+                        {idx + 1}
+                      </span>
+                    </div>
+                  )}
                   {/* Delete button */}
-                  <button
-                    onPointerDown={(e) => { e.stopPropagation(); deleteFrame(f.id); }}
-                    className="w-5 h-5 rounded-full bg-black/40 text-white/60 hover:text-white hover:bg-red-500/60 flex items-center justify-center transition-all opacity-0 group-hover/frame:opacity-100 z-10"
-                  >
-                    <span className="material-symbols-outlined text-[11px]">close</span>
-                  </button>
+                  {!isChangingRadius && (
+                    <button
+                      onPointerDown={(e) => { e.stopPropagation(); deleteFrame(f.id); }}
+                      className="w-5 h-5 rounded-full bg-black/40 text-white/60 hover:text-white hover:bg-red-500/60 flex items-center justify-center transition-all opacity-0 group-hover/frame:opacity-100 z-10"
+                    >
+                      <span className="material-symbols-outlined text-[11px]">close</span>
+                    </button>
+                  )}
                   {/* Size label */}
-                  <div className="absolute bottom-1 left-1.5 text-[9px] font-mono text-white/40 pointer-events-none">
-                    {f.colEnd - f.colStart}×{f.rowEnd - f.rowStart}
-                  </div>
+                  {!isChangingRadius && (
+                    <div className="absolute bottom-1 left-1.5 text-[9px] font-mono text-white/40 pointer-events-none">
+                      {f.colEnd - f.colStart}×{f.rowEnd - f.rowStart}
+                    </div>
+                  )}
 
                   {/* Center & Copy Toolbar (placed top-left outside of the square) */}
-                  {isSelected && (
+                  {isSelected && !isChangingRadius && (
                     <div 
                       className={`absolute flex items-center gap-1 z-30 bg-[#13131e]/95 border border-white/12 p-0.5 rounded shadow-lg pointer-events-auto ${
                         f.rowStart === 1 ? '-bottom-8 left-0' : '-top-8 left-0'
@@ -1035,7 +1429,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                   )}
 
                   {/* Resize Handles */}
-                  {isSelected && (
+                  {isSelected && !isChangingRadius && (
                     <>
                       {/* Corner Handles */}
                       <div
@@ -1094,7 +1488,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
               const rowEnd = Math.max(dragging.rowStart, dragging.rowEnd) + 1;
               return (
                 <div
-                  className="absolute rounded-[3px] pointer-events-none"
+                  className="absolute pointer-events-none"
                   style={{
                     left: `${((colStart - 1) / gridSize) * 100}%`,
                     top: `${((rowStart - 1) / gridSize) * 100}%`,
@@ -1102,6 +1496,7 @@ export default function CollageBuilder({ onSave, onClose }: CollageBuilderProps)
                     height: `${((rowEnd - rowStart) / gridSize) * 100}%`,
                     background: 'rgba(212,175,55,0.15)',
                     border: '1.5px dashed rgba(212,175,55,0.7)',
+                    borderRadius: '4px',
                   }}
                 >
                   <span className="absolute bottom-1 left-1.5 text-[9px] font-mono text-[var(--gold)]/80">

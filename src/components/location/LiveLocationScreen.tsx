@@ -6,6 +6,7 @@ import { useLiveLocation } from '../../hooks/useLiveLocation';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { PartnerProfile } from '../../hooks/usePartner';
+import EncryptedImage from '../common/EncryptedImage';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 // liberty style has far richer POI labels than dark (restaurants, shops, landmarks)
@@ -51,7 +52,7 @@ function MapController({ center }: { center: { lat: number; lng: number } | null
 }
 
 // ── PFP Marker (memoised — no re-render on map pan) ────────────────────────────
-function PfpMarker({ avatarUrl, name, isPartner }: { avatarUrl: string; name: string; isPartner: boolean }) {
+function PfpMarker({ avatarUrl, avatarKey, avatarNonce, name, isPartner }: { avatarUrl: string | null; avatarKey?: string | null; avatarNonce?: string | null; name: string; isPartner: boolean }) {
   return (
     <div className="relative select-none" style={{ transform: 'translateZ(0)' }}>
       {isPartner && (
@@ -61,7 +62,14 @@ function PfpMarker({ avatarUrl, name, isPartner }: { avatarUrl: string; name: st
         />
       )}
       <div className={`w-11 h-11 rounded-full overflow-hidden shadow-xl bg-[var(--bg-elevated)] ${isPartner ? 'border-[3px] border-[var(--gold)]' : 'border-[2px] border-white'}`}>
-        <img src={avatarUrl} alt={name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+        <EncryptedImage 
+          url={avatarUrl} 
+          encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
+          nonce={avatarNonce ? (typeof avatarNonce === 'string' ? avatarNonce : JSON.stringify(avatarNonce)) : null}
+          alt={name} 
+          className="w-full h-full object-cover rounded-full" 
+          placeholder={`https://ui-avatars.com/api/?name=${name}&background=${isPartner ? 'c9a96e' : 'ffffff'}&color=13131b`}
+        />
       </div>
       <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap pointer-events-none">
         <span className={`text-[8px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full shadow ${isPartner ? 'bg-[var(--gold)] text-[var(--on-accent)]' : 'bg-white text-black'}`}>
@@ -127,25 +135,31 @@ export default function LiveLocationScreen({ partner, isActive }: LiveLocationSc
   }, [isActive, hasBeenActive]);
 
   // ── Avatars ───────────────────────────────────────────────────────────────────
-  const [myAvatar, setMyAvatar] = useState('');
+  const [myProfile, setMyProfile] = useState<{ url: string | null; key: string | null; nonce: string | null; display_name: string }>({
+    url: null,
+    key: null,
+    nonce: null,
+    display_name: 'Me'
+  });
+
   useEffect(() => {
     if (!user) return;
     supabase
       .from('profiles')
-      .select('avatar_url,display_name')
+      .select('avatar_url,avatar_key,avatar_nonce,display_name')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        setMyAvatar(
-          data?.avatar_url ||
-            `https://ui-avatars.com/api/?name=${data?.display_name ?? 'Me'}&background=ffffff&color=13131b`
-        );
+        if (data) {
+          setMyProfile({
+            url: data.avatar_url,
+            key: data.avatar_key,
+            nonce: data.avatar_nonce,
+            display_name: data.display_name ?? 'Me'
+          });
+        }
       });
   }, [user?.id]);
-
-  const partnerAvatar =
-    partner?.avatar_url ||
-    `https://ui-avatars.com/api/?name=${partner?.display_name ?? 'P'}&background=c9a96e&color=13131b`;
 
   // ── Map viewState — RAF debounced for smooth panning without extra renders ─────
   const [viewState, setViewState] = useState({ longitude: 72.8777, latitude: 21.1702, zoom: 15.5, pitch: 0, bearing: 0 });
@@ -234,13 +248,25 @@ export default function LiveLocationScreen({ partner, isActive }: LiveLocationSc
 
             {userLocation && (
               <Marker longitude={userLocation.lng} latitude={userLocation.lat} anchor="bottom" style={{ zIndex: 10 }}>
-                <PfpMarker avatarUrl={myAvatar} name="You" isPartner={false} />
+                <PfpMarker 
+                  avatarUrl={myProfile.url} 
+                  avatarKey={myProfile.key} 
+                  avatarNonce={myProfile.nonce} 
+                  name={myProfile.display_name} 
+                  isPartner={false} 
+                />
               </Marker>
             )}
 
             {partnerLocation && (
               <Marker longitude={partnerLocation.lng} latitude={partnerLocation.lat} anchor="bottom" style={{ zIndex: 20 }}>
-                <PfpMarker avatarUrl={partnerAvatar} name={partner?.display_name ?? 'P'} isPartner />
+                <PfpMarker 
+                  avatarUrl={partner?.avatar_url || null} 
+                  avatarKey={partner?.avatar_key} 
+                  avatarNonce={partner?.avatar_nonce} 
+                  name={partner?.display_name ?? 'P'} 
+                  isPartner 
+                />
               </Marker>
             )}
           </Map>
@@ -333,13 +359,14 @@ export default function LiveLocationScreen({ partner, isActive }: LiveLocationSc
           {/* Partner row */}
           <div className="flex items-center justify-between px-4 py-3 gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className={`flex-shrink-0 w-10 h-10 rounded-full border-2 transition-colors duration-500 ${partnerLocation ? 'border-[var(--gold)]' : 'border-white/10'}`}>
-                <img
-                  src={partnerAvatar}
+              <div className={`flex-shrink-0 w-10 h-10 rounded-full border-2 transition-colors duration-500 overflow-hidden ${partnerLocation ? 'border-[var(--gold)]' : 'border-white/10'}`}>
+                <EncryptedImage
+                  url={partner?.avatar_url || null}
+                  encryptionKey={partner?.avatar_key ? (typeof partner.avatar_key === 'string' ? partner.avatar_key : JSON.stringify(partner.avatar_key)) : null}
+                  nonce={partner?.avatar_nonce ? (typeof partner.avatar_nonce === 'string' ? partner.avatar_nonce : JSON.stringify(partner.avatar_nonce)) : null}
                   alt={partner?.display_name ?? 'Partner'}
                   className={`w-full h-full object-cover rounded-full transition-all duration-500 ${!partnerLocation ? 'grayscale opacity-35' : ''}`}
-                  loading="lazy"
-                  decoding="async"
+                  placeholder={`https://ui-avatars.com/api/?name=${partner?.display_name ?? 'P'}&background=c9a96e&color=13131b`}
                 />
               </div>
               <div className="min-w-0">

@@ -8,6 +8,7 @@ type MessageRow = Database['public']['Tables']['messages']['Row'];
 interface ThrowbackItem extends MessageRow {
   decryptedUrl?: string;
   loading?: boolean;
+  failed?: boolean;
 }
 
 interface OnThisDayCardProps {
@@ -22,7 +23,12 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
   const generatedUrlsRef = useRef<Set<string>>(new Set());
 
   const decryptItem = async (item: ThrowbackItem) => {
-    if (item.decryptedUrl || !partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) return;
+    if (item.decryptedUrl || !partnerPublicKey) return;
+
+    if (!item.media_url || !item.media_key || !item.media_nonce) {
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, failed: true } : i));
+      return;
+    }
 
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: true } : i));
 
@@ -38,10 +44,11 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, decryptedUrl: url, loading: false } : i));
+      } else {
+        setItems(prev => prev.map(i => i.id === item.id ? { ...i, failed: true, loading: false } : i));
       }
     } catch (err) {
-      
-      setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: false } : i));
+      setItems(prev => prev.map(i => i.id === item.id ? { ...i, failed: true, loading: false } : i));
     }
   };
 
@@ -51,7 +58,8 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
     };
   }, []);
 
-  if (throwbacks.length === 0) return null;
+  const visibleItems = items.filter(i => !i.failed);
+  if (visibleItems.length === 0) return null;
 
   return (
     <motion.div
@@ -75,7 +83,7 @@ export default function OnThisDayCard({ throwbacks, partnerPublicKey, onOpenMedi
 
         {/* Scrollable strip */}
         <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <ThrowbackThumb
               key={item.id}
               item={item}

@@ -28,18 +28,18 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
           password,
         });
         if (error) throw error;
-        toast.success('Account created! You are securely verified.');
+        toast.success('Account created! Verification email sent.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        toast.success('Welcome back to Aura.');
+        toast.success('Welcome back to your Sanctuary.');
         onLogin();
       }
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred during authentication');
+      toast.error(error.message || 'Authentication error occurred');
     } finally {
       setLoading(false);
     }
@@ -48,43 +48,67 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         
+        .login-bg-glow {
+          position: absolute;
+          width: 300px;
+          height: 300px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(201, 169, 110, 0.08) 0%, transparent 70%);
+          filter: blur(40px);
+          animation: float-glow 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes float-glow {
+          0% { transform: translate(-10%, -10%) scale(1); }
+          100% { transform: translate(10%, 10%) scale(1.2); }
+        }
+
         .input-field:-webkit-autofill,
         .input-field:-webkit-autofill:hover, 
         .input-field:-webkit-autofill:focus, 
         .input-field:-webkit-autofill:active{
-            -webkit-box-shadow: 0 0 0 30px #111111 inset !important;
-            -webkit-text-fill-color: white !important;
+            -webkit-box-shadow: 0 0 0 30px #13131e inset !important;
+            -webkit-text-fill-color: #f0ede8 !important;
             transition: background-color 5000s ease-in-out 0s;
         }
       `}</style>
       
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center relative bg-[#0a0a0a] text-white font-sans overflow-hidden">
-        <main className="w-full max-w-md px-6 py-8 relative z-10 flex flex-col h-[884px]">
-          {/* Header */}
-          <header className="flex flex-col items-center mt-20 mb-10">
-            <div className="w-20 h-20 mb-6 flex items-center justify-center bg-white/5 rounded-2xl border border-white/10 shadow-xl">
-               <span className="material-symbols-outlined text-4xl">shopping_bag</span>
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center relative bg-[#0c0c14] text-[#f0ede8] font-sans overflow-hidden">
+        {/* Animated Glow Backdrops */}
+        <div className="login-bg-glow top-12 left-10" />
+        <div className="login-bg-glow bottom-12 right-10" style={{ animationDelay: '-4s' }} />
+
+        <main className="w-full max-w-md px-6 py-12 relative z-10 flex flex-col h-[100dvh] justify-between">
+          
+          {/* Header & Branding */}
+          <header className="flex flex-col items-center mt-12 mb-6 text-center">
+            <div className="w-16 h-16 mb-5 flex items-center justify-center bg-white/[0.02] rounded-3xl border border-white/10 shadow-2xl relative group">
+              <span className="material-symbols-outlined text-3xl text-[var(--gold)]">favorite</span>
+              <div className="absolute inset-0 rounded-3xl bg-[var(--gold)]/10 blur-md opacity-50" />
             </div>
-            <h1 className="text-2xl font-bold tracking-widest mb-10 uppercase text-white">Aura Store</h1>
-            <div className="text-center space-y-3">
-              <h2 className="text-3xl font-semibold text-white tracking-wide">
-                {isSignUp ? 'Create Account' : 'Welcome Back'}
+            
+            <h1 className="text-4xl font-serif italic font-bold tracking-[0.25em] text-gradient-gold uppercase mb-2">AURA</h1>
+            <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[var(--text-secondary)] mb-6">Our Private Space</p>
+            
+            <div className="space-y-2 max-w-[280px]">
+              <h2 className="text-2xl font-bold tracking-wide text-white">
+                {isSignUp ? 'Join the Sanctuary' : 'Welcome Back'}
               </h2>
-              <p className="text-sm leading-relaxed max-w-[280px] mx-auto text-gray-400">
+              <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                 {isSignUp 
-                  ? 'Sign up to track your orders, save to your wishlist, and check out faster.' 
-                  : 'Sign in to access your orders, saved items, and recommendations.'}
+                  ? 'Create a secure workspace to share memories, chat, and stories privately.' 
+                  : 'Step inside to access your shared timeline, notes, and arcade.'}
               </p>
             </div>
           </header>
 
-          {/* LoginForm */}
-          <form className="flex-1 flex flex-col w-full space-y-5" onSubmit={handleSubmit}>
-            {/* Identity Input */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-gray-400 tracking-wider uppercase" htmlFor="email-mobile">Email Address</label>
+          {/* Form */}
+          <form className="flex-1 flex flex-col justify-center space-y-5 my-8" onSubmit={handleSubmit}>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label className="block text-[10px] font-bold text-white/50 tracking-widest uppercase" htmlFor="email-mobile">Email</label>
               <input 
                 id="email-mobile" 
                 type="email"
@@ -92,68 +116,53 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="input-field w-full rounded-xl px-4 py-3.5 text-white focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors bg-white/5 border border-white/10 text-base"
+                className="input-field w-full rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[var(--gold)]/40 transition-colors bg-white/[0.03] border border-white/10 text-sm"
               />
             </div>
 
-            {/* Secret Key Input */}
-            <div className="space-y-2">
+            {/* Password */}
+            <div className="space-y-1.5">
               <div className="flex justify-between items-center">
-                <label className="block text-xs font-semibold text-gray-400 tracking-wider uppercase" htmlFor="password-mobile">Password</label>
-                {!isSignUp && (
-                  <a href="#" className="text-[11px] tracking-wider transition-colors text-gray-400 hover:text-white">Forgot Password?</a>
-                )}
+                <label className="block text-[10px] font-bold text-white/50 tracking-widest uppercase" htmlFor="password-mobile">Password</label>
               </div>
-              <div className="relative">
-                <input 
-                  id="password-mobile" 
-                  type="password"
-                  placeholder="Enter your password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="input-field w-full rounded-xl pl-4 pr-12 py-3.5 text-white focus:outline-none focus:ring-1 focus:ring-white/30 transition-colors bg-white/5 border border-white/10 text-base"
-                />
-                <button type="button" className="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors text-gray-400 hover:text-white">
-                  <span className="material-symbols-outlined text-lg">visibility</span>
-                </button>
-              </div>
+              <input 
+                id="password-mobile" 
+                type="password"
+                placeholder="Enter password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="input-field w-full rounded-2xl px-4 py-3.5 text-white focus:outline-none focus:border-[var(--gold)]/40 transition-colors bg-white/[0.03] border border-white/10 text-sm"
+              />
             </div>
 
-            <div className="pt-4 space-y-6">
-              {/* Primary Action */}
+            {/* Actions */}
+            <div className="pt-4 space-y-4">
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-white hover:bg-gray-200 text-black font-bold rounded-xl py-4 px-4 transition-all tracking-wide text-sm disabled:opacity-50 active:scale-[0.98] shadow-lg shadow-white/10"
+                className="w-full bg-[var(--gold)] hover:bg-[var(--gold-light)] text-[#2a1e00] font-bold rounded-2xl py-3.5 px-4 transition-all tracking-wider text-xs uppercase disabled:opacity-50 active:scale-[0.98] shadow-lg shadow-[var(--gold-glow)]"
               >
-                {loading ? 'Authenticating...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                {loading ? 'Securing entrance...' : (isSignUp ? 'Create Workspace' : 'Enter')}
               </button>
 
-              {/* Divider */}
-              <div className="relative flex items-center justify-center">
-                <div className="absolute inset-x-0 h-px bg-white/10"></div>
-                <span className="relative bg-[#0a0a0a] px-4 text-xs font-medium text-gray-500 uppercase">Or</span>
-              </div>
-
-              {/* Secondary Action */}
               <button 
                 type="button" 
                 onClick={() => setIsSignUp(!isSignUp)}
-                className="w-full bg-transparent border border-white/20 text-white hover:bg-white/5 font-semibold rounded-xl py-4 px-4 transition-colors tracking-wide text-sm"
+                className="w-full text-center text-xs font-semibold text-[var(--gold)] hover:text-[var(--gold-light)] transition-colors pt-2"
               >
-                {isSignUp ? 'Already have an account? Sign In' : 'Create an Account'}
+                {isSignUp ? 'Already have a space? Enter here' : 'Need to set up a new space? Create account'}
               </button>
             </div>
           </form>
 
           {/* Footer */}
-          <footer className="mt-auto pb-8 pt-6 text-center">
-            <p className="text-xs text-gray-500 leading-relaxed">
-              By entering, you agree to our <a href="#" className="text-gray-300 hover:text-white underline transition-colors">Privacy Policy</a> & <a href="#" className="text-gray-300 hover:text-white underline transition-colors">Terms of Service</a>
+          <footer className="mt-auto pb-4 text-center">
+            <p className="text-[10px] text-[var(--text-secondary)]/50 leading-relaxed max-w-[240px] mx-auto">
+              End-to-end encryption keys are held locally in your browser session.
             </p>
-            <p className="text-xs text-gray-600 mt-4 uppercase tracking-widest font-semibold">
-              © 2024 Aura Store. All rights reserved.
+            <p className="text-[9px] text-[var(--text-secondary)]/30 mt-3 uppercase tracking-widest font-semibold">
+              © 2026 AURA. Private Sanctuary v2.0.0
             </p>
           </footer>
         </main>

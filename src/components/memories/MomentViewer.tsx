@@ -12,6 +12,7 @@ type MessageRow = Database['public']['Tables']['messages']['Row'];
 export interface MomentItem extends MessageRow {
   decryptedUrl?: string;
   loading?: boolean;
+  failed?: boolean;
 }
 
 export interface MomentGroup {
@@ -115,10 +116,23 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const moment = moments[currentMomentIdx];
-  const items = decryptedItems.get(moment.id) || moment.items;
+  const rawItems = decryptedItems.get(moment.id) || moment.items;
+  const items = rawItems.filter(i => !(i as any).failed);
   const currentItem = items[currentItemIdx];
   const prevMoment = currentMomentIdx > 0 ? moments[currentMomentIdx - 1] : null;
   const nextMoment = currentMomentIdx < moments.length - 1 ? moments[currentMomentIdx + 1] : null;
+
+  // Auto advance if current moment has no decryptable items left
+  useEffect(() => {
+    if (items.length === 0 && rawItems.length > 0 && rawItems.some(i => (i as any).failed)) {
+      if (currentMomentIdx < moments.length - 1) {
+        setCurrentMomentIdx(prev => prev + 1);
+        setCurrentItemIdx(0);
+      } else {
+        onClose();
+      }
+    }
+  }, [items.length, rawItems.length, currentMomentIdx, moments.length, onClose]);
 
   const isAvailable = !!(currentItem?.decryptedUrl || (currentItem?.type === 'video' && !currentItem?.media_url));
   const [slideStartTime, setSlideStartTime] = useState<number>(Date.now());
@@ -164,7 +178,11 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
       } catch { /* silent */ }
     }
 
-    if (item.decryptedUrl || !partnerPublicKey || !decryptUrl || !item.media_key || !item.media_nonce) {
+    if (item.decryptedUrl) return;
+
+    if (!partnerPublicKey) return;
+
+    if (!decryptUrl || !item.media_key || !item.media_nonce) {
       if (isChunked && !item.decryptedUrl) {
         // Chunked video with no thumbnail — mark as done (will use ChunkedVideoFetcher)
         setDecryptedItems(prev => {
@@ -172,6 +190,15 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
           const list = [...(next.get(momentId) || [])];
           const idx = list.findIndex(i => i.id === item.id);
           if (idx !== -1) list[idx] = { ...list[idx], loading: false };
+          next.set(momentId, list);
+          return next;
+        });
+      } else {
+        setDecryptedItems(prev => {
+          const next = new Map(prev);
+          const list = [...(next.get(momentId) || [])];
+          const idx = list.findIndex(i => i.id === item.id);
+          if (idx !== -1) list[idx] = { ...list[idx], failed: true };
           next.set(momentId, list);
           return next;
         });
@@ -214,7 +241,7 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
           const next = new Map(prev);
           const list = [...(next.get(momentId) || [])];
           const idx = list.findIndex(i => i.id === item.id);
-          if (idx !== -1) list[idx] = { ...list[idx], loading: false };
+          if (idx !== -1) list[idx] = { ...list[idx], loading: false, failed: true };
           next.set(momentId, list);
           return next;
         });
@@ -224,7 +251,7 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
         const next = new Map(prev);
         const list = [...(next.get(momentId) || [])];
         const idx = list.findIndex(i => i.id === item.id);
-        if (idx !== -1) list[idx] = { ...list[idx], loading: false };
+        if (idx !== -1) list[idx] = { ...list[idx], loading: false, failed: true };
         next.set(momentId, list);
         return next;
       });
@@ -438,6 +465,14 @@ export default function MomentViewer({ moments, initialMomentIndex, partnerPubli
     if (i === currentItemIdx) return -1; // active (animating)
     return 0; // upcoming
   });
+
+  if (items.length === 0) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-black flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-[var(--gold)] rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const content = (
     <motion.div

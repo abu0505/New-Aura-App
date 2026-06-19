@@ -8,7 +8,7 @@ import type { Database } from '../../integrations/supabase/types';
 import CollageViewer, { type CollageCard } from './CollageViewer';
 import CollageBuilder from './CollageBuilder';
 import CustomScrapbookLayout from './CustomScrapbookLayout';
-import type { CollageLayoutConfig } from './CollageBuilder';
+import type { CollageLayoutConfig, CollageFrame } from './CollageBuilder';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -21,6 +21,8 @@ interface CollageCache {
   partnerId: string;
   images: MemoryItem[];
   timestamp: number;
+  layoutIds?: string[];
+  cardSelections?: Record<string, string[]>;
 }
 let globalCollageCache: CollageCache | null = null;
 
@@ -42,6 +44,21 @@ export default function RomanticCollages() {
       return globalCollageCache.images;
     }
     return [];
+  });
+
+  const [cardSelections, setCardSelections] = useState<Record<string, string[]>>(() => {
+    if (
+      globalCollageCache &&
+      user &&
+      partner &&
+      globalCollageCache.userId === user.id &&
+      globalCollageCache.partnerId === partner.id &&
+      Date.now() - globalCollageCache.timestamp < 24 * 60 * 60 * 1000 &&
+      globalCollageCache.cardSelections
+    ) {
+      return globalCollageCache.cardSelections;
+    }
+    return {};
   });
 
   const [loading, setLoading] = useState(() => {
@@ -90,14 +107,31 @@ export default function RomanticCollages() {
         .order('created_at', { ascending: true })
         .limit(5);
       if (data) {
-        setCustomLayouts(data.map(row => ({
-          id: row.id,
-          config: {
-            gridSize: row.grid_size,
-            frames: row.frames as CollageLayoutConfig['frames'],
-            bgColor: row.bg_color || '#f4f0e6'
+        setCustomLayouts(data.map(row => {
+          let frames: CollageFrame[] = [];
+          let imageSources = undefined;
+          let borderRadius = undefined;
+          
+          if (Array.isArray(row.frames)) {
+            frames = row.frames as CollageFrame[];
+          } else if (row.frames && typeof row.frames === 'object') {
+            const payload = row.frames as any;
+            frames = payload.layoutFrames || [];
+            imageSources = payload.imageSources;
+            borderRadius = payload.borderRadius;
           }
-        })));
+
+          return {
+            id: row.id,
+            config: {
+              gridSize: row.grid_size,
+              frames,
+              bgColor: row.bg_color || '#f4f0e6',
+              imageSources,
+              borderRadius: borderRadius !== undefined ? borderRadius : 4
+            }
+          };
+        }));
       }
     };
     fetchLayouts();
@@ -107,13 +141,20 @@ export default function RomanticCollages() {
   const handleSaveLayout = async (config: CollageLayoutConfig) => {
     if (!user || !partner) return;
     if (customLayouts.length >= 5) return;
+
+    const framesPayload = {
+      layoutFrames: config.frames,
+      imageSources: config.imageSources,
+      borderRadius: config.borderRadius
+    };
+
     const { data, error } = await supabase
       .from('custom_collage_layouts')
       .insert({
         user_id: user.id,
         partner_id: partner.id,
         grid_size: config.gridSize,
-        frames: config.frames,
+        frames: framesPayload as any,
         bg_color: config.bgColor || '#f4f0e6'
       })
       .select('id')
@@ -128,11 +169,17 @@ export default function RomanticCollages() {
     if (!user || !partner?.public_key) return;
 
     // Check if global cache is valid, skip fetching/decrypting
+    const cacheLayoutIds = globalCollageCache?.layoutIds || [];
+    const currentLayoutIds = customLayouts.map(l => l.id);
+    const layoutsMatch = cacheLayoutIds.length === currentLayoutIds.length &&
+      currentLayoutIds.every(id => cacheLayoutIds.includes(id));
+
     if (
       globalCollageCache &&
       globalCollageCache.userId === user.id &&
       globalCollageCache.partnerId === partner.id &&
-      Date.now() - globalCollageCache.timestamp < 24 * 60 * 60 * 1000
+      Date.now() - globalCollageCache.timestamp < 24 * 60 * 60 * 1000 &&
+      layoutsMatch
     ) {
       setLoading(false);
       return;
@@ -142,64 +189,147 @@ export default function RomanticCollages() {
     const fetchRandomMedia = async () => {
       setLoading(true);
       try {
-        const CACHE_KEY = 'aura_collage_selection';
         const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Hours
 
-        let selectedIds: string[] = [];
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          try {
-            const parsed = JSON.parse(cached);
-            if (Date.now() - parsed.timestamp < CACHE_DURATION && parsed.ids && parsed.ids.length >= 3) {
-              selectedIds = parsed.ids;
+        // 1. Fetch user's favorited message IDs
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('favorited_message_ids')
+          .eq('id', user.id)
+          .single();
+        const favs = profileData?.favorited_message_ids || [];
+
+        // 2. Fetch folder item IDs
+        const { data: folderItems } = await supabase
+          .from('media_folder_items')
+          .select('folder_id, message_id');
+        
+        const folderItemsMap: Record<string, string[]> = {};
+        (folderItems || []).forEach(item => {
+          if (!folderItemsMap[item.folder_id]) {
+            folderItemsMap[item.folder_id] = [];
+          }
+          folderItemsMap[item.folder_id].push(item.message_id);
+        });
+
+        // 3. Fetch general image message IDs from chat
+        const { data: generalMsg } = await supabase
+          .from('messages')
+          .select('id, media_url')
+          .eq('type', 'image')
+          .not('media_url', 'is', null)
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
+          .limit(150);
+
+        const cleanGeneralMsgIds = (generalMsg || [])
+          .filter(m => m.media_url && !m.media_url.toLowerCase().includes('.gif'))
+          .map(m => m.id);
+
+        const allFolderMsgIds = (folderItems || []).map(item => item.message_id);
+        const defaultPool = Array.from(new Set([...favs, ...allFolderMsgIds, ...cleanGeneralMsgIds]));
+
+        // 4. Resolve IDs for each card
+        const newSelections: Record<string, string[]> = {};
+        
+        // Define default cards and their required sizes
+        const defaultCardsConfig = [
+          { id: 'scrapbook', size: 5 },
+          { id: 'polaroid', size: 4 },
+          { id: 'gallery', size: 4 },
+        ];
+
+        // Process default cards
+        defaultCardsConfig.forEach(cfg => {
+          const cacheKey = `aura_collage_selection_${cfg.id}`;
+          let selected: string[] = [];
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              if (Date.now() - parsed.timestamp < CACHE_DURATION && parsed.ids && parsed.ids.length >= cfg.size) {
+                selected = parsed.ids;
+              }
+            } catch (e) {}
+          }
+
+          if (selected.length === 0) {
+            // Shuffle default pool and pick
+            selected = [...defaultPool].sort(() => 0.5 - Math.random()).slice(0, cfg.size);
+            if (selected.length > 0) {
+              localStorage.setItem(cacheKey, JSON.stringify({
+                ids: selected,
+                timestamp: Date.now()
+              }));
             }
-          } catch (e) {
-            console.error('Failed to parse cached collage selection:', e);
           }
-        }
+          newSelections[cfg.id] = selected;
+        });
 
-        if (selectedIds.length === 0) {
-          // 1. Fetch user's favorited message IDs
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('favorited_message_ids')
-            .eq('id', user.id)
-            .single();
-          const favs = profileData?.favorited_message_ids || [];
-
-          // 2. Fetch some folder item IDs
-          const { data: folderItems } = await supabase
-            .from('media_folder_items')
-            .select('message_id')
-            .limit(40);
-          const folderMsgIds = (folderItems || []).map(f => f.message_id);
-
-          // 3. Fetch general image message IDs from chat
-          const { data: generalMsg } = await supabase
-            .from('messages')
-            .select('id, media_url')
-            .eq('type', 'image')
-            .not('media_url', 'is', null)
-            .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
-            .limit(120);
-
-          const cleanGeneralMsgIds = (generalMsg || [])
-            .filter(m => m.media_url && !m.media_url.toLowerCase().includes('.gif'))
-            .map(m => m.id);
-
-          // Merge and shuffle to select up to 13 unique IDs (5 for collage 1, 4 each for collages 2 and 3)
-          const allIds = Array.from(new Set([...favs, ...folderMsgIds, ...cleanGeneralMsgIds]));
-          selectedIds = allIds.sort(() => 0.5 - Math.random()).slice(0, 13);
-
-          if (selectedIds.length > 0) {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-              ids: selectedIds,
-              timestamp: Date.now()
-            }));
+        // Process custom cards
+        customLayouts.forEach(layout => {
+          const cacheKey = `aura_collage_selection_${layout.id}`;
+          const requiredSize = layout.config.frames.length;
+          let selected: string[] = [];
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              if (Date.now() - parsed.timestamp < CACHE_DURATION && parsed.ids && parsed.ids.length >= requiredSize) {
+                selected = parsed.ids;
+              }
+            } catch (e) {}
           }
-        }
 
-        if (selectedIds.length === 0) {
+          if (selected.length === 0) {
+            // Resolve custom pool
+            let customPool: string[] = [];
+            const sources = layout.config.imageSources;
+            if (sources) {
+              if (sources.includeFavorites) {
+                customPool.push(...favs);
+              }
+              if (sources.includeMemories) {
+                customPool.push(...cleanGeneralMsgIds);
+              }
+              if (sources.folders && sources.folders.length > 0) {
+                sources.folders.forEach(fid => {
+                  if (folderItemsMap[fid]) {
+                    customPool.push(...folderItemsMap[fid]);
+                  }
+                });
+              }
+              customPool = Array.from(new Set(customPool));
+            }
+            
+            // If custom pool is empty, fallback to default pool
+            if (customPool.length === 0) {
+              customPool = defaultPool;
+            }
+
+            // Shuffle custom pool and pick
+            selected = [...customPool].sort(() => 0.5 - Math.random()).slice(0, requiredSize);
+            
+            // If we still don't have enough images, pad from default pool
+            if (selected.length < requiredSize) {
+              const extraNeeded = requiredSize - selected.length;
+              const extra = defaultPool.filter(id => !selected.includes(id)).sort(() => 0.5 - Math.random()).slice(0, extraNeeded);
+              selected.push(...extra);
+            }
+
+            if (selected.length > 0) {
+              localStorage.setItem(cacheKey, JSON.stringify({
+                ids: selected,
+                timestamp: Date.now()
+              }));
+            }
+          }
+          newSelections[layout.id] = selected;
+        });
+
+        // 5. Collect all selected IDs
+        const allSelectedIds = Array.from(new Set(Object.values(newSelections).flat()));
+
+        if (allSelectedIds.length === 0) {
           if (active) setLoading(false);
           return;
         }
@@ -208,7 +338,7 @@ export default function RomanticCollages() {
         const { data: messagesData } = await supabase
           .from('messages')
           .select('id,sender_id,media_url,media_key,media_nonce,type,created_at,sender_public_key')
-          .in('id', selectedIds);
+          .in('id', allSelectedIds);
 
         if (!active) return;
         const msgItems = (messagesData || []) as MemoryItem[];
@@ -244,6 +374,7 @@ export default function RomanticCollages() {
 
         if (active) {
           setDecryptedImages(validDecrypted);
+          setCardSelections(newSelections);
 
           // Revoke old cache URLs before saving the new ones
           if (globalCollageCache) {
@@ -261,7 +392,9 @@ export default function RomanticCollages() {
             userId: user.id,
             partnerId: partner.id,
             images: validDecrypted,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            layoutIds: currentLayoutIds,
+            cardSelections: newSelections
           };
         }
       } catch (err) {
@@ -275,28 +408,34 @@ export default function RomanticCollages() {
     return () => {
       active = false;
     };
-  }, [user, partner?.public_key]);
+  }, [user, partner?.public_key, customLayouts]);
 
   if (!loading && decryptedImages.length < 3) {
     return null;
   }
 
-  const collage1Images = decryptedImages.slice(0, 5);
-  const collage2Images = decryptedImages.slice(5, 9);
-  const collage3Images = decryptedImages.slice(9, 13);
+  const getCardImages = (cardId: string) => {
+    const ids = cardSelections[cardId] || [];
+    return ids
+      .map(id => decryptedImages.find(img => img.id === id))
+      .filter((img): img is MemoryItem => !!img && !!img.decryptedUrl);
+  };
 
-  // Images for custom cards — slots beyond the first 13 in the pool, cycling back if needed
-  const customCards: CollageCard[] = customLayouts.map((layout, layoutIdx) => {
-    const slotStart = 13 + layoutIdx * 5;
-    const poolImages = decryptedImages.length > 0
-      ? Array.from({ length: layout.config.frames.length }, (_, i) =>
-          decryptedImages[(slotStart + i) % decryptedImages.length]
-        ).filter(img => !!img?.decryptedUrl).map(img => ({ id: img.id, decryptedUrl: img.decryptedUrl! }))
-      : [];
+  const collage1Images = getCardImages('scrapbook');
+  const collage2Images = getCardImages('polaroid');
+  const collage3Images = getCardImages('gallery');
+
+  // Images for custom cards
+  const customCards: CollageCard[] = customLayouts.map((layout) => {
+    const images = getCardImages(layout.id).map(img => ({
+      id: img.id,
+      decryptedUrl: img.decryptedUrl!
+    }));
+    
     return {
       id: layout.id,
       type: 'custom' as const,
-      images: poolImages,
+      images,
       layoutConfig: layout.config,
     };
   });
@@ -590,7 +729,7 @@ export default function RomanticCollages() {
               onClick={() => setViewerCardIndex(3 + idx)}
               whileHover={{ y: -4, scale: 1.01 }}
               transition={{ type: 'spring', damping: 20 }}
-              className="w-[300px] sm:w-[340px] aspect-[3/4] flex-shrink-0 snap-start relative rounded-[2.5rem] shadow-xl overflow-hidden p-0 group cursor-pointer hover:border-[#c9a96e]/40 transition-colors duration-300"
+              className="w-[300px] sm:w-[340px] aspect-[3/4] md:aspect-square flex-shrink-0 snap-start relative rounded-[2.5rem] shadow-xl overflow-hidden p-0 group cursor-pointer hover:border-[#c9a96e]/40 transition-colors duration-300"
               style={{
                 background: card.layoutConfig?.bgColor || '#f4f0e6',
                 border: (card.layoutConfig?.bgColor && ['#14141d', '#1e1212', '#121e16'].includes(card.layoutConfig.bgColor))
@@ -627,7 +766,7 @@ export default function RomanticCollages() {
               whileHover={{ y: -4, scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: 'spring', damping: 20 }}
-              className="w-[300px] sm:w-[340px] aspect-[3/4] flex-shrink-0 snap-start relative rounded-[2.5rem] border-2 border-dashed border-[var(--gold)]/30 flex flex-col items-center justify-center gap-4 group hover:border-[var(--gold)]/60 transition-colors duration-300 bg-white/3 cursor-pointer"
+              className="w-[300px] sm:w-[340px] aspect-[3/4] md:aspect-square flex-shrink-0 snap-start relative rounded-[2.5rem] border-2 border-dashed border-[var(--gold)]/30 flex flex-col items-center justify-center gap-4 group hover:border-[var(--gold)]/60 transition-colors duration-300 bg-white/3 cursor-pointer"
             >
               <div className="w-16 h-16 rounded-full bg-[var(--gold)]/10 border border-[var(--gold)]/30 flex items-center justify-center group-hover:bg-[var(--gold)]/20 group-hover:border-[var(--gold)]/50 transition-all duration-300">
                 <span className="material-symbols-outlined text-3xl text-[var(--gold)]/70 group-hover:text-[var(--gold)] transition-colors">add</span>

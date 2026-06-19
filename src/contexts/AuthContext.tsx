@@ -168,7 +168,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSession = async (currentSession: Session | null) => {
     setSession(currentSession);
-    setUser(currentSession?.user ?? null);
+    setUser(prev => {
+      if (prev && currentSession?.user && prev.id === currentSession.user.id) {
+        return prev;
+      }
+      return currentSession?.user ?? null;
+    });
 
     if (currentSession?.user) {
       const userId = currentSession.user.id;

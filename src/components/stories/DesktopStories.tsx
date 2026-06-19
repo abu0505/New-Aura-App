@@ -1,5 +1,6 @@
-﻿import { usePartner } from '../../hooks/usePartner';
+import { usePartner } from '../../hooks/usePartner';
 import type { Story } from '../../hooks/useStories';
+import EncryptedImage from '../common/EncryptedImage';
 
 interface DesktopStoriesProps {
   stories: Story[];
@@ -61,10 +62,13 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
             >
               <div className="w-24 h-24 rounded-full p-[3px] bg-gradient-to-br from-[var(--gold)] to-[var(--gold)] group-hover:scale-105 active:scale-95 transition-transform duration-300 shadow-2xl">
                 <div className="w-full h-full rounded-full border-2 border-[var(--bg-primary)] overflow-hidden bg-[var(--bg-elevated)]">
-                  <img 
-                    src={partner?.avatar_url || 'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'P') + '&background=c9a96e&color=13131b'} 
+                  <EncryptedImage 
+                    url={partner?.avatar_url || null}
+                    encryptionKey={partner?.avatar_key ? (typeof partner.avatar_key === 'string' ? partner.avatar_key : JSON.stringify(partner.avatar_key)) : null}
+                    nonce={partner?.avatar_nonce ? (typeof partner.avatar_nonce === 'string' ? partner.avatar_nonce : JSON.stringify(partner.avatar_nonce)) : null}
                     alt="Partner's Avatar" 
-                    className="w-full h-full object-cover" 
+                    className="w-full h-full object-cover rounded-full" 
+                    placeholder={'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'P') + '&background=c9a96e&color=13131b'} 
                   />
                 </div>
               </div>
@@ -116,11 +120,14 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
                       {story.is_mine ? (
                          <span className="text-[10px] font-black text-[var(--gold)] tracking-widest uppercase">YOU</span>
                       ) : (
-                         <img 
-                            src={partner?.avatar_url || 'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'P') + '&background=c9a96e&color=13131b'} 
-                            alt="Avatar" 
-                            className="w-full h-full object-cover" 
-                         />
+                          <EncryptedImage 
+                             url={partner?.avatar_url || null}
+                             encryptionKey={partner?.avatar_key ? (typeof partner.avatar_key === 'string' ? partner.avatar_key : JSON.stringify(partner.avatar_key)) : null}
+                             nonce={partner?.avatar_nonce ? (typeof partner.avatar_nonce === 'string' ? partner.avatar_nonce : JSON.stringify(partner.avatar_nonce)) : null}
+                             alt="Avatar" 
+                             className="w-full h-full object-cover rounded-full" 
+                             placeholder={'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'P') + '&background=c9a96e&color=13131b'} 
+                          />
                       )}
                     </div>
                     <div>

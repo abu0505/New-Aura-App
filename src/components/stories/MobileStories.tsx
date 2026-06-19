@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { usePartner } from '../../hooks/usePartner';
 import SlidingName from '../common/SlidingName';
+import EncryptedImage from '../common/EncryptedImage';
 
 import type { Story } from '../../hooks/useStories';
 
@@ -19,10 +20,13 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
       <header className="bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-40 border-b border-white/5 flex items-center justify-between px-6 py-4 w-full safe-top">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center overflow-hidden shrink-0">
-            <img 
-              src={partner?.avatar_url || 'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'A') + '&background=c9a96e&color=13131b'} 
+            <EncryptedImage 
+              url={partner?.avatar_url || null}
+              encryptionKey={partner?.avatar_key ? (typeof partner.avatar_key === 'string' ? partner.avatar_key : JSON.stringify(partner.avatar_key)) : null}
+              nonce={partner?.avatar_nonce ? (typeof partner.avatar_nonce === 'string' ? partner.avatar_nonce : JSON.stringify(partner.avatar_nonce)) : null}
               alt="Partner Profile" 
               className="w-full h-full object-cover rounded-full" 
+              placeholder={'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'A') + '&background=c9a96e&color=13131b'} 
             />
           </div>
           <SlidingName
@@ -69,10 +73,13 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
               >
                 <div className="w-20 h-20 p-[3px] rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--gold)] cursor-pointer active:scale-95 transition-transform">
                   <div className="w-full h-full rounded-full bg-[var(--bg-primary)] border-[2px] border-[var(--bg-primary)] overflow-hidden">
-                    <img 
-                      src={partner?.avatar_url || 'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'P') + '&background=c9a96e&color=13131b'} 
+                    <EncryptedImage 
+                      url={partner?.avatar_url || null}
+                      encryptionKey={partner?.avatar_key ? (typeof partner.avatar_key === 'string' ? partner.avatar_key : JSON.stringify(partner.avatar_key)) : null}
+                      nonce={partner?.avatar_nonce ? (typeof partner.avatar_nonce === 'string' ? partner.avatar_nonce : JSON.stringify(partner.avatar_nonce)) : null}
                       alt="Partner's Story" 
-                      className="w-full h-full object-cover" 
+                      className="w-full h-full object-cover rounded-full" 
+                      placeholder={'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'P') + '&background=c9a96e&color=13131b'} 
                     />
                   </div>
                 </div>

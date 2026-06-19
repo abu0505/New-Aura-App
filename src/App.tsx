@@ -4,13 +4,11 @@ import { useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/auth/LoginScreen';
 import type { Tab } from './types';
 const ChatScreen = lazy(() => import('./components/chat/ChatScreen'));
-const StoriesScreen = lazy(() => import('./components/stories/StoriesScreen'));
-// const LiveLocationScreen = lazy(() => import('./components/location/LiveLocationScreen'));
+const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
+const ReelsScreen = lazy(() => import('./components/reels/ReelsScreen'));
+const ExploreScreen = lazy(() => import('./components/explore/ExploreScreen'));
+const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
 const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration'));
-const SettingsScreen = lazy(() => import('./components/settings/SettingsScreen'));
-const MemoriesScreen = lazy(() => import('./components/memories/MemoriesScreen'));
-const NotesScreen = lazy(() => import('./components/notes/NotesScreen'));
-const GamesScreen = lazy(() => import('./components/games/GamesScreen'));
 import AppLayout from './components/layout/AppLayout';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -40,7 +38,7 @@ function InnerApp({
   const { streakCount, showCelebration, setShowCelebration } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
-    return isStealth ? 'notes' : 'chat';
+    return isStealth ? 'explore' : 'home';
   });
 
   // Listen for stealth mode changes to sync state
@@ -48,7 +46,7 @@ function InnerApp({
     const handleStealthChange = () => {
       const isStealth = localStorage.getItem('aura_stealth_mode') === 'true';
       if (isStealth) {
-        setActiveTab('notes');
+        setActiveTab('explore');
       }
     };
     window.addEventListener('stealth-mode-change', handleStealthChange);
@@ -211,7 +209,7 @@ function InnerApp({
 
   // If newly unlocked via modal, they probably want to go back to chat
   useEffect(() => {
-    if (!isLocked && hasAppPin && activeTab === 'settings') {
+    if (!isLocked && hasAppPin && activeTab === 'profile') {
        setActiveTab('chat');
     }
   }, [isLocked, hasAppPin]);
@@ -278,24 +276,20 @@ function InnerApp({
           </div>
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
+          <div className={activeTab === 'home' ? 'h-full w-full' : 'hidden'}>
+            <HomeScreen onTabChange={handleTabChangeWrapper} />
+          </div>
+          <div className={activeTab === 'explore' ? 'h-full w-full' : 'hidden'}>
+            <ExploreScreen />
+          </div>
           <div className={activeTab === 'chat' ? 'h-full w-full' : 'hidden'}>
             <ChatScreen partner={partnerWithPresence} isActive={activeTab === 'chat' && !isLocked} />
           </div>
-          <div className={activeTab === 'stories' ? 'h-full w-full' : 'hidden'}>
-            <StoriesScreen partner={partner} />
+          <div className={activeTab === 'reels' ? 'h-full w-full' : 'hidden'}>
+            <ReelsScreen />
           </div>
-          <div className={activeTab === 'memories' ? 'h-full w-full' : 'hidden'}>
-            <MemoriesScreen />
-          </div>
-          <div className={activeTab === 'notes' ? 'h-full w-full' : 'hidden'}>
-            <NotesScreen />
-          </div>
-          <div className={activeTab === 'games' ? 'h-full w-full' : 'hidden'}>
-            <GamesScreen />
-          </div>
-
-          <div className={activeTab === 'settings' ? 'h-full w-full' : 'hidden'}>
-            <SettingsScreen />
+          <div className={activeTab === 'profile' ? 'h-full w-full' : 'hidden'}>
+            <ProfileScreen />
           </div>
         </Suspense>
       </AppLayout>

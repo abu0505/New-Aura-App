@@ -35,7 +35,8 @@ export default function CustomScrapbookLayout({
               backgroundColor: '#ffffff',
               boxShadow: '0 8px 20px rgba(0,0,0,0.14)',
               border: '1px solid rgba(0,0,0,0.06)',
-              borderRadius: '0.2rem',
+              borderRadius: config.borderRadius !== undefined ? `${config.borderRadius}px` : '0.2rem',
+              zIndex: frame.zIndex !== undefined ? frame.zIndex : 10 + idx,
               overflow: 'hidden',
             }}
             className={`z-10 transition-all duration-300 ${image ? 'cursor-zoom-in hover:scale-[1.02] hover:z-30 hover:shadow-2xl' : ''}`}

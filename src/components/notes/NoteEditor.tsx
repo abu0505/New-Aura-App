@@ -478,6 +478,14 @@ export default function NoteEditor({
   const [decryptedBg, setDecryptedBg] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showColorMenu, setShowColorMenu] = useState(false);
+
+  // Auto-save with debounce
+  const debouncedSave = useCallback((updates: Partial<Note>) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      onUpdate(note.id, updates);
+    }, 400);
+  }, [note.id, onUpdate]);
   // ═══ INLINE DRAWING STATE ═══
   const [drawMode, setDrawMode] = useState(false);
   const [drawTool, setDrawTool] = useState<InlineDrawTool>('pen');
@@ -721,7 +729,7 @@ export default function NoteEditor({
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       setContent(html);
-      debouncedSave({ title, content: html });
+      debouncedSave({ content: html });
     },
     onSelectionUpdate: ({ editor }) => {
       updateActiveStyles(editor);
@@ -987,13 +995,7 @@ export default function NoteEditor({
     sentinelObserverRef.current.observe(node);
   }, [fetchMemoriesPage]);
 
-  // Auto-save with debounce
-  const debouncedSave = useCallback((updates: Partial<Note>) => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      onUpdate(note.id, updates);
-    }, 400);
-  }, [note.id, onUpdate]);
+
 
   // Cleanup timer
   useEffect(() => {
@@ -1937,7 +1939,7 @@ export default function NoteEditor({
 
   const handleTitleChange = (val: string) => {
     setTitle(val);
-    debouncedSave({ title: val, content });
+    debouncedSave({ title: val });
   };
 
   const togglePanel = (panel: BottomPanel) => {

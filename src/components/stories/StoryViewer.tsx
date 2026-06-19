@@ -23,6 +23,7 @@ export default function StoryViewer({
   const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const decryptedUrlRef = useRef<string | null>(null);
 
   const activeStory = stories[currentIndex] || null;
 
@@ -49,14 +50,17 @@ export default function StoryViewer({
   }, [currentIndex]);
 
   useEffect(() => {
+    let active = true;
     if (isOpen && activeStory?.media_url && activeStory.media_key && activeStory.media_nonce && partnerPublicKey) {
       setLoading(true);
       getDecryptedBlob(activeStory.media_url, activeStory.media_key, activeStory.media_nonce, partnerPublicKey)
         .then(blob => {
-          if (blob) {
-            setDecryptedUrl(URL.createObjectURL(blob));
+          if (blob && active) {
+            const url = URL.createObjectURL(blob);
+            decryptedUrlRef.current = url;
+            setDecryptedUrl(url);
           }
-          setLoading(false);
+          if (active) setLoading(false);
         });
     } else {
       setDecryptedUrl(null);
@@ -64,7 +68,11 @@ export default function StoryViewer({
     }
 
     return () => {
-      if (decryptedUrl) URL.revokeObjectURL(decryptedUrl);
+      active = false;
+      if (decryptedUrlRef.current) {
+        URL.revokeObjectURL(decryptedUrlRef.current);
+        decryptedUrlRef.current = null;
+      }
     };
   }, [isOpen, activeStory?.id, partnerPublicKey]);
 

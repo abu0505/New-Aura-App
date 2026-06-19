@@ -522,3 +522,56 @@ a {
   animation: shimmerSweep 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   pointer-events: none;
 }
+
+/* ===== Social Media Redesign Custom Animations ===== */
+@keyframes heartBurst {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.4); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-heart-burst {
+  animation: heartBurst 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes storyRingPulse {
+  0% { transform: rotate(0deg); border-color: var(--gold) #ff4572 var(--rose) #8a2be2; }
+  50% { border-color: #ff4572 var(--rose) #8a2be2 var(--gold); }
+  100% { transform: rotate(360deg); border-color: var(--gold) #ff4572 var(--rose) #8a2be2; }
+}
+.story-ring-active {
+  background: linear-gradient(45deg, var(--gold), #ff4572, var(--rose));
+  position: relative;
+  padding: 3px;
+  border-radius: 50%;
+  animation: pulse-border 2s infinite alternate;
+}
+
+@keyframes pulse-border {
+  0% { box-shadow: 0 0 0 0px rgba(201, 169, 110, 0.4); }
+  100% { box-shadow: 0 0 0 6px rgba(201, 169, 110, 0); }
+}
+
+@keyframes reelSlideIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-reel-slide-in {
+  animation: reelSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes kenBurns {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.animate-ken-burns {
+  animation: kenBurns 20s ease-in-out infinite;
+}
+
+/* Custom premium scrollbar for feeds */
+.social-feed-scroll::-webkit-scrollbar {
+  width: 0px;
+}
+.social-feed-scroll {
+  scrollbar-width: none;
+}

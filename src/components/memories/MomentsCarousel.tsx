@@ -52,7 +52,11 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
       } catch { /* silent */ }
     }
 
-    if (!decryptUrl || !coverItem.media_key || !coverItem.media_nonce || !partnerPublicKey) return;
+    if (!decryptUrl || !coverItem.media_key || !coverItem.media_nonce || !partnerPublicKey) {
+      coverUrlsRef.current.set(moment.id, '__failed__');
+      setCoverUrls(prev => new Map(prev).set(moment.id, '__failed__'));
+      return;
+    }
 
     // Mark as in-progress
     coverUrlsRef.current.set(moment.id, '__loading__');
@@ -73,10 +77,12 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
         coverUrlsRef.current.set(moment.id, url);
         setCoverUrls(prev => new Map(prev).set(moment.id, url));
       } else {
-        coverUrlsRef.current.delete(moment.id);
+        coverUrlsRef.current.set(moment.id, '__failed__');
+        setCoverUrls(prev => new Map(prev).set(moment.id, '__failed__'));
       }
     } catch {
-      coverUrlsRef.current.delete(moment.id);
+      coverUrlsRef.current.set(moment.id, '__failed__');
+      setCoverUrls(prev => new Map(prev).set(moment.id, '__failed__'));
     }
   }, [partnerPublicKey, getDecryptedBlob]); // removed coverUrls from deps to fix stale closure
 
@@ -156,7 +162,7 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
           className="flex gap-4 overflow-x-auto pb-4 pt-1 no-scrollbar snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none' }}
         >
-          {moments.map((moment, idx) => {
+          {moments.filter(m => coverUrls.get(m.id) !== '__failed__').map((moment, idx) => {
             const coverUrl = coverUrls.get(moment.id);
             return (
               <motion.div

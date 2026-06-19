@@ -597,7 +597,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           )}
         </div>
         {/* TopAppBar */}
-        <header className={`shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 pb-4 border-b border-white/5 gap-2 ${isNative ? 'safe-top' : 'pt-5'}`}>
+        <header className={`shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 pb-4 border-b border-white/5 gap-2 ${isNative ? 'safe-top' : 'pt-2'}`}>
           <div className="flex items-center gap-3 min-w-0">
             <button 
               onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))} 
@@ -620,7 +620,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-aura-success rounded-full border-2 border-background"></div>
               )}
             </div>
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
               <div className="flex flex-col min-w-0 w-full">
                 <SlidingName
                   name={partner.display_name || 'Your Partner'}

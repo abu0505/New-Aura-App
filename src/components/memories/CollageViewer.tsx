@@ -486,7 +486,9 @@ export default function CollageViewer({ cards, initialCardIndex, onClose }: Coll
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.96 }}
           transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-          className="relative w-[85vw] max-w-[460px] aspect-[3/4] rounded-[2rem] md:rounded-[2.8rem] shadow-2xl overflow-hidden flex flex-col"
+          className={`relative w-[85vw] max-w-[460px] rounded-[2rem] md:rounded-[2.8rem] shadow-2xl overflow-hidden flex flex-col ${
+            card.type === 'custom' ? 'aspect-[3/4] md:aspect-square' : 'aspect-[3/4]'
+          }`}
           style={{ background: cardBg, border: cardBorder }}
         >
           {/* Type-specific collage layout */}

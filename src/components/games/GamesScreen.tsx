@@ -3,9 +3,13 @@ import { motion } from 'framer-motion';
 // Game Components
 import WhoIsTheSpy from './WhoIsTheSpy';
 
+interface GamesScreenProps {
+  onBack?: () => void;
+}
+
 type GameMode = 'hub' | 'who-is-the-spy';
 
-export default function GamesScreen() {
+export default function GamesScreen({ onBack }: GamesScreenProps = {}) {
   const [viewMode, setViewMode] = useState<GameMode>('hub');
 
   if (viewMode === 'who-is-the-spy') {
@@ -18,10 +22,17 @@ export default function GamesScreen() {
       <header className="px-6 pt-6 pb-4 flex flex-col gap-2 border-b border-white/5 bg-black/20 shrink-0 safe-top">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => document.dispatchEvent(new CustomEvent('toggle-nav'))}
-            className="p-2 -ml-2 rounded-full lg:hidden text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onBack) {
+                onBack();
+              } else {
+                document.dispatchEvent(new CustomEvent('toggle-nav'));
+              }
+            }}
+            className={`p-2 -ml-2 rounded-full text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center shrink-0 ${onBack ? '' : 'lg:hidden'}`}
           >
-            <span className="material-symbols-outlined text-xl">menu</span>
+            <span className="material-symbols-outlined text-xl">{onBack ? 'arrow_back' : 'menu'}</span>
           </button>
           <div>
             <h1 className="font-serif italic text-2xl text-[var(--gold)]">Aura Arcade</h1>

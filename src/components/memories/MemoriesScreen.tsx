@@ -23,11 +23,16 @@ interface MemoryItem extends MessageRow {
   decrypted_content?: string;
   loading?: boolean;
   isChunkedVideo?: boolean;
+  failed?: boolean;
 }
 
 type ViewMode = 'gallery' | 'search' | 'folders' | 'folder-view';
 
-export default function MemoriesScreen() {
+interface MemoriesScreenProps {
+  onBack?: () => void;
+}
+
+export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
@@ -470,6 +475,8 @@ export default function MemoriesScreen() {
       if (isChunked) {
         console.log('[MemoriesScreen] processQueue: Chunked video without thumbnail completed (e.g. sender side or missing thumbnail):', nextId);
         setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: true } : m));
+      } else {
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, failed: true } : m));
       }
       processQueue();
       return;
@@ -498,11 +505,11 @@ export default function MemoriesScreen() {
         setMemories(prev => prev.map(m => m.id === nextId ? { ...m, decryptedUrl: url, loading: false, isChunkedVideo: isChunked } : m));
       } else {
         console.warn('[MemoriesScreen] processQueue: Decryption returned null blob for item:', nextId);
-        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked } : m));
+        setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked, failed: true } : m));
       }
     } catch (err) {
       console.error('[MemoriesScreen] processQueue: Decryption THREW ERROR for item:', nextId, 'error:', err);
-      setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked } : m));
+      setMemories(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, isChunkedVideo: isChunked, failed: true } : m));
     } finally {
       processingIdsRef.current.delete(nextId);
       decryptionQueueRef.current = decryptionQueueRef.current.filter(id => id !== nextId);
@@ -589,6 +596,7 @@ export default function MemoriesScreen() {
   }, []);
 
   const filteredMemories = memories.filter(m => {
+    if (m.failed) return false;
     if (filter === 'all') return true;
     if (filter === 'favorites') return favorites.has(m.id);
     return m.type === filter;
@@ -777,9 +785,13 @@ export default function MemoriesScreen() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    document.dispatchEvent(new CustomEvent('toggle-nav'));
+                    if (onBack) {
+                      onBack();
+                    } else {
+                      document.dispatchEvent(new CustomEvent('toggle-nav'));
+                    }
                   }}
-                  className="p-2 -ml-2 rounded-full lg:hidden text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center"
+                  className={`p-2 -ml-2 rounded-full text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center ${onBack ? '' : 'lg:hidden'}`}
                 >
                   <span className="material-symbols-outlined text-xl">arrow_back</span>
                 </button>

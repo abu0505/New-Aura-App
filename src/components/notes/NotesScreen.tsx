@@ -9,7 +9,11 @@ import FolderTree from './FolderTree';
 import { useChatSettingsContext } from '../../contexts/ChatSettingsContext';
 import { hashPin } from '../../contexts/AppLockContext';
 
-export default function NotesScreen() {
+interface NotesScreenProps {
+  onBack?: () => void;
+}
+
+export default function NotesScreen({ onBack }: NotesScreenProps = {}) {
   const {
     notes,
     labels,
@@ -564,9 +568,13 @@ export default function NotesScreen() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          document.dispatchEvent(new CustomEvent('toggle-nav'));
+                          if (onBack) {
+                            onBack();
+                          } else {
+                            document.dispatchEvent(new CustomEvent('toggle-nav'));
+                          }
                         }}
-                        className="p-2 -ml-2 rounded-full lg:hidden text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center shrink-0"
+                        className={`p-2 -ml-2 rounded-full text-[#998f81] hover:text-[var(--gold)] hover:bg-white/5 active:scale-90 transition-all flex items-center justify-center shrink-0 ${onBack ? '' : 'lg:hidden'}`}
                       >
                         <span className="material-symbols-outlined text-xl">arrow_back</span>
                       </button>

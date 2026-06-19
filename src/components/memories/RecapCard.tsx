@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import type { Database } from '../../integrations/supabase/types';
@@ -305,9 +305,14 @@ export default function RecapCard({
   viewerSubtitle,
 }: RecapCardProps) {
   const { getDecryptedBlob } = useMedia();
-  const [items, setItems] = useState<RecapItem[]>(rawItems);
+  // Filter out invalid items (like text messages mistakenly fetched) right at initialization
+  const validItems = useMemo(() => rawItems.filter(i => i.media_url), [rawItems]);
+  const [items, setItems] = useState<RecapItem[]>(validItems);
   const generatedUrlsRef = useRef<Set<string>>(new Set());
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  
+  // Track decryptions to prevent StrictMode duplicate decryptions
+  const inFlightRef = useRef<Set<string>>(new Set());
 
   // Revoke blobs on unmount
   useEffect(() => () => {
@@ -315,8 +320,28 @@ export default function RecapCard({
   }, []);
 
   const decryptItem = useCallback(async (item: RecapItem) => {
-    if (item.decryptedUrl || !partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) return;
+    const tag = `[RecapCard][${title}][${item.id?.slice(0,8)}]`;
 
+    // Guard: skip if already done or missing fields
+    if (!partnerPublicKey) {
+      console.warn(`${tag} SKIP — partnerPublicKey is empty/null`);
+      return;
+    }
+    if (!item.media_url) {
+      console.warn(`${tag} SKIP — media_url is null`);
+      return;
+    }
+    if (!item.media_key || !item.media_nonce) {
+      console.warn(`${tag} SKIP — media_key or media_nonce missing`, { key: item.media_key, nonce: item.media_nonce });
+      return;
+    }
+    if (item.decryptedUrl || inFlightRef.current.has(item.id)) {
+      console.log(`${tag} SKIP — already decrypted or in-flight`);
+      return;
+    }
+
+    inFlightRef.current.add(item.id);
+    console.log(`${tag} START decrypt → url=${item.media_url?.slice(-30)} type=${item.type} senderPub=${item.sender_public_key?.slice(0,8) ?? 'null'}`);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: true } : i));
     try {
       const blob = await getDecryptedBlob(
@@ -329,21 +354,32 @@ export default function RecapCard({
       if (blob) {
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
+        console.log(`${tag} SUCCESS → blob=${(blob.size/1024).toFixed(1)}KB mime=${blob.type}`);
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, decryptedUrl: url, loading: false } : i));
       } else {
+        console.error(`${tag} FAILED — getDecryptedBlob returned null`);
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: false } : i));
       }
-    } catch {
+    } catch (err) {
+      console.error(`${tag} EXCEPTION`, err);
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: false } : i));
+      inFlightRef.current.delete(item.id);
     }
-  }, [partnerPublicKey, getDecryptedBlob]);
+  }, [partnerPublicKey, getDecryptedBlob, title]);
 
-  // Decrypt first 6 thumbs on mount (visible)
+  // Decrypt first 6 thumbs when items or partner key changes
+  // NOTE: We depend on validItems NOT the items state, to avoid a
+  // stale-closure bug where items are already decrypted but the effect
+  // re-runs with the old state.
   useEffect(() => {
-    items.slice(0, 6).forEach(item => decryptItem(item));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    console.log(`[RecapCard][${title}] decrypt-trigger — partnerKey=${partnerPublicKey?.slice(0,8) ?? 'MISSING'} items=${validItems.length}`);
+    if (!partnerPublicKey || validItems.length === 0) return;
+    // Decrypt the first 6 visible thumbnails
+    validItems.slice(0, 6).forEach(item => decryptItem(item));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [partnerPublicKey, validItems, title]);
 
-  if (rawItems.length === 0) return null;
+  if (validItems.length === 0) return null;
 
   const handleThumbClick = (index: number) => {
     // Make sure the clicked item and neighbours are decrypted

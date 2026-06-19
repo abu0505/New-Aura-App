@@ -165,6 +165,22 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
 
             <nav className={`flex flex-col gap-8 flex-grow ${shrinkNav ? 'items-center w-full' : ''}`}>
               <button
+                onClick={() => onTabChange('home')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'home' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Home"
+              >
+                <span className="material-symbols-outlined text-2xl">home</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Home</span>}
+              </button>
+              <button
+                onClick={() => onTabChange('explore')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'explore' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Explore"
+              >
+                <span className="material-symbols-outlined text-2xl">search</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Explore</span>}
+              </button>
+              <button
                 onClick={() => onTabChange('chat')}
                 className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Chat"
@@ -173,45 +189,20 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
                 {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>}
               </button>
               <button
-                onClick={() => onTabChange('stories')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'stories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Stories"
+                onClick={() => onTabChange('reels')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'reels' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Reels"
               >
-                <span className="material-symbols-outlined text-2xl">auto_stories</span>
-                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Stories</span>}
-              </button>
-
-              <button
-                onClick={() => onTabChange('memories')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'memories' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Memories"
-              >
-                <span className="material-symbols-outlined text-2xl">photo_library</span>
-                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Memories</span>}
+                <span className="material-symbols-outlined text-2xl">movie</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Reels</span>}
               </button>
               <button
-                onClick={() => onTabChange('notes')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'notes' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Notes"
+                onClick={() => onTabChange('profile')}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'profile' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Profile"
               >
-                <span className="material-symbols-outlined text-2xl">sticky_note_2</span>
-                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Notes</span>}
-              </button>
-              <button
-                onClick={() => onTabChange('games')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'games' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Games"
-              >
-                <span className="material-symbols-outlined text-2xl">sports_esports</span>
-                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Games</span>}
-              </button>
-              <button
-                onClick={() => onTabChange('settings')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${shrinkNav ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'settings' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Settings"
-              >
-                <span className="material-symbols-outlined text-2xl">settings</span>
-                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Settings</span>}
+                <span className="material-symbols-outlined text-2xl">person</span>
+                {!shrinkNav && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Profile</span>}
               </button>
             </nav>
 
@@ -237,7 +228,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
         )}
 
         {/* Main Content Area */}
-        <main className="relative h-full w-full overflow-hidden">
+        <main className="relative h-full w-full">
           {children}
         </main>
       </div>
@@ -248,65 +239,56 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
   return (
     <div className="fixed inset-0 bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans flex flex-col overflow-hidden">
       {/* Main Content Area */}
-      <main className="flex-1 w-full relative z-0 overflow-hidden">
+      <main className="flex-1 w-full relative z-0 min-h-0 overflow-hidden">
         {children}
       </main>
 
       {/* Bottom Navigation Bar */}
       {!isStealthActive && (
-        <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${((activeTab === 'chat' || activeTab === 'memories' || activeTab === 'notes') && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
+        <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${(activeTab === 'chat' && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
+          {/* Home */}
+          <button
+            onClick={() => changeTab('home')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'home' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'home' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'home' ? "'FILL' 1" : "" }}>home</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Home</span>
+          </button>
+
+          {/* Explore */}
+          <button
+            onClick={() => changeTab('explore')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'explore' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+          >
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'explore' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'explore' ? "'FILL' 1" : "" }}>search</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Explore</span>
+          </button>
+
           {/* Chat */}
           <button
             onClick={() => changeTab('chat')}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'chat' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'chat' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'chat' ? "'FILL' 1" : "" }}>chat_bubble</span>
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'chat' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'chat' ? "'FILL' 1" : "" }}>forum</span>
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Chat</span>
           </button>
 
-          {/* Stories */}
+          {/* Reels */}
           <button
-            onClick={() => changeTab('stories')}
-            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'stories' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+            onClick={() => changeTab('reels')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'reels' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'stories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'stories' ? "'FILL' 1" : "" }}>auto_stories</span>
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Stories</span>
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'reels' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'reels' ? "'FILL' 1" : "" }}>movie</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Reels</span>
           </button>
 
-          {/* Memories */}
+          {/* Profile */}
           <button
-            onClick={() => changeTab('memories')}
-            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'memories' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+            onClick={() => changeTab('profile')}
+            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'profile' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'memories' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'memories' ? "'FILL' 1" : "" }}>photo_library</span>
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Memories</span>
-          </button>
-
-          {/* Notes */}
-          <button
-            onClick={() => changeTab('notes')}
-            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'notes' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-          >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'notes' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'notes' ? "'FILL' 1" : "" }}>sticky_note_2</span>
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Notes</span>
-          </button>
-
-          {/* Games */}
-          <button
-            onClick={() => changeTab('games')}
-            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'games' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-          >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'games' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'games' ? "'FILL' 1" : "" }}>sports_esports</span>
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Games</span>
-          </button>
-
-          {/* Settings */}
-          <button
-            onClick={() => changeTab('settings')}
-            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'settings' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
-          >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'settings' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'settings' ? "'FILL' 1" : "" }}>settings</span>
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Settings</span>
+            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'profile' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'profile' ? "'FILL' 1" : "" }}>person</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Profile</span>
           </button>
         </nav>
       )}
