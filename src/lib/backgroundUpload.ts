@@ -34,6 +34,8 @@ interface EnqueueUploadOptions {
 interface EnqueueChunkedOptions {
   messageId: string;
   totalChunks: number;
+  chunkIndex: number;
+  chunk: string;  // Base64-encoded encrypted chunk data
   cloudinaryPreset: string;
   cloudinaryCloudName: string;
   supabaseUrl: string;
@@ -44,7 +46,6 @@ interface EnqueueChunkedOptions {
   duration: number;
   senderId: string;
   receiverId: string;
-  chunks: string[];  // Array of base64-encoded encrypted chunk data
 }
 
 interface EnqueueTextOptions {
@@ -67,9 +68,18 @@ interface QueueStatus {
 
 interface BackgroundUploadPlugin {
   enqueueUpload(options: EnqueueUploadOptions): Promise<{ taskId: string; enqueued: boolean }>;
-  enqueueChunkedUpload(options: EnqueueChunkedOptions): Promise<{ messageId: string; enqueuedCount: number; totalChunks: number }>;
+  enqueueChunkedUpload(options: EnqueueChunkedOptions): Promise<{ messageId: string; chunkIndex: number; enqueued: boolean }>;
   enqueueTextMessage(options: EnqueueTextOptions): Promise<{ taskId: string; enqueued: boolean }>;
   getQueueStatus(): Promise<QueueStatus>;
+  getUploadStatusForMessage(options: { messageId: string }): Promise<{
+    pending: number;
+    running: number;
+    succeeded: number;
+    failed: number;
+    cancelled: number;
+    total: number;
+    isCompleted: boolean;
+  }>;
   cancelUpload(options: { taskId: string }): Promise<{ cancelled: boolean }>;
   retryFailed(): Promise<{ pruned: boolean }>;
 }
@@ -205,30 +215,52 @@ export async function enqueueChunkedUpload(
   if (!creds) return false;
 
   try {
-    // Convert all chunks to base64
-    const chunksBase64 = encryptedChunks.map(chunk => uint8ArrayToBase64(chunk));
+    console.log(`[BackgroundUpload] Enqueuing ${totalChunks} chunks one-by-one to avoid bridge limits...`);
+    
+    for (let i = 0; i < totalChunks; i++) {
+      const chunkBase64 = uint8ArrayToBase64(encryptedChunks[i]);
+      
+      const result = await BackgroundUpload.enqueueChunkedUpload({
+        messageId,
+        totalChunks,
+        chunkIndex: i,
+        chunk: chunkBase64,
+        cloudinaryPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+        cloudinaryCloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+        supabaseUrl: creds.url,
+        supabaseKey: creds.key,
+        supabaseAccessToken: creds.accessToken,
+        packedKey,
+        baseNonce,
+        duration,
+        senderId,
+        receiverId,
+      });
+      
+      console.log(`[BackgroundUpload] Chunk ${i + 1}/${totalChunks} enqueued:`, result.enqueued);
+    }
 
-    const result = await BackgroundUpload.enqueueChunkedUpload({
-      messageId,
-      totalChunks,
-      cloudinaryPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
-      cloudinaryCloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-      supabaseUrl: creds.url,
-      supabaseKey: creds.key,
-      supabaseAccessToken: creds.accessToken,
-      packedKey,
-      baseNonce,
-      duration,
-      senderId,
-      receiverId,
-      chunks: chunksBase64,
-    });
-
-    console.log(`[BackgroundUpload] Chunked upload enqueued: ${result.enqueuedCount}/${result.totalChunks} chunks`);
-    return result.enqueuedCount > 0;
+    return true;
   } catch (err) {
     console.error('[BackgroundUpload] Failed to enqueue chunked upload:', err);
     return false;
+  }
+}
+
+export async function getUploadStatusForMessage(messageId: string): Promise<{
+  pending: number;
+  running: number;
+  succeeded: number;
+  failed: number;
+  cancelled: number;
+  total: number;
+  isCompleted: boolean;
+} | null> {
+  if (!isNativeUploadAvailable()) return null;
+  try {
+    return await BackgroundUpload.getUploadStatusForMessage({ messageId });
+  } catch {
+    return null;
   }
 }
 

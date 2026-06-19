@@ -31,8 +31,8 @@
 
 /* ── Byte-level chunking (transport only) ─────────────────────────────── */
 
-/** Default chunk size: 5MB — safely under Cloudinary's 10MB upload limit */
-export const DEFAULT_BYTE_CHUNK_SIZE = 5 * 1024 * 1024;
+/** Default chunk size: 1MB — optimized for Capacitor bridge transfer limits */
+export const DEFAULT_BYTE_CHUNK_SIZE = 1 * 1024 * 1024;
 
 export interface ByteChunk {
   data: Uint8Array;

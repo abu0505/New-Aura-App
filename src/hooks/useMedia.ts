@@ -19,7 +19,7 @@ import { usePartner } from './usePartner';
 import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb } from '../utils/videoChunker';
 import nacl from 'tweetnacl';
 import { supabase } from '../lib/supabase';
-import { isNativeUploadAvailable, enqueueChunkedUpload as nativeEnqueueChunkedUpload } from '../lib/backgroundUpload';
+import { isNativeUploadAvailable, enqueueChunkedUpload as nativeEnqueueChunkedUpload, getUploadStatusForMessage } from '../lib/backgroundUpload';
 
 export interface ProcessedMedia {
   url: string;
@@ -441,49 +441,79 @@ export function useMedia() {
     partnerKeyHistory?: string[],
     mediaType?: string | null   // Pass the known message type for correct MIME detection
   ): Promise<Blob | null> => {
-    if (!user) return null;
+    const shortUrl = url?.slice(-40) ?? 'null';
+    const tag = `[useMedia][${shortUrl}]`;
+
+    if (!user) { console.warn(`${tag} SKIP — no user`); return null; }
     const myKeyPair = getStoredKeyPair();
-    if (!myKeyPair) return null;
+    if (!myKeyPair) { console.warn(`${tag} SKIP — no keypair in localStorage`); return null; }
+    if (!url) { console.warn(`${tag} SKIP — url is empty`); return null; }
+    if (!packedKey) { console.warn(`${tag} SKIP — packedKey is empty`); return null; }
+    if (!mediaNonce) { console.warn(`${tag} SKIP — mediaNonce is empty`); return null; }
+    if (!partnerPublicKey) { console.warn(`${tag} SKIP — partnerPublicKey is empty`); return null; }
 
     // Fix 4.1: Return cached blob immediately
     if (decryptedBlobCache.has(url)) {
+      console.log(`${tag} CACHE HIT ✓ size=${(decryptedBlobCache.get(url)!.size/1024).toFixed(1)}KB`);
       return decryptedBlobCache.get(url)!;
     }
 
     // Fix 4.1: If same URL is already being decrypted, wait for that promise
     if (inflightDecryptions.has(url)) {
+      console.log(`${tag} IN-FLIGHT — waiting on existing promise`);
       return inflightDecryptions.get(url)!;
     }
+
+    console.log(`${tag} START — type=${mediaType} senderPub=${senderPublicKey?.slice(0,8) ?? 'null'} partnerPub=${partnerPublicKey?.slice(0,8)}`);
 
     const decryptionPromise = (async (): Promise<Blob | null> => {
       try {
         const [keyNonce, encryptedKey] = packedKey.split(':');
-        if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key');
+        if (!keyNonce || !encryptedKey) throw new Error('Invalid packed key — missing ":" separator. packedKey=' + packedKey?.slice(0,30));
 
         // NaCl box decryption: nacl.box.open(cipher, nonce, theirPublicKey, mySecretKey)
         // For a message I SENT:     "theirPublicKey" slot = Partner's public key
         // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
         const isMine = senderPublicKey === encodeBase64(myKeyPair.publicKey);
         const primaryKey = isMine ? partnerPublicKey : (senderPublicKey || partnerPublicKey);
+        console.log(`${tag} key-unwrap — isMine=${isMine} primaryKey=${primaryKey?.slice(0,8)}`);
 
         // Try current partner key and all historical partner keys as fallbacks
-        const fallbackKeys = (partnerKeyHistory || [])
+        const passedHistory = partnerKeyHistory || [];
+        const globalHistory = partner?.key_history?.map(k => k.public_key) || [];
+        const combinedHistory = Array.from(new Set([...passedHistory, ...globalHistory]));
+        const fallbackKeys = combinedHistory
           .filter(k => k !== primaryKey)
           .map(k => decodeBase64(k));
+        console.log(`${tag} key-unwrap — fallbacks=${fallbackKeys.length}`);
 
         const symmetricKey = decryptFileKeyWithFallback(
           encryptedKey, keyNonce,
           decodeBase64(primaryKey), myKeyPair.secretKey,
           fallbackKeys
         );
-        if (!symmetricKey) throw new Error('Failed to unwrap key');
+        if (!symmetricKey) {
+          console.error(`${tag} FAILED — could not unwrap symmetric key. Tried primaryKey=${primaryKey?.slice(0,8)} + ${fallbackKeys.length} fallbacks.`);
+          throw new Error('Failed to unwrap key');
+        }
+        console.log(`${tag} key-unwrap SUCCESS → symmetricKey OK`);
 
+        console.log(`${tag} fetching ciphertext from Cloudinary...`);
         const response = await fetch(url);
+        if (!response.ok) {
+          console.error(`${tag} fetch FAILED — HTTP ${response.status} ${response.statusText}`);
+          return null;
+        }
         const arrayBuffer = await response.arrayBuffer();
         const ciphertext = new Uint8Array(arrayBuffer);
+        console.log(`${tag} fetched ${(ciphertext.length/1024).toFixed(1)}KB ciphertext`);
 
         const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
-        if (!decrypted) return null;
+        if (!decrypted) {
+          console.error(`${tag} FAILED — decryptFile returned null (wrong key or corrupted data?)`);
+          return null;
+        }
+        console.log(`${tag} decryptFile OK → ${(decrypted.length/1024).toFixed(1)}KB plaintext. First bytes: ${Array.from(decrypted.slice(0,4)).map(b=>b.toString(16).padStart(2,'0')).join(' ')}`);
 
         // ── Magic-byte sniffing for reliable MIME detection ─────────────────────
         // Mobile cameras (iOS QuickTime, Android WebM) produce containers that
@@ -557,7 +587,7 @@ export function useMedia() {
     // Fix 4.1: Register the promise so concurrent callers can wait on it
     inflightDecryptions.set(url, decryptionPromise);
     return decryptionPromise;
-  }, [user]);
+  }, [user, partner]);
 
   const getRecentCachedMedia = useCallback((): { url: string; blob: Blob }[] => {
     return Array.from(decryptedBlobCache.entries())
@@ -693,7 +723,38 @@ export function useMedia() {
 
         if (enqueued) {
           console.log('[useMedia] All ' + totalChunks + ' chunks enqueued to native WorkManager ✓');
-          onStatusChange('Uploading in background...');
+          
+          // Poll the status of native workers until they are complete or failed
+          let isDone = false;
+          let retryCount = 0;
+          while (!isDone) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            const status = await getUploadStatusForMessage(messageId);
+            if (!status) {
+              retryCount++;
+              if (retryCount > 10) break; // Break if status check fails repeatedly
+              continue;
+            }
+            retryCount = 0;
+
+            if (status.total > 0) {
+              const uploaded = status.succeeded;
+              const total = status.total;
+              onStatusChange(`Uploading (${uploaded}/${total} chunks)...`);
+
+              if (status.failed > 0) {
+                console.error(`[useMedia] Native upload failed for some chunks:`, status);
+                throw new Error('Some video chunks failed to upload');
+              }
+
+              if (uploaded === total) {
+                isDone = true;
+              }
+            } else {
+              onStatusChange('Uploading in background...');
+            }
+          }
+          console.log('[useMedia] Native background upload completed successfully ✓');
         } else {
           console.warn('[useMedia] Native enqueue failed — falling back to JS upload path');
           // Fall through to JS path below
@@ -752,8 +813,8 @@ export function useMedia() {
           console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' DB row inserted ✓');
         };
 
-        // Parallel upload with limit 4 (prevent connection saturation)
-        const PARALLEL_LIMIT = 4;
+        // Parallel upload with limit 5 (prevent connection saturation)
+        const PARALLEL_LIMIT = 5;
         const activeTasks = new Set<Promise<void>>();
         for (let i = 0; i < totalChunks; i++) {
           const task = encryptAndUploadAndInsert(i);

@@ -155,6 +155,23 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     }
   }, [isActive]);
 
+  // Prevent accidental tab close or reload during uploads (web version)
+  useEffect(() => {
+    if (!isUploading) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      // Modern browsers ignore custom string but require it to be set on e.returnValue
+      e.returnValue = 'Upload in progress. If you leave, your upload will be cancelled.';
+      return e.returnValue;
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isUploading]);
+
   // Autocomplete suggestion effect
   useEffect(() => {
     if (!text || activeFolderChip) {
@@ -683,10 +700,15 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
     };
 
     // ── Fire both pipelines concurrently (images get head start via slot priority)
-    await Promise.all([
-      standardUploads.length > 0 ? imagePipeline() : Promise.resolve(),
-      chunkedVideoUploads.length > 0 ? videoPipeline() : Promise.resolve(),
-    ]);
+    setIsUploading(true);
+    try {
+      await Promise.all([
+        standardUploads.length > 0 ? imagePipeline() : Promise.resolve(),
+        chunkedVideoUploads.length > 0 ? videoPipeline() : Promise.resolve(),
+      ]);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleAudioComplete = (media: any) => {

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
@@ -10,10 +10,31 @@ import EncryptedImage from '../common/EncryptedImage';
 import ImageCropperModal from '../common/ImageCropperModal';
 import MemoryImagePicker from '../common/MemoryImagePicker';
 import { motion, AnimatePresence } from 'framer-motion';
+import { usePlatform } from '../../hooks/usePlatform';
+import { App as CapacitorApp } from '@capacitor/app';
 
 export default function ProfileSection() {
   const { user, refreshUser } = useAuth();
   const { partner } = usePartner();
+  const { isNative } = usePlatform();
+  const [appVersion, setAppVersion] = useState('2.0.6');
+
+  useEffect(() => {
+    async function fetchVersion() {
+      if (isNative) {
+        try {
+          const info = await CapacitorApp.getInfo();
+          if (info && info.version) {
+            setAppVersion(info.version);
+          }
+        } catch (error) {
+          console.error('Error fetching native app version:', error);
+        }
+      }
+    }
+    fetchVersion();
+  }, [isNative]);
+
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState(user?.user_metadata?.display_name || '');
   const [uploading, setUploading] = useState(false);
@@ -276,6 +297,13 @@ export default function ProfileSection() {
           onCancel={handleCropCancel}
         />
       )}
+
+      {/* App Version Tag */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 text-center opacity-30 pointer-events-none">
+        <p className="font-label text-[8px] uppercase tracking-[0.45em] text-white">
+          Version {appVersion} • {isNative ? 'Native' : 'Web'}
+        </p>
+      </div>
     </section>
   );
 }

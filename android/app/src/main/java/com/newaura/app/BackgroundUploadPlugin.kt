@@ -120,6 +120,8 @@ class BackgroundUploadPlugin : Plugin() {
         try {
             val messageId = call.getString("messageId") ?: ""
             val totalChunks = call.getInt("totalChunks") ?: 0
+            val chunkIndex = call.getInt("chunkIndex", -1)
+            val chunkBase64 = call.getString("chunk") ?: ""
             val cloudinaryPreset = call.getString("cloudinaryPreset") ?: ""
             val cloudinaryCloudName = call.getString("cloudinaryCloudName") ?: ""
             val supabaseUrl = call.getString("supabaseUrl") ?: ""
@@ -131,73 +133,105 @@ class BackgroundUploadPlugin : Plugin() {
             val senderId = call.getString("senderId") ?: ""
             val receiverId = call.getString("receiverId") ?: ""
 
-            // Chunks are passed as a JSON array of base64 strings
-            val chunksArray = call.getArray("chunks")
-            if (chunksArray == null || chunksArray.length() == 0) {
-                call.reject("chunks array is required")
+            if (chunkIndex < 0 || chunkBase64.isEmpty()) {
+                call.reject("chunk and chunkIndex are required")
                 return
             }
 
-            Log.i(TAG, "enqueueChunkedUpload: messageId=$messageId totalChunks=$totalChunks")
+            Log.i(TAG, "enqueueChunkedUpload: messageId=$messageId chunkIndex=$chunkIndex/$totalChunks")
 
-            val taskIds = mutableListOf<String>()
+            val chunkTaskId = "${messageId}_chunk_$chunkIndex"
+
+            // Save each chunk to its own temp file
+            val tempFile = saveTempFile(chunkTaskId, chunkBase64)
+            if (tempFile == null) {
+                call.reject("Failed to save chunk $chunkIndex to temp file")
+                return
+            }
+
+            val inputData = Data.Builder()
+                .putString("taskId", chunkTaskId)
+                .putString("messageId", messageId)
+                .putInt("chunkIndex", chunkIndex)
+                .putInt("totalChunks", totalChunks)
+                .putString("tempFilePath", tempFile.absolutePath)
+                .putString("cloudinaryPreset", cloudinaryPreset)
+                .putString("cloudinaryCloudName", cloudinaryCloudName)
+                .putString("supabaseUrl", supabaseUrl)
+                .putString("supabaseKey", supabaseKey)
+                .putString("supabaseAccessToken", supabaseAccessToken)
+                .putString("packedKey", packedKey)
+                .putString("baseNonce", baseNonce)
+                .putInt("duration", duration)
+                .putString("senderId", senderId)
+                .putString("receiverId", receiverId)
+                .build()
+
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
 
-            for (i in 0 until chunksArray.length()) {
-                val chunkBase64 = chunksArray.getString(i)
-                val chunkTaskId = "${messageId}_chunk_$i"
+            val chunkWork = OneTimeWorkRequestBuilder<ChunkUploadWorker>()
+                .setInputData(inputData)
+                .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.SECONDS)
+                .addTag(WORK_TAG)
+                .addTag("chunk_${messageId}")
+                .addTag("chunk_$chunkTaskId")
+                .build()
 
-                // Save each chunk to its own temp file
-                val tempFile = saveTempFile(chunkTaskId, chunkBase64)
-                if (tempFile == null) {
-                    Log.e(TAG, "Failed to save chunk $i to temp file")
-                    continue
-                }
-
-                val inputData = Data.Builder()
-                    .putString("taskId", chunkTaskId)
-                    .putString("messageId", messageId)
-                    .putInt("chunkIndex", i)
-                    .putInt("totalChunks", totalChunks)
-                    .putString("tempFilePath", tempFile.absolutePath)
-                    .putString("cloudinaryPreset", cloudinaryPreset)
-                    .putString("cloudinaryCloudName", cloudinaryCloudName)
-                    .putString("supabaseUrl", supabaseUrl)
-                    .putString("supabaseKey", supabaseKey)
-                    .putString("supabaseAccessToken", supabaseAccessToken)
-                    .putString("packedKey", packedKey)
-                    .putString("baseNonce", baseNonce)
-                    .putInt("duration", duration)
-                    .putString("senderId", senderId)
-                    .putString("receiverId", receiverId)
-                    .build()
-
-                val chunkWork = OneTimeWorkRequestBuilder<ChunkUploadWorker>()
-                    .setInputData(inputData)
-                    .setConstraints(constraints)
-                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.SECONDS)
-                    .addTag(WORK_TAG)
-                    .addTag("chunk_${messageId}")
-                    .addTag("chunk_$chunkTaskId")
-                    .build()
-
-                WorkManager.getInstance(context)
-                    .enqueueUniqueWork("chunk_$chunkTaskId", ExistingWorkPolicy.KEEP, chunkWork)
-
-                taskIds.add(chunkTaskId)
-            }
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork("chunk_$chunkTaskId", ExistingWorkPolicy.KEEP, chunkWork)
 
             val result = JSObject()
             result.put("messageId", messageId)
-            result.put("enqueuedCount", taskIds.size)
-            result.put("totalChunks", totalChunks)
+            result.put("chunkIndex", chunkIndex)
+            result.put("enqueued", true)
             call.resolve(result)
 
         } catch (e: Exception) {
             Log.e(TAG, "enqueueChunkedUpload failed", e)
             call.reject("Failed to enqueue chunked upload: ${e.message}")
+        }
+    }
+
+    @PluginMethod
+    fun getUploadStatusForMessage(call: PluginCall) {
+        val messageId = call.getString("messageId") ?: run {
+            call.reject("messageId is required")
+            return
+        }
+        try {
+            val workManager = WorkManager.getInstance(context)
+            val workInfos = workManager.getWorkInfosByTag("chunk_$messageId").get()
+            
+            var pending = 0
+            var running = 0
+            var succeeded = 0
+            var failed = 0
+            var cancelled = 0
+
+            for (info in workInfos) {
+                when (info.state) {
+                    WorkInfo.State.ENQUEUED, WorkInfo.State.BLOCKED -> pending++
+                    WorkInfo.State.RUNNING -> running++
+                    WorkInfo.State.SUCCEEDED -> succeeded++
+                    WorkInfo.State.FAILED -> failed++
+                    WorkInfo.State.CANCELLED -> cancelled++
+                }
+            }
+
+            val result = JSObject()
+            result.put("pending", pending)
+            result.put("running", running)
+            result.put("succeeded", succeeded)
+            result.put("failed", failed)
+            result.put("cancelled", cancelled)
+            result.put("total", workInfos.size)
+            result.put("isCompleted", succeeded == workInfos.size && workInfos.size > 0)
+            call.resolve(result)
+        } catch (e: Exception) {
+            call.reject("Failed to get status for message: ${e.message}")
         }
     }
 
