@@ -19,6 +19,8 @@ import { buildReelQueue, filterDecryptableItems } from '../../utils/reelWeightin
 import { fetchDiverseMediaPool } from '../../utils/feedPool';
 import { getPrefetchedFeed, clearPrefetchedFeed } from '../../contexts/AppLockContext';
 import type { Database } from '../../integrations/supabase/types';
+import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
+import { toast } from 'sonner';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -28,8 +30,10 @@ interface FeedPostItem extends MessageRow {
   loading?: boolean;
 }
 
+import type { Tab } from '../../types';
+
 interface HomeScreenProps {
-  onTabChange: (tab: 'home' | 'reels' | 'chat' | 'explore' | 'profile') => void;
+  onTabChange: (tab: Tab) => void;
   partner?: any;
 }
 
@@ -327,18 +331,34 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
       className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24"
     >
       {/* Top Bar Header */}
-      <header className={`sticky top-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-white/5 ${isNative ? 'safe-top' : ''}`}>
-        <h1 className="font-serif italic text-2xl tracking-[0.1em] text-gradient-gold">AURA</h1>
-        <div className="flex items-center gap-3 lg:hidden">
+      <header className={`sticky top-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-md px-4 py-2 grid grid-cols-3 items-center border-b border-white/5 ${isNative ? 'safe-top' : ''}`}>
+        {/* Left Side: Upload Reel Button */}
+        <div className="flex justify-start">
+          <button 
+            onClick={() => onTabChange('upload-reel')} 
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
+            title="Upload Reel"
+          >
+            <span className="material-symbols-outlined text-[24px]">add</span>
+          </button>
+        </div>
+
+        {/* Center: Brand name */}
+        <div className="flex justify-center">
+          <h1 className="font-serif italic text-2xl tracking-[0.1em] text-gradient-gold">AURA</h1>
+        </div>
+
+        {/* Right Side: Quick Action buttons (Explore/Chat on Mobile) */}
+        <div className="flex justify-end items-center gap-3">
           <button 
             onClick={() => onTabChange('explore')} 
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform lg:hidden"
           >
             <span className="material-symbols-outlined text-[22px]">search</span>
           </button>
           <button 
             onClick={() => onTabChange('chat')} 
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform lg:hidden"
           >
             <span className="material-symbols-outlined text-[22px]">forum</span>
           </button>
@@ -595,6 +615,72 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       setIsPaused(true);
       setShowStatusIcon('pause');
       setTimeout(() => setShowStatusIcon(null), 500);
+    }
+  };
+
+  const handleSharePost = async () => {
+    if (!user || !partner) return;
+    const toastId = toast.loading('Sharing post to chat...');
+    try {
+      const myKeyPair = getStoredKeyPair();
+      if (!myKeyPair) throw new Error('Encryption key missing');
+      const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
+
+      const newMessageId = crypto.randomUUID();
+      const isChunked = item.type === 'video' && !item.media_url;
+
+      // 1. Insert message
+      const { error: msgError } = await supabase.from('messages').insert({
+        id: newMessageId,
+        sender_id: user.id,
+        receiver_id: partner.id,
+        encrypted_content: '',
+        nonce: '',
+        type: item.type,
+        media_url: isChunked ? null : item.media_url,
+        media_key: item.media_key,
+        media_nonce: item.media_nonce,
+        thumbnail_url: item.thumbnail_url || null,
+        sender_public_key: myPublicKeyStr,
+        is_reel_upload: false,
+      } as any);
+
+      if (msgError) throw msgError;
+
+      // 2. If chunked video, duplicate chunks
+      if (isChunked) {
+        const { data: chunksData, error: fetchError } = await supabase
+          .from('video_chunks')
+          .select('*')
+          .eq('message_id', item.id);
+
+        if (fetchError) throw fetchError;
+
+        if (chunksData && chunksData.length > 0) {
+          const newChunks = chunksData.map(chunk => ({
+            message_id: newMessageId,
+            chunk_index: chunk.chunk_index,
+            total_chunks: chunk.total_chunks,
+            chunk_url: chunk.chunk_url,
+            chunk_key: chunk.chunk_key,
+            chunk_nonce: chunk.chunk_nonce,
+            duration: chunk.duration,
+            sender_id: user.id,
+            receiver_id: partner.id,
+          }));
+
+          const { error: chunkError } = await supabase
+            .from('video_chunks')
+            .insert(newChunks);
+
+          if (chunkError) throw chunkError;
+        }
+      }
+
+      toast.success('Post shared to chat! 💬', { id: toastId });
+    } catch (err: any) {
+      console.error('Error sharing post:', err);
+      toast.error(err.message || 'Failed to share post', { id: toastId });
     }
   };
 
@@ -913,9 +999,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           <span className="material-symbols-outlined text-2xl text-white/60 hover:text-white cursor-pointer">
             chat_bubble
           </span>
-          <span className="material-symbols-outlined text-2xl text-white/60 hover:text-white cursor-pointer rotate-[-15deg] translate-y-[-1px]">
-            send
-          </span>
+          <button 
+            onClick={handleSharePost}
+            className="flex items-center justify-center transition-all active:scale-75 text-white/60 hover:text-white cursor-pointer rotate-[-15deg] translate-y-[-1px]"
+            title="Share to chat"
+          >
+            <span className="material-symbols-outlined text-2xl">
+              send
+            </span>
+          </button>
         </div>
         <span className="material-symbols-outlined text-2xl text-white/60 hover:text-white cursor-pointer">
           bookmark

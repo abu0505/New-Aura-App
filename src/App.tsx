@@ -9,6 +9,7 @@ const ReelsScreen = lazy(() => import('./components/reels/ReelsScreen'));
 const ExploreScreen = lazy(() => import('./components/explore/ExploreScreen'));
 const ProfileScreen = lazy(() => import('./components/profile/ProfileScreen'));
 const StreakCelebration = lazy(() => import('./components/chat/StreakCelebration'));
+const UploadReelScreen = lazy(() => import('./components/reels/UploadReelScreen'));
 import AppLayout from './components/layout/AppLayout';
 import { usePartner } from './hooks/usePartner';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
@@ -290,6 +291,9 @@ function InnerApp({
           </div>
           <div className={activeTab === 'profile' ? 'h-full w-full' : 'hidden'}>
             <ProfileScreen />
+          </div>
+          <div className={activeTab === 'upload-reel' ? 'h-full w-full' : 'hidden'}>
+            <UploadReelScreen onBack={() => handleTabChangeWrapper('home')} />
           </div>
         </Suspense>
       </AppLayout>

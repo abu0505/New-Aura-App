@@ -646,7 +646,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 onClick={() => setShowCallDropdown(!showCallDropdown)}
                 className="hover:text-primary transition-colors active:scale-90 flex items-center justify-center p-1"
               >
-                <span className="material-symbols-outlined">call</span>
+                <span className="material-symbols-outlined text-[20px]">call</span>
               </button>
               {showCallDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-xl glass-panel z-[100] overflow-hidden py-1">
@@ -689,7 +689,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 onClick={() => setShowPinDropdown(!showPinDropdown)}
                 className="hover:text-primary transition-colors active:scale-90 flex items-center justify-center p-1 -m-1"
               >
-                <span className="material-symbols-outlined">more_vert</span>
+                <span className="material-symbols-outlined text-[20px]">more_vert</span>
               </button>
               
               {showPinDropdown && (

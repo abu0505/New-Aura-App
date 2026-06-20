@@ -693,7 +693,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               )}
               <div className="relative" ref={callDropdownRef}>
                 <span 
-                  className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
+                  className="material-symbols-outlined text-[20px] hover:text-primary cursor-pointer transition-colors"
                   onClick={() => setShowCallDropdown(!showCallDropdown)}
                 >
                   call
@@ -728,14 +728,14 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                 }`}
                 title={partner.is_online ? 'Surprise Snap 📸' : 'Partner must be online'}
               >
-                <span className="material-symbols-outlined text-2xl">photo_camera</span>
+                <span className="material-symbols-outlined text-[20px]">photo_camera</span>
                 {partner.is_online && snapCapture.snapState.phase === 'idle' && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_6px_rgba(16,185,129,0.5)]"></span>
                 )}
               </button>
               <div className="relative" ref={pinDropdownRef}>
                 <span
-                  className="material-symbols-outlined text-2xl hover:text-primary cursor-pointer transition-colors"
+                  className="material-symbols-outlined text-[20px] hover:text-primary cursor-pointer transition-colors"
                   onClick={() => setShowPinDropdown(!showPinDropdown)}
                 >
                   more_vert

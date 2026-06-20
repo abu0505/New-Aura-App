@@ -148,5 +148,5 @@ export const USER_A_NAME = 'Abuturab';
 export const USER_B_ID = '8bb51234-4a86-470f-9f7d-96a95f551952'; // Riffuu
 export const USER_B_NAME = 'Riffuu';
 
-export type Tab = 'home' | 'reels' | 'chat' | 'explore' | 'profile';
+export type Tab = 'home' | 'reels' | 'chat' | 'explore' | 'profile' | 'upload-reel';
 

@@ -10,6 +10,7 @@ import EncryptedImage from '../common/EncryptedImage';
 import { buildReelQueue, filterDecryptableItems } from '../../utils/reelWeighting';
 import { fetchDiverseMediaPool } from '../../utils/feedPool';
 import { useGlobalMute } from '../../hooks/useGlobalMute';
+import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import type { Database } from '../../integrations/supabase/types';
 
 // Semaphore to limit parallel decryptions
@@ -47,220 +48,7 @@ interface ReelItem extends MessageRow {
   loading?: boolean;
 }
 
-// ─── Upload Modal ────────────────────────────────────────────────────────────
-
-interface UploadModalProps {
-  onClose: () => void;
-  onUploaded: () => void;
-}
-
-function UploadReelModal({ onClose, onUploaded }: UploadModalProps) {
-  const { user } = useAuth();
-  const { partner } = usePartner();
-  const { processAndUpload } = useMedia();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [caption, setCaption] = useState('');
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const isValid = file.type.startsWith('image/') || file.type.startsWith('video/');
-    if (!isValid) { toast.error('Only images and videos are supported.'); return; }
-    setSelectedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  const handleUpload = async () => {
-    if (!selectedFile || !user || !partner) return;
-    setUploading(true);
-    setUploadProgress(10);
-
-    try {
-      setUploadProgress(30);
-      const processed = await processAndUpload(selectedFile);
-      if (!processed) throw new Error('Upload failed');
-
-      setUploadProgress(80);
-
-      // Insert as a message with is_reel_upload = true
-      // Caption stored in encrypted_content (empty string if none)
-      const { error } = await supabase.from('messages').insert({
-        sender_id: user.id,
-        receiver_id: partner.id,
-        encrypted_content: caption || '',
-        nonce: '',
-        type: processed.type as any,
-        media_url: processed.url,
-        media_key: processed.media_key,
-        media_nonce: processed.media_nonce,
-        thumbnail_url: processed.thumbnail_url || null,
-        sender_public_key: null,
-        is_reel_upload: true,
-      } as any);
-
-      if (error) throw error;
-      setUploadProgress(100);
-      toast.success('🎬 Reel uploaded! It\'ll show more often in your feed.');
-      onUploaded();
-      onClose();
-    } catch (e: any) {
-      console.error('[UploadReelModal] Upload error:', e);
-      toast.error(e?.message || 'Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-end sm:items-center justify-center p-0 pb-[96px] sm:p-4 sm:pb-4"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <motion.div
-        initial={{ y: 80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 80, opacity: 0 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 260 }}
-        className="w-full sm:max-w-md bg-[#0f0f1a] border border-white/10 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl max-h-[calc(100vh-120px)] sm:max-h-[85vh] flex flex-col"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/5 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#c9a96e] to-[#f0c27f] flex items-center justify-center">
-              <span className="material-symbols-outlined text-[18px] text-black">movie</span>
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white">Upload Reel</h2>
-              <p className="text-[10px] text-white/40">Higher priority in your feed</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/60">
-            <span className="material-symbols-outlined text-[18px]">close</span>
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-5 space-y-4 overflow-y-auto flex-1 custom-scrollbar">
-          {/* File Picker */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/*"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
-
-          {!previewUrl ? (
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="w-full h-48 rounded-2xl border-2 border-dashed border-white/10 hover:border-[var(--gold)]/40 flex flex-col items-center justify-center gap-3 bg-white/[0.02] transition-all active:scale-[0.98] group"
-            >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#c9a96e]/20 to-[#f0c27f]/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-3xl text-[var(--gold)]">add_photo_alternate</span>
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-semibold text-white/80">Choose Photo or Video</p>
-                <p className="text-[10px] text-white/30 mt-0.5">Tap to browse your device</p>
-              </div>
-            </button>
-          ) : (
-            <div className="relative rounded-2xl overflow-hidden aspect-[9/16] max-h-64 bg-black group">
-              {selectedFile?.type.startsWith('video/') ? (
-                <video src={previewUrl} className="w-full h-full object-cover" muted playsInline />
-              ) : (
-                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/40" />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white/80 border border-white/10"
-              >
-                <span className="material-symbols-outlined text-[16px]">edit</span>
-              </button>
-              {/* File type badge */}
-              <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-full">
-                <span className="material-symbols-outlined text-[14px] text-[var(--gold)]">
-                  {selectedFile?.type.startsWith('video/') ? 'movie' : 'image'}
-                </span>
-                <span className="text-[10px] text-white/70 font-medium">
-                  {selectedFile?.type.startsWith('video/') ? 'Video Reel' : 'Photo Reel'}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Caption */}
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-white/30">Caption (Optional)</label>
-            <input
-              type="text"
-              value={caption}
-              onChange={e => setCaption(e.target.value)}
-              placeholder="Add a caption to your reel..."
-              maxLength={120}
-              className="w-full bg-white/5 border border-white/8 rounded-xl px-4 py-3 text-sm text-white/90 placeholder:text-white/20 focus:outline-none focus:border-[var(--gold)]/40 transition-colors"
-            />
-          </div>
-
-          {/* Priority Info Card */}
-          <div className="flex items-start gap-3 bg-[var(--gold)]/5 border border-[var(--gold)]/15 rounded-xl p-3">
-            <span className="material-symbols-outlined text-[18px] text-[var(--gold)] mt-0.5 flex-shrink-0">star</span>
-            <p className="text-[11px] text-white/50 leading-relaxed">
-              Reels uploaded here get <span className="text-[var(--gold)] font-semibold">priority placement</span> in your feed — appearing 2–3× more often than regular chat photos.
-            </p>
-          </div>
-
-          {/* Upload Button */}
-          {uploading ? (
-            <div className="space-y-2">
-              <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-[#c9a96e] to-[#f0c27f] rounded-full"
-                  initial={{ width: '0%' }}
-                  animate={{ width: `${uploadProgress}%` }}
-                  transition={{ duration: 0.4 }}
-                />
-              </div>
-              <p className="text-center text-[11px] text-white/40">Uploading your reel... {uploadProgress}%</p>
-            </div>
-          ) : (
-            <button
-              onClick={handleUpload}
-              disabled={!selectedFile}
-              className="w-full py-3.5 rounded-2xl font-bold text-sm tracking-wide transition-all active:scale-[0.97] disabled:opacity-30 disabled:cursor-not-allowed"
-              style={{
-                background: selectedFile
-                  ? 'linear-gradient(135deg, #c9a96e 0%, #f0c27f 50%, #c9a96e 100%)'
-                  : 'rgba(255,255,255,0.05)',
-                color: selectedFile ? '#13131b' : '#ffffff40',
-              }}
-            >
-              <span className="flex items-center justify-center gap-2">
-                <span className="material-symbols-outlined text-[18px]">upload</span>
-                Upload Reel
-              </span>
-            </button>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
+// ─── Upload Modal migrated to UploadReelScreen ───────────────────────────────
 
 // ─── Main Reels Screen ────────────────────────────────────────────────────────
 
@@ -275,7 +63,6 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const userId = user?.id;
   const partnerId = partner?.id;
@@ -435,7 +222,7 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
             Share media in chat or upload a dedicated reel below.
           </p>
           <button
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'upload-reel' }))}
             className="mt-6 px-5 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-widest bg-gradient-to-r from-[#c9a96e] to-[#f0c27f] text-[#13131b]"
           >
             Upload First Reel
@@ -474,34 +261,7 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
         </div>
       )}
 
-      {/* Upload Reel FAB */}
-      {!loading && (
-        <motion.button
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.3, type: 'spring', stiffness: 300 }}
-          onClick={() => setShowUploadModal(true)}
-          className="absolute bottom-28 right-4 z-20 w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl border border-white/10"
-          style={{
-            background: 'linear-gradient(135deg, #c9a96e 0%, #f0c27f 50%, #c9a96e 100%)',
-          }}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
-          title="Upload Reel"
-        >
-          <span className="material-symbols-outlined text-2xl text-[#13131b] font-bold">add</span>
-        </motion.button>
-      )}
-
-      {/* Upload Modal */}
-      <AnimatePresence>
-        {showUploadModal && (
-          <UploadReelModal
-            onClose={() => setShowUploadModal(false)}
-            onUploaded={fetchReels}
-          />
-        )}
-      </AnimatePresence>
+      {/* Upload flow migrated to dedicated screen */}
     </div>
   );
 }
@@ -793,8 +553,70 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
     }
   };
 
-  const handleShareReel = () => {
-    toast.success(`Reel shared with ${partner?.display_name || 'your partner'}!`);
+  const handleShareReel = async () => {
+    if (!user || !partner) return;
+    const toastId = toast.loading('Sharing reel to chat...');
+    try {
+      const myKeyPair = getStoredKeyPair();
+      if (!myKeyPair) throw new Error('Encryption key missing');
+      const myPublicKeyStr = encodeBase64(myKeyPair.publicKey);
+
+      const newMessageId = crypto.randomUUID();
+      const isChunked = item.type === 'video' && !item.media_url;
+
+      // 1. Insert message
+      const { error: msgError } = await supabase.from('messages').insert({
+        id: newMessageId,
+        sender_id: user.id,
+        receiver_id: partner.id,
+        encrypted_content: '',
+        nonce: '',
+        type: item.type,
+        media_url: isChunked ? null : item.media_url,
+        media_key: item.media_key,
+        media_nonce: item.media_nonce,
+        thumbnail_url: item.thumbnail_url || null,
+        sender_public_key: myPublicKeyStr,
+        is_reel_upload: false,
+      } as any);
+
+      if (msgError) throw msgError;
+
+      // 2. If chunked video, duplicate chunks
+      if (isChunked) {
+        const { data: chunksData, error: fetchError } = await supabase
+          .from('video_chunks')
+          .select('*')
+          .eq('message_id', item.id);
+
+        if (fetchError) throw fetchError;
+
+        if (chunksData && chunksData.length > 0) {
+          const newChunks = chunksData.map(chunk => ({
+            message_id: newMessageId,
+            chunk_index: chunk.chunk_index,
+            total_chunks: chunk.total_chunks,
+            chunk_url: chunk.chunk_url,
+            chunk_key: chunk.chunk_key,
+            chunk_nonce: chunk.chunk_nonce,
+            duration: chunk.duration,
+            sender_id: user.id,
+            receiver_id: partner.id,
+          }));
+
+          const { error: chunkError } = await supabase
+            .from('video_chunks')
+            .insert(newChunks);
+
+          if (chunkError) throw chunkError;
+        }
+      }
+
+      toast.success('Reel shared to chat! 💬', { id: toastId });
+    } catch (err: any) {
+      console.error('Error sharing reel:', err);
+      toast.error(err.message || 'Failed to share reel', { id: toastId });
+    }
   };
 
   if (decryptionFailed) return null;
@@ -889,18 +711,29 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
         <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
         <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/75 to-transparent pointer-events-none" />
 
-        {/* Reel Upload Badge (shown if this was a dedicated upload) */}
+        {/* Top Left Mute Button */}
+        <button
+          onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+          className="absolute top-5 left-4 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-75 transition-all hover:bg-black/60"
+          title={isMuted ? "Unmute" : "Mute"}
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            {isMuted ? 'volume_off' : 'volume_up'}
+          </span>
+        </button>
+
+        {/* Reel Upload Badge (shown if this was a dedicated upload, shifted to left-16 to avoid mute button) */}
         {item.is_reel_upload && (
-          <div className="absolute top-5 left-4 z-20 flex items-center gap-1.5 bg-[var(--gold)]/20 backdrop-blur-md border border-[var(--gold)]/30 px-2.5 py-1 rounded-full pointer-events-none">
+          <div className="absolute top-5 left-16 z-20 flex items-center gap-1.5 bg-[var(--gold)]/20 backdrop-blur-md border border-[var(--gold)]/30 px-2.5 py-1 rounded-full pointer-events-none">
             <span className="material-symbols-outlined text-[12px] text-[var(--gold)]">star</span>
             <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--gold)]">Featured Reel</span>
           </div>
         )}
 
-        {/* Slide Details (Left Bottom) */}
-        <div className="absolute bottom-28 lg:bottom-8 left-4 right-16 z-20 flex flex-col gap-2 pointer-events-none">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full border border-white/20 overflow-hidden bg-white/5 flex items-center justify-center">
+        {/* Slide Details (Left Bottom - Spans full width) */}
+        <div className="absolute bottom-28 lg:bottom-8 left-4 right-4 z-20 flex flex-col gap-2 pointer-events-none">
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-full border border-white/20 overflow-hidden bg-white/5 flex items-center justify-center flex-shrink-0">
               <EncryptedImage
                 url={avatarUrl || null}
                 encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
@@ -910,32 +743,23 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
                 placeholder={placeholder}
               />
             </div>
-            <span className="text-xs font-bold text-white tracking-wide">{senderName}</span>
-            <span className="text-[10px] text-white/40">•</span>
-            <span className="text-[10px] text-white/40">
-              {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
-            </span>
+            <div className="flex flex-col justify-center">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-white tracking-wide">{senderName}</span>
+                <span className="text-[10px] text-white/40">•</span>
+                <span className="text-[10px] text-white/40">
+                  {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-white/80 leading-relaxed font-sans line-clamp-3">
+          <p className="text-xs text-white/80 leading-relaxed font-sans line-clamp-3 pl-1">
             {item.type === 'video' ? '🎬 Video Reel' : '📸 Photo Memory'}
           </p>
         </div>
 
-        {/* Action Controls (Right Bottom) */}
-        <div className="absolute bottom-28 lg:bottom-8 right-4 z-20 flex flex-col items-center gap-6 no-pause-trigger">
-          {/* Mute/Unmute Toggle */}
-          <button
-            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-            className="flex flex-col items-center gap-1.5"
-          >
-            <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-75 transition-transform">
-              <span className="material-symbols-outlined text-2xl">
-                {isMuted ? 'volume_off' : 'volume_up'}
-              </span>
-            </div>
-            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{isMuted ? 'Muted' : 'Mute'}</span>
-          </button>
-
+        {/* Action Controls (Right Middle-High, pushed up above slide details) */}
+        <div className="absolute bottom-[240px] lg:bottom-[170px] right-4 z-20 flex flex-col items-center gap-6 no-pause-trigger">
           {/* Like */}
           <button
             onClick={(e) => { e.stopPropagation(); setIsLiked(!isLiked); }}

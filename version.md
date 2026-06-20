@@ -1,12 +1,29 @@
 # App Version
-VersionName: 2.4.14
-VersionCode: 35
+VersionName: 2.5.4
+VersionCode: 40
 Date: 2026-06-20
 Changes:
-- Set aspect ratio of the entire post card container on the Home Feed to 9:16 (`aspect-[9/16]`) so that the media adjusts dynamically inside the card without hardcropping the media component itself.
+- Resized chat screen header call button/dropdown icon from 24px to 20px (`text-[20px]`) in both MobileChatScreen and DesktopChatScreen to match sibling icons.
+- Resized chat header more_vert icon from 24px to 20px (`text-[20px]`) for design and size consistency.
 
 ## Previous Versions
-### Version 2.4.13 (Code 34)
+### Version 2.5.3 (Code 39)
+- Adjusted Reels card layout: enlarged bottom-left avatar container size to 56px (w-14 h-14) for enhanced visibility.
+- Pushed right-side action controls container up to `bottom-[240px]` (mobile) and `lg:bottom-[170px]` (desktop) to prevent overlap with the full-width profile details container.
+### Version 2.5.2 (Code 38)
+- Refined ReelsScreen layout: shifted Mute button to absolute top-left of the card to prevent overlap.
+- Expanded bottom-left profile details area to span the full width (using right-4 instead of right-16) for cleaner caption presentation.
+- Pushed right-side action buttons up (using bottom-[200px]/lg:bottom-[120px]) so they sit above the profile info.
+- Enlarged bottom-left avatar container size to 48px (w-12 h-12) for a more premium look.
+### Version 2.5.1 (Code 37)
+- Integrated a new "Share to chat" functionality for both feed posts and video reels. When users click the share button, the post or reel is duplicated and inserted securely into the direct vault chat using the original wrapped E2EE keys.
+- Supported duplication and forwarding of both standard single-file media assets and fragmented chunked video blocks.
+### Version 2.5.0 (Code 36)
+- Restructured Home feed header: centered "AURA" brand title and added a "+" upload icon that programmatically switches to the dedicated upload reel view.
+- Created a dedicated, full-screen `UploadReelScreen` optimized for both mobile and desktop viewports, with integrated file selection, aspect-ratio preview, captions, E2EE encryption processing, and progress feedback.
+- Removed the local floating upload FAB and UploadReelModal from the ReelsScreen to centralize creation entry from the main Home feed.
+### Version 2.4.14 (Code 35)
+- Set aspect ratio of the entire post card container on the Home Feed to 9:16 (`aspect-[9/16]`) so that the media adjusts dynamically inside the card without hardcropping the media component itself.
 - Changed Home Feed video/image post media container aspect ratio from 1:1 (`aspect-square`) to 9:16 (`aspect-[9/16]`) to fit vertical reels-style content.
 ### Version 2.4.12 (Code 33)
 - Implemented Reels-like video playback for Home Feed posts: removed default controls overlay, enabled looping, and integrated `IntersectionObserver` to automatically play videos when visible in the viewport and pause them when scrolled away. Clicking/tapping a post video toggles play/pause with a premium animated indicator.
