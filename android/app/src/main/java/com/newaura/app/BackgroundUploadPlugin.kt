@@ -120,7 +120,7 @@ class BackgroundUploadPlugin : Plugin() {
         try {
             val messageId = call.getString("messageId") ?: ""
             val totalChunks = call.getInt("totalChunks") ?: 0
-            val chunkIndex = call.getInt("chunkIndex", -1)
+            val chunkIndex = call.getInt("chunkIndex") ?: -1
             val chunkBase64 = call.getString("chunk") ?: ""
             val cloudinaryPreset = call.getString("cloudinaryPreset") ?: ""
             val cloudinaryCloudName = call.getString("cloudinaryCloudName") ?: ""

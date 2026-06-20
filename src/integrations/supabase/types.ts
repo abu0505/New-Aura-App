@@ -67,6 +67,7 @@ export interface Database {
           is_deleted_for_sender: boolean
           is_deleted_for_receiver: boolean
           is_deleted_for_everyone: boolean
+          is_reel_upload: boolean
           read_at: string | null
           delivered_at: string | null
           created_at: string
@@ -95,6 +96,7 @@ export interface Database {
           is_deleted_for_sender?: boolean
           is_deleted_for_receiver?: boolean
           is_deleted_for_everyone?: boolean
+          is_reel_upload?: boolean
           read_at?: string | null
           delivered_at?: string | null
           created_at?: string
@@ -123,6 +125,7 @@ export interface Database {
           is_deleted_for_sender?: boolean
           is_deleted_for_receiver?: boolean
           is_deleted_for_everyone?: boolean
+          is_reel_upload?: boolean
           read_at?: string | null
           delivered_at?: string | null
           created_at?: string

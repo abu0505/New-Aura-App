@@ -61,7 +61,7 @@ export default function ExploreScreen() {
       const { data, error } = await supabase
         .from('messages')
         .select('id,media_url,media_key,media_nonce,sender_public_key,type,created_at')
-        .or('type.eq.image,type.eq.video')
+        .in('type', ['image', 'video'])
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
         .order('created_at', { ascending: false })
         .limit(24);
@@ -124,9 +124,9 @@ export default function ExploreScreen() {
   }
 
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24 safe-top">
+    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24 safe-top lg:px-8 lg:py-6">
       {/* Search Header */}
-      <div className="px-4 py-3 bg-[var(--bg-primary)] sticky top-0 z-30">
+      <div className="px-4 py-3 bg-[var(--bg-primary)] sticky top-0 z-30 lg:px-0 lg:max-w-4xl lg:mx-auto lg:mb-6">
         <div className="relative flex items-center w-full bg-white/5 rounded-2xl border border-white/10 px-4 py-2.5">
           <span className="material-symbols-outlined text-white/40 mr-2 text-xl">search</span>
           <input 
@@ -140,11 +140,11 @@ export default function ExploreScreen() {
       </div>
 
       {/* Discovery Hub Card Grid */}
-      <div className="px-4 py-4 grid grid-cols-3 gap-3">
+      <div className="px-4 py-4 grid grid-cols-3 gap-3 lg:px-0 lg:max-w-4xl lg:mx-auto lg:gap-6 lg:mb-8">
         {/* Gallery */}
         <button 
           onClick={() => setSubView('gallery')}
-          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300"
         >
           <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center text-[var(--gold)]">
             <span className="material-symbols-outlined text-xl">photo_library</span>
@@ -155,7 +155,7 @@ export default function ExploreScreen() {
         {/* Notes */}
         <button 
           onClick={() => setSubView('notes')}
-          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300"
         >
           <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
             <span className="material-symbols-outlined text-xl">sticky_note_2</span>
@@ -166,7 +166,7 @@ export default function ExploreScreen() {
         {/* Games */}
         <button 
           onClick={() => setSubView('games')}
-          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300"
         >
           <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
             <span className="material-symbols-outlined text-xl">sports_esports</span>
@@ -176,7 +176,7 @@ export default function ExploreScreen() {
       </div>
 
       {/* Explore Grid */}
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-4 space-y-4 lg:px-0 lg:max-w-4xl lg:mx-auto">
         <h3 className="font-serif italic text-base text-[var(--gold)] tracking-wide">Explore Shared Grid</h3>
 
         {loading ? (
@@ -188,7 +188,7 @@ export default function ExploreScreen() {
             No memories to explore.
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1.5 rounded-3xl overflow-hidden">
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-1.5 lg:gap-3 rounded-3xl overflow-hidden">
             {exploreItems.map((item) => (
               <ExploreGridThumb 
                 key={item.id} 

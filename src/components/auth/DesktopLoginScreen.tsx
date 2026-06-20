@@ -25,7 +25,7 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        toast.success('Account created! You are securely verified.');
+        toast.success('Account created! Verification email sent.');
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -42,161 +42,132 @@ export default function DesktopLoginScreen({ onLogin }: DesktopLoginScreenProps)
   return (
     <>
       <style>{`
-        .aurora-gradient-desktop {
-            background: radial-gradient(circle at 20% 30%, rgba(var(--primary-rgb), 0.08) 0%, transparent 40%),
-                        radial-gradient(circle at 80% 70%, rgba(65, 45, 0, 0.15) 0%, transparent 50%),
-                        radial-gradient(circle at 50% 50%, rgba(19, 19, 27, 1) 0%, rgba(13, 13, 21, 1) 100%);
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+        .aurora-bg-desktop {
+          background: radial-gradient(circle at 10% 20%, rgba(201, 169, 110, 0.05) 0%, transparent 40%),
+                      radial-gradient(circle at 90% 80%, rgba(201, 169, 110, 0.08) 0%, transparent 50%),
+                      radial-gradient(circle at 50% 50%, rgba(19, 19, 27, 1) 0%, rgba(12, 12, 20, 1) 100%);
         }
-        .text-glow-gold {
-            text-shadow: 0 0 20px rgba(var(--primary-rgb), 0.3);
+        
+        .glass-login-card {
+          background: rgba(28, 28, 46, 0.45);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .gold-focus:focus {
+          border-color: rgba(201, 169, 110, 0.4) !important;
+          box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.15) !important;
+        }
+
+        /* Particle flow animations */
+        .glow-particle {
+          position: absolute;
+          border-radius: 50%;
+          background: rgba(201, 169, 110, 0.2);
+          filter: blur(8px);
+          animation: float-particle 15s infinite ease-in-out;
+        }
+
+        @keyframes float-particle {
+          0%, 100% { transform: translateY(0px) translateX(0px) scale(1); opacity: 0.1; }
+          50% { transform: translateY(-80px) translateX(40px) scale(1.3); opacity: 0.4; }
         }
       `}</style>
-      <main className="flex min-h-screen w-full bg-surface-container-lowest text-on-surface font-body selection:bg-primary-container selection:text-on-primary overflow-hidden">
-        {/* Left Side: Hero/Branding */}
-        <section className="hidden lg:flex flex-col justify-between w-7/12 p-20 aurora-gradient-desktop relative overflow-hidden">
-          {/* Decorative Elements */}
-          <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPt3UQD2zhBjdcfz4vpoMnLVAO00p927weid8NJG3wHiiGD4FcU1P0MTD8VIMkLAfZM-917g3aicYjhSmb1SqSsCsuThtfGQQS7semr3pXlk2v9N0uWeQ10UsiwSLBcqBuSOhzePp3kU4MNVfyWGXDPMgOw6f_MWEozVvoD15vfsOjt4R6aaTsNn8QKsSyo1VpDaqwNU88qukxWfkWAdJpXUnG-yBBNzFfk4MykA2UpWQnCgOB4mCV3dS5wEZDn4RmtU6KFiU_yb8')" }}></div>
-          <div className="z-10 flex flex-col items-start gap-4">
-            <div className="flex items-center gap-2 opacity-60">
-              <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
-              <span className="text-[10px] tracking-[0.3em] uppercase font-label text-primary">Premium Quality, Guaranteed</span>
-            </div>
-          </div>
+      <main className="relative flex min-h-screen w-full items-center justify-center aurora-bg-desktop text-white font-sans overflow-hidden p-6">
+        
+        {/* Floating Ambient Particles */}
+        <div className="glow-particle w-32 h-32 top-[15%] left-[20%]" style={{ animationDelay: '0s' }}></div>
+        <div className="glow-particle w-48 h-48 bottom-[10%] right-[15%]" style={{ animationDelay: '-5s', animationDuration: '20s' }}></div>
+        <div className="glow-particle w-24 h-24 top-[65%] left-[10%]" style={{ animationDelay: '-10s', animationDuration: '18s' }}></div>
+        
+        {/* Centered Glass Login Card */}
+        <section className="relative z-10 w-full max-w-lg glass-login-card rounded-[32px] p-10 md:p-14 flex flex-col items-center">
           
-          <div className="z-10 flex flex-col justify-center flex-grow">
-            <div className="w-24 h-24 mb-6 flex items-center justify-center bg-white/5 rounded-3xl border border-white/10 shadow-xl backdrop-blur-md">
-               <span className="material-symbols-outlined text-5xl text-primary drop-shadow-[0_0_15px_rgba(var(--primary-rgb),0.4)]">shopping_bag</span>
+          {/* Logo / Lock Indicator */}
+          <header className="flex flex-col items-center text-center w-full mb-10">
+            <div className="w-14 h-14 mb-5 flex items-center justify-center bg-white/[0.02] rounded-2xl border border-white/10 shadow-xl relative group">
+              <span className="material-symbols-outlined text-2xl text-[var(--gold)]">lock</span>
+              <div className="absolute inset-0 rounded-2xl bg-[var(--gold)]/10 blur-md opacity-40 group-hover:opacity-60 transition-opacity" />
             </div>
-            <h1 className="font-headline text-8xl font-light tracking-[0.25em] text-primary text-glow-gold leading-tight mb-4">
-              AURA STORE
-            </h1>
-            <p className="font-headline italic text-2xl text-on-surface-variant font-light tracking-widest opacity-80">
-              Elevate Your Wardrobe
+            
+            <h1 className="text-4xl md:text-5xl font-serif italic font-bold tracking-[0.25em] text-gradient-gold uppercase mb-2">AURA</h1>
+            <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-[var(--text-secondary)]">Your private world, together.</p>
+          </header>
+
+          <div className="w-full text-center mb-6">
+            <h2 className="text-xl md:text-2xl font-bold tracking-wide text-white">
+              {isSignUp ? 'Create Workspace' : 'Welcome Back'}
+            </h2>
+            <p className="text-xs text-[var(--text-secondary)]/70 mt-1.5 leading-relaxed max-w-sm mx-auto">
+              {isSignUp 
+                ? 'Establish a private sanctuary to share messages, stories, and reels safely.' 
+                : 'Access your fully encrypted timeline and chat space.'}
             </p>
           </div>
-          
-          <div className="z-10 flex flex-col gap-8">
-            <div className="w-32 h-px bg-outline-variant opacity-30"></div>
-            <div className="flex gap-12">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] tracking-widest uppercase text-outline">Fast Shipping</span>
-                <span className="text-xs text-on-surface/60">Worldwide delivery</span>
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] tracking-widest uppercase text-outline">Easy Returns</span>
-                <span className="text-xs text-on-surface/60">30-day return policy</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Background Ambient Image Layer */}
-          <div className="absolute inset-0 opacity-10 pointer-events-none mix-blend-overlay">
-            <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDggKZyHZC82wWLMBP-ZCFJ23iMF1LP-aPhtH9VSTVj3voyoGeExuWoH0mtS8yIyZwR2uhbD-TrJ-QPcpvnPmCy7uIfq15pXXBN0V2qO-LrW5YSshT7jVJhAcZ5NnEtlNNKgMOQoUoAv2Czddr90nG_XHej07gElVkLMkkX8KEOm5ddQSQXvSek9DM2suox42xcr7Uk0r9V0XWulKV1pKmv4fZDxSUTHY9fyxvid2BNpTofZKTx2oiTNFoZJG4KJfhCMR3n0R6Ue1o" />
-          </div>
-        </section>
 
-        {/* Right Side: Login Form */}
-        <section className="flex flex-col justify-center items-center w-full lg:w-5/12 bg-surface p-8 md:p-16 lg:p-24 relative overflow-y-auto">
-          <div className="w-full max-w-md flex flex-col gap-12 pt-28">
-            <header className="flex flex-col gap-3">
-              <h2 className="font-headline text-4xl text-on-surface tracking-tight">
-                {isSignUp ? 'Create Account' : 'Welcome Back'}
-              </h2>
-              <p className="text-on-surface-variant/70 text-sm leading-relaxed">
-                {isSignUp ? 'Sign up to track orders and save your wishlist.' : 'Sign in to access your orders and saved items.'}
-              </p>
-            </header>
+          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
+            {/* Email Field */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]/60 px-1" htmlFor="email-desktop">Email Address</label>
+              <input 
+                id="email-desktop" 
+                type="email"
+                placeholder="Enter email address" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 px-5 text-white placeholder:text-white/20 focus:outline-none transition-all duration-300 font-body text-sm gold-focus" 
+              />
+            </div>
             
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              {/* Email Field */}
-              <div className="flex flex-col gap-2">
-                <label className="text-[10px] uppercase tracking-[0.2em] text-outline px-1" htmlFor="email">Email Address</label>
-                <div className="group relative">
-                  <input 
-                    className="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 text-on-surface placeholder:text-on-surface-variant/30 focus:ring-1 focus:ring-primary/40 focus:outline-none transition-all duration-500 font-body text-sm" 
-                    id="email" 
-                    placeholder="Email address" 
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              
-              {/* Password Field */}
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-end px-1">
-                  <label className="text-[10px] uppercase tracking-[0.2em] text-outline" htmlFor="password">Password</label>
-                  {!isSignUp && (
-                    <a className="text-[10px] uppercase tracking-[0.1em] text-primary/60 hover:text-primary transition-colors duration-300" href="#">Forgot password?</a>
-                  )}
-                </div>
-                <div className="group relative">
-                  <input 
-                    className="w-full bg-surface-container-low border-none rounded-xl py-4 px-5 text-on-surface placeholder:text-on-surface-variant/30 focus:ring-1 focus:ring-primary/40 focus:outline-none transition-all duration-500 font-body text-sm" 
-                    id="password" 
-                    placeholder="••••••••" 
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-primary transition-colors" type="button">
-                    <span className="material-symbols-outlined text-xl">visibility</span>
-                  </button>
-                </div>
-              </div>
-              
-              {/* Actions */}
-              <div className="flex flex-col gap-4 mt-4">
-                <button 
-                  disabled={loading}
-                  type="submit" 
-                  className="w-full bg-primary-container text-on-primary py-4 rounded-full font-label font-semibold tracking-widest uppercase text-xs hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-300 shadow-xl shadow-primary/5"
-                >
-                  {loading ? 'Authenticating...' : (isSignUp ? 'Create Account' : 'Sign In')}
-                </button>
-                
-                <div className="flex items-center gap-4 py-2">
-                  <div className="flex-grow h-px bg-outline-variant/20"></div>
-                  <span className="text-[10px] uppercase tracking-widest text-outline/40">or</span>
-                  <div className="flex-grow h-px bg-outline-variant/20"></div>
-                </div>
-                
-                <button 
-                  onClick={() => setIsSignUp(!isSignUp)}
-                  type="button" 
-                  className="w-full border border-outline-variant/30 text-on-surface py-4 rounded-full font-label font-semibold tracking-widest uppercase text-xs hover:bg-surface-container-high transition-all duration-300"
-                >
-                  {isSignUp ? 'Sign In Instead' : 'Create Account'}
-                </button>
-              </div>
-            </form>
-            
-            <footer className="flex justify-center mt-8">
-              <p className="text-[10px] text-outline/40 tracking-widest uppercase text-center max-w-xs leading-loose">
-                  By entering, you agree to our <br/>
-                  <a className="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Privacy Policy</a> &amp; <a className="text-outline/60 hover:text-primary underline-offset-4 underline decoration-primary/20" href="#">Terms of Service</a>
-              </p>
-            </footer>
-          </div>
-        </section>
+            {/* Password Field */}
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] uppercase tracking-[0.2em] text-[var(--text-secondary)]/60 px-1" htmlFor="password-desktop">Password</label>
+              <input 
+                id="password-desktop" 
+                type="password"
+                placeholder="Enter password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 px-5 text-white placeholder:text-white/20 focus:outline-none transition-all duration-300 font-body text-sm gold-focus" 
+              />
+            </div>
 
-        {/* Shared Footer Navigation */}
-        <footer className="fixed bottom-0 left-0 w-full px-12 py-8 z-50 pointer-events-none hidden lg:block">
-          <div className="flex justify-between items-center w-full opacity-60">
-            <div className="flex gap-8 pointer-events-auto">
-              <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Privacy</a>
-              <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Terms</a>
-              <a className="text-[#4D463A] hover:text-[var(--gold)] font-body text-[10px] tracking-[0.2em] uppercase transition-opacity duration-500" href="#">Concierge</a>
+            {/* Actions */}
+            <div className="flex flex-col gap-4 mt-6">
+              <button 
+                disabled={loading}
+                type="submit" 
+                className="w-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold-light)] hover:brightness-110 active:scale-[0.98] text-[#2a1e00] py-3.5 rounded-2xl font-bold tracking-widest uppercase text-xs disabled:opacity-50 disabled:active:scale-100 transition-all duration-300 shadow-lg shadow-[var(--gold-glow)]"
+              >
+                {loading ? 'Securing entrance...' : (isSignUp ? 'Create Workspace' : 'Enter AURA')}
+              </button>
+              
+              <button 
+                onClick={() => setIsSignUp(!isSignUp)}
+                type="button" 
+                className="w-full text-center text-xs font-semibold text-[var(--gold)] hover:text-[var(--gold-light)] transition-colors pt-2"
+              >
+                {isSignUp ? 'Already have a space? Enter here' : 'Need to set up a new space? Create account'}
+              </button>
             </div>
-            <div className="text-[#4D463A] font-body text-[10px] tracking-[0.2em] uppercase">
-                © 2024 AURA STORE. ALL RIGHTS RESERVED.
-            </div>
-          </div>
-        </footer>
+          </form>
+
+          {/* Secure Message Footer */}
+          <footer className="mt-10 text-center border-t border-white/5 pt-6 w-full">
+            <p className="text-[10px] text-[var(--text-secondary)]/50 leading-relaxed max-w-xs mx-auto">
+              Keys are held locally in your browser. All communications are end-to-end encrypted.
+            </p>
+            <p className="text-[9px] text-[var(--text-secondary)]/30 mt-3 uppercase tracking-widest font-semibold">
+              © 2026 AURA. Private Sanctuary v2.0.0
+            </p>
+          </footer>
+        </section>
       </main>
     </>
   );

@@ -122,8 +122,8 @@ export default function ProfileScreen() {
 
   return (
     <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24 safe-top">
-      {/* Profile Header */}
-      <header className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-[var(--bg-primary)]">
+      {/* Profile Header (Mobile Only, Hidden on Desktop) */}
+      <header className="px-4 py-3 flex items-center justify-between border-b border-white/5 bg-[var(--bg-primary)] lg:hidden">
         <span className="font-serif italic text-lg text-white">{userDisplayName}</span>
         <button 
           onClick={() => setViewMode('settings')} 
@@ -133,12 +133,14 @@ export default function ProfileScreen() {
         </button>
       </header>
 
-      {/* Profile Info Row */}
-      <div className="px-6 py-6 flex flex-col gap-6">
-        <div className="flex items-center gap-6">
-          {/* Avatar */}
-          <div className="relative w-20 h-20 rounded-full p-[2.5px] bg-gradient-to-tr from-[var(--gold)] to-[var(--gold-light)] shrink-0">
-            <div className="w-full h-full rounded-full bg-[var(--bg-primary)] p-[2px] overflow-hidden">
+      {/* Profile Info Section */}
+      <div className="px-6 py-6 flex flex-col gap-6 lg:max-w-4xl lg:mx-auto lg:px-8 lg:py-12">
+        
+        {/* Desktop Profile Info Layout (Hidden on Mobile) */}
+        <div className="hidden lg:flex gap-12 items-start border-b border-white/5 pb-10">
+          {/* Large Desktop Avatar */}
+          <div className="relative w-32 h-32 rounded-full p-[2.5px] bg-gradient-to-tr from-[var(--gold)] to-[var(--gold-light)] shrink-0">
+            <div className="w-full h-full rounded-full bg-[var(--bg-primary)] p-[3px] overflow-hidden">
               <EncryptedImage 
                 url={user?.user_metadata?.avatar_url}
                 encryptionKey={user?.user_metadata?.avatar_key ? (typeof user.user_metadata.avatar_key === 'string' ? user.user_metadata.avatar_key : JSON.stringify(user.user_metadata.avatar_key)) : null}
@@ -150,48 +152,99 @@ export default function ProfileScreen() {
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="flex-1 flex justify-around items-center">
-            <div className="flex flex-col items-center">
-              <span className="text-base font-bold text-white leading-tight">{stats.posts}</span>
-              <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Posts</span>
+          {/* Desktop Profile Info Column */}
+          <div className="flex-grow space-y-5">
+            <div className="flex items-center gap-5">
+              <h2 className="text-xl font-serif italic text-white font-semibold">{userDisplayName}</h2>
+              <button 
+                onClick={() => { setNewDisplayName(userDisplayName); setIsEditOpen(true); }}
+                className="bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl py-2 px-5 text-xs font-semibold active:scale-98 transition-all"
+              >
+                Edit Profile
+              </button>
+              <button 
+                onClick={() => setViewMode('settings')} 
+                className="bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl p-2 flex items-center justify-center active:scale-98 transition-all"
+              >
+                <span className="material-symbols-outlined text-[18px]">settings</span>
+              </button>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-base font-bold text-white leading-tight">{streakCount}</span>
-              <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Streak</span>
+
+            {/* Desktop Stats Row */}
+            <div className="flex gap-10 text-sm">
+              <div><span className="font-bold text-white">{stats.posts}</span> <span className="text-white/50 text-xs uppercase tracking-wider ml-1.5">Posts</span></div>
+              <div><span className="font-bold text-white">{streakCount}</span> <span className="text-white/50 text-xs uppercase tracking-wider ml-1.5">Streak</span></div>
+              <div><span className="font-bold text-white">{stats.notes}</span> <span className="text-white/50 text-xs uppercase tracking-wider ml-1.5">Notes</span></div>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-base font-bold text-white leading-tight">{stats.notes}</span>
-              <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Notes</span>
+
+            {/* Bio */}
+            <div>
+              <h3 className="text-sm font-bold text-white">{userDisplayName}</h3>
+              <p className="text-xs text-white/50 italic mt-0.5">Private Aura Space</p>
             </div>
           </div>
         </div>
 
-        {/* Bio / Edit Profile */}
-        <div className="space-y-3">
-          <div>
-            <h3 className="text-sm font-bold text-white">{userDisplayName}</h3>
-            <p className="text-xs text-white/50 italic mt-0.5">Private Aura Space</p>
+        {/* Mobile Profile Info Layout (Hidden on Desktop) */}
+        <div className="lg:hidden flex flex-col gap-6">
+          <div className="flex items-center gap-6">
+            {/* Avatar */}
+            <div className="relative w-20 h-20 rounded-full p-[2.5px] bg-gradient-to-tr from-[var(--gold)] to-[var(--gold-light)] shrink-0">
+              <div className="w-full h-full rounded-full bg-[var(--bg-primary)] p-[2px] overflow-hidden">
+                <EncryptedImage 
+                  url={user?.user_metadata?.avatar_url}
+                  encryptionKey={user?.user_metadata?.avatar_key ? (typeof user.user_metadata.avatar_key === 'string' ? user.user_metadata.avatar_key : JSON.stringify(user.user_metadata.avatar_key)) : null}
+                  nonce={user?.user_metadata?.avatar_nonce ? (typeof user.user_metadata.avatar_nonce === 'string' ? user.user_metadata.avatar_nonce : JSON.stringify(user.user_metadata.avatar_nonce)) : null}
+                  alt="User profile" 
+                  className="w-full h-full object-cover rounded-full" 
+                  placeholder={`https://ui-avatars.com/api/?name=${userDisplayName}&background=c9a96e&color=13131b`}
+                />
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex-1 flex justify-around items-center">
+              <div className="flex flex-col items-center">
+                <span className="text-base font-bold text-white leading-tight">{stats.posts}</span>
+                <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Posts</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-base font-bold text-white leading-tight">{streakCount}</span>
+                <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Streak</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-base font-bold text-white leading-tight">{stats.notes}</span>
+                <span className="text-[10px] uppercase font-semibold text-white/40 tracking-wider">Notes</span>
+              </div>
+            </div>
           </div>
 
-          <button 
-            onClick={() => { setNewDisplayName(userDisplayName); setIsEditOpen(true); }}
-            className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-4 text-xs font-semibold hover:bg-white/10 active:scale-98 transition-all"
-          >
-            Edit Profile
-          </button>
+          {/* Bio / Edit Profile */}
+          <div className="space-y-3">
+            <div>
+              <h3 className="text-sm font-bold text-white">{userDisplayName}</h3>
+              <p className="text-xs text-white/50 italic mt-0.5">Private Aura Space</p>
+            </div>
+
+            <button 
+              onClick={() => { setNewDisplayName(userDisplayName); setIsEditOpen(true); }}
+              className="w-full bg-white/5 border border-white/10 text-white rounded-xl py-2 px-4 text-xs font-semibold hover:bg-white/10 active:scale-98 transition-all"
+            >
+              Edit Profile
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Grid Posts Divider */}
-      <div className="border-t border-white/5">
-        <div className="flex justify-center py-2.5 border-b border-[var(--gold)]/30 w-1/3 mx-auto">
+      <div className="border-t border-white/5 lg:max-w-4xl lg:mx-auto">
+        <div className="flex justify-center py-2.5 border-b border-[var(--gold)]/30 w-1/3 lg:w-20 mx-auto">
           <span className="material-symbols-outlined text-[20px] text-[var(--gold)]">grid_on</span>
         </div>
       </div>
 
       {/* User Posts Grid */}
-      <div className="px-1 py-1">
+      <div className="px-1 py-1 lg:max-w-4xl lg:mx-auto lg:px-8 lg:py-6">
         {loading ? (
           <div className="py-12 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -201,7 +254,7 @@ export default function ProfileScreen() {
             No posts shared by you.
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-1 lg:gap-3 rounded-2xl overflow-hidden">
             {posts.map((item) => (
               <ProfileGridThumb 
                 key={item.id} 

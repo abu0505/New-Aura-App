@@ -279,28 +279,17 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     if (!user || !partner) return;
     if (pageNumber === 1) setLoading(true);
     try {
-      // Build filter based on current tab
-      let mediaFilter: string;
-      if (filter === 'video') {
-        // Videos tab: show ALL videos (including chunked ones with null media_url)
-        mediaFilter = `type.eq.video`;
-      } else if (filter !== 'all' && filter !== 'favorites') {
-        // Specific type tab (image, audio, document): must have media_url
-        mediaFilter = `and(media_url.not.is.null,type.eq.${filter})`;
-      } else {
-        // All/Favorites: include anything with media_url OR type=video (chunked)
-        mediaFilter = `media_url.not.is.null,type.eq.video`;
-      }
-
       let query = supabase
         .from('messages')
         .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,thumbnail_url,type,created_at,sender_public_key,duration', { count: 'exact' })
-        .or(mediaFilter)
-        // Fix 5.1: Use correct AND filter — must have matching sender+receiver pairs
         .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
         .neq('type', 'gif');
 
-      if (filter === 'favorites') {
+      if (filter === 'all') {
+        query = query.in('type', ['image', 'video']);
+      } else if (filter === 'video') {
+        query = query.eq('type', 'video');
+      } else if (filter === 'favorites') {
         const favs = favoritesRef.current;
         if (favs.size === 0) {
           setMemories([]);
@@ -308,7 +297,9 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
           setLoading(false);
           return;
         }
-        query = query.in('id', Array.from(favs));
+        query = query.in('id', Array.from(favs)).in('type', ['image', 'video']);
+      } else {
+        query = query.eq('type', filter).not('media_url', 'is', null);
       }
 
       const { data, error } = await query

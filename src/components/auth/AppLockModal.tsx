@@ -1,8 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { useAppLock } from '../../contexts/AppLockContext';
+import { useAppLock, prefetchFeed } from '../../contexts/AppLockContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePartner } from '../../hooks/usePartner';
 
 export default function AppLockModal() {
   const { isLocked, unlockApp } = useAppLock();
+  const { user } = useAuth();
+  const { partner } = usePartner();
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,8 +131,12 @@ export default function AppLockModal() {
                   type="password"
                   value={pin}
                   onChange={(e) => {
-                    setPin(e.target.value);
+                    const val = e.target.value;
+                    setPin(val);
                     setError(null);
+                    if (val.length >= 1 && user?.id && partner?.id) {
+                      prefetchFeed(user.id, partner.id);
+                    }
                   }}
                   placeholder="Enter code..."
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-base text-white focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all placeholder:text-gray-600"

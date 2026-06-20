@@ -11,8 +11,9 @@ import { isNativeUploadAvailable, enqueueTextMessage as nativeEnqueueTextMessage
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
-export interface ChatMessage extends Omit<MessageRow, 'type'> {
+export interface ChatMessage extends Omit<MessageRow, 'type' | 'is_reel_upload'> {
   type: MessageRow['type'] | 'gif';
+  is_reel_upload?: boolean;
   decrypted_content?: string;
   decrypted_media_url?: string;
   is_mine: boolean;
@@ -347,6 +348,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           .from('messages')
           .select(MSG_COLUMNS)
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+          .eq('is_reel_upload', false)
           .gt('created_at', lastMessageTimeRef.current)
           .order('created_at', { ascending: true });
 
@@ -407,6 +409,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           .from('messages')
           .select(MSG_COLUMNS)
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+          .eq('is_reel_upload', false)
           .order('created_at', { ascending: false })
           .limit(PAGE_SIZE);
 
@@ -483,6 +486,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       if (payload.eventType !== 'DELETE') {
         if (row.sender_id !== user.id && row.sender_id !== partnerId) return;
         if (row.receiver_id !== user.id && row.receiver_id !== partnerId) return;
+        if (row.is_reel_upload) return; // Skip dedicated reel uploads in chat
       }
 
       if (payload.eventType === 'INSERT') {

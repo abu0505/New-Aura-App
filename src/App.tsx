@@ -277,7 +277,7 @@ function InnerApp({
         }>
           {/* Soft Tab Switching: Screens remain mounted but hidden to preserve state */}
           <div className={activeTab === 'home' ? 'h-full w-full' : 'hidden'}>
-            <HomeScreen onTabChange={handleTabChangeWrapper} />
+            <HomeScreen onTabChange={handleTabChangeWrapper} partner={partnerWithPresence} />
           </div>
           <div className={activeTab === 'explore' ? 'h-full w-full' : 'hidden'}>
             <ExploreScreen />
@@ -286,7 +286,7 @@ function InnerApp({
             <ChatScreen partner={partnerWithPresence} isActive={activeTab === 'chat' && !isLocked} />
           </div>
           <div className={activeTab === 'reels' ? 'h-full w-full' : 'hidden'}>
-            <ReelsScreen />
+            <ReelsScreen isActive={activeTab === 'reels'} />
           </div>
           <div className={activeTab === 'profile' ? 'h-full w-full' : 'hidden'}>
             <ProfileScreen />

@@ -1,6 +1,35 @@
 import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useChatSettingsContext } from './ChatSettingsContext';
+import { fetchDiverseMediaPool } from '../utils/feedPool';
+
+let prefetchFeedPromise: Promise<any[]> | null = null;
+
+export function prefetchFeed(userId: string, partnerId: string) {
+  if (prefetchFeedPromise) return; // already prefetching or prefetched
+  
+  console.log('[AppLockContext] Starting background prefetch of diverse feed pool...');
+  prefetchFeedPromise = (async () => {
+    try {
+      return await fetchDiverseMediaPool(userId, partnerId, {
+        recentLimit: 30,
+        middleLimit: 60,
+        oldLimit: 60,
+      });
+    } catch (e) {
+      console.error('[AppLockContext] Background prefetch failed:', e);
+      return [];
+    }
+  })();
+}
+
+export function getPrefetchedFeed(): Promise<any[]> | null {
+  return prefetchFeedPromise;
+}
+
+export function clearPrefetchedFeed() {
+  prefetchFeedPromise = null;
+}
 
 interface AppLockContextType {
   isLocked: boolean;

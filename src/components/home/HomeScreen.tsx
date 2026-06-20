@@ -5,11 +5,19 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { useMedia } from '../../hooks/useMedia';
+import { useVideoChunks } from '../../hooks/useVideoChunks';
+import { useGlobalMute } from '../../hooks/useGlobalMute';
+import { useStreak } from '../../contexts/StreakContext';
+import { useCall } from '../../contexts/CallContext';
+import { LastSeenStatus } from '../chat/LastSeenStatus';
 import StoryCircles from './StoryCircles';
 import OnThisDayCard from '../memories/OnThisDayCard';
 import MomentsCarousel from '../memories/MomentsCarousel';
 import type { MomentGroup } from '../memories/MomentViewer';
 import EncryptedImage from '../common/EncryptedImage';
+import { buildReelQueue, filterDecryptableItems } from '../../utils/reelWeighting';
+import { fetchDiverseMediaPool } from '../../utils/feedPool';
+import { getPrefetchedFeed, clearPrefetchedFeed } from '../../contexts/AppLockContext';
 import type { Database } from '../../integrations/supabase/types';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
@@ -22,12 +30,16 @@ interface FeedPostItem extends MessageRow {
 
 interface HomeScreenProps {
   onTabChange: (tab: 'home' | 'reels' | 'chat' | 'explore' | 'profile') => void;
+  partner?: any;
 }
 
-export default function HomeScreen({ onTabChange }: HomeScreenProps) {
+export default function HomeScreen({ onTabChange, partner: livePartner }: HomeScreenProps) {
   const { user } = useAuth();
-  const { partner } = usePartner();
+  const { partner: dbPartner } = usePartner();
+  const partner = livePartner || dbPartner;
   const { getDecryptedBlob } = useMedia();
+  const { streakCount, streakAtRisk, longestStreak } = useStreak();
+  const { initiateCall } = useCall();
   const isNative = Capacitor.isNativePlatform();
 
   const [feedItems, setFeedItems] = useState<FeedPostItem[]>([]);
@@ -43,6 +55,9 @@ export default function HomeScreen({ onTabChange }: HomeScreenProps) {
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
   const loadingMoreRef = useRef(false);
+  const seenVideoIds = useRef<string[]>([]);
+  const seenImageIds = useRef<string[]>([]);
+  const lastMarkedIndexRef = useRef(-1);
 
   // Load favorites
   useEffect(() => {
@@ -92,43 +107,125 @@ export default function HomeScreen({ onTabChange }: HomeScreenProps) {
     });
   };
 
-  // Fetch feed items
+  const userId = user?.id;
+  const partnerId = partner?.id;
+
+  // Fetch feed items using weighted algorithm
+  // We fetch a larger pool then apply weighted reservoir sampling so
+  // reel uploads and old/video content appear more often in the home feed.
   const fetchFeed = useCallback(async (page = 1) => {
-    if (!user || !partner) return;
+    if (!userId || !partnerId) return;
     if (page === 1) setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .or('type.eq.image,type.eq.video')
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
-        .order('created_at', { ascending: false })
-        .range((page - 1) * 6, page * 6 - 1);
-
-      if (error) throw error;
-
-      const items = (data as FeedPostItem[]) || [];
       if (page === 1) {
-        setFeedItems(items);
+        let pool: FeedPostItem[] = [];
+
+        // Check if we have pre-fetched data from AppLockContext
+        const prefetchedPromise = getPrefetchedFeed();
+        if (prefetchedPromise) {
+          console.log('[HomeScreen] Consuming pre-fetched feed pool...');
+          const data = await prefetchedPromise;
+          pool = (data as FeedPostItem[]) || [];
+          clearPrefetchedFeed(); // Clear so it doesn't get consumed again on manual refresh
+        }
+
+        // Fallback if prefetch wasn't started or returned empty
+        if (pool.length === 0) {
+          console.log('[HomeScreen] Fetching diverse feed pool from DB...');
+          const data = await fetchDiverseMediaPool(userId, partnerId, {
+            recentLimit: 30,
+            middleLimit: 60,
+            oldLimit: 60,
+          });
+          pool = (data as FeedPostItem[]) || [];
+        }
+
+        const decryptablePool = filterDecryptableItems(pool);
+        // Apply same weighted algorithm as reels — reel uploads + old/video content surface higher
+        const weighted = buildReelQueue(decryptablePool, 30);
+
+        // Reset seen refs on page 1 load/refresh to allow clean paging
+        seenVideoIds.current = [];
+        seenImageIds.current = [];
+        lastMarkedIndexRef.current = -1;
+
+        setFeedItems(weighted);
+        hasMoreRef.current = weighted.length > 0;
       } else {
-        setFeedItems(prev => {
-          const fresh = items.filter(item => !prev.some(p => p.id === item.id));
-          return [...prev, ...fresh];
-        });
+        // Subsequent pages: stratified random sampling excluding already loaded IDs
+        let excludeIds = [...seenVideoIds.current, ...seenImageIds.current];
+        console.log(`[HomeScreen] Fetching next page... Excluded videos: ${seenVideoIds.current.length}, images: ${seenImageIds.current.length}`);
+
+        let pool = await fetchDiverseMediaPool(
+          userId,
+          partnerId,
+          {
+            recentLimit: 15,
+            middleLimit: 30,
+            oldLimit: 30,
+          },
+          excludeIds
+        );
+
+        let fetchedVideos = pool.filter(p => p.type === 'video');
+        let fetchedImages = pool.filter(p => p.type !== 'video');
+
+        // Check if we ran out of unseen videos or images based on our 40/30 minimum bounds
+        const minVideos = 6;  // 40% of 15
+        const minImages = 5;  // 30% of 15
+        const needsVideoReset = fetchedVideos.length < minVideos && seenVideoIds.current.length > 0;
+        const needsImageReset = fetchedImages.length < minImages && seenImageIds.current.length > 0;
+
+        if (needsVideoReset || needsImageReset) {
+          console.log(`[HomeScreen] Scarcity detected: Resetting seen caches. Video reset: ${needsVideoReset}, Image reset: ${needsImageReset}`);
+
+          if (needsVideoReset) {
+            const keepCount = Math.min(30, Math.floor(seenVideoIds.current.length * 0.5));
+            seenVideoIds.current = seenVideoIds.current.slice(-keepCount);
+          }
+          if (needsImageReset) {
+            const keepCount = Math.min(50, Math.floor(seenImageIds.current.length * 0.5));
+            seenImageIds.current = seenImageIds.current.slice(-keepCount);
+          }
+
+          excludeIds = [...seenVideoIds.current, ...seenImageIds.current];
+          pool = await fetchDiverseMediaPool(
+            userId,
+            partnerId,
+            {
+              recentLimit: 15,
+              middleLimit: 30,
+              oldLimit: 30,
+            },
+            excludeIds
+          );
+          fetchedVideos = pool.filter(p => p.type === 'video');
+          fetchedImages = pool.filter(p => p.type !== 'video');
+        }
+
+        const decryptableItems = filterDecryptableItems(pool as FeedPostItem[]);
+        const weighted = buildReelQueue(decryptableItems, 15);
+
+        if (weighted.length > 0) {
+          setFeedItems(prev => {
+            const fresh = weighted.filter(item => !prev.some(p => p.id === item.id));
+            return [...prev, ...fresh];
+          });
+        }
+        hasMoreRef.current = weighted.length > 0;
       }
-      hasMoreRef.current = items.length === 6;
     } catch (e) {
       console.error('Error fetching feed:', e);
     } finally {
       setLoading(false);
       loadingMoreRef.current = false;
     }
-  }, [user, partner]);
+  }, [userId, partnerId]);
 
   // Fetch Throwbacks and Recaps
   const fetchAuxiliaryData = useCallback(async () => {
-    if (!user || !partner) return;
+    if (!userId || !partnerId) return;
     try {
       const now = new Date();
       const month = now.getMonth() + 1;
@@ -136,8 +233,8 @@ export default function HomeScreen({ onTabChange }: HomeScreenProps) {
 
       // Throwbacks
       supabase.rpc('get_throwbacks', {
-        u_id: user.id,
-        p_id: partner.id,
+        u_id: userId,
+        p_id: partnerId,
         current_month: month,
         current_day: day,
         limit_count: 10
@@ -146,28 +243,71 @@ export default function HomeScreen({ onTabChange }: HomeScreenProps) {
       });
 
       // Recaps
-      supabase.rpc('get_last_week_recap', { u_id: user.id, p_id: partner.id, limit_count: 10 }).then(({ data }) => {
+      supabase.rpc('get_last_week_recap', { u_id: userId, p_id: partnerId, limit_count: 10 }).then(({ data }) => {
         if (data) setLastWeekRecap(data as FeedPostItem[]);
       });
-      supabase.rpc('get_last_month_recap', { u_id: user.id, p_id: partner.id, limit_count: 10 }).then(({ data }) => {
+      supabase.rpc('get_last_month_recap', { u_id: userId, p_id: partnerId, limit_count: 10 }).then(({ data }) => {
         if (data) setLastMonthRecap(data as FeedPostItem[]);
       });
-      supabase.rpc('get_random_shuffle_recap', { u_id: user.id, p_id: partner.id, limit_count: 10 }).then(({ data }) => {
+      supabase.rpc('get_random_shuffle_recap', { u_id: userId, p_id: partnerId, limit_count: 10 }).then(({ data }) => {
         if (data) setRandomRecap(data as FeedPostItem[]);
       });
     } catch (e) {
       console.error('Error fetching recaps/throwbacks:', e);
     }
-  }, [user, partner]);
+  }, [userId, partnerId]);
+
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
+
     fetchFeed(1);
     fetchAuxiliaryData();
   }, [fetchFeed, fetchAuxiliaryData]);
 
-  // Infinite Scroll Sentinel
+  // Mark the first loaded feed item as seen on initial load
+  useEffect(() => {
+    if (feedItems.length > 0 && lastMarkedIndexRef.current === -1) {
+      const firstItem = feedItems[0];
+      if (firstItem) {
+        if (firstItem.type === 'video') {
+          if (!seenVideoIds.current.includes(firstItem.id)) seenVideoIds.current.push(firstItem.id);
+        } else {
+          if (!seenImageIds.current.includes(firstItem.id)) seenImageIds.current.push(firstItem.id);
+        }
+        lastMarkedIndexRef.current = 0;
+      }
+    }
+  }, [feedItems]);
+
+  // Infinite Scroll Sentinel & Progressive Seen Tracking
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
+
+    // Estimate current visible index based on average post card height (~500px)
+    const visibleIndex = Math.floor(target.scrollTop / 500);
+    if (visibleIndex > lastMarkedIndexRef.current && visibleIndex < feedItems.length) {
+      for (let i = lastMarkedIndexRef.current + 1; i <= visibleIndex; i++) {
+        const item = feedItems[i];
+        if (item) {
+          if (item.type === 'video') {
+            if (!seenVideoIds.current.includes(item.id)) {
+              seenVideoIds.current.push(item.id);
+              console.log(`[HomeScreen] Marked video seen: ${item.id}`);
+            }
+          } else {
+            if (!seenImageIds.current.includes(item.id)) {
+              seenImageIds.current.push(item.id);
+              console.log(`[HomeScreen] Marked image seen: ${item.id}`);
+            }
+          }
+        }
+      }
+      lastMarkedIndexRef.current = visibleIndex;
+    }
+
     if (target.scrollHeight - target.scrollTop - target.clientHeight < 100) {
       if (hasMoreRef.current && !loadingMoreRef.current) {
         loadingMoreRef.current = true;
@@ -189,7 +329,7 @@ export default function HomeScreen({ onTabChange }: HomeScreenProps) {
       {/* Top Bar Header */}
       <header className={`sticky top-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-md px-4 py-2 flex items-center justify-between border-b border-white/5 ${isNative ? 'safe-top' : ''}`}>
         <h1 className="font-serif italic text-2xl tracking-[0.1em] text-gradient-gold">AURA</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 lg:hidden">
           <button 
             onClick={() => onTabChange('explore')} 
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform"
@@ -205,93 +345,188 @@ export default function HomeScreen({ onTabChange }: HomeScreenProps) {
         </div>
       </header>
 
-      {/* Stories horizontal row */}
-      <StoryCircles />
-
-      {/* Auxiliary Collections (Throwbacks & Recaps) */}
-      <div className="px-4 py-6 space-y-6">
-        {throwbacks.length > 0 && partner?.public_key && (
-          <OnThisDayCard 
-            throwbacks={throwbacks} 
-            partnerPublicKey={partner.public_key} 
-            onOpenMedia={handleOpenMedia} 
-          />
-        )}
-
-        {partner?.public_key && (() => {
-          const momentGroups: MomentGroup[] = [];
-          if (randomRecap.length > 0) {
-            momentGroups.push({
-              id: 'random-shuffle',
-              title: 'Daily Shuffle',
-              badge: 'Random Shuffle',
-              iconName: 'shuffle',
-              accentColor: '#fb7185',
-              items: randomRecap,
-            });
-          }
-          if (lastWeekRecap.length > 0) {
-            momentGroups.push({
-              id: 'last-week',
-              title: "This Week's Memories",
-              badge: 'Last 7 Days',
-              iconName: 'date_range',
-              accentColor: '#a78bfa',
-              items: lastWeekRecap,
-            });
-          }
-          if (lastMonthRecap.length > 0) {
-            const now = new Date();
-            const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-              .toLocaleDateString('en-US', { month: 'long' });
-            momentGroups.push({
-              id: 'last-month',
-              title: `${lastMonthName} in Review`,
-              badge: 'Last Month',
-              iconName: 'calendar_month',
-              accentColor: '#60a5fa',
-              items: lastMonthRecap,
-            });
-          }
-          if (momentGroups.length === 0) return null;
-          return (
-            <MomentsCarousel
-              moments={momentGroups}
-              partnerPublicKey={partner.public_key}
-            />
-          );
-        })()}
-      </div>
-
-      {/* Vertical Feed */}
-      <div className="px-4 pb-12 space-y-8">
-        <h2 className="font-serif italic text-xl text-[var(--gold)] px-2">Recent Shared Feed</h2>
+      {/* Main Grid Wrapper (Desktop Split View vs Mobile Stacking) */}
+      <div className="w-full lg:max-w-6xl lg:mx-auto lg:px-6 lg:py-8 lg:grid lg:grid-cols-[minmax(0,_1fr)_320px] lg:gap-8 items-start">
         
-        {loading ? (
-          <div className="py-12 flex flex-col items-center justify-center gap-3">
-            <div className="w-8 h-8 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
-            <p className="text-xs font-label uppercase tracking-widest text-white/30">Loading your memories...</p>
-          </div>
-        ) : feedItems.length === 0 ? (
-          <div className="py-16 text-center border border-dashed border-white/5 rounded-3xl p-6 bg-white/[0.01]">
-            <span className="material-symbols-outlined text-4xl text-white/20 mb-3">camera_roll</span>
-            <p className="text-sm font-medium text-white/50">No photos or videos shared yet</p>
-            <p className="text-xs text-white/30 mt-1">Send media in chat to see them in your shared feed.</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {feedItems.map((item) => (
-              <FeedPost 
-                key={item.id} 
-                item={item} 
-                partnerPublicKey={partner?.public_key || ''} 
-                getDecryptedBlob={getDecryptedBlob}
-                isLiked={favorites.has(item.id)}
-                onLikeToggle={() => toggleFavorite(item.id)}
+        {/* Left Column: Feed Content */}
+        <div className="space-y-6 lg:space-y-8">
+          {/* Stories horizontal row */}
+          <StoryCircles />
+
+          {/* Auxiliary Collections (Throwbacks & Recaps) */}
+          <div className="px-4 py-6 space-y-6 lg:px-0 lg:py-0">
+            {throwbacks.length > 0 && partner?.public_key && (
+              <OnThisDayCard 
+                throwbacks={throwbacks} 
+                partnerPublicKey={partner.public_key} 
+                onOpenMedia={handleOpenMedia} 
               />
-            ))}
+            )}
+
+            {partner?.public_key && (() => {
+              const momentGroups: MomentGroup[] = [];
+              if (randomRecap.length > 0) {
+                momentGroups.push({
+                  id: 'random-shuffle',
+                  title: 'Daily Shuffle',
+                  badge: 'Random Shuffle',
+                  iconName: 'shuffle',
+                  accentColor: '#fb7185',
+                  items: randomRecap,
+                });
+              }
+              if (lastWeekRecap.length > 0) {
+                momentGroups.push({
+                  id: 'last-week',
+                  title: "This Week's Memories",
+                  badge: 'Last 7 Days',
+                  iconName: 'date_range',
+                  accentColor: '#a78bfa',
+                  items: lastWeekRecap,
+                });
+              }
+              if (lastMonthRecap.length > 0) {
+                const now = new Date();
+                const lastMonthName = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                  .toLocaleDateString('en-US', { month: 'long' });
+                momentGroups.push({
+                  id: 'last-month',
+                  title: `${lastMonthName} in Review`,
+                  badge: 'Last Month',
+                  iconName: 'calendar_month',
+                  accentColor: '#60a5fa',
+                  items: lastMonthRecap,
+                });
+              }
+              if (momentGroups.length === 0) return null;
+              return (
+                <MomentsCarousel
+                  moments={momentGroups}
+                  partnerPublicKey={partner.public_key}
+                />
+              );
+            })()}
           </div>
-        )}
+
+          {/* Vertical Feed */}
+          <div className="px-4 pb-12 space-y-8 lg:px-0 lg:pb-0">
+            <h2 className="font-serif italic text-xl text-[var(--gold)] px-2 lg:px-0">Recent Shared Feed</h2>
+            
+            {loading ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
+                <p className="text-xs font-label uppercase tracking-widest text-white/30">Loading your memories...</p>
+              </div>
+            ) : feedItems.length === 0 ? (
+              <div className="py-16 text-center border border-dashed border-white/5 rounded-3xl p-6 bg-white/[0.01]">
+                <span className="material-symbols-outlined text-4xl text-white/20 mb-3">camera_roll</span>
+                <p className="text-sm font-medium text-white/50">No photos or videos shared yet</p>
+                <p className="text-xs text-white/30 mt-1">Send media in chat to see them in your shared feed.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {feedItems.map((item) => (
+                  <FeedPost 
+                    key={item.id} 
+                    item={item} 
+                    partnerPublicKey={partner?.public_key || ''} 
+                    getDecryptedBlob={getDecryptedBlob}
+                    isLiked={favorites.has(item.id)}
+                    onLikeToggle={() => toggleFavorite(item.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Desktop Sidebar (Hidden on Mobile) */}
+        <aside className="hidden lg:flex flex-col gap-6 sticky top-24">
+          
+          {/* Partner Status Card */}
+          {partner && (
+            <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden shadow-xl">
+              <div className="relative mb-4">
+                <div className={`w-20 h-20 rounded-full p-1 border-2 ${partner.is_online ? 'border-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : 'border-white/10'} overflow-hidden`}>
+                  <EncryptedImage 
+                    url={partner.avatar_url}
+                    encryptionKey={partner.avatar_key}
+                    nonce={partner.avatar_nonce}
+                    alt={partner.display_name || 'Partner'}
+                    className="w-full h-full object-cover rounded-full"
+                    placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
+                  />
+                </div>
+                {partner.is_online && (
+                  <div className="absolute bottom-0 right-1 w-4 h-4 bg-emerald-500 border-2 border-[var(--bg-secondary)] rounded-full animate-pulse"></div>
+                )}
+              </div>
+              <h3 className="font-serif italic text-lg text-white mb-0.5">{partner.display_name || 'Your Partner'}</h3>
+              <p className="text-[10px] font-label uppercase tracking-widest text-white/40 flex items-center gap-1.5 justify-center">
+                <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
+              </p>
+              {partner.status_message && (
+                <p className="text-xs text-white/60 italic mt-3 px-4 border-t border-white/5 pt-3 w-full">
+                  "{partner.status_message}"
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Streak Card */}
+          <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col items-center text-center shadow-xl">
+            <div className="text-4xl mb-2 animate-bounce">🔥</div>
+            <span className="text-2xl font-bold text-[var(--gold)] tracking-wide">{streakCount} Days</span>
+            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider mt-1">Current Streak</span>
+            <div className="w-full h-px bg-white/5 my-4"></div>
+            <div className="flex justify-between w-full text-xs text-white/50 px-2">
+              <span>Longest: {longestStreak} days</span>
+              {streakAtRisk && <span className="text-orange-400 font-bold">At Risk! ⏳</span>}
+            </div>
+          </div>
+
+          {/* Quick Actions Card */}
+          <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col gap-3 shadow-xl">
+            <h4 className="text-[10px] uppercase font-bold text-white/40 tracking-widest mb-1 px-1">Quick Actions</h4>
+            
+            <button 
+              onClick={() => onTabChange('chat')}
+              className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-98 transition-all px-4 py-3 rounded-2xl text-xs font-semibold text-white/90 border border-white/5"
+            >
+              <span className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-lg text-[var(--gold)]">forum</span>
+                Open Chat
+              </span>
+              <span className="material-symbols-outlined text-sm text-white/30">chevron_right</span>
+            </button>
+
+            {partner && (
+              <>
+                <button 
+                  onClick={() => initiateCall(false)}
+                  className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-98 transition-all px-4 py-3 rounded-2xl text-xs font-semibold text-white/90 border border-white/5"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-lg text-emerald-400">call</span>
+                    Voice Call
+                  </span>
+                  <span className="material-symbols-outlined text-sm text-white/30">chevron_right</span>
+                </button>
+
+                <button 
+                  onClick={() => initiateCall(true)}
+                  className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-98 transition-all px-4 py-3 rounded-2xl text-xs font-semibold text-white/90 border border-white/5"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-lg text-sky-400">videocam</span>
+                    Video Call
+                  </span>
+                  <span className="material-symbols-outlined text-sm text-white/30">chevron_right</span>
+                </button>
+              </>
+            )}
+          </div>
+        </aside>
       </div>
 
       {/* Fullscreen Video/Photo Viewer */}
@@ -341,25 +576,144 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   const hasDecryptedRef = useRef(false);
   const tag = `[FeedPost][${item.id?.slice(0,8)}]`;
 
+  const { isMuted, toggleMute } = useGlobalMute();
+  const [isPaused, setIsPaused] = useState(false);
+  const [showStatusIcon, setShowStatusIcon] = useState<'play' | 'pause' | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleVideoTap = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      video.play().catch(() => {});
+      setIsPaused(false);
+      setShowStatusIcon('play');
+      setTimeout(() => setShowStatusIcon(null), 500);
+    } else {
+      video.pause();
+      setIsPaused(true);
+      setShowStatusIcon('pause');
+      setTimeout(() => setShowStatusIcon(null), 500);
+    }
+  };
+
+  // Play/pause video when active in viewport
+  useEffect(() => {
+    if (item.type !== 'video' || !decryptedUrl) return;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      if (entry.isIntersecting) {
+        if (!isPaused) {
+          video.play().catch(() => {});
+        }
+      } else {
+        video.pause();
+      }
+    }, {
+      threshold: 0.5
+    });
+
+    if (postRef.current) {
+      observer.observe(postRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [item.type, decryptedUrl, isPaused]);
+
+  // Detect chunked video: type=video but no media_url
+  const isChunkedVideo = item.type === 'video' && !item.media_url;
+
+  // Hook for chunked video assembly
+  const { chunks: videoChunks, loadExistingChunks } = useVideoChunks(isChunkedVideo ? item.id : undefined);
+
+  // Pick up blobUrl from useVideoChunks store when chunked video is ready
+  useEffect(() => {
+    if (!isChunkedVideo || !videoChunks?.length) return;
+    const chunk = videoChunks[0];
+    if (chunk?.blobUrl && chunk.isDecrypted) {
+      console.log(`${tag} Chunked video blob ready`);
+      setDecryptedUrl(chunk.blobUrl);
+      setLoading(false);
+      hasDecryptedRef.current = true;
+    }
+  }, [isChunkedVideo, videoChunks, tag]);
+
   // Clean up Object URL on unmount or item change
   useEffect(() => {
     setDecryptedUrl(null);
     setLoading(false);
     hasDecryptedRef.current = false;
     return () => {
-      if (decryptedUrlRef.current) {
+      if (decryptedUrlRef.current && !isChunkedVideo) {
         URL.revokeObjectURL(decryptedUrlRef.current);
         decryptedUrlRef.current = null;
       }
     };
-  }, [item.id, item.media_url]);
+  }, [item.id, item.media_url, isChunkedVideo]);
 
   // Handle decryption on viewport entry
-  // NOTE: decryptedUrl intentionally NOT in dep array — it causes observer
-  // teardown/recreate on every state change, preventing decryption from completing.
   useEffect(() => {
     let active = true;
 
+    // Chunked video path
+    if (isChunkedVideo) {
+      if (!partnerPublicKey || !item.media_key || !item.media_nonce) {
+        console.warn(`${tag} SKIP chunked video — missing key/nonce`);
+        setDecryptionFailed(true);
+        return;
+      }
+
+      const observer = new IntersectionObserver(([entry]) => {
+        if (!entry.isIntersecting || !active) return;
+        if (hasDecryptedRef.current) {
+          observer.disconnect();
+          return;
+        }
+
+        hasDecryptedRef.current = true;
+        console.log(`${tag} VISIBLE → loading chunked video`);
+        setLoading(true);
+
+        (async () => {
+          try {
+            const { data, error } = await supabase
+              .from('video_chunks')
+              .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+              .eq('message_id', item.id)
+              .order('chunk_index', { ascending: true });
+
+            if (error) throw error;
+            if (!data || data.length === 0) {
+              if (active) setDecryptionFailed(true);
+              return;
+            }
+
+            await loadExistingChunks(item.id, data, partnerPublicKey);
+            // useEffect watching videoChunks will pick up the blobUrl
+          } catch (e) {
+            console.error(`${tag} Chunked video load error`, e);
+            if (active) {
+              hasDecryptedRef.current = false;
+              setDecryptionFailed(true);
+              setLoading(false);
+            }
+          }
+        })();
+
+        observer.disconnect();
+      }, { rootMargin: '600px' });
+
+      if (postRef.current) observer.observe(postRef.current);
+      return () => { active = false; observer.disconnect(); };
+    }
+
+    // Regular media path
     if (!partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) {
       console.warn(`${tag} SKIP observer — missing fields`);
       setDecryptionFailed(true);
@@ -406,7 +760,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
         }
       };
       decrypt();
-    }, { rootMargin: '200px' });
+    }, { rootMargin: '600px' });
 
     if (postRef.current) {
       observer.observe(postRef.current);
@@ -417,7 +771,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       observer.disconnect();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob]);
+  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo]);
 
   // Determine sender info
   const isMine = item.sender_id === user?.id;
@@ -432,10 +786,10 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   return (
     <div 
       ref={postRef}
-      className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl overflow-hidden shadow-xl"
+      className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl overflow-hidden shadow-xl aspect-[9/16] w-full flex flex-col"
     >
       {/* Post Header */}
-      <div className="p-4 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10">
             <EncryptedImage 
@@ -463,7 +817,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       </div>
 
       {/* Post Media Container */}
-      <div className="relative aspect-square w-full bg-black/40 flex items-center justify-center overflow-hidden border-y border-white/5">
+      <div className="relative flex-1 w-full bg-black/40 flex items-center justify-center overflow-hidden border-y border-white/5">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -471,13 +825,65 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           </div>
         ) : decryptedUrl ? (
           item.type === 'video' ? (
-            <video 
-              src={decryptedUrl} 
-              className="w-full h-full object-cover" 
-              controls
-              playsInline
-              preload="metadata"
-            />
+            <div 
+              className="relative w-full h-full cursor-pointer flex items-center justify-center"
+              onClick={handleVideoTap}
+            >
+              <video 
+                ref={videoRef}
+                src={decryptedUrl} 
+                className="w-full h-full object-cover" 
+                loop
+                playsInline
+                preload="metadata"
+                muted={isMuted}
+              />
+              
+              {/* Play overlay when paused */}
+              {isPaused && !showStatusIcon && (
+                <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+                  <motion.div 
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
+                  >
+                    <span className="material-symbols-outlined text-2xl">play_arrow</span>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Play/Pause status flash overlay */}
+              <AnimatePresence>
+                {showStatusIcon && (
+                  <motion.div
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1.2, opacity: 0.8 }}
+                    exit={{ scale: 1.5, opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center text-white">
+                      <span className="material-symbols-outlined text-2xl">
+                        {showStatusIcon === 'play' ? 'play_arrow' : 'pause'}
+                      </span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Floating Mute Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleMute();
+                }}
+                className="absolute bottom-3 right-3 z-30 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-90 transition-transform"
+              >
+                <span className="material-symbols-outlined text-lg">
+                  {isMuted ? 'volume_off' : 'volume_up'}
+                </span>
+              </button>
+            </div>
           ) : (
             <img 
               src={decryptedUrl} 
@@ -494,7 +900,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       </div>
 
       {/* Post Actions Bar */}
-      <div className="p-4 flex items-center justify-between">
+      <div className="p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-4">
           <button 
             onClick={onLikeToggle}
