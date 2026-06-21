@@ -19,7 +19,13 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
       {/* Top App Bar */}
       <header className="bg-[#0f172a]/60 backdrop-blur-xl sticky top-0 z-40 border-b border-white/5 flex items-center justify-between px-6 py-4 w-full safe-top">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center overflow-hidden shrink-0">
+          <div 
+            className="w-10 h-10 rounded-full bg-[var(--bg-elevated)] border border-[rgba(var(--primary-rgb),_0.2)] flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+            onClick={() => {
+              document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+              document.dispatchEvent(new CustomEvent('view-partner-profile'));
+            }}
+          >
             <EncryptedImage 
               url={partner?.avatar_url || null}
               encryptionKey={partner?.avatar_key ? (typeof partner.avatar_key === 'string' ? partner.avatar_key : JSON.stringify(partner.avatar_key)) : null}
@@ -29,11 +35,19 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
               placeholder={'https://ui-avatars.com/api/?name=' + (partner?.display_name || 'A') + '&background=c9a96e&color=13131b'} 
             />
           </div>
-          <SlidingName
-            name={partner?.display_name || 'AURA'}
-            className="flex-1 min-w-0"
-            textClassName="font-serif italic text-xl tracking-wide text-[rgba(var(--primary-rgb),_0.9)]"
-          />
+          <div 
+            className="flex-1 min-w-0 cursor-pointer hover:opacity-85 transition-all"
+            onClick={() => {
+              document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+              document.dispatchEvent(new CustomEvent('view-partner-profile'));
+            }}
+          >
+            <SlidingName
+              name={partner?.display_name || 'AURA'}
+              className="w-full"
+              textClassName="font-serif italic text-xl tracking-wide text-[rgba(var(--primary-rgb),_0.9)]"
+            />
+          </div>
         </div>
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors duration-300 text-[#998f81]">
           <span className="material-symbols-outlined">more_vert</span>

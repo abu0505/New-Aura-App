@@ -54,6 +54,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
 
   const [loading, setLoading] = useState(true);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string } | null>(null);
 
   const pageRef = useRef(1);
@@ -89,6 +90,32 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
     loadFavorites();
   }, [user]);
 
+  // Load saved items
+  useEffect(() => {
+    if (!user) return;
+    const loadSaved = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('saved_message_ids')
+          .eq('id', user.id)
+          .single();
+        if (data?.saved_message_ids) {
+          setSavedItems(new Set(data.saved_message_ids));
+        }
+      } catch (e) {
+        // Fallback to localStorage
+        const saved = localStorage.getItem('aura_saved');
+        if (saved) {
+          try {
+            setSavedItems(new Set(JSON.parse(saved)));
+          } catch {}
+        }
+      }
+    };
+    loadSaved();
+  }, [user]);
+
   // Favorite toggle
   const toggleFavorite = async (id: string) => {
     if (!user) return;
@@ -105,6 +132,30 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
       supabase
         .from('profiles')
         .update({ favorited_message_ids: arr })
+        .eq('id', user.id)
+        .then();
+      return next;
+    });
+  };
+
+  // Saved toggle
+  const toggleSaved = async (id: string) => {
+    if (!user) return;
+    setSavedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        toast.success('Removed from saved items!');
+      } else {
+        next.add(id);
+        navigator.vibrate?.(10);
+        toast.success('Saved to profile! 🔖');
+      }
+      const arr = Array.from(next);
+      localStorage.setItem('aura_saved', JSON.stringify(arr));
+      supabase
+        .from('profiles')
+        .update({ saved_message_ids: arr })
         .eq('id', user.id)
         .then();
       return next;
@@ -128,7 +179,6 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
         // Check if we have pre-fetched data from AppLockContext
         const prefetchedPromise = getPrefetchedFeed();
         if (prefetchedPromise) {
-          console.log('[HomeScreen] Consuming pre-fetched feed pool...');
           const data = await prefetchedPromise;
           pool = (data as FeedPostItem[]) || [];
           clearPrefetchedFeed(); // Clear so it doesn't get consumed again on manual refresh
@@ -136,7 +186,6 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
 
         // Fallback if prefetch wasn't started or returned empty
         if (pool.length === 0) {
-          console.log('[HomeScreen] Fetching diverse feed pool from DB...');
           const data = await fetchDiverseMediaPool(userId, partnerId, {
             recentLimit: 30,
             middleLimit: 60,
@@ -159,7 +208,6 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
       } else {
         // Subsequent pages: stratified random sampling excluding already loaded IDs
         let excludeIds = [...seenVideoIds.current, ...seenImageIds.current];
-        console.log(`[HomeScreen] Fetching next page... Excluded videos: ${seenVideoIds.current.length}, images: ${seenImageIds.current.length}`);
 
         let pool = await fetchDiverseMediaPool(
           userId,
@@ -182,7 +230,6 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
         const needsImageReset = fetchedImages.length < minImages && seenImageIds.current.length > 0;
 
         if (needsVideoReset || needsImageReset) {
-          console.log(`[HomeScreen] Scarcity detected: Resetting seen caches. Video reset: ${needsVideoReset}, Image reset: ${needsImageReset}`);
 
           if (needsVideoReset) {
             const keepCount = Math.min(30, Math.floor(seenVideoIds.current.length * 0.5));
@@ -299,12 +346,10 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
           if (item.type === 'video') {
             if (!seenVideoIds.current.includes(item.id)) {
               seenVideoIds.current.push(item.id);
-              console.log(`[HomeScreen] Marked video seen: ${item.id}`);
             }
           } else {
             if (!seenImageIds.current.includes(item.id)) {
               seenImageIds.current.push(item.id);
-              console.log(`[HomeScreen] Marked image seen: ${item.id}`);
             }
           }
         }
@@ -453,6 +498,8 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                     getDecryptedBlob={getDecryptedBlob}
                     isLiked={favorites.has(item.id)}
                     onLikeToggle={() => toggleFavorite(item.id)}
+                    isSaved={savedItems.has(item.id)}
+                    onSaveToggle={() => toggleSaved(item.id)}
                   />
                 ))}
               </div>
@@ -466,7 +513,13 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
           {/* Partner Status Card */}
           {partner && (
             <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden shadow-xl">
-              <div className="relative mb-4">
+              <div 
+                className="relative mb-4 cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                }}
+              >
                 <div className={`w-20 h-20 rounded-full p-1 border-2 ${partner.is_online ? 'border-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : 'border-white/10'} overflow-hidden`}>
                   <EncryptedImage 
                     url={partner.avatar_url}
@@ -481,7 +534,15 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                   <div className="absolute bottom-0 right-1 w-4 h-4 bg-emerald-500 border-2 border-[var(--bg-secondary)] rounded-full animate-pulse"></div>
                 )}
               </div>
-              <h3 className="font-serif italic text-lg text-white mb-0.5">{partner.display_name || 'Your Partner'}</h3>
+              <h3 
+                className="font-serif italic text-lg text-white mb-0.5 cursor-pointer hover:underline"
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                }}
+              >
+                {partner.display_name || 'Your Partner'}
+              </h3>
               <p className="text-[10px] font-label uppercase tracking-widest text-white/40 flex items-center gap-1.5 justify-center">
                 <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
               </p>
@@ -582,9 +643,11 @@ interface FeedPostProps {
   getDecryptedBlob: any;
   isLiked: boolean;
   onLikeToggle: () => void;
+  isSaved: boolean;
+  onSaveToggle: () => void;
 }
 
-function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeToggle }: FeedPostProps) {
+function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeToggle, isSaved, onSaveToggle }: FeedPostProps) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
@@ -723,12 +786,11 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     if (!isChunkedVideo || !videoChunks?.length) return;
     const chunk = videoChunks[0];
     if (chunk?.blobUrl && chunk.isDecrypted) {
-      console.log(`${tag} Chunked video blob ready`);
       setDecryptedUrl(chunk.blobUrl);
       setLoading(false);
       hasDecryptedRef.current = true;
     }
-  }, [isChunkedVideo, videoChunks, tag]);
+  }, [isChunkedVideo, videoChunks]);
 
   // Clean up Object URL on unmount or item change
   useEffect(() => {
@@ -750,7 +812,6 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     // Chunked video path
     if (isChunkedVideo) {
       if (!partnerPublicKey || !item.media_key || !item.media_nonce) {
-        console.warn(`${tag} SKIP chunked video — missing key/nonce`);
         setDecryptionFailed(true);
         return;
       }
@@ -763,7 +824,6 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
         }
 
         hasDecryptedRef.current = true;
-        console.log(`${tag} VISIBLE → loading chunked video`);
         setLoading(true);
 
         (async () => {
@@ -801,7 +861,6 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
 
     // Regular media path
     if (!partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) {
-      console.warn(`${tag} SKIP observer — missing fields`);
       setDecryptionFailed(true);
       return;
     }
@@ -814,7 +873,6 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       }
 
       hasDecryptedRef.current = true;
-      console.log(`${tag} VISIBLE → starting decrypt type=${item.type}`);
 
       const decrypt = async () => {
         setLoading(true);
@@ -829,7 +887,6 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           if (blob && active) {
             const url = URL.createObjectURL(blob);
             decryptedUrlRef.current = url;
-            console.log(`${tag} SUCCESS → ${(blob.size/1024).toFixed(1)}KB`);
             setDecryptedUrl(url);
             observer.disconnect();
           } else if (!blob) {
@@ -877,7 +934,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       {/* Post Header */}
       <div className="p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full overflow-hidden border border-white/10">
+          <div 
+            className={`w-9 h-9 rounded-full overflow-hidden border border-white/10 ${!isMine ? 'cursor-pointer hover:opacity-85 active:scale-95 transition-all' : ''}`}
+            onClick={() => {
+              if (!isMine) {
+                document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                document.dispatchEvent(new CustomEvent('view-partner-profile'));
+              }
+            }}
+          >
             <EncryptedImage 
               url={avatarUrl} 
               encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
@@ -888,7 +953,17 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
             />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white/90">{senderName}</h4>
+            <h4 
+              className={`text-xs font-bold text-white/90 ${!isMine ? 'cursor-pointer hover:underline' : ''}`}
+              onClick={() => {
+                if (!isMine) {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                }
+              }}
+            >
+              {senderName}
+            </h4>
             <p className="text-[10px] text-white/40">
               {new Date(item.created_at).toLocaleDateString(undefined, {
                 month: 'short',
@@ -1009,9 +1084,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
             </span>
           </button>
         </div>
-        <span className="material-symbols-outlined text-2xl text-white/60 hover:text-white cursor-pointer">
-          bookmark
-        </span>
+        <button 
+          onClick={onSaveToggle}
+          className={`flex items-center justify-center transition-all active:scale-75 ${isSaved ? 'text-[var(--gold)]' : 'text-white/60 hover:text-white'}`}
+          title="Save post"
+        >
+          <span className={`material-symbols-outlined text-2xl ${isSaved ? 'fill-current' : ''}`}>
+            bookmark
+          </span>
+        </button>
       </div>
     </div>
   );

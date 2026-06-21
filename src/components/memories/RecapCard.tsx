@@ -320,28 +320,13 @@ export default function RecapCard({
   }, []);
 
   const decryptItem = useCallback(async (item: RecapItem) => {
-    const tag = `[RecapCard][${title}][${item.id?.slice(0,8)}]`;
-
     // Guard: skip if already done or missing fields
-    if (!partnerPublicKey) {
-      console.warn(`${tag} SKIP — partnerPublicKey is empty/null`);
-      return;
-    }
-    if (!item.media_url) {
-      console.warn(`${tag} SKIP — media_url is null`);
-      return;
-    }
-    if (!item.media_key || !item.media_nonce) {
-      console.warn(`${tag} SKIP — media_key or media_nonce missing`, { key: item.media_key, nonce: item.media_nonce });
-      return;
-    }
-    if (item.decryptedUrl || inFlightRef.current.has(item.id)) {
-      console.log(`${tag} SKIP — already decrypted or in-flight`);
-      return;
-    }
+    if (!partnerPublicKey) return;
+    if (!item.media_url) return;
+    if (!item.media_key || !item.media_nonce) return;
+    if (item.decryptedUrl || inFlightRef.current.has(item.id)) return;
 
     inFlightRef.current.add(item.id);
-    console.log(`${tag} START decrypt → url=${item.media_url?.slice(-30)} type=${item.type} senderPub=${item.sender_public_key?.slice(0,8) ?? 'null'}`);
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: true } : i));
     try {
       const blob = await getDecryptedBlob(
@@ -354,14 +339,13 @@ export default function RecapCard({
       if (blob) {
         const url = URL.createObjectURL(blob);
         generatedUrlsRef.current.add(url);
-        console.log(`${tag} SUCCESS → blob=${(blob.size/1024).toFixed(1)}KB mime=${blob.type}`);
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, decryptedUrl: url, loading: false } : i));
       } else {
-        console.error(`${tag} FAILED — getDecryptedBlob returned null`);
+        console.error(`[RecapCard][${title}][${item.id?.slice(0,8)}] FAILED — getDecryptedBlob returned null`);
         setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: false } : i));
       }
     } catch (err) {
-      console.error(`${tag} EXCEPTION`, err);
+      console.error(`[RecapCard][${title}][${item.id?.slice(0,8)}] EXCEPTION`, err);
       setItems(prev => prev.map(i => i.id === item.id ? { ...i, loading: false } : i));
       inFlightRef.current.delete(item.id);
     }
@@ -372,7 +356,6 @@ export default function RecapCard({
   // stale-closure bug where items are already decrypted but the effect
   // re-runs with the old state.
   useEffect(() => {
-    console.log(`[RecapCard][${title}] decrypt-trigger — partnerKey=${partnerPublicKey?.slice(0,8) ?? 'MISSING'} items=${validItems.length}`);
     if (!partnerPublicKey || validItems.length === 0) return;
     // Decrypt the first 6 visible thumbnails
     validItems.slice(0, 6).forEach(item => decryptItem(item));

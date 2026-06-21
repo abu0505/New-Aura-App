@@ -43,7 +43,7 @@ import {
 } from '../lib/encryption';
 import { deriveBlockNonce } from '../utils/videoChunker';
 
-const LOG = (...args: unknown[]) => console.log('[VideoChunks]', ...args);
+const LOG = (..._args: any[]) => {};
 const WARN = (...args: unknown[]) => console.warn('[VideoChunks]', ...args);
 const ERR = (...args: unknown[]) => console.error('[VideoChunks]', ...args);
 

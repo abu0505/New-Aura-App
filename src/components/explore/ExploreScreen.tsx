@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { useMedia } from '../../hooks/useMedia';
+import { useVideoChunks } from '../../hooks/useVideoChunks';
+import { Capacitor } from '@capacitor/core';
 
 // Lazy load the sub-screens to preserve codebase architecture
 const MemoriesScreen = lazy(() => import('../memories/MemoriesScreen'));
@@ -12,10 +14,10 @@ const GamesScreen = lazy(() => import('../games/GamesScreen'));
 
 interface ExploreItem {
   id: string;
-  media_url: string;
-  media_key: string;
-  media_nonce: string;
-  sender_public_key: string;
+  media_url: string | null;
+  media_key: string | null;
+  media_nonce: string | null;
+  sender_public_key: string | null;
   type: string;
   created_at: string;
   decryptedUrl?: string;
@@ -26,6 +28,7 @@ export default function ExploreScreen() {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
+  const isNative = Capacitor.isNativePlatform();
 
   const [subView, setSubView] = useState<'grid' | 'gallery' | 'notes' | 'games'>(() => {
     const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
@@ -51,6 +54,19 @@ export default function ExploreScreen() {
     window.addEventListener('stealth-mode-change', handleStealthChange);
     return () => window.removeEventListener('stealth-mode-change', handleStealthChange);
   }, []);
+
+  // Manage bottom nav bar visibility based on subView
+  useEffect(() => {
+    if (subView === 'grid') {
+      document.dispatchEvent(new CustomEvent('show-global-nav'));
+    } else {
+      document.dispatchEvent(new CustomEvent('hide-global-nav'));
+    }
+    return () => {
+      // Restore navigation when switching away from Explore screen
+      document.dispatchEvent(new CustomEvent('show-global-nav'));
+    };
+  }, [subView]);
 
 
   // Fetch random images/videos for the discovery grid
@@ -124,10 +140,10 @@ export default function ExploreScreen() {
   }
 
   return (
-    <div className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24 safe-top lg:px-8 lg:py-6">
+    <div className={`h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24 lg:px-8 lg:py-6 ${isNative ? 'safe-top' : ''}`}>
       {/* Search Header */}
       <div className="px-4 py-3 bg-[var(--bg-primary)] sticky top-0 z-30 lg:px-0 lg:max-w-4xl lg:mx-auto lg:mb-6">
-        <div className="relative flex items-center w-full bg-white/5 rounded-2xl border border-white/10 px-4 py-2.5">
+        <div className="relative flex items-center w-full bg-white/5 rounded-full border border-white/10 px-4 py-2.5">
           <span className="material-symbols-outlined text-white/40 mr-2 text-xl">search</span>
           <input 
             type="text" 
@@ -160,7 +176,7 @@ export default function ExploreScreen() {
           <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
             <span className="material-symbols-outlined text-xl">sticky_note_2</span>
           </div>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Vault</span>
+          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Notes</span>
         </button>
 
         {/* Games */}
@@ -171,7 +187,7 @@ export default function ExploreScreen() {
           <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
             <span className="material-symbols-outlined text-xl">sports_esports</span>
           </div>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Arcade</span>
+          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Games</span>
         </button>
       </div>
 
@@ -188,7 +204,7 @@ export default function ExploreScreen() {
             No memories to explore.
           </div>
         ) : (
-          <div className="grid grid-cols-3 lg:grid-cols-4 gap-1.5 lg:gap-3 rounded-3xl overflow-hidden">
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-1 rounded-3xl overflow-hidden">
             {exploreItems.map((item) => (
               <ExploreGridThumb 
                 key={item.id} 
@@ -246,27 +262,38 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
   const hasDecryptedRef = useRef(false);
   const tag = `[ExploreThumb][${item.id?.slice(0,8)}]`;
 
+  const isChunkedVideo = item.type === 'video' && !item.media_url;
+  const { chunks: videoChunks, loadExistingChunks } = useVideoChunks(isChunkedVideo ? item.id : undefined);
+
+  // Chunked video watcher
+  useEffect(() => {
+    if (!isChunkedVideo || !videoChunks?.length) return;
+    const chunk = videoChunks[0];
+    if (chunk?.blobUrl && chunk.isDecrypted) {
+      setDecryptedUrl(chunk.blobUrl);
+      setLoading(false);
+      hasDecryptedRef.current = true;
+    }
+  }, [isChunkedVideo, videoChunks]);
+
   // Clean up Object URL on unmount or item change
   useEffect(() => {
     setDecryptedUrl(null);
     setLoading(false);
     hasDecryptedRef.current = false;
     return () => {
-      if (decryptedUrlRef.current) {
+      if (decryptedUrlRef.current && !isChunkedVideo) {
         URL.revokeObjectURL(decryptedUrlRef.current);
         decryptedUrlRef.current = null;
       }
     };
-  }, [item.id, item.media_url]);
+  }, [item.id, item.media_url, isChunkedVideo]);
 
   // Handle decryption on viewport entry
-  // NOTE: decryptedUrl intentionally NOT in dep array — it causes observer
-  // teardown/recreate on every state change, breaking decryption.
   useEffect(() => {
     let active = true;
 
-    if (!partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) {
-      console.warn(`${tag} SKIP observer — missing fields`);
+    if (!partnerPublicKey || (!item.media_url && !isChunkedVideo) || !item.media_key || !item.media_nonce) {
       setDecryptionFailed(true);
       return;
     }
@@ -279,35 +306,50 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
       }
 
       hasDecryptedRef.current = true;
-      console.log(`${tag} VISIBLE → starting decrypt type=${item.type}`);
 
       const decrypt = async () => {
         setLoading(true);
         try {
-          const blob = await getDecryptedBlob(
-            item.media_url!,
-            item.media_key!,
-            item.media_nonce!,
-            partnerPublicKey,
-            item.sender_public_key
-          );
-          if (blob && active) {
-            const url = URL.createObjectURL(blob);
-            decryptedUrlRef.current = url;
-            console.log(`${tag} SUCCESS → ${(blob.size/1024).toFixed(1)}KB`);
-            setDecryptedUrl(url);
+          if (isChunkedVideo) {
+            const { data, error } = await supabase
+              .from('video_chunks')
+              .select('chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+              .eq('message_id', item.id)
+              .order('chunk_index', { ascending: true });
+
+            if (error) throw error;
+            if (!data || data.length === 0) {
+              if (active) setDecryptionFailed(true);
+              return;
+            }
+
+            await loadExistingChunks(item.id, data, partnerPublicKey);
             observer.disconnect();
-          } else if (!blob) {
-            console.error(`${tag} FAILED — null blob`);
-            hasDecryptedRef.current = false;
-            setDecryptionFailed(true);
+          } else {
+            const blob = await getDecryptedBlob(
+              item.media_url!,
+              item.media_key!,
+              item.media_nonce!,
+              partnerPublicKey,
+              item.sender_public_key
+            );
+            if (blob && active) {
+              const url = URL.createObjectURL(blob);
+              decryptedUrlRef.current = url;
+              setDecryptedUrl(url);
+              observer.disconnect();
+            } else if (!blob) {
+              console.error(`${tag} FAILED — null blob`);
+              hasDecryptedRef.current = false;
+              setDecryptionFailed(true);
+            }
           }
         } catch (e) {
           console.error(`${tag} EXCEPTION`, e);
           hasDecryptedRef.current = false;
           setDecryptionFailed(true);
         } finally {
-          if (active) setLoading(false);
+          if (active && !isChunkedVideo) setLoading(false);
         }
       };
       decrypt();
@@ -322,7 +364,7 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
       observer.disconnect();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob]);
+  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo]);
 
   if (decryptionFailed) return null;
 

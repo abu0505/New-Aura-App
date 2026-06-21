@@ -660,7 +660,13 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
           {/* TOP APP BAR - Explicit Grid Row 1 */}
           <header className="h-20 z-50 w-full glass-header flex items-center justify-between px-14 border-b border-white/5 relative shrink-0">
             <div className="flex items-center gap-5">
-              <div className="relative">
+              <div 
+                className="relative cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                }}
+              >
                 <div className="w-12 h-12 rounded-full border-2 border-primary/30 p-0.5 overflow-hidden">
                   <EncryptedImage
                      url={partner.avatar_url}
@@ -675,7 +681,13 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-background rounded-full shadow-lg"></div>
                 )}
               </div>
-              <div>
+              <div
+                className="cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                }}
+              >
                 <div className="flex items-center gap-3">
                   <h2 className="text-xl font-serif text-primary leading-tight">{partner.display_name || 'Your Partner'}</h2>
                 </div>

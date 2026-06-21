@@ -43,7 +43,7 @@ const decryptionSemaphore = new DecryptionSemaphore();
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
-interface ReelItem extends MessageRow {
+export interface ReelItem extends MessageRow {
   decryptedUrl?: string;
   loading?: boolean;
 }
@@ -63,8 +63,108 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
 
   const userId = user?.id;
+
+  // Load favorites
+  useEffect(() => {
+    if (!userId) return;
+    const loadFavorites = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('favorited_message_ids')
+          .eq('id', userId)
+          .single();
+        if (data?.favorited_message_ids) {
+          setFavorites(new Set(data.favorited_message_ids));
+        }
+      } catch (e) {
+        // Fallback to localStorage
+        const saved = localStorage.getItem('aura_favorites');
+        if (saved) {
+          try {
+            setFavorites(new Set(JSON.parse(saved)));
+          } catch {}
+        }
+      }
+    };
+    loadFavorites();
+  }, [userId]);
+
+  // Load saved items
+  useEffect(() => {
+    if (!userId) return;
+    const loadSaved = async () => {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('saved_message_ids')
+          .eq('id', userId)
+          .single();
+        if (data?.saved_message_ids) {
+          setSavedItems(new Set(data.saved_message_ids));
+        }
+      } catch (e) {
+        // Fallback to localStorage
+        const saved = localStorage.getItem('aura_saved');
+        if (saved) {
+          try {
+            setSavedItems(new Set(JSON.parse(saved)));
+          } catch {}
+        }
+      }
+    };
+    loadSaved();
+  }, [userId]);
+
+  // Favorite toggle
+  const toggleFavorite = useCallback(async (id: string) => {
+    if (!userId) return;
+    setFavorites(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+        navigator.vibrate?.(10);
+      }
+      const arr = Array.from(next);
+      localStorage.setItem('aura_favorites', JSON.stringify(arr));
+      supabase
+        .from('profiles')
+        .update({ favorited_message_ids: arr })
+        .eq('id', userId)
+        .then();
+      return next;
+    });
+  }, [userId]);
+
+  // Saved toggle
+  const toggleSaved = useCallback(async (id: string) => {
+    if (!userId) return;
+    setSavedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        toast.success('Removed from saved items!');
+      } else {
+        next.add(id);
+        navigator.vibrate?.(10);
+        toast.success('Saved to profile! 🔖');
+      }
+      const arr = Array.from(next);
+      localStorage.setItem('aura_saved', JSON.stringify(arr));
+      supabase
+        .from('profiles')
+        .update({ saved_message_ids: arr })
+        .eq('id', userId)
+        .then();
+      return next;
+    });
+  }, [userId]);
   const partnerId = partner?.id;
   const partnerPublicKey = partner?.public_key || '';
 
@@ -83,7 +183,6 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
       });
 
       const decryptablePool = filterDecryptableItems(pool as ReelItem[]);
-      console.log(`[ReelsScreen] Pool: ${pool.length} total → ${decryptablePool.length} decryptable`);
 
       // Apply weighted reservoir sampling algorithm
       const weighted = buildReelQueue(decryptablePool, 60);
@@ -101,7 +200,6 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
     setLoadingMore(true);
     try {
       let excludeIds = [...seenVideoIds.current, ...seenImageIds.current];
-      console.log(`[ReelsScreen] Fetching more reels... Excluded videos: ${seenVideoIds.current.length}, images: ${seenImageIds.current.length}`);
 
       let pool = await fetchDiverseMediaPool(
         userId,
@@ -124,7 +222,6 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
       const needsImageReset = fetchedImages.length < minImages && seenImageIds.current.length > 0;
 
       if (needsVideoReset || needsImageReset) {
-        console.log(`[ReelsScreen] Scarcity detected: Resetting seen caches. Video reset: ${needsVideoReset}, Image reset: ${needsImageReset}`);
 
         if (needsVideoReset) {
           // Keep only a scaled fraction to avoid repeats on small/large libraries
@@ -182,12 +279,10 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
     if (activeReel.type === 'video') {
       if (!seenVideoIds.current.includes(activeReel.id)) {
         seenVideoIds.current.push(activeReel.id);
-        console.log(`[ReelsScreen] Marked video seen: ${activeReel.id}`);
       }
     } else {
       if (!seenImageIds.current.includes(activeReel.id)) {
         seenImageIds.current.push(activeReel.id);
-        console.log(`[ReelsScreen] Marked image seen: ${activeReel.id}`);
       }
     }
   }, [activeIndex, reels]);
@@ -255,6 +350,10 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
                 isActive={idx === activeIndex && isActive}
                 isNearby={isNearby}
                 partnerPublicKey={partnerPublicKey}
+                isLiked={favorites.has(item.id)}
+                onLikeToggle={() => toggleFavorite(item.id)}
+                isSaved={savedItems.has(item.id)}
+                onSaveToggle={() => toggleSaved(item.id)}
               />
             );
           })}
@@ -273,9 +372,13 @@ interface ReelCardProps {
   isActive: boolean;
   isNearby: boolean;
   partnerPublicKey: string;
+  isLiked: boolean;
+  onLikeToggle: () => void;
+  isSaved: boolean;
+  onSaveToggle: () => void;
 }
 
-const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPublicKey }: ReelCardProps) {
+export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPublicKey, isLiked, onLikeToggle, isSaved, onSaveToggle }: ReelCardProps) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
@@ -289,7 +392,6 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
   const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [decryptionFailed, setDecryptionFailed] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isHeldPaused, setIsHeldPaused] = useState(false);
@@ -315,12 +417,11 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
     if (!isChunkedVideo || !videoChunks?.length) return;
     const chunk = videoChunks[0];
     if (chunk?.blobUrl && chunk.isDecrypted) {
-      console.log(`${tag} Chunked video blob ready`);
       setDecryptedUrl(chunk.blobUrl);
       setLoading(false);
       hasDecryptedRef.current = true;
     }
-  }, [isChunkedVideo, videoChunks, tag]);
+  }, [isChunkedVideo, videoChunks]);
 
   // Play/pause active video
   useEffect(() => {
@@ -362,7 +463,6 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
     // ── Path A: Chunked video — fetch chunks from DB, decrypt & assemble ──
     if (isChunkedVideo) {
       if (!item.media_key || !item.media_nonce) {
-        console.warn(`${tag} SKIP chunked video — missing media_key/nonce`);
         setDecryptionFailed(true);
         return;
       }
@@ -370,7 +470,6 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
       let active = true;
       hasDecryptedRef.current = true;
       setLoading(true);
-      console.log(`${tag} ACTIVE/NEARBY → loading chunked video`);
 
       (async () => {
         try {
@@ -382,12 +481,10 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
 
           if (error) throw error;
           if (!data || data.length === 0) {
-            console.warn(`${tag} No chunks found in DB`);
             if (active) setDecryptionFailed(true);
             return;
           }
 
-          console.log(`${tag} Found ${data.length} chunks, loading...`);
           await loadExistingChunks(item.id, data, partnerPublicKey);
           // The useEffect watching videoChunks will pick up the blobUrl
         } catch (e) {
@@ -405,13 +502,11 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
 
     // ── Path B: Regular media — download media_url and decrypt ──
     if (!item.media_url || !item.media_key || !item.media_nonce) {
-      console.warn(`${tag} SKIP — missing fields`);
       return;
     }
 
     let active = true;
     hasDecryptedRef.current = true;
-    console.log(`${tag} ACTIVE/NEARBY → decrypt type=${item.type}`);
 
     const decrypt = async () => {
       setLoading(true);
@@ -440,7 +535,6 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
         if (active) {
           if (retryCountRef.current < 1) {
             retryCountRef.current += 1;
-            console.log(`${tag} Retrying decryption in 2 seconds...`);
             setTimeout(() => {
               if (active) decrypt();
             }, 2000);
@@ -475,7 +569,9 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
       // Double tap detected (Like)
       clearTimeout(clickTimeoutRef.current);
       clickTimeoutRef.current = null;
-      setIsLiked(true);
+      if (!isLiked) {
+        onLikeToggle();
+      }
       setShowHeartBurst(true);
       setTimeout(() => setShowHeartBurst(false), 800);
       navigator.vibrate?.([10, 30]);
@@ -733,7 +829,16 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
         {/* Slide Details (Left Bottom - Spans full width) */}
         <div className="absolute bottom-28 lg:bottom-8 left-4 right-4 z-20 flex flex-col gap-2 pointer-events-none">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full border border-white/20 overflow-hidden bg-white/5 flex items-center justify-center flex-shrink-0">
+            <div 
+              className={`w-14 h-14 rounded-full border border-white/20 overflow-hidden bg-white/5 flex items-center justify-center flex-shrink-0 ${!isMine ? 'pointer-events-auto cursor-pointer active:scale-95 hover:opacity-85 transition-all' : ''}`}
+              onClick={(e) => {
+                if (!isMine) {
+                  e.stopPropagation();
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                }
+              }}
+            >
               <EncryptedImage
                 url={avatarUrl || null}
                 encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
@@ -744,13 +849,21 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
               />
             </div>
             <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-white tracking-wide">{senderName}</span>
-                <span className="text-[10px] text-white/40">•</span>
-                <span className="text-[10px] text-white/40">
-                  {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
-                </span>
-              </div>
+              <span 
+                className={`text-sm font-bold text-white tracking-wide ${!isMine ? 'pointer-events-auto cursor-pointer hover:underline' : ''}`}
+                onClick={(e) => {
+                  if (!isMine) {
+                    e.stopPropagation();
+                    document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                    document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                  }
+                }}
+              >
+                {senderName}
+              </span>
+              <span className="text-[10px] text-white/45 mt-0.5">
+                {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })}
+              </span>
             </div>
           </div>
           <p className="text-xs text-white/80 leading-relaxed font-sans line-clamp-3 pl-1">
@@ -762,7 +875,7 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
         <div className="absolute bottom-[240px] lg:bottom-[170px] right-4 z-20 flex flex-col items-center gap-6 no-pause-trigger">
           {/* Like */}
           <button
-            onClick={(e) => { e.stopPropagation(); setIsLiked(!isLiked); }}
+            onClick={(e) => { e.stopPropagation(); onLikeToggle(); }}
             className="flex flex-col items-center gap-1.5"
           >
             <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isLiked ? 'text-rose-500' : 'text-white'}`}>
@@ -791,6 +904,17 @@ const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPubli
               <span className="material-symbols-outlined text-2xl">send</span>
             </div>
             <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Share</span>
+          </button>
+
+          {/* Save */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onSaveToggle(); }}
+            className="flex flex-col items-center gap-1.5"
+          >
+            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isSaved ? 'text-[var(--gold)]' : 'text-white'}`}>
+              <span className={`material-symbols-outlined text-2xl ${isSaved ? 'fill-current' : ''}`}>bookmark</span>
+            </div>
+            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{isSaved ? 'Saved' : 'Save'}</span>
           </button>
         </div>
 

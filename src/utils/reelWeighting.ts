@@ -223,19 +223,19 @@ export function buildReelQueue<T extends WeightedMediaItem>(
   const videos = pool.filter(item => item.type === 'video');
   const images = pool.filter(item => item.type !== 'video');
 
-  // Calculate video target using a randomized 40% to 70% target (4 to 7 videos per 10 items)
+  // Calculate video target using a randomized 30% to 50% target (3 to 5 videos per 10 items)
   let videoTarget = 0;
   let remaining = limit;
   while (remaining > 0) {
     const chunkSize = Math.min(remaining, 10);
     if (chunkSize === 10) {
-      // Out of 10 items, randomly show 4, 5, 6, or 7 videos
-      const v = Math.floor(Math.random() * 4) + 4;
+      // Out of 10 items, randomly show 3, 4, or 5 videos (average 4.0 i.e. 40%)
+      const v = Math.floor(Math.random() * 3) + 3;
       videoTarget += v;
     } else {
       // Scale proportionally for remaining items
-      const minV = Math.ceil(0.4 * chunkSize);
-      const maxV = Math.floor(0.7 * chunkSize);
+      const minV = Math.ceil(0.3 * chunkSize);
+      const maxV = Math.floor(0.5 * chunkSize);
       const v = Math.floor(Math.random() * (maxV - minV + 1)) + minV;
       videoTarget += v;
     }
@@ -253,8 +253,6 @@ export function buildReelQueue<T extends WeightedMediaItem>(
     imageTarget = images.length;
     videoTarget = Math.min(videos.length, videoTarget + deficit);
   }
-
-  console.log(`[buildReelQueue] Pool split: total=${pool.length} (v=${videos.length}, i=${images.length}) | Target: v=${videoTarget}, i=${imageTarget} (limit=${limit})`);
 
   const sampledVideos = weightedReservoirSample(videos, videoTarget);
   const sampledImages = weightedReservoirSample(images, imageTarget);

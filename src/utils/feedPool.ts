@@ -30,7 +30,6 @@ export async function fetchDiverseMediaPool(
   excludeIds: string[] = []
 ): Promise<any[]> {
   try {
-    console.log(`[feedPool] Fetching diverse media pool via RPC... limits: recent=${recentLimit}, middle=${middleLimit}, old=${oldLimit} | Excluded=${excludeIds.length}`);
     const { data, error } = await supabase.rpc('get_diverse_reels_pool', {
       u_id: userId,
       p_id: partnerId,
@@ -43,7 +42,6 @@ export async function fetchDiverseMediaPool(
     if (error) throw error;
 
     if (data) {
-      console.log(`[feedPool] RPC success → fetched ${data.length} total items`);
       return data;
     }
   } catch (e) {
@@ -80,11 +78,7 @@ export async function fetchDiverseMediaPool(
     buildFallbackQuery(undefined, threeMonthsAgo, oldLimit),
   ]);
 
-  // Log bucket sizes for debugging
-  const rCount = recentResult.data?.length ?? 0;
-  const mCount = middleResult.data?.length ?? 0;
-  const oCount = oldResult.data?.length ?? 0;
-  console.log(`[feedPool] Buckets → recent=${rCount}, middle=${mCount}, old=${oCount}`);
+
 
   if (recentResult.error) console.error('[feedPool] Recent bucket error:', recentResult.error);
   if (middleResult.error) console.error('[feedPool] Middle bucket error:', middleResult.error);

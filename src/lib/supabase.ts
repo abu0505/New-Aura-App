@@ -21,10 +21,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     fetch: async (url, options) => {
-      console.log('[SUPABASE FETCH START] URL:', url, 'OPTIONS:', JSON.stringify(options));
       try {
         const response = await fetch(url, options);
-        console.log('[SUPABASE FETCH SUCCESS] Status:', response.status, response.statusText);
         return response;
       } catch (err: any) {
         console.error('[SUPABASE FETCH ERROR] URL:', url);

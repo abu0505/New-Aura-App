@@ -605,7 +605,13 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             >
               <span className="material-symbols-outlined text-xl">arrow_back</span>
             </button>
-            <div className="relative">
+            <div 
+              className="relative cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+              onClick={() => {
+                document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                document.dispatchEvent(new CustomEvent('view-partner-profile'));
+              }}
+            >
               <div className="w-10 h-10 rounded-full border-2 border-primary/30 overflow-hidden bg-aura-bg-elevated">
                 <EncryptedImage
                   url={partner.avatar_url}
@@ -620,7 +626,13 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-aura-success rounded-full border-2 border-background"></div>
               )}
             </div>
-            <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div 
+              className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+              onClick={() => {
+                document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                document.dispatchEvent(new CustomEvent('view-partner-profile'));
+              }}
+            >
               <div className="flex flex-col min-w-0 w-full">
                 <SlidingName
                   name={partner.display_name || 'Your Partner'}

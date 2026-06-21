@@ -1,12 +1,43 @@
 # App Version
-VersionName: 2.5.4
-VersionCode: 40
-Date: 2026-06-20
+VersionName: 2.6.7
+VersionCode: 50
+Date: 2026-06-21
 Changes:
+- Implemented swipable full-screen vertical Reels swiper for profile posts, liked items, and saved items, supporting liking, saving, E2EE decryption, and chunked video rendering.
+- Changed Liked and Saved tabs sorting to list most recently liked/saved media first (based on index in profiles arrays) rather than their original message creation dates.
+
+## Previous Versions
+### Version 2.6.6 (Code 49)
+- Changed Liked and Saved tabs sorting to list most recently liked/saved media first (based on index in profiles arrays) rather than their original message creation dates.
+### Version 2.6.5 (Code 48)
+- Center-aligned and distributed Profile screen tabs equally across the tab bar using flex justify-around within a constrained container.
+### Version 2.6.4 (Code 47)
+- Increased average video probability in Home/Reels feeds from 35% to 40% (range of 3 to 5 videos per 10 items).
+- Fixed critical mobile bottom navigation bar visibility bug: nav bar is now properly restored when exiting subviews (Notes, Gallery, Games) back to Explore grid.
+### Version 2.6.3 (Code 46)
+- Added a "Saved" posts & reels feature with profile tab view, interactive home feed bookmark button, and reels action save button.
+### Version 2.6.2 (Code 45)
+- Changed the video probability in home feed / reels queues to an average of 35% (range of 2 to 5 videos per 10 items).
+### Version 2.6.1 (Code 44)
+- Made partner's avatar and name clickable everywhere (Chat header, Chat message bubbles, Reels, Home Feed posts, and Desktop status sidebar) to open partner's profile.
+- Removed the Profile Owner switcher toggle tab from the top of the Profile screen.
+- Reduced the post/liked grids gap on desktop Profile screen from 3 to 1 (`gap-1`) to match mobile layout density.
+### Version 2.6.0 (Code 43)
+- Added a Profile owner toggle to switch between "My Profile" and "Wife's Profile" to view the partner's posts, notes, and liked items.
+- Fixed video rendering in Profile and Explore grid thumbnails by implementing decryption for encrypted chunked videos.
+- Dynamic tab labels and stats tracking on Profile page depending on selected owner.
+### Version 2.5.6 (Code 42)
+- Implemented a "Liked" tab on the Profile screen next to the existing posts grid, displaying all posts and reels liked by the user.
+- Persisted likes from the Reels screen to the Supabase database (`profiles.favorited_message_ids`) and local storage.
+- Synchronized double-tap and heart icon interactions on Reels to update the persisted likes state.
+### Version 2.5.5 (Code 41)
+- Cleaned up verbose test-phase console logs across key components (HomeScreen, ReelsScreen, ExploreScreen, ProfileScreen, RecapCard) to improve runtime performance.
+- Muted database query logging ([SUPABASE FETCH START/SUCCESS]) to protect sensitive Authorization and E2EE headers from logging in plaintext.
+- Muted debug traces in Media decryption (useMedia cache hits, key-unwrap steps, ciphertext sizes) and video chunking hooks (useVideoChunks).
+### Version 2.5.4 (Code 40)
 - Resized chat screen header call button/dropdown icon from 24px to 20px (`text-[20px]`) in both MobileChatScreen and DesktopChatScreen to match sibling icons.
 - Resized chat header more_vert icon from 24px to 20px (`text-[20px]`) for design and size consistency.
 
-## Previous Versions
 ### Version 2.5.3 (Code 39)
 - Adjusted Reels card layout: enlarged bottom-left avatar container size to 56px (w-14 h-14) for enhanced visibility.
 - Pushed right-side action controls container up to `bottom-[240px]` (mobile) and `lg:bottom-[170px]` (desktop) to prevent overlap with the full-width profile details container.

@@ -454,17 +454,13 @@ export function useMedia() {
 
     // Fix 4.1: Return cached blob immediately
     if (decryptedBlobCache.has(url)) {
-      console.log(`${tag} CACHE HIT ✓ size=${(decryptedBlobCache.get(url)!.size/1024).toFixed(1)}KB`);
       return decryptedBlobCache.get(url)!;
     }
 
     // Fix 4.1: If same URL is already being decrypted, wait for that promise
     if (inflightDecryptions.has(url)) {
-      console.log(`${tag} IN-FLIGHT — waiting on existing promise`);
       return inflightDecryptions.get(url)!;
     }
-
-    console.log(`${tag} START — type=${mediaType} senderPub=${senderPublicKey?.slice(0,8) ?? 'null'} partnerPub=${partnerPublicKey?.slice(0,8)}`);
 
     const decryptionPromise = (async (): Promise<Blob | null> => {
       try {
@@ -476,7 +472,6 @@ export function useMedia() {
         // For a message I RECEIVED: "theirPublicKey" slot = partner's sender_public_key
         const isMine = senderPublicKey === encodeBase64(myKeyPair.publicKey);
         const primaryKey = isMine ? partnerPublicKey : (senderPublicKey || partnerPublicKey);
-        console.log(`${tag} key-unwrap — isMine=${isMine} primaryKey=${primaryKey?.slice(0,8)}`);
 
         // Try current partner key and all historical partner keys as fallbacks
         const passedHistory = partnerKeyHistory || [];
@@ -485,7 +480,6 @@ export function useMedia() {
         const fallbackKeys = combinedHistory
           .filter(k => k !== primaryKey)
           .map(k => decodeBase64(k));
-        console.log(`${tag} key-unwrap — fallbacks=${fallbackKeys.length}`);
 
         const symmetricKey = decryptFileKeyWithFallback(
           encryptedKey, keyNonce,
@@ -496,9 +490,7 @@ export function useMedia() {
           console.error(`${tag} FAILED — could not unwrap symmetric key. Tried primaryKey=${primaryKey?.slice(0,8)} + ${fallbackKeys.length} fallbacks.`);
           throw new Error('Failed to unwrap key');
         }
-        console.log(`${tag} key-unwrap SUCCESS → symmetricKey OK`);
 
-        console.log(`${tag} fetching ciphertext from Cloudinary...`);
         const response = await fetch(url);
         if (!response.ok) {
           console.error(`${tag} fetch FAILED — HTTP ${response.status} ${response.statusText}`);
@@ -506,14 +498,12 @@ export function useMedia() {
         }
         const arrayBuffer = await response.arrayBuffer();
         const ciphertext = new Uint8Array(arrayBuffer);
-        console.log(`${tag} fetched ${(ciphertext.length/1024).toFixed(1)}KB ciphertext`);
 
         const decrypted = decryptFile(ciphertext, symmetricKey, decodeBase64(mediaNonce));
         if (!decrypted) {
           console.error(`${tag} FAILED — decryptFile returned null (wrong key or corrupted data?)`);
           return null;
         }
-        console.log(`${tag} decryptFile OK → ${(decrypted.length/1024).toFixed(1)}KB plaintext. First bytes: ${Array.from(decrypted.slice(0,4)).map(b=>b.toString(16).padStart(2,'0')).join(' ')}`);
 
         // ── Magic-byte sniffing for reliable MIME detection ─────────────────────
         // Mobile cameras (iOS QuickTime, Android WebM) produce containers that
@@ -649,7 +639,6 @@ export function useMedia() {
 
     try {
       // ── Step 1: Get video duration ──────────────────────────────────────
-      console.log('[useMedia] processAndUploadChunked START msg=' + messageId + ' file=' + fileToChunk.name + ' size=' + (fileToChunk.size / 1024 / 1024).toFixed(2) + 'MB');
       onStatusChange('Preparing video...');
       let videoDuration = durationOverride;
       if (videoDuration === undefined) {
@@ -698,7 +687,6 @@ export function useMedia() {
       // On Android native, encrypt all blocks in JS, then hand off to
       // WorkManager for upload + DB insert. This survives app kill.
       if (isNativeUploadAvailable()) {
-        console.log('[useMedia] Native background upload available — encrypting all blocks...');
         onStatusChange('Encrypting video...');
 
         const encryptedChunks: Uint8Array[] = [];
@@ -722,8 +710,6 @@ export function useMedia() {
         );
 
         if (enqueued) {
-          console.log('[useMedia] All ' + totalChunks + ' chunks enqueued to native WorkManager ✓');
-          
           // Poll the status of native workers until they are complete or failed
           let isDone = false;
           let retryCount = 0;
@@ -754,9 +740,7 @@ export function useMedia() {
               onStatusChange('Uploading in background...');
             }
           }
-          console.log('[useMedia] Native background upload completed successfully ✓');
         } else {
-          console.warn('[useMedia] Native enqueue failed — falling back to JS upload path');
           // Fall through to JS path below
           await jsUploadPath();
         }
@@ -797,7 +781,6 @@ export function useMedia() {
           onStatusChange(`Uploading ${blockIndex + 1}/${totalChunks}...`);
           const chunkUrl = await uploadBlock(encryptedBlock);
           // 4. IMMEDIATELY insert DB row → triggers realtime on receiver
-          console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' uploaded → ' + chunkUrl + ' | inserting DB row...');
           const { error } = await supabase.from('video_chunks').insert({
             message_id: messageId,
             chunk_index: blockIndex,
@@ -810,7 +793,6 @@ export function useMedia() {
             receiver_id: receiverId,
           });
           if (error) throw new Error(`DB insert failed for block ${blockIndex}: ${error.message}`);
-          console.log('[useMedia] Block ' + blockIndex + '/' + (totalChunks - 1) + ' DB row inserted ✓');
         };
 
         // Parallel upload with limit 5 (prevent connection saturation)
@@ -826,7 +808,6 @@ export function useMedia() {
       }
 
       onStatusChange('Done');
-      console.log('[useMedia] processAndUploadChunked COMPLETE msg=' + messageId + ' totalChunks=' + totalChunks);
       return true;
     } catch (err) {
       console.error('[processAndUploadChunked] Error:', err);

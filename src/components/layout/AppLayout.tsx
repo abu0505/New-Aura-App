@@ -66,6 +66,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
   const changeTab = (t: Tab) => {
     onTabChange(t);
     setForceNav(false);
+    setHideNav(false);
   };
 
   // ── Streak badge helpers ──────────────────────────────────────────────────
@@ -204,7 +205,10 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
                 {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Reels</span>}
               </button>
               <button
-                onClick={() => onTabChange('profile')}
+                onClick={() => {
+                  onTabChange('profile');
+                  document.dispatchEvent(new CustomEvent('view-my-profile'));
+                }}
                 className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'profile' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Profile"
               >
@@ -291,7 +295,10 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
 
           {/* Profile */}
           <button
-            onClick={() => changeTab('profile')}
+            onClick={() => {
+              changeTab('profile');
+              document.dispatchEvent(new CustomEvent('view-my-profile'));
+            }}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'profile' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
             <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'profile' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'profile' ? "'FILL' 1" : "" }}>person</span>
