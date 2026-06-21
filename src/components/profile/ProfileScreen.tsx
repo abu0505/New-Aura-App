@@ -500,7 +500,7 @@ export default function ProfileScreen() {
           >
             <span className="material-symbols-outlined text-[20px]">grid_on</span>
             <span className="text-xs font-bold uppercase tracking-wider">
-              {profileOwner === 'me' ? 'My Posts' : `${partnerDisplayName}'s Posts`}
+              {profileOwner === 'me' ? 'My Posts' : 'Posts'}
             </span>
             {activeTab === 'posts' && (
               <motion.div

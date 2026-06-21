@@ -10,9 +10,10 @@ interface AppLayoutProps {
   activeTab: Tab;
   onTabChange: (tab: Tab) => void;
   children: React.ReactNode;
+  hasUnreadChat?: boolean;
 }
 
-export default function AppLayout({ activeTab, onTabChange, children }: AppLayoutProps) {
+export default function AppLayout({ activeTab, onTabChange, children, hasUnreadChat = false }: AppLayoutProps) {
   const { signOut } = useAuth();
   const { streakCount, streakAtRisk, mySnappedToday, partnerSnappedToday } = useStreak();
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -173,10 +174,10 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
               )}
             </div>
 
-            <nav className={`flex flex-col gap-8 flex-grow ${isSidebarShrunk ? 'items-center w-full' : ''}`}>
+            <nav className={`flex flex-col gap-5 flex-grow ${isSidebarShrunk ? 'items-center w-full' : ''}`}>
               <button
                 onClick={() => onTabChange('home')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'home' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0 py-3' : activeTab === 'home' ? 'py-5 px-6' : 'py-3 px-4'} ${activeTab === 'home' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Home"
               >
                 <Home className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'home' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
@@ -184,7 +185,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
               </button>
               <button
                 onClick={() => onTabChange('explore')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'explore' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0 py-3' : activeTab === 'explore' ? 'py-5 px-6' : 'py-3 px-4'} ${activeTab === 'explore' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Search"
               >
                 <Search className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'explore' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
@@ -192,15 +193,25 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
               </button>
               <button
                 onClick={() => onTabChange('chat')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`relative flex items-center gap-4 font-medium transition-all duration-300 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0 py-3' : activeTab === 'chat' ? 'py-5 px-6' : 'py-3 px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Chat"
               >
-                <MessageCircle className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'chat' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
+                <div className="relative">
+                  <MessageCircle className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'chat' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
+                  {hasUnreadChat && activeTab !== 'chat' && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[var(--gold)] border-2 border-[var(--bg-primary)] shadow-[0_0_6px_var(--gold)]"
+                    />
+                  )}
+                </div>
                 {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>}
               </button>
               <button
                 onClick={() => onTabChange('reels')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'reels' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0 py-3' : activeTab === 'reels' ? 'py-5 px-6' : 'py-3 px-4'} ${activeTab === 'reels' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Reels"
               >
                 <ReelsIcon className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'reels' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
@@ -211,7 +222,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
                   onTabChange('profile');
                   document.dispatchEvent(new CustomEvent('view-my-profile'));
                 }}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'profile' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0 py-3' : activeTab === 'profile' ? 'py-5 px-6' : 'py-3 px-4'} ${activeTab === 'profile' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Profile"
               >
                 <User className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'profile' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
@@ -280,9 +291,19 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
           {/* Chat */}
           <button
             onClick={() => changeTab('chat')}
-            className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'chat' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
+            className={`relative flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'chat' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <MessageCircle className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'chat' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
+            <div className="relative">
+              <MessageCircle className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'chat' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
+              {hasUnreadChat && activeTab !== 'chat' && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[var(--gold)] border-2 border-[var(--bg-secondary)] shadow-[0_0_8px_var(--gold)]"
+                />
+              )}
+            </div>
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Chat</span>
           </button>
  

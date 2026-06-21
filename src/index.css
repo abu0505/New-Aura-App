@@ -607,3 +607,26 @@ a {
 .material-symbols-outlined.medium {
   --material-wght: 350;
 }
+
+/* Fix sonner custom toast wrapper background spillover on mobile */
+.aura-custom-toast-wrapper,
+.aura-custom-toast-wrapper [data-content] {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  --normal-bg: transparent !important;
+  --normal-border: transparent !important;
+}
+
+.aura-custom-toast-wrapper {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-left: auto !important;
+}

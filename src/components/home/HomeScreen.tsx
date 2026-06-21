@@ -20,7 +20,11 @@ import type { Database } from '../../integrations/supabase/types';
 import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import { toast } from 'sonner';
 import { useChat } from '../../hooks/useChat';
-import { Plus, Search, MessageCircle, Heart, MessageSquare, Send, Bookmark, Volume2, VolumeX, Lock, Maximize2, Minimize2 } from 'lucide-react';
+import { useStreak } from '../../contexts/StreakContext';
+import { useCall } from '../../contexts/CallContext';
+import { NOTE_COLORS } from '../../hooks/useNotes';
+import type { NoteColor, ChecklistItem } from '../../hooks/useNotes';
+import { Plus, Search, MessageCircle, Heart, MessageSquare, Send, Bookmark, Volume2, VolumeX, Lock, Maximize2, Minimize2, Phone, Video, Trophy, Flame, Camera, Zap, Coffee } from 'lucide-react';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -31,6 +35,34 @@ interface FeedPostItem extends MessageRow {
 }
 
 import type { Tab } from '../../types';
+
+// Helper to strip HTML tags for plain text card previews
+const getPlainText = (html: string) => {
+  if (!html) return '';
+  let text = html
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li>/gi, ' • ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<h1>/gi, '\n')
+    .replace(/<\/h1>/gi, '\n')
+    .replace(/<h2>/gi, '\n')
+    .replace(/<\/h2>/gi, '\n')
+    .replace(/<h3>/gi, '\n')
+    .replace(/<\/h3>/gi, '\n');
+  
+  text = text.replace(/<[^>]*>/g, '');
+  
+  return text
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+};
 
 interface HomeScreenProps {
   onTabChange: (tab: Tab) => void;
@@ -44,36 +76,95 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
   const { getDecryptedBlob } = useMedia();
   const isNative = Capacitor.isNativePlatform();
 
-  // Direct chat widget state
+  const [isMobileGrid, setIsMobileGrid] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileGrid(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const userId = user?.id;
+  const partnerId = partner?.id;
+
+  // Direct chat widget state for sending nudges
   const {
-    messages: chatMessages,
-    sendMessage: sendChatMessage,
-    loading: chatLoading
+    sendMessage: sendChatMessage
   } = useChat(
     partner?.id,
     partner?.public_key,
     partner?.key_history?.map((h: any) => h.public_key)
   );
 
-  const [chatInput, setChatInput] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { streakCount, longestStreak, streakAtRisk, mySnappedToday, partnerSnappedToday } = useStreak();
+  const { initiateCall } = useCall();
+  const [totalMediaCount, setTotalMediaCount] = useState<number | null>(null);
+  const [sharedNotes, setSharedNotes] = useState<any[]>([]);
 
-  // Scroll to bottom on new messages
+  // Fetch total media shared in the vault
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [chatMessages]);
+    if (!userId || !partnerId) return;
+    supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .or(`sender_id.eq.${userId},sender_id.eq.${partnerId}`)
+      .in('type', ['image', 'video'])
+      .then(({ count }) => {
+        if (count !== null) setTotalMediaCount(count);
+      });
+  }, [userId, partnerId]);
 
-  const handleSendChat = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim()) return;
+  // Fetch dashboard notes
+  useEffect(() => {
+    if (!userId) return;
+    const fetchNotes = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*')
+          .eq('couple_id', 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
+          .eq('is_trashed', false)
+          .order('is_pinned', { ascending: false })
+          .order('updated_at', { ascending: false })
+          .limit(2);
+        if (!error && data) {
+          setSharedNotes(data);
+        }
+      } catch (err) {
+        console.error('Error fetching dashboard notes:', err);
+      }
+    };
+    fetchNotes();
+
+    const channel = supabase
+      .channel('dashboard-notes-channel')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notes', filter: 'couple_id=eq.aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+        () => {
+          fetchNotes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
+  const sendNudge = async (nudgeText: string) => {
+    if (!partner?.id) return;
+    const toastId = toast.loading(`Sending "${nudgeText}"...`);
     try {
-      await sendChatMessage(chatInput.trim());
-      setChatInput('');
+      await sendChatMessage(nudgeText);
+      toast.success('Sent to chat! 💖', { id: toastId });
     } catch (error) {
-      console.error('Failed to send direct message:', error);
-      toast.error('Failed to send message');
+      console.error('Failed to send nudge:', error);
+      toast.error('Failed to send nudge', { id: toastId });
     }
   };
 
@@ -192,9 +283,6 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
       return next;
     });
   };
-
-  const userId = user?.id;
-  const partnerId = partner?.id;
 
   // Fetch feed items using weighted algorithm
   // We fetch a larger pool then apply weighted reservoir sampling so
@@ -519,7 +607,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                 <p className="text-sm font-medium text-white/50">No photos or videos shared yet</p>
                 <p className="text-xs text-white/30 mt-1">Send media in chat to see them in your shared feed.</p>
               </div>
-            ) : (
+            ) : isMobileGrid ? (
               <div className="space-y-6">
                 {feedItems.map((item) => (
                   <FeedPost
@@ -534,32 +622,73 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                   />
                 ))}
               </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-6 items-start">
+                <div className="flex flex-col gap-6">
+                  {feedItems.filter((_, idx) => idx % 2 === 0).map((item) => (
+                    <FeedPost
+                      key={item.id}
+                      item={item}
+                      partnerPublicKey={partner?.public_key || ''}
+                      getDecryptedBlob={getDecryptedBlob}
+                      isLiked={favorites.has(item.id)}
+                      onLikeToggle={() => toggleFavorite(item.id)}
+                      isSaved={savedItems.has(item.id)}
+                      onSaveToggle={() => toggleSaved(item.id)}
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-col gap-6">
+                  {feedItems.filter((_, idx) => idx % 2 === 1).map((item) => (
+                    <FeedPost
+                      key={item.id}
+                      item={item}
+                      partnerPublicKey={partner?.public_key || ''}
+                      getDecryptedBlob={getDecryptedBlob}
+                      isLiked={favorites.has(item.id)}
+                      onLikeToggle={() => toggleFavorite(item.id)}
+                      isSaved={savedItems.has(item.id)}
+                      onSaveToggle={() => toggleSaved(item.id)}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
-        <aside className="hidden lg:flex flex-col sticky top-[73px] h-[calc(100vh-105px)] max-h-[calc(100vh-105px)] overflow-hidden w-full bg-[var(--bg-secondary)] border border-white/5 rounded-3xl shadow-xl flex-none">
-          {/* Combined Header: Partner Profile Only */}
+        <aside className="hidden lg:flex flex-col sticky top-[73px] h-[calc(100vh-105px)] max-h-[calc(100vh-105px)] overflow-y-auto scrollbar-hide w-full bg-[var(--bg-secondary)] border border-white/5 rounded-3xl shadow-xl flex-none p-6 space-y-6">
+          {/* Partner Identity Header */}
           {partner && (
-            <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.01] flex-none">
-              <div
-                className={`w-10 h-10 rounded-full p-0.5 border-2 ${partner.is_online ? 'border-emerald-500/70 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border-white/10'} overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all`}
+            <div className="flex flex-col items-center text-center pb-6 border-b border-white/5 space-y-4">
+              {/* Pulsing Avatar Container */}
+              <div 
+                className="relative cursor-pointer hover:opacity-90 active:scale-95 transition-all group"
                 onClick={() => {
                   document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
                   document.dispatchEvent(new CustomEvent('view-partner-profile'));
                 }}
               >
-                <EncryptedImage
-                  url={partner.avatar_url}
-                  encryptionKey={partner.avatar_key}
-                  nonce={partner.avatar_nonce}
-                  alt={partner.display_name || 'Partner'}
-                  className="w-full h-full object-cover rounded-full"
-                  placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
-                />
+                {/* Glowing ring */}
+                <div className={`absolute -inset-1 rounded-full blur-md opacity-40 group-hover:opacity-70 transition-all ${partner.is_online ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`}></div>
+                <div className={`relative w-20 h-20 rounded-full p-0.5 border-2 ${partner.is_online ? 'border-emerald-500/70' : 'border-amber-500/40'} overflow-hidden`}>
+                  <EncryptedImage
+                    url={partner.avatar_url}
+                    encryptionKey={partner.avatar_key}
+                    nonce={partner.avatar_nonce}
+                    alt={partner.display_name || 'Partner'}
+                    className="w-full h-full object-cover rounded-full"
+                    placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
+                  />
+                </div>
+                {partner.is_online && (
+                  <span className="absolute bottom-1 right-1 w-4 h-4 bg-emerald-500 border-2 border-[var(--bg-secondary)] rounded-full shadow-lg"></span>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
+
+              {/* Identity details */}
+              <div>
                 <h3
-                  className="font-serif italic text-sm text-white cursor-pointer hover:underline truncate"
+                  className="font-serif italic text-lg text-white hover:underline cursor-pointer"
                   onClick={() => {
                     document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
                     document.dispatchEvent(new CustomEvent('view-partner-profile'));
@@ -567,129 +696,183 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                 >
                   {partner.display_name || 'Your Partner'}
                 </h3>
-                <div className="text-[9px] font-label uppercase tracking-widest text-white/40 flex items-center gap-1.5 mt-0.5">
+                <div className="text-[10px] font-label uppercase tracking-widest text-white/40 flex items-center justify-center gap-1.5 mt-1">
                   <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
                 </div>
+              </div>
+
+              {/* Call Controls */}
+              <div className="flex items-center gap-3 w-full px-4">
+                <button
+                  onClick={() => initiateCall(false)}
+                  className="flex-1 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  title="Voice Call"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  Voice Call
+                </button>
+                <button
+                  onClick={() => initiateCall(true)}
+                  className="flex-1 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 text-xs font-semibold tracking-wider flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  title="Video Call"
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  Video Call
+                </button>
               </div>
             </div>
           )}
 
-          {/* Chat Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 scrollbar-hide">
-            {chatLoading ? (
-              <div className="h-full flex flex-col items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
-                <span className="text-[8px] uppercase tracking-widest text-white/30">Decrypting messages...</span>
+          {/* Together Statistics Dashboard */}
+          <div className="space-y-4">
+            <h4 className="font-serif italic text-sm text-[var(--gold)] tracking-wide">Together Space</h4>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Active Streak Card */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden group">
+                <div className="absolute -right-2 -bottom-2 opacity-5 group-hover:scale-120 transition-transform">
+                  <Flame className="w-12 h-12 text-[var(--gold)]" />
+                </div>
+                <Flame className={`w-5 h-5 text-orange-500 ${streakAtRisk ? 'animate-bounce' : ''}`} />
+                <span className="text-lg font-bold text-white leading-tight">{streakCount} Days</span>
+                <span className="text-[8px] uppercase tracking-wider text-white/40">
+                  {streakAtRisk 
+                    ? '⏳ At Risk!' 
+                    : mySnappedToday && partnerSnappedToday
+                      ? 'Safe Today! 🔥'
+                      : mySnappedToday
+                        ? 'Waiting for Partner'
+                        : partnerSnappedToday
+                          ? 'Waiting for You'
+                          : 'Not Snapped Today'}
+                </span>
               </div>
-            ) : chatMessages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                <p className="text-[10px] text-white/30 italic font-medium">No messages yet. Say hi to your partner! 👋</p>
+
+              {/* Longest Streak Card */}
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden group">
+                <div className="absolute -right-2 -bottom-2 opacity-5 group-hover:scale-120 transition-transform">
+                  <Trophy className="w-12 h-12 text-[var(--gold)]" />
+                </div>
+                <Trophy className="w-5 h-5 text-[var(--gold)]" />
+                <span className="text-lg font-bold text-white leading-tight">{longestStreak} Days</span>
+                <span className="text-[8px] uppercase tracking-wider text-white/40">Best Record</span>
               </div>
-            ) : (
-              chatMessages.slice(-20).map((msg) => {
-                const isMine = msg.sender_id === user?.id;
-                const msgType = msg.type as string;
-                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            </div>
 
-                // Helper to render content type
-                let contentNode = null;
-                if (msg.is_deleted_for_everyone) {
-                  contentNode = <span className="italic text-white/30">This message was deleted</span>;
-                } else if (msgType === 'text') {
-                  contentNode = <span>{msg.decrypted_content}</span>;
-                } else if (msgType === 'image') {
-                  contentNode = <span className="italic flex items-center gap-1">📷 Photo {msg.decrypted_content ? `• ${msg.decrypted_content}` : ''}</span>;
-                } else if (msgType === 'video') {
-                  contentNode = <span className="italic flex items-center gap-1">🎥 Video {msg.decrypted_content ? `• ${msg.decrypted_content}` : ''}</span>;
-                } else if (msgType === 'sticker') {
-                  contentNode = <span className="italic flex items-center gap-1">🖼️ Sticker</span>;
-                } else if (msgType === 'audio') {
-                  contentNode = <span className="italic flex items-center gap-1">🎵 Voice Note</span>;
-                } else if (msgType === 'location') {
-                  contentNode = <span className="italic flex items-center gap-1">📍 Location</span>;
-                } else if (msgType === 'call_log') {
-                  contentNode = <span className="italic flex items-center gap-1">📞 Call Log</span>;
-                } else {
-                  contentNode = <span>{msg.decrypted_content || '[Media Message]'}</span>;
-                }
-
-                // Render ticks for own messages
-                let tickIcon = null;
-                if (isMine && !msg.is_deleted_for_everyone) {
-                  if (msg.is_read) {
-                    tickIcon = (
-                      <span className="material-symbols-outlined text-[12px] text-sky-500 font-bold ml-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        done_all
-                      </span>
-                    );
-                  } else if (msg.is_delivered) {
-                    tickIcon = (
-                      <span className="material-symbols-outlined text-[12px] text-black/40 font-bold ml-0.5">
-                        done_all
-                      </span>
-                    );
-                  } else {
-                    tickIcon = (
-                      <span className="material-symbols-outlined text-[12px] text-black/30 font-bold ml-0.5">
-                        check
-                      </span>
-                    );
-                  }
-                }
-
-                return (
-                  <div key={msg.id} className={`flex w-full mb-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div
-                      className={`relative max-w-[75%] px-4 py-2.5 flex flex-col gap-1 rounded-2xl ${isMine
-                          ? 'rounded-tr-sm bg-[var(--gold)] text-[var(--bg-primary)] shadow-[0_4px_15px_rgba(201,169,110,0.15)]'
-                          : 'rounded-tl-sm text-[#E4E1ED]'
-                        }`}
-                      style={
-                        !isMine
-                          ? {
-                            background: 'rgba(19, 19, 30, 0.8)',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(201, 169, 110, 0.08)',
-                          }
-                          : undefined
-                      }
-                    >
-                      <div className="font-body text-xs whitespace-pre-wrap break-words leading-relaxed relative z-10">
-                        {contentNode}
-                      </div>
-                      <div
-                        className={`flex items-center justify-end gap-1 text-[9px] select-none mt-1 ${isMine ? 'text-[var(--bg-primary)]/60' : 'text-[#8A8799]'
-                          }`}
-                      >
-                        <span>{time}</span>
-                        {isMine && tickIcon}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-            <div ref={messagesEndRef} />
+            {/* Total Shared Media Counter */}
+            <div className="bg-white/[0.01] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[var(--gold)]/10 flex items-center justify-center text-[var(--gold)]">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] uppercase tracking-wider text-white/40">Media Shared</span>
+                  <span className="text-xs font-semibold text-white/90">E2E Vault Capsule</span>
+                </div>
+              </div>
+              <span className="text-sm font-bold text-[var(--gold)] bg-[var(--gold)]/10 px-2.5 py-1 rounded-lg">
+                {totalMediaCount !== null ? `${totalMediaCount} files` : 'Loading...'}
+              </span>
+            </div>
           </div>
 
-          {/* Input Form */}
-          <form onSubmit={handleSendChat} className="p-3 border-t border-white/5 flex gap-2 flex-none bg-white/[0.01]">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 bg-white/5 hover:bg-white/10 focus:bg-white/10 focus:ring-1 focus:ring-[var(--gold)]/30 text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-all placeholder-white/30 border border-white/5"
-            />
-            <button
-              type="submit"
-              disabled={!chatInput.trim()}
-              className="w-8 h-8 rounded-xl bg-[var(--gold)] text-black flex items-center justify-center hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:hover:opacity-40 transition-all shadow-md shrink-0"
-            >
-              <Send className="w-3.5 h-3.5" />
-            </button>
-          </form>
+          {/* Quick Love Nudges */}
+          <div className="space-y-3">
+            <h4 className="font-serif italic text-sm text-[var(--gold)] tracking-wide">Quick Nudges</h4>
+            <div className="grid grid-cols-4 gap-2">
+              <button
+                onClick={() => sendNudge('❤️ sent a heart')}
+                className="py-2.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl text-lg flex items-center justify-center active:scale-90 transition-transform"
+                title="Send Heart"
+              >
+                ❤️
+              </button>
+              <button
+                onClick={() => sendNudge('🤗 sent a hug')}
+                className="py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl text-lg flex items-center justify-center active:scale-90 transition-transform"
+                title="Send Hug"
+              >
+                🤗
+              </button>
+              <button
+                onClick={() => sendNudge('☕ sent a coffee request')}
+                className="py-2.5 bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-xl text-lg flex items-center justify-center active:scale-90 transition-transform"
+                title="Send Coffee Request"
+              >
+                <Coffee className="w-5 h-5 text-yellow-500" />
+              </button>
+              <button
+                onClick={() => sendNudge('⚡ sent a nudge')}
+                className="py-2.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 rounded-xl text-lg flex items-center justify-center active:scale-90 transition-transform"
+                title="Send Nudge"
+              >
+                <Zap className="w-5 h-5 text-sky-400 fill-sky-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Shared Note Board */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-serif italic text-sm text-[var(--gold)] tracking-wide">Shared Notepad</h4>
+              <button
+                onClick={() => {
+                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'explore' }));
+                  toast.info('Opening notes area under Search/Explore tab!');
+                }}
+                className="text-[9px] font-bold uppercase tracking-widest text-[var(--gold)] hover:underline"
+              >
+                Manage Notes
+              </button>
+            </div>
+
+            {sharedNotes.length === 0 ? (
+              <div className="border border-dashed border-white/5 rounded-2xl p-4 text-center text-white/30 text-[10px] bg-white/[0.01]">
+                No active notes or checklists.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sharedNotes.map((note) => {
+                  const bgStyle = NOTE_COLORS[note.color as NoteColor] || NOTE_COLORS.default;
+                  const hasChecklist = note.is_checklist && note.checklist?.length > 0;
+
+                  return (
+                    <div
+                      key={note.id}
+                      style={{ backgroundColor: bgStyle.bg, borderColor: bgStyle.border }}
+                      className="border rounded-2xl p-3.5 space-y-2 text-left relative group overflow-hidden"
+                    >
+                      <h5 className="font-sans font-bold text-xs text-white truncate pr-4">
+                        {note.title || 'Untitled Note'}
+                      </h5>
+                      
+                      {hasChecklist ? (
+                        <div className="space-y-1">
+                          {note.checklist.slice(0, 3).map((item: ChecklistItem) => (
+                            <div key={item.id} className="flex items-center gap-2 text-[10px] text-white/70">
+                              <span className={`w-2 h-2 rounded-sm border ${item.checked ? 'bg-[var(--gold)] border-[var(--gold)]' : 'border-white/20'}`} />
+                              <span className={item.checked ? 'line-through opacity-45' : ''}>{item.text}</span>
+                            </div>
+                          ))}
+                          {note.checklist.length > 3 && (
+                            <span className="text-[8px] text-white/30 block">+ {note.checklist.length - 3} more items</span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-[10px] text-white/60 line-clamp-3 leading-relaxed whitespace-pre-wrap">
+                          {getPlainText(note.content)}
+                        </p>
+                      )}
+                      
+                      <div className="text-[7px] text-white/30 flex items-center justify-between pt-1">
+                        <span>Updated {new Date(note.updated_at).toLocaleDateString()}</span>
+                        {note.is_pinned && <span className="text-[var(--gold)]">★ Pinned</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </aside>
       </div>
 
@@ -746,29 +929,65 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   const { isMuted, toggleMute } = useGlobalMute();
   const [isPaused, setIsPaused] = useState(false);
   const [showStatusIcon, setShowStatusIcon] = useState<'play' | 'pause' | null>(null);
+  const [showHeartBurst, setShowHeartBurst] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleVideoTap = () => {
-    const video = videoRef.current;
-    if (!video) return;
+  const handleMediaTap = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('.no-pause-trigger')) {
+      return;
+    }
 
-    if (video.paused) {
-      video.play().catch(() => { });
-      setIsPaused(false);
-      setShowStatusIcon('play');
-      setTimeout(() => setShowStatusIcon(null), 500);
+    if (clickTimeoutRef.current) {
+      // Double click/tap detected (Like)
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+      if (!isLiked) {
+        onLikeToggle();
+      }
+      setShowHeartBurst(true);
+      setTimeout(() => setShowHeartBurst(false), 800);
+      navigator.vibrate?.([10, 30]);
     } else {
-      video.pause();
-      setIsPaused(true);
-      setShowStatusIcon('pause');
-      setTimeout(() => setShowStatusIcon(null), 500);
+      // Start single click/tap timer
+      clickTimeoutRef.current = setTimeout(() => {
+        clickTimeoutRef.current = null;
+        if (item.type === 'video' && videoRef.current) {
+          const video = videoRef.current;
+          if (video.paused) {
+            video.play().catch(() => { });
+            setIsPaused(false);
+            setShowStatusIcon('play');
+            setTimeout(() => setShowStatusIcon(null), 500);
+          } else {
+            video.pause();
+            setIsPaused(true);
+            setShowStatusIcon('pause');
+            setTimeout(() => setShowStatusIcon(null), 500);
+          }
+        }
+      }, 250);
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleMediaLoad = (width: number, height: number) => {
-    if (window.innerWidth < 1024 && width > 0 && height > 0) {
+    if (width > 0 && height > 0) {
       const ratio = height / width;
-      if (ratio < 1.5) {
+      // On desktop/tablet (2-column layout width >= 768), always show the original aspect ratio
+      // to let cards size themselves dynamically and stack in a clean masonry/bento grid.
+      // On mobile, show original ratio for landscape/square media, but keep 2:3 for tall media.
+      if (window.innerWidth >= 768) {
+        setShowOriginalRatio(true);
+      } else if (ratio < 1.5) {
         setShowOriginalRatio(true);
       }
     }
@@ -1022,7 +1241,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   return (
     <div
       ref={postRef}
-      className="bg-transparent border-none rounded-none shadow-none w-full flex flex-col mx-auto pb-6 border-b border-white/5 last:border-b-0 lg:bg-[var(--bg-secondary)] lg:border lg:border-white/5 lg:rounded-3xl lg:overflow-hidden lg:shadow-xl lg:w-auto lg:h-[calc((100vh-57px)*0.85)] lg:max-h-[calc((100vh-57px)*0.85)] lg:aspect-[2/3] lg:pb-0"
+      className="bg-transparent border-none rounded-none shadow-none w-full flex flex-col mx-auto pb-6 border-b border-white/5 last:border-b-0 lg:bg-[var(--bg-secondary)] lg:border lg:border-white/5 lg:rounded-3xl lg:overflow-hidden lg:shadow-xl lg:w-full lg:h-auto lg:pb-0"
     >
       {/* Post Header */}
       <div className="py-3 px-0 lg:p-4 flex items-center justify-between flex-none">
@@ -1070,9 +1289,12 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       </div>
 
       {/* Post Media Container */}
-      <div className={`relative flex-1 -mx-4 w-[calc(100%+2rem)] lg:mx-0 lg:w-full bg-black/40 flex items-center justify-center overflow-hidden border-y border-white/5 ${
-        showOriginalRatio && decryptedUrl ? 'aspect-auto h-auto' : 'aspect-[2/3] lg:aspect-auto'
-      }`}>
+      <div 
+        onClick={handleMediaTap}
+        className={`relative -mx-4 w-[calc(100%+2rem)] lg:mx-0 lg:w-full bg-black/40 flex items-center justify-center overflow-hidden border-y border-white/5 cursor-pointer ${
+          showOriginalRatio && decryptedUrl ? 'aspect-auto h-auto flex-none' : 'aspect-[2/3] lg:aspect-[2/3] flex-1'
+        }`}
+      >
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -1080,10 +1302,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           </div>
         ) : decryptedUrl ? (
           item.type === 'video' ? (
-            <div
-              className="relative w-full h-full cursor-pointer flex items-center justify-center"
-              onClick={handleVideoTap}
-            >
+            <div className="relative w-full h-full flex items-center justify-center">
               <video
                 ref={videoRef}
                 src={decryptedUrl}
@@ -1158,6 +1377,21 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
             <span className="text-[9px] uppercase tracking-widest font-bold">Securely Encrypted</span>
           </div>
         )}
+
+        {/* Double-Tap Heart Burst */}
+        <AnimatePresence>
+          {showHeartBurst && (
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: [0.5, 1.2, 1], opacity: [0, 0.9, 0] }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute z-30 pointer-events-none text-rose-500"
+            >
+              <span className="material-symbols-outlined text-8xl fill-current drop-shadow-2xl">favorite</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Post Actions Bar */}

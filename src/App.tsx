@@ -3,6 +3,9 @@ import { useTabNotification } from './hooks/useTabNotification';
 import { useAuth } from './contexts/AuthContext';
 import LoginScreen from './components/auth/LoginScreen';
 import type { Tab } from './types';
+import { toast } from 'sonner';
+import { realtimeHub } from './lib/realtimeHub';
+import { MessageCircle } from 'lucide-react';
 const ChatScreen = lazy(() => import('./components/chat/ChatScreen'));
 const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
 const ReelsScreen = lazy(() => import('./components/reels/ReelsScreen'));
@@ -20,7 +23,6 @@ import { initNativePushNotifications, cleanupNativePushNotifications } from './l
 import { Capacitor } from '@capacitor/core';
 import { AppLockProvider, useAppLock } from './contexts/AppLockContext';
 import AppLockModal from './components/auth/AppLockModal';
-import { realtimeHub } from './lib/realtimeHub';
 import ThemeProvider from './components/common/ThemeProvider';
 import { App as CapacitorApp } from '@capacitor/app';
 import { MediaFoldersProvider } from './contexts/MediaFoldersContext';
@@ -36,11 +38,20 @@ function InnerApp({
   session, 
   partner,
 }: any) {
+  const { isLocked, hasAppPin, isLoading } = useAppLock();
+  const isLockedRef = useRef(isLocked);
+  useEffect(() => {
+    isLockedRef.current = isLocked;
+  }, [isLocked]);
+
   const { streakCount, showCelebration, setShowCelebration } = useStreak();
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
     return isStealth ? 'explore' : 'home';
   });
+  const [hasUnreadChat, setHasUnreadChat] = useState(false);
+  const activeTabRef = useRef<Tab>(activeTab);
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
 
   // Listen for stealth mode changes to sync state
   useEffect(() => {
@@ -70,6 +81,93 @@ function InnerApp({
 
   // ── Global Tab Badge: runs on ALL pages, not just chat ──
   useTabNotification();
+
+  // ── In-app toast + unread dot when new message arrives outside chat ──
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const unsubscribe = realtimeHub.on('messages', (payload) => {
+      if (payload.eventType !== 'INSERT') return;
+      const row = payload.new as any;
+      // Only care about messages received by us (not sent by us) & not reel uploads
+      if (row.receiver_id !== session.user.id) return;
+      if (row.is_reel_upload) return;
+      // If user is already on chat tab — no toast/dot needed
+      if (activeTabRef.current === 'chat') return;
+      // If app is locked — do not show the toast notification (but still mark unread dot)
+      if (isLockedRef.current) {
+        setHasUnreadChat(true);
+        return;
+      }
+      // Mark unread dot
+      setHasUnreadChat(true);
+      // Show toast at top-right
+      toast.custom(
+        (id) => (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'rgba(19,19,30,0.96)',
+              backdropFilter: 'blur(16px)',
+              border: '1px solid rgba(201,169,110,0.25)',
+              borderRadius: '16px',
+              padding: '12px 16px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+              minWidth: '240px',
+              maxWidth: '320px',
+              cursor: 'pointer',
+            }}
+            onClick={() => {
+              toast.dismiss(id);
+              setActiveTab('chat');
+              setHasUnreadChat(false);
+            }}
+          >
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--gold), var(--gold-deep))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: '0 0 12px rgba(201,169,110,0.4)',
+              }}
+            >
+              <MessageCircle size={18} color="#2a1e00" strokeWidth={2.5} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: 'var(--gold)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>New Message</p>
+              <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'rgba(240,237,232,0.6)', letterSpacing: '0.02em' }}>Tap to open chat →</p>
+            </div>
+          </div>
+        ),
+        {
+          position: 'top-right',
+          duration: 5000,
+          className: 'aura-custom-toast-wrapper',
+          style: {
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+            padding: 0,
+            width: 'auto',
+          }
+        }
+      );
+    });
+    return () => unsubscribe();
+  }, [session?.user?.id]);
+
+  // Clear unread dot when user navigates to chat
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      setHasUnreadChat(false);
+    }
+  }, [activeTab]);
 
   const { trackMyStatus, untrackMyStatus, partnerPresence } = usePresenceChannel(partner?.id || null);
   useOnlineStatus(trackMyStatus, untrackMyStatus, activeTab);
@@ -141,7 +239,6 @@ function InnerApp({
     last_seen: effectiveLastSeen,
   } : partner;
 
-  const { isLocked, hasAppPin, isLoading } = useAppLock();
   const { encryptionStatus } = useAuth();
 
   // Handle push notification setup silently
@@ -270,7 +367,7 @@ function InnerApp({
         />
         <AppLockModal />
       <KeySetupModal />
-      <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper}>
+      <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} hasUnreadChat={hasUnreadChat}>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center bg-background w-full h-full">
             <p className="text-primary/50 uppercase tracking-widest text-xs animate-pulse">Loading...</p>

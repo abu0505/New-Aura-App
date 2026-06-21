@@ -19,7 +19,7 @@ import type { ChatMessage } from '../../hooks/useChat';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmojiText } from '../common/PremiumEmoji';
 import { useAutocompletePhrases } from '../../hooks/useAutocompletePhrases';
-import { Mic, Image, Play, PlusCircle, Send, Smile, Camera } from 'lucide-react';
+import { Mic, Image, PlusCircle, Send, Smile, Camera } from 'lucide-react';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
@@ -1160,14 +1160,6 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 </button>
 
                 <button
-                  onClick={() => setIsGifPickerOpen(true)}
-                  className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
-                  title="GIF"
-                >
-                  <Play className="w-5 h-5" />
-                </button>
-
-                <button
                   onClick={() => setIsAttachmentOpen(true)}
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="More"
@@ -1272,25 +1264,6 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
               </motion.div>
             )}
 
-            {isGifPickerOpen && (
-              <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                className="fixed bottom-0 left-0 right-0 z-[60] h-1/2"
-              >
-                <GifPicker
-                  onSelect={(gif) => {
-                    // Send as a dedicated 'gif' type message. 
-                    // No encryption needed for public Tenor URLs, but we keep the structure consistent.
-                    onSend('', { url: gif.url, media_key: '', media_nonce: '', type: 'gif' }, replyingTo?.id);
-                    if (onCancelReply) onCancelReply();
-                    setIsGifPickerOpen(false);
-                  }}
-                  onClose={() => setIsGifPickerOpen(false)}
-                />
-              </motion.div>
-            )}
           </AnimatePresence>
         </>,
         document.body

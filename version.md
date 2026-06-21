@@ -1,11 +1,63 @@
 # App Version
-VersionName: 2.9.1
-VersionCode: 64
+VersionName: 2.9.19
+VersionCode: 82
 Date: 2026-06-21
 Changes:
-- Unlocked message input and chat functionality during background media sharing and video processing, allowing users to converse normally while large files upload.
+- Cleaned up profile screen tab labels: changed the tab label from displaying the partner's name ("Wife's Posts") to a simpler "Posts" label when viewing the partner's profile page.
 
 ## Previous Versions
+### Version 2.9.18 (Code 81)
+- Added double-tap/double-click to like feature for feed posts on the HomeScreen, featuring a premium animated heart burst overlay effect and custom click delay to separate media play/pause from like triggers.
+
+### Version 2.9.17 (Code 80)
+- Fixed desktop Home Feed post layout to render as a clean Pinterest-style masonry grid. Removed the viewport constraint in aspect ratio detection to allow media to scale to its native aspect ratio on desktop, and eliminated vertical container stretching (removed flex-1 constraint when original ratio is active) to completely resolve top/bottom black bars and empty spacing inside cards.
+
+### Version 2.9.16 (Code 79)
+- Refactored the HomeScreen 2-column post layout on desktop viewports to use a dynamic masonry grid layout. This allows columns to stack post cards of uneven heights without leaving empty vertical gaps, while preserving correct chronological order.
+
+### Version 2.9.15 (Code 78)
+- Suppressed new message in-app toast notifications from appearing while the app is locked or on the PIN entry screen, resolving visual privacy leaks before app access is granted.
+
+### Version 2.9.14 (Code 77)
+- Overhauled the HomeScreen post feed layout from a single vertical column to a 2-column grid on desktop and larger viewports. Adjusted the FeedPost card to adapt fluidly to the column widths (w-full, h-auto, aspect-[2/3]) instead of restricting it to viewport height limits.
+
+### Version 2.9.13 (Code 76)
+- Fixed a rendering issue in the Shared Notepad on the Home Feed where Tiptap HTML tags (like `<p>`, `<h1>`, etc.) were displayed as raw text inside note preview cards, by introducing a `getPlainText` HTML stripper.
+
+### Version 2.9.12 (Code 75)
+- Refined desktop sidebar spacing by reducing the gap between navigation tabs from 8 to 5 (`gap-5`).
+
+### Version 2.9.11 (Code 74)
+- Added dynamic scaling for active navigation sidebar buttons on desktop: active buttons now show with py-5 and px-6 padding.
+- Shifted the GIF entry point from the main input action bar into the "+" (attachment options) menu for all viewports.
+
+### Version 2.9.10 (Code 73)
+- Fully cleaned up internal sonner wrapper container layout ([data-content]) by forcing width, background, borders, and margins to inherit transparency and fit content size.
+
+### Version 2.9.9 (Code 72)
+- Re-aligned the custom top-right toast to sit flush with the right viewport edge (with padding) and set space to sit on the left of the toast.
+
+### Version 2.9.8 (Code 71)
+- Implemented robust class-based CSS styling override for the custom toast container, completely eliminating wrapper background leakage on mobile viewports.
+
+### Version 2.9.7 (Code 70)
+- Fixed toast notification UI bug on mobile where the default sonner wrapper background extended beyond the rounded custom toast card.
+
+### Version 2.9.6 (Code 69)
+- Resolved unused import and unused state warnings (`Zap`, `Coffee`, `mySnappedToday`, `partnerSnappedToday`) on the HomeScreen by rendering the `Zap` and `Coffee` Lucide icons in the nudge buttons and implementing detailed descriptive text for the active streak card.
+### Version 2.9.5 (Code 68)
+- Replaced the redundant chat widget on the desktop Home feed sidebar with a beautiful, premium "Together Space" Partner Dashboard. The dashboard includes live call controls, interactive streak status, trophy milestones, total shared vault media counters, quick love emoji nudges, and a real-time synchronized couple notepad/checklist widget.
+
+### Version 2.9.4 (Code 67)
+- Fixed an auto-scroll bug on the HomeScreen where the side chat widget's scrollIntoView caused the entire home feed to scroll down when landing or receiving new messages.
+
+### Version 2.9.3 (Code 66)
+- Fixed duplicate import of `realtimeHub` in [App.tsx](file:///c:/D%20drive%20D/College%20Detailed%20Projects/ai%20projects/client/new-social-media-app/src/App.tsx) causing build problems.
+
+### Version 2.9.2 (Code 65)
+- Added in-app new message toast notification (top-right) that appears when the user is online but not on the chat page — shows a gold-accented card with "New Message" and "Tap to open chat →". Tapping the toast navigates directly to the chat tab.
+- Added animated gold accent dot on the Chat icon in both the mobile bottom navigation bar and the desktop sidebar when unread messages arrive while the user is on another page. The dot pulses subtly and clears automatically when the user opens the chat tab.
+
 ### Version 2.9.0 (Code 63)
 - Implemented smart automated aspect-ratio detection on mobile: if an image or video's original height-to-width ratio is less than 1.5 (meaning it is shorter in height than 2:3, e.g., 4:5, 1:1, or 16:9), it is automatically displayed in its original ratio by default instead of cropping to 2:3.
 ### Version 2.8.9 (Code 62)
