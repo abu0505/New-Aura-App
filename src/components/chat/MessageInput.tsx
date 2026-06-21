@@ -331,8 +331,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
   const handleSend = () => {
     const textToSend = text.trim();
 
-    if ((textToSend || selectedFolderMedia.length > 0 || isUploading) && !disabled) {
-      if (isUploading) return;
+    if ((textToSend || selectedFolderMedia.length > 0) && !disabled) {
       clearTypingTimers();
       onTypingRef.current?.(false);
 
@@ -973,7 +972,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 onClick={handleCameraClick}
                 className="w-full h-full flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                 title="Camera"
-                disabled={disabled || isUploading}
+                disabled={disabled}
               >
                 <Camera className="w-5 h-5" />
               </motion.button>
@@ -987,7 +986,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 onClick={() => setIsEmojiPickerOpen(true)}
                 className="w-full h-full flex items-center justify-center rounded-full text-white transition-all active:scale-90"
                 title="Emoji"
-                disabled={disabled || isUploading}
+                disabled={disabled}
               >
                 <Smile className="w-5 h-5" />
               </motion.button>
@@ -1105,8 +1104,8 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 handleKeyDown(e);
               }}
               onPaste={handlePaste}
-              placeholder={isUploading ? "Securing media..." : "I love you..."}
-              disabled={disabled || isUploading}
+              placeholder="I love you..."
+              disabled={disabled}
               className={`w-full border-none text-sm resize-none focus:ring-0 focus:outline-none scrollbar-hide py-1 leading-normal px-1 relative z-10 ${activeFolderChip
                   ? 'text-transparent caret-white bg-transparent'
                   : 'text-aura-text-primary bg-transparent'
@@ -1136,7 +1135,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
             )}
           </AnimatePresence>
           <AnimatePresence mode="wait">
-            {!text.trim() && !isUploading ? (
+            {!text.trim() ? (
               <motion.div
                 key="media-actions"
                 initial={{ opacity: 0, scale: 0.8, x: 20 }}
@@ -1184,19 +1183,13 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 exit={{ opacity: 0, scale: 0.8, x: -20 }}
                 className="flex items-center"
               >
-                {isUploading ? (
-                  <div className="w-10 h-10 shrink-0 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : (
-                  <button
-                    onClick={handleSend}
-                    disabled={disabled}
-                    className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-primary text-background shadow-glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
-                  >
-                    <Send className="w-4 h-4 fill-current" />
-                  </button>
-                )}
+                <button
+                  onClick={handleSend}
+                  disabled={disabled}
+                  className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-primary text-background shadow-glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
+                >
+                  <Send className="w-4 h-4 fill-current" />
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

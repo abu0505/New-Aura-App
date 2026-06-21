@@ -1,11 +1,13 @@
 # App Version
-VersionName: 2.9.0
-VersionCode: 63
+VersionName: 2.9.1
+VersionCode: 64
 Date: 2026-06-21
 Changes:
-- Implemented smart automated aspect-ratio detection on mobile: if an image or video's original height-to-width ratio is less than 1.5 (meaning it is shorter in height than 2:3, e.g., 4:5, 1:1, or 16:9), it is automatically displayed in its original ratio by default instead of cropping to 2:3.
+- Unlocked message input and chat functionality during background media sharing and video processing, allowing users to converse normally while large files upload.
 
 ## Previous Versions
+### Version 2.9.0 (Code 63)
+- Implemented smart automated aspect-ratio detection on mobile: if an image or video's original height-to-width ratio is less than 1.5 (meaning it is shorter in height than 2:3, e.g., 4:5, 1:1, or 16:9), it is automatically displayed in its original ratio by default instead of cropping to 2:3.
 ### Version 2.8.9 (Code 62)
 - Added aspect ratio toggle button (Maximize2/Minimize2) after the Share button in the post feed to let users view media in its original aspect ratio (aspect-auto/h-auto/object-contain) or crop to fit (2:3 aspect ratio).
 ### Version 2.8.8 (Code 61)
