@@ -6,6 +6,7 @@ import { usePartner } from '../../hooks/usePartner';
 import { useMedia } from '../../hooks/useMedia';
 import { useVideoChunks } from '../../hooks/useVideoChunks';
 import { Capacitor } from '@capacitor/core';
+import { Search } from 'lucide-react';
 
 // Lazy load the sub-screens to preserve codebase architecture
 const MemoriesScreen = lazy(() => import('../memories/MemoriesScreen'));
@@ -144,7 +145,7 @@ export default function ExploreScreen() {
       {/* Search Header */}
       <div className="px-4 py-3 bg-[var(--bg-primary)] sticky top-0 z-30 lg:px-0 lg:max-w-4xl lg:mx-auto lg:mb-6">
         <div className="relative flex items-center w-full bg-white/5 rounded-full border border-white/10 px-4 py-2.5">
-          <span className="material-symbols-outlined text-white/40 mr-2 text-xl">search</span>
+          <Search className="text-white/40 mr-2 w-5 h-5" />
           <input 
             type="text" 
             placeholder="Search moments, topics..."

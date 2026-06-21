@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import QualityChoiceModal from '../chat/QualityChoiceModal';
+import { X, ImagePlus, Trash2 } from 'lucide-react';
 
 interface StoryUploadModalProps {
   isOpen: boolean;
@@ -83,8 +84,8 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
           {/* Header */}
           <div className="px-8 py-6 flex justify-between items-center border-b border-white/5 bg-black/20">
             <h2 className="font-serif italic text-2xl text-[var(--gold)]">New Memory</h2>
-            <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
-              <span className="material-symbols-outlined">close</span>
+            <button onClick={onClose} className="text-white/40 hover:text-white transition-colors flex items-center justify-center">
+              <X size={20} />
             </button>
           </div>
 
@@ -95,7 +96,7 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
                 onClick={() => fileInputRef.current?.click()}
                 className="aspect-square rounded-[2rem] border-2 border-dashed border-[#998f81]/20 bg-black/20 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[rgba(var(--primary-rgb),_0.5)] hover:bg-black/40 transition-all group"
               >
-                <span className="material-symbols-outlined text-5xl text-[#998f81] group-hover:text-[var(--gold)] transition-colors">add_photo_alternate</span>
+                <ImagePlus className="w-12 h-12 text-[#998f81] group-hover:text-[var(--gold)] transition-colors" />
                 <p className="font-label text-xs uppercase tracking-[0.2em] text-[#998f81] group-hover:text-white">Select a visual fragment</p>
                 <input 
                   type="file" 
@@ -116,7 +117,7 @@ export default function StoryUploadModal({ isOpen, onClose, onUploadComplete }: 
                   onClick={() => { setFile(null); setPreview(null); }}
                   className="absolute top-4 right-4 bg-black/60 backdrop-blur-md rounded-full p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <span className="material-symbols-outlined text-sm">delete</span>
+                  <Trash2 className="w-4 h-4 text-white" />
                 </button>
               </div>
             )}

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { usePartner } from '../../hooks/usePartner';
 import SlidingName from '../common/SlidingName';
 import EncryptedImage from '../common/EncryptedImage';
+import { MoreVertical, Plus, Lock, CheckCheck, Image, Video, Type } from 'lucide-react';
 
 import type { Story } from '../../hooks/useStories';
 
@@ -50,7 +51,7 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
           </div>
         </div>
         <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors duration-300 text-[#998f81]">
-          <span className="material-symbols-outlined">more_vert</span>
+          <MoreVertical size={20} />
         </button>
       </header>
 
@@ -67,7 +68,7 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
               <div className="relative w-20 h-20 p-[3px] rounded-full bg-gradient-to-br from-[var(--gold)] to-[var(--gold)] cursor-pointer active:scale-95 transition-transform">
                 <div className="w-full h-full rounded-full bg-[var(--bg-primary)] flex items-center justify-center overflow-hidden relative">
                   <div className="absolute inset-0 bg-white/5"></div>
-                  <span className="material-symbols-outlined text-4xl text-[var(--gold)]">add</span>
+                  <Plus className="w-9 h-9 text-[var(--gold)]" />
                 </div>
               </div>
               <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[#998f81]">Your Story</span>
@@ -122,10 +123,10 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
                      {story.decrypted_content || 'Text Story'}
                    </span>
                 ) : (
-                  <>
-                    <span className="material-symbols-outlined text-3xl text-[rgba(var(--primary-rgb),_0.4)] mb-2 group-hover:scale-110 transition-transform">lock</span>
-                    <span className="font-label text-[9px] uppercase tracking-widest text-[#998f81]/60">Encrypted</span>
-                  </>
+                   <>
+                     <Lock className="w-8 h-8 text-[rgba(var(--primary-rgb),_0.4)] mb-2 group-hover:scale-110 transition-transform" />
+                     <span className="font-label text-[9px] uppercase tracking-widest text-[#998f81]/60">Encrypted</span>
+                   </>
                 )}
                 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
@@ -136,7 +137,7 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
                 </div>
                 {story.is_mine && story.viewed_at && (
                   <div className="absolute top-3 right-3 shadow-2xl flex items-center gap-1.5 bg-[rgba(var(--primary-rgb),_0.2)] backdrop-blur-md px-3 py-1.5 rounded-full border border-[rgba(var(--primary-rgb),_0.4)]">
-                    <span className="material-symbols-outlined text-[10px] text-[var(--gold)]">done_all</span>
+                    <CheckCheck className="w-3.5 h-3.5 text-[var(--gold)]" />
                     <span className="text-[9px] text-[var(--gold)] font-bold tracking-widest uppercase">Seen</span>
                   </div>
                 )}
@@ -169,21 +170,21 @@ export default function MobileStories({ stories, onStoryClick, onAddStory }: Mob
               <div className="flex items-center justify-between w-full max-w-[240px]">
                 <button onClick={onAddStory} className="flex flex-col items-center gap-3 group/btn">
                   <div className="w-14 h-14 rounded-full bg-[var(--bg-primary)] border border-white/5 flex items-center justify-center text-[var(--gold)] group-hover/btn:scale-110 group-hover/btn:bg-[var(--gold)] group-hover/btn:text-[var(--on-accent)] transition-all duration-300">
-                    <span className="material-symbols-outlined">image</span>
+                    <Image size={24} />
                   </div>
                   <span className="font-label text-[9px] font-bold uppercase tracking-widest text-[#998f81] group-hover/btn:text-[var(--gold)]">Gallery</span>
                 </button>
                 
                 <button onClick={onAddStory} className="flex flex-col items-center gap-3 group/btn">
                   <div className="w-14 h-14 rounded-full bg-[var(--bg-primary)] border border-white/5 flex items-center justify-center text-[var(--gold)] group-hover/btn:scale-110 group-hover/btn:bg-[var(--gold)] group-hover/btn:text-[var(--on-accent)] transition-all duration-300">
-                    <span className="material-symbols-outlined">videocam</span>
+                    <Video size={24} />
                   </div>
                   <span className="font-label text-[9px] font-bold uppercase tracking-widest text-[#998f81] group-hover/btn:text-[var(--gold)]">Video</span>
                 </button>
 
                 <button onClick={onAddStory} className="flex flex-col items-center gap-3 group/btn">
                   <div className="w-14 h-14 rounded-full bg-[var(--bg-primary)] border border-white/5 flex items-center justify-center text-[var(--gold)] group-hover/btn:scale-110 group-hover/btn:bg-[var(--gold)] group-hover/btn:text-[var(--on-accent)] transition-all duration-300">
-                    <span className="material-symbols-outlined">title</span>
+                    <Type size={24} />
                   </div>
                   <span className="font-label text-[9px] font-bold uppercase tracking-widest text-[#998f81] group-hover/btn:text-[var(--gold)]">Text</span>
                 </button>

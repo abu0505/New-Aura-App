@@ -19,6 +19,7 @@ import type { ChatMessage } from '../../hooks/useChat';
 import { useAuth } from '../../contexts/AuthContext';
 import { EmojiText } from '../common/PremiumEmoji';
 import { useAutocompletePhrases } from '../../hooks/useAutocompletePhrases';
+import { Mic, Image, Play, PlusCircle, Send, Smile, Camera } from 'lucide-react';
 
 export interface MessageInputHandle {
   handleDroppedFiles: (files: File[]) => void;
@@ -974,7 +975,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 title="Camera"
                 disabled={disabled || isUploading}
               >
-                <span className="material-symbols-outlined text-[24px]">photo_camera</span>
+                <Camera className="w-5 h-5" />
               </motion.button>
             ) : (
               <motion.button
@@ -988,7 +989,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                 title="Emoji"
                 disabled={disabled || isUploading}
               >
-                <span className="material-symbols-outlined text-[24px]">sentiment_satisfied</span>
+                <Smile className="w-5 h-5" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -1148,7 +1149,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="Audio"
                 >
-                  <span className="material-symbols-outlined text-[22px]">mic</span>
+                  <Mic className="w-5 h-5" />
                 </button>
 
                 <button
@@ -1156,7 +1157,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="Media"
                 >
-                  <span className="material-symbols-outlined text-[22px]">perm_media</span>
+                  <Image className="w-5 h-5" />
                 </button>
 
                 <button
@@ -1164,7 +1165,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="GIF"
                 >
-                  <span className="material-symbols-outlined text-[22px]">gif_box</span>
+                  <Play className="w-5 h-5" />
                 </button>
 
                 <button
@@ -1172,7 +1173,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                   className="w-9 h-9 shrink-0 flex items-center justify-center rounded-full text-aura-text-secondary/60 hover:text-primary transition-all active:scale-90"
                   title="More"
                 >
-                  <span className="material-symbols-outlined text-[22px]">add_circle</span>
+                  <PlusCircle className="w-5 h-5" />
                 </button>
               </motion.div>
             ) : (
@@ -1193,7 +1194,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
                     disabled={disabled}
                     className="w-10 h-10 shrink-0 flex items-center justify-center rounded-full bg-primary text-background shadow-glow-gold hover:scale-105 active:scale-95 transition-all duration-300"
                   >
-                    <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                    <Send className="w-4 h-4 fill-current" />
                   </button>
                 )}
               </motion.div>

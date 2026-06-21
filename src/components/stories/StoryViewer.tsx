@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import type { Story } from '../../hooks/useStories';
+import { X } from 'lucide-react';
 
 interface StoryViewerProps {
   isOpen: boolean;
@@ -167,8 +168,8 @@ export default function StoryViewer({
             ))}
           </div>
 
-          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-[var(--gold)] bg-black/20 backdrop-blur-md rounded-full p-2 hover:bg-black/40 transition-all active:scale-95">
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-[var(--gold)] bg-black/20 backdrop-blur-md rounded-full p-2 hover:bg-black/40 transition-all active:scale-95 flex items-center justify-center">
+            <X size={20} />
           </button>
         </header>
 

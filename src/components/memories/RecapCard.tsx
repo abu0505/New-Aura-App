@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedia } from '../../hooks/useMedia';
 import type { Database } from '../../integrations/supabase/types';
+import { X } from 'lucide-react';
+import { CurvyChevronLeft, CurvyChevronRight } from '../common/CustomIcons';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -68,9 +70,9 @@ function RecapViewer({ items, initialIndex, title, subtitle, iconName, onClose }
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all"
+          className="p-2 rounded-full bg-white/10 text-white/70 hover:bg-white/20 hover:text-white transition-all flex items-center justify-center"
         >
-          <span className="material-symbols-outlined text-xl">close</span>
+          <X size={20} />
         </button>
       </div>
 
@@ -127,17 +129,17 @@ function RecapViewer({ items, initialIndex, title, subtitle, iconName, onClose }
         {currentIndex > 0 && (
           <button
             onClick={goPrev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 backdrop-blur text-white/70 hover:text-white hover:bg-black/70 transition-all"
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 backdrop-blur text-white/70 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
           >
-            <span className="material-symbols-outlined text-2xl">chevron_left</span>
+            <CurvyChevronLeft size={24} />
           </button>
         )}
         {currentIndex < items.length - 1 && (
           <button
             onClick={goNext}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 backdrop-blur text-white/70 hover:text-white hover:bg-black/70 transition-all"
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 backdrop-blur text-white/70 hover:text-white hover:bg-black/70 transition-all flex items-center justify-center"
           >
-            <span className="material-symbols-outlined text-2xl">chevron_right</span>
+            <CurvyChevronRight size={24} />
           </button>
         )}
       </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
 import { useMedia } from '../../hooks/useMedia';
 import { toast } from 'sonner';
+import { ArrowLeft, ImagePlus, Film, Image, Edit2, Trash2, Sparkles, Lock, Upload } from 'lucide-react';
 
 interface UploadReelScreenProps {
   onBack: () => void;
@@ -130,7 +131,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
           onClick={onBack}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
         >
-          <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+          <ArrowLeft size={20} />
         </button>
         <h1 className="font-serif italic text-xl text-white">Create Reel</h1>
         <div className="w-10 h-10" /> {/* Spacer */}
@@ -163,7 +164,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
                 }`}
               >
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#c9a96e]/20 to-[#f0c27f]/10 flex items-center justify-center text-[var(--gold)]">
-                  <span className="material-symbols-outlined text-4xl">add_photo_alternate</span>
+                  <ImagePlus size={32} />
                 </div>
                 <div className="text-center px-6">
                   <p className="text-sm font-semibold text-white/80">Choose Photo or Video</p>
@@ -184,9 +185,11 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
                 
                 {/* File Details Badge */}
                 <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
-                  <span className="material-symbols-outlined text-[13px] text-[var(--gold)]">
-                    {selectedFile?.type.startsWith('video/') ? 'movie' : 'image'}
-                  </span>
+                  {selectedFile?.type.startsWith('video/') ? (
+                    <Film className="w-3.5 h-3.5 text-[var(--gold)]" />
+                  ) : (
+                    <Image className="w-3.5 h-3.5 text-[var(--gold)]" />
+                  )}
                   <span className="text-[10px] text-white/70 font-semibold uppercase tracking-wider">
                     {selectedFile?.type.startsWith('video/') ? 'Video Reel' : 'Photo Reel'}
                   </span>
@@ -197,7 +200,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white/80 border border-white/10 hover:text-white hover:bg-black/80 transition-all active:scale-95"
                 >
-                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  <Edit2 size={16} />
                 </button>
 
                 {/* Delete/Reset Button */}
@@ -206,7 +209,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
                   className="absolute bottom-4 right-4 w-9 h-9 rounded-full bg-red-500/80 backdrop-blur-md flex items-center justify-center text-white border border-red-500/20 hover:bg-red-500 transition-all active:scale-95"
                   title="Remove file"
                 >
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                  <Trash2 size={18} />
                 </button>
 
                 {/* File size indicator */}
@@ -243,7 +246,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
               <div className="bg-[var(--gold)]/5 border border-[var(--gold)]/10 rounded-2xl p-5 space-y-3 relative overflow-hidden">
                 <div className="absolute -right-8 -top-8 w-24 h-24 bg-[var(--gold)]/5 rounded-full blur-xl pointer-events-none" />
                 <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[20px] text-[var(--gold)]">stars</span>
+                  <Sparkles className="w-5 h-5 text-[var(--gold)]" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--gold)]">Priority Placement</h3>
                 </div>
                 <p className="text-xs text-white/50 leading-relaxed">
@@ -253,7 +256,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
 
               {/* Encryption Notice */}
               <div className="bg-emerald-500/[0.02] border border-emerald-500/10 rounded-2xl p-4 flex items-start gap-3">
-                <span className="material-symbols-outlined text-[18px] text-emerald-400 mt-0.5">lock</span>
+                <Lock className="w-[18px] h-[18px] text-emerald-400 mt-0.5 shrink-0" />
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-emerald-400/90">E2E Encrypted Vault</h4>
                   <p className="text-[11px] text-white/40 leading-normal mt-0.5">
@@ -298,7 +301,7 @@ export default function UploadReelScreen({ onBack }: UploadReelScreenProps) {
                     border: selectedFile ? 'none' : '1px solid rgba(255, 255, 255, 0.05)',
                   }}
                 >
-                  <span className="material-symbols-outlined text-[20px]">upload</span>
+                  <Upload size={20} />
                   Upload to Feed
                 </button>
               )}

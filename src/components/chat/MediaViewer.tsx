@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 import { usePartner } from '../../hooks/usePartner';
 import { toast } from 'sonner';
 import { useMediaFolders } from '../../hooks/useMediaFolders';
+import { CurvyChevronLeft, CurvyChevronRight } from '../common/CustomIcons';
 
 interface MediaItem {
   id: string;
@@ -545,17 +546,17 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
             {currentIndex > 0 && (
               <button 
                 onClick={handlePrev}
-                className="absolute left-4 z-[10001] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all backdrop-blur-sm top-1/2 -translate-y-1/2"
+                className="absolute left-4 z-[10001] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all backdrop-blur-sm top-1/2 -translate-y-1/2 flex items-center justify-center"
               >
-                <span className="material-symbols-outlined text-3xl">chevron_left</span>
+                <CurvyChevronLeft size={30} />
               </button>
             )}
             {currentIndex < allMedia.length - 1 && (
               <button 
                 onClick={handleNext}
-                className="absolute right-4 z-[10001] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all backdrop-blur-sm top-1/2 -translate-y-1/2"
+                className="absolute right-4 z-[10001] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all backdrop-blur-sm top-1/2 -translate-y-1/2 flex items-center justify-center"
               >
-                <span className="material-symbols-outlined text-3xl">chevron_right</span>
+                <CurvyChevronRight size={30} />
               </button>
             )}
           </div>

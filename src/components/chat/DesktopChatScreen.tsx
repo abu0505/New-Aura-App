@@ -27,6 +27,8 @@ import SnapCaptureOverlay from './SnapCaptureOverlay';
 import SnapCaptureConsentModal from './SnapCaptureConsentModal';
 import type { useSnapCapture } from '../../hooks/useSnapCapture';
 import { toast } from 'sonner';
+import { Phone, Camera, MoreVertical, Search, MessageSquare, Pin, User, CheckSquare, BookOpen, ChevronDown } from 'lucide-react';
+import { VideoCallIcon } from '../common/CustomIcons';
 
 
 
@@ -703,54 +705,42 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Mode</span>
                 </div>
               )}
-              <div className="relative" ref={callDropdownRef}>
-                <span 
-                  className="material-symbols-outlined text-[20px] hover:text-primary cursor-pointer transition-colors"
-                  onClick={() => setShowCallDropdown(!showCallDropdown)}
-                >
-                  call
-                </span>
-                {showCallDropdown && (
-                  <div className="absolute right-0 top-full mt-4 w-48 rounded-xl bg-aura-bg-elevated border border-white/5 shadow-2xl glass-panel z-[100] overflow-hidden py-1">
-                    <button
-                      onClick={() => { initiateCall(false); setShowCallDropdown(false); }}
-                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">call</span>
-                      Voice Call
-                    </button>
-                    <button
-                      onClick={() => { initiateCall(true); setShowCallDropdown(false); }}
-                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5 border-t border-white/5"
-                    >
-                      <span className="material-symbols-outlined text-[18px]">videocam</span>
-                      Video Call
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button 
+                onClick={() => initiateCall(false)}
+                className="hover:text-primary cursor-pointer hover:scale-110 active:scale-95 transition-all flex items-center justify-center p-1 text-aura-text-secondary"
+                title="Voice Call"
+              >
+                <Phone className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={() => initiateCall(true)}
+                className="hover:text-primary cursor-pointer hover:scale-110 active:scale-95 transition-all flex items-center justify-center p-1 text-aura-text-secondary"
+                title="Video Call"
+              >
+                <VideoCallIcon className="w-5 h-5" />
+              </button>
               {/* SnapCapture Button */}
               <button
                 onClick={() => snapCapture.initiateSnapCapture()}
                 disabled={!partner.is_online || snapCapture.snapState.phase !== 'idle'}
                 className={`relative transition-all duration-300 ${
                   partner.is_online && snapCapture.snapState.phase === 'idle'
-                    ? 'hover:text-primary cursor-pointer hover:scale-110 active:scale-95'
-                    : 'opacity-30 cursor-not-allowed'
+                    ? 'hover:text-primary cursor-pointer hover:scale-110 active:scale-95 text-aura-text-secondary'
+                    : 'opacity-30 cursor-not-allowed text-aura-text-secondary'
                 }`}
                 title={partner.is_online ? 'Surprise Snap 📸' : 'Partner must be online'}
               >
-                <span className="material-symbols-outlined text-[20px]">photo_camera</span>
+                <Camera className="w-5 h-5" />
                 {partner.is_online && snapCapture.snapState.phase === 'idle' && (
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_6px_rgba(16,185,129,0.5)]"></span>
                 )}
               </button>
               <div className="relative" ref={pinDropdownRef}>
                 <span
-                  className="material-symbols-outlined text-[20px] hover:text-primary cursor-pointer transition-colors"
+                  className="hover:text-primary cursor-pointer transition-colors flex items-center justify-center p-1"
                   onClick={() => setShowPinDropdown(!showPinDropdown)}
                 >
-                  more_vert
+                  <MoreVertical className="w-5 h-5" />
                 </span>
                 {showPinDropdown && (
                   <>
@@ -760,7 +750,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                         onClick={() => { setIsSearchOpen(true); setShowPinDropdown(false); }}
                         className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-aura-text-primary hover:bg-white/5 border-b border-white/5"
                       >
-                        <span className="material-symbols-outlined text-[18px]">search</span>
+                        <Search className="w-4 h-4" />
                         Search Messages
                       </button>
                       {viewMode === 'pinned' && (
@@ -768,7 +758,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                           onClick={() => { setViewMode('chat'); setShowPinDropdown(false); }}
                           className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-primary bg-white/5 font-bold mb-1"
                         >
-                          <span className="material-symbols-outlined text-[18px]">forum</span>
+                          <MessageSquare className="w-4 h-4" />
                           Back to Normal Chat
                         </button>
                       )}
@@ -776,21 +766,21 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                         onClick={() => { setViewMode('pinned'); setPinFilter('me'); setShowPinDropdown(false); }}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 ${pinFilter === 'me' && viewMode === 'pinned' ? 'text-primary bg-white/5' : 'text-aura-text-primary hover:bg-white/5'}`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">push_pin</span>
+                        <Pin className="w-4 h-4" />
                         My Pinned Messages
                       </button>
                       <button
                         onClick={() => { setViewMode('pinned'); setPinFilter('partner'); setShowPinDropdown(false); }}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'partner' && viewMode === 'pinned' ? 'text-primary bg-white/5' : 'text-aura-text-primary hover:bg-white/5'}`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">person</span>
+                        <User className="w-4 h-4" />
                         Partner's Pinned Messages
                       </button>
                       <button
                         onClick={() => { setViewMode('pinned'); setPinFilter('all'); setShowPinDropdown(false); }}
                         className={`w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 border-t border-white/5 ${pinFilter === 'all' && viewMode === 'pinned' ? 'text-primary bg-white/5' : 'text-aura-text-primary hover:bg-white/5'}`}
                       >
-                        <span className="material-symbols-outlined text-[18px]">library_add_check</span>
+                        <CheckSquare className="w-4 h-4" />
                         Combined Pinned Messages
                       </button>
                       <button
@@ -798,7 +788,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                         className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center justify-between border-t border-white/5 text-aura-text-primary hover:bg-white/5"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                          <BookOpen className="w-4 h-4" />
                           <span>Study / AFK Mode</span>
                         </div>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${isAfkActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white/5 text-aura-text-secondary border border-white/10'}`}>
@@ -976,7 +966,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                 onClick={handleJumpToLatest} 
                 className="bg-primary text-background px-4 py-2 rounded-full shadow-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
               >
-                <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                <ChevronDown className="w-4 h-4" />
                 Jump to Latest
               </button>
             </div>

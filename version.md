@@ -1,12 +1,30 @@
 # App Version
-VersionName: 2.6.7
-VersionCode: 50
+VersionName: 2.8.2
+VersionCode: 55
 Date: 2026-06-21
 Changes:
-- Implemented swipable full-screen vertical Reels swiper for profile posts, liked items, and saved items, supporting liking, saving, E2EE decryption, and chunked video rendering.
-- Changed Liked and Saved tabs sorting to list most recently liked/saved media first (based on index in profiles arrays) rather than their original message creation dates.
+- Replaced the Reels tab navigation icon with a custom Instagram-style Reels clapperboard icon (featuring a play triangle and slanted top lines).
+- Added a custom Video Call icon (video camera with an embedded play button) to the direct call controls in the chat headers.
+- Implemented curvy chevrons with smooth, rounded tips for all media, carousel, and collage viewers.
+- Replaced the Explore tab labels with "Search" to match the Search icon in bottom and sidebar navigation.
 
 ## Previous Versions
+### Version 2.8.1 (Code 54)
+- Refined desktop post height and layout: adjusted post card aspect ratio from 9:16 to 2:3 on both mobile and desktop to present a slightly wider, more balanced post view.
+- Consolidated desktop right sidebar: merged the partner status and chat widget into a single, elegant card container, removing call shortcuts, streak badges, and vault headers to focus purely on the conversation.
+- Polished direct chat UI in sidebar: styled chat bubbles to match the original chat interface, including NaCl-box style bubble cards, time formatting, and dynamic double-tick status indicators.
+- Fixed desktop post height: restricted home feed posts to a maximum height of 85% of the viewport height minus the header, automatically scaling the width to maintain a perfect 9:16 aspect ratio.
+- Fixed desktop sidebar height cut-off: set a fixed viewport-relative height and max-height for the right sidebar aside element so it fits the viewport without getting cut off.
+- Added a bubble-style direct chat interface to the desktop right sidebar for messaging the partner in real-time, including E2EE secure indicators, streak status integration, and quick audio/video calling shortcuts.
+### Version 2.7.1 (Code 52)
+- Extended the premium icon overhaul to the Stories system (Home Feed stories list, story circles, viewer overlay, and upload modal) and the dedicated Upload Reel Screen, converting all remaining high-frequency Material Symbols to Lucide React icons.
+- Overhauled and improved the application's visual aesthetics by replacing the most frequently used icons with modern, clean, and premium Lucide React vector icons.
+- Replaced icons in the Bottom Navigation Bar, Sidebar, Home Feed posts action bar, Reels screen action controls, Chat Screen headers, and Message Input fields.
+- Implemented global premium CSS styling overrides for Google Material Symbols, setting a thin stroke weight (wght 250) and sleek optical sizes for all other icons across the entire app.
+
+### Version 2.6.7 (Code 50)
+- Implemented swipable full-screen vertical Reels swiper for profile posts, liked items, and saved items, supporting liking, saving, E2EE decryption, and chunked video rendering.
+- Changed Liked and Saved tabs sorting to list most recently liked/saved media first (based on index in profiles arrays) rather than their original message creation dates.
 ### Version 2.6.6 (Code 49)
 - Changed Liked and Saved tabs sorting to list most recently liked/saved media first (based on index in profiles arrays) rather than their original message creation dates.
 ### Version 2.6.5 (Code 48)

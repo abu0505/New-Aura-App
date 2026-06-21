@@ -575,3 +575,35 @@ a {
 .social-feed-scroll {
   scrollbar-width: none;
 }
+
+/* Premium sleek styling for Material Symbols across the app */
+.material-symbols-outlined {
+  --material-fill: 0;
+  --material-wght: 250; /* Super thin, clean and luxury-feeling weight */
+  --material-grad: -25;
+  --material-opsz: 22;
+  
+  font-variation-settings:
+    'FILL' var(--material-fill),
+    'wght' var(--material-wght),
+    'GRAD' var(--material-grad),
+    'opsz' var(--material-opsz);
+  
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), font-variation-settings 0.2s ease, color 0.2s ease;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Micro-animations and active states for custom interactive icons */
+.material-symbols-outlined.filled-active {
+  --material-fill: 1;
+  --material-wght: 300;
+}
+
+.material-symbols-outlined.thin {
+  --material-wght: 200;
+}
+
+.material-symbols-outlined.medium {
+  --material-wght: 350;
+}

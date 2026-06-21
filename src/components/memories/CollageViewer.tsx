@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import CustomScrapbookLayout from './CustomScrapbookLayout';
 import type { CollageLayoutConfig } from './CollageBuilder';
+import { X } from 'lucide-react';
+import { CurvyChevronLeft, CurvyChevronRight } from '../common/CustomIcons';
 
 export interface CollageCard {
   id: string;
@@ -323,7 +325,7 @@ function ImageZoomViewer({
         onClick={onClose}
         className="absolute top-4 right-4 z-10 w-11 h-11 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
       >
-        <span className="material-symbols-outlined text-xl">close</span>
+        <X size={20} />
       </button>
 
       {/* Left Arrow */}
@@ -332,7 +334,7 @@ function ImageZoomViewer({
           onClick={prev}
           className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
         >
-          <span className="material-symbols-outlined text-3xl">chevron_left</span>
+          <CurvyChevronLeft size={30} />
         </button>
       )}
 
@@ -362,7 +364,7 @@ function ImageZoomViewer({
           onClick={next}
           className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-12 h-12 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
         >
-          <span className="material-symbols-outlined text-3xl">chevron_right</span>
+          <CurvyChevronRight size={30} />
         </button>
       )}
 
@@ -463,7 +465,7 @@ export default function CollageViewer({ cards, initialCardIndex, onClose }: Coll
         onClick={onClose}
         className="absolute top-4 right-4 z-30 w-11 h-11 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center transition-colors"
       >
-        <span className="material-symbols-outlined text-xl">close</span>
+        <X size={20} />
       </button>
 
       {/* Previous Card (left side preview - desktop only) */}

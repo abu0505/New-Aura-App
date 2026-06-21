@@ -7,8 +7,6 @@ import { usePartner } from '../../hooks/usePartner';
 import { useMedia } from '../../hooks/useMedia';
 import { useVideoChunks } from '../../hooks/useVideoChunks';
 import { useGlobalMute } from '../../hooks/useGlobalMute';
-import { useStreak } from '../../contexts/StreakContext';
-import { useCall } from '../../contexts/CallContext';
 import { LastSeenStatus } from '../chat/LastSeenStatus';
 import StoryCircles from './StoryCircles';
 import OnThisDayCard from '../memories/OnThisDayCard';
@@ -21,6 +19,8 @@ import { getPrefetchedFeed, clearPrefetchedFeed } from '../../contexts/AppLockCo
 import type { Database } from '../../integrations/supabase/types';
 import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import { toast } from 'sonner';
+import { useChat } from '../../hooks/useChat';
+import { Plus, Search, MessageCircle, Heart, MessageSquare, Send, Bookmark, Volume2, VolumeX, Lock } from 'lucide-react';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -42,9 +42,40 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
   const { partner: dbPartner } = usePartner();
   const partner = livePartner || dbPartner;
   const { getDecryptedBlob } = useMedia();
-  const { streakCount, streakAtRisk, longestStreak } = useStreak();
-  const { initiateCall } = useCall();
   const isNative = Capacitor.isNativePlatform();
+
+  // Direct chat widget state
+  const {
+    messages: chatMessages,
+    sendMessage: sendChatMessage,
+    loading: chatLoading
+  } = useChat(
+    partner?.id,
+    partner?.public_key,
+    partner?.key_history?.map((h: any) => h.public_key)
+  );
+
+  const [chatInput, setChatInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom on new messages
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages]);
+
+  const handleSendChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    try {
+      await sendChatMessage(chatInput.trim());
+      setChatInput('');
+    } catch (error) {
+      console.error('Failed to send direct message:', error);
+      toast.error('Failed to send message');
+    }
+  };
 
   const [feedItems, setFeedItems] = useState<FeedPostItem[]>([]);
   const [throwbacks, setThrowbacks] = useState<FeedPostItem[]>([]);
@@ -83,7 +114,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
         if (saved) {
           try {
             setFavorites(new Set(JSON.parse(saved)));
-          } catch {}
+          } catch { }
         }
       }
     };
@@ -109,7 +140,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
         if (saved) {
           try {
             setSavedItems(new Set(JSON.parse(saved)));
-          } catch {}
+          } catch { }
         }
       }
     };
@@ -371,7 +402,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
   };
 
   return (
-    <div 
+    <div
       onScroll={handleScroll}
       className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24"
     >
@@ -379,12 +410,12 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
       <header className={`sticky top-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-md px-4 py-2 grid grid-cols-3 items-center border-b border-white/5 ${isNative ? 'safe-top' : ''}`}>
         {/* Left Side: Upload Reel Button */}
         <div className="flex justify-start">
-          <button 
-            onClick={() => onTabChange('upload-reel')} 
+          <button
+            onClick={() => onTabChange('upload-reel')}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition-all"
             title="Upload Reel"
           >
-            <span className="material-symbols-outlined text-[24px]">add</span>
+            <Plus className="w-5 h-5" />
           </button>
         </div>
 
@@ -395,24 +426,24 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
 
         {/* Right Side: Quick Action buttons (Explore/Chat on Mobile) */}
         <div className="flex justify-end items-center gap-3">
-          <button 
-            onClick={() => onTabChange('explore')} 
+          <button
+            onClick={() => onTabChange('explore')}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform lg:hidden"
           >
-            <span className="material-symbols-outlined text-[22px]">search</span>
+            <Search className="w-5 h-5" />
           </button>
-          <button 
-            onClick={() => onTabChange('chat')} 
+          <button
+            onClick={() => onTabChange('chat')}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 text-white/70 active:scale-95 transition-transform lg:hidden"
           >
-            <span className="material-symbols-outlined text-[22px]">forum</span>
+            <MessageCircle className="w-5 h-5" />
           </button>
         </div>
       </header>
 
       {/* Main Grid Wrapper (Desktop Split View vs Mobile Stacking) */}
       <div className="w-full lg:max-w-6xl lg:mx-auto lg:px-6 lg:py-8 lg:grid lg:grid-cols-[minmax(0,_1fr)_320px] lg:gap-8 items-start">
-        
+
         {/* Left Column: Feed Content */}
         <div className="space-y-6 lg:space-y-8">
           {/* Stories horizontal row */}
@@ -421,10 +452,10 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
           {/* Auxiliary Collections (Throwbacks & Recaps) */}
           <div className="px-4 py-6 space-y-6 lg:px-0 lg:py-0">
             {throwbacks.length > 0 && partner?.public_key && (
-              <OnThisDayCard 
-                throwbacks={throwbacks} 
-                partnerPublicKey={partner.public_key} 
-                onOpenMedia={handleOpenMedia} 
+              <OnThisDayCard
+                throwbacks={throwbacks}
+                partnerPublicKey={partner.public_key}
+                onOpenMedia={handleOpenMedia}
               />
             )}
 
@@ -476,7 +507,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
           {/* Vertical Feed */}
           <div className="px-4 pb-12 space-y-8 lg:px-0 lg:pb-0">
             <h2 className="font-serif italic text-xl text-[var(--gold)] px-2 lg:px-0">Recent Shared Feed</h2>
-            
+
             {loading ? (
               <div className="py-12 flex flex-col items-center justify-center gap-3">
                 <div className="w-8 h-8 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -491,10 +522,10 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
             ) : (
               <div className="space-y-6">
                 {feedItems.map((item) => (
-                  <FeedPost 
-                    key={item.id} 
-                    item={item} 
-                    partnerPublicKey={partner?.public_key || ''} 
+                  <FeedPost
+                    key={item.id}
+                    item={item}
+                    partnerPublicKey={partner?.public_key || ''}
                     getDecryptedBlob={getDecryptedBlob}
                     isLiked={favorites.has(item.id)}
                     onLikeToggle={() => toggleFavorite(item.id)}
@@ -506,120 +537,172 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
             )}
           </div>
         </div>
-
-        {/* Right Column: Desktop Sidebar (Hidden on Mobile) */}
-        <aside className="hidden lg:flex flex-col gap-6 sticky top-24">
-          
-          {/* Partner Status Card */}
+        <aside className="hidden lg:flex flex-col sticky top-[73px] h-[calc(100vh-105px)] max-h-[calc(100vh-105px)] overflow-hidden w-full bg-[var(--bg-secondary)] border border-white/5 rounded-3xl shadow-xl flex-none">
+          {/* Combined Header: Partner Profile Only */}
           {partner && (
-            <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden shadow-xl">
-              <div 
-                className="relative mb-4 cursor-pointer hover:opacity-85 active:scale-95 transition-all"
+            <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.01] flex-none">
+              <div
+                className={`w-10 h-10 rounded-full p-0.5 border-2 ${partner.is_online ? 'border-emerald-500/70 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 'border-white/10'} overflow-hidden cursor-pointer hover:opacity-85 active:scale-95 transition-all`}
                 onClick={() => {
                   document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
                   document.dispatchEvent(new CustomEvent('view-partner-profile'));
                 }}
               >
-                <div className={`w-20 h-20 rounded-full p-1 border-2 ${partner.is_online ? 'border-emerald-500/70 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : 'border-white/10'} overflow-hidden`}>
-                  <EncryptedImage 
-                    url={partner.avatar_url}
-                    encryptionKey={partner.avatar_key}
-                    nonce={partner.avatar_nonce}
-                    alt={partner.display_name || 'Partner'}
-                    className="w-full h-full object-cover rounded-full"
-                    placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
-                  />
-                </div>
-                {partner.is_online && (
-                  <div className="absolute bottom-0 right-1 w-4 h-4 bg-emerald-500 border-2 border-[var(--bg-secondary)] rounded-full animate-pulse"></div>
-                )}
+                <EncryptedImage
+                  url={partner.avatar_url}
+                  encryptionKey={partner.avatar_key}
+                  nonce={partner.avatar_nonce}
+                  alt={partner.display_name || 'Partner'}
+                  className="w-full h-full object-cover rounded-full"
+                  placeholder={`https://ui-avatars.com/api/?name=${partner.display_name || 'Partner'}&background=c9a96e&color=13131b`}
+                />
               </div>
-              <h3 
-                className="font-serif italic text-lg text-white mb-0.5 cursor-pointer hover:underline"
-                onClick={() => {
-                  document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
-                  document.dispatchEvent(new CustomEvent('view-partner-profile'));
-                }}
-              >
-                {partner.display_name || 'Your Partner'}
-              </h3>
-              <p className="text-[10px] font-label uppercase tracking-widest text-white/40 flex items-center gap-1.5 justify-center">
-                <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
-              </p>
-              {partner.status_message && (
-                <p className="text-xs text-white/60 italic mt-3 px-4 border-t border-white/5 pt-3 w-full">
-                  "{partner.status_message}"
-                </p>
-              )}
+              <div className="flex-1 min-w-0">
+                <h3
+                  className="font-serif italic text-sm text-white cursor-pointer hover:underline truncate"
+                  onClick={() => {
+                    document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                    document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                  }}
+                >
+                  {partner.display_name || 'Your Partner'}
+                </h3>
+                <div className="text-[9px] font-label uppercase tracking-widest text-white/40 flex items-center gap-1.5 mt-0.5">
+                  <LastSeenStatus isOnline={partner.is_online} lastSeen={partner.last_seen} />
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Streak Card */}
-          <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col items-center text-center shadow-xl">
-            <div className="text-4xl mb-2 animate-bounce">🔥</div>
-            <span className="text-2xl font-bold text-[var(--gold)] tracking-wide">{streakCount} Days</span>
-            <span className="text-[10px] uppercase font-bold text-white/40 tracking-wider mt-1">Current Streak</span>
-            <div className="w-full h-px bg-white/5 my-4"></div>
-            <div className="flex justify-between w-full text-xs text-white/50 px-2">
-              <span>Longest: {longestStreak} days</span>
-              {streakAtRisk && <span className="text-orange-400 font-bold">At Risk! ⏳</span>}
-            </div>
-          </div>
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0 scrollbar-hide">
+            {chatLoading ? (
+              <div className="h-full flex flex-col items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
+                <span className="text-[8px] uppercase tracking-widest text-white/30">Decrypting messages...</span>
+              </div>
+            ) : chatMessages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-4">
+                <p className="text-[10px] text-white/30 italic font-medium">No messages yet. Say hi to your partner! 👋</p>
+              </div>
+            ) : (
+              chatMessages.slice(-20).map((msg) => {
+                const isMine = msg.sender_id === user?.id;
+                const msgType = msg.type as string;
+                const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-          {/* Quick Actions Card */}
-          <div className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl p-6 flex flex-col gap-3 shadow-xl">
-            <h4 className="text-[10px] uppercase font-bold text-white/40 tracking-widest mb-1 px-1">Quick Actions</h4>
-            
-            <button 
-              onClick={() => onTabChange('chat')}
-              className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-98 transition-all px-4 py-3 rounded-2xl text-xs font-semibold text-white/90 border border-white/5"
-            >
-              <span className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-lg text-[var(--gold)]">forum</span>
-                Open Chat
-              </span>
-              <span className="material-symbols-outlined text-sm text-white/30">chevron_right</span>
-            </button>
+                // Helper to render content type
+                let contentNode = null;
+                if (msg.is_deleted_for_everyone) {
+                  contentNode = <span className="italic text-white/30">This message was deleted</span>;
+                } else if (msgType === 'text') {
+                  contentNode = <span>{msg.decrypted_content}</span>;
+                } else if (msgType === 'image') {
+                  contentNode = <span className="italic flex items-center gap-1">📷 Photo {msg.decrypted_content ? `• ${msg.decrypted_content}` : ''}</span>;
+                } else if (msgType === 'video') {
+                  contentNode = <span className="italic flex items-center gap-1">🎥 Video {msg.decrypted_content ? `• ${msg.decrypted_content}` : ''}</span>;
+                } else if (msgType === 'sticker') {
+                  contentNode = <span className="italic flex items-center gap-1">🖼️ Sticker</span>;
+                } else if (msgType === 'audio') {
+                  contentNode = <span className="italic flex items-center gap-1">🎵 Voice Note</span>;
+                } else if (msgType === 'location') {
+                  contentNode = <span className="italic flex items-center gap-1">📍 Location</span>;
+                } else if (msgType === 'call_log') {
+                  contentNode = <span className="italic flex items-center gap-1">📞 Call Log</span>;
+                } else {
+                  contentNode = <span>{msg.decrypted_content || '[Media Message]'}</span>;
+                }
 
-            {partner && (
-              <>
-                <button 
-                  onClick={() => initiateCall(false)}
-                  className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-98 transition-all px-4 py-3 rounded-2xl text-xs font-semibold text-white/90 border border-white/5"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-lg text-emerald-400">call</span>
-                    Voice Call
-                  </span>
-                  <span className="material-symbols-outlined text-sm text-white/30">chevron_right</span>
-                </button>
+                // Render ticks for own messages
+                let tickIcon = null;
+                if (isMine && !msg.is_deleted_for_everyone) {
+                  if (msg.is_read) {
+                    tickIcon = (
+                      <span className="material-symbols-outlined text-[12px] text-sky-500 font-bold ml-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        done_all
+                      </span>
+                    );
+                  } else if (msg.is_delivered) {
+                    tickIcon = (
+                      <span className="material-symbols-outlined text-[12px] text-black/40 font-bold ml-0.5">
+                        done_all
+                      </span>
+                    );
+                  } else {
+                    tickIcon = (
+                      <span className="material-symbols-outlined text-[12px] text-black/30 font-bold ml-0.5">
+                        check
+                      </span>
+                    );
+                  }
+                }
 
-                <button 
-                  onClick={() => initiateCall(true)}
-                  className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 active:scale-98 transition-all px-4 py-3 rounded-2xl text-xs font-semibold text-white/90 border border-white/5"
-                >
-                  <span className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-lg text-sky-400">videocam</span>
-                    Video Call
-                  </span>
-                  <span className="material-symbols-outlined text-sm text-white/30">chevron_right</span>
-                </button>
-              </>
+                return (
+                  <div key={msg.id} className={`flex w-full mb-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
+                    <div
+                      className={`relative max-w-[75%] px-4 py-2.5 flex flex-col gap-1 rounded-2xl ${isMine
+                          ? 'rounded-tr-sm bg-[var(--gold)] text-[var(--bg-primary)] shadow-[0_4px_15px_rgba(201,169,110,0.15)]'
+                          : 'rounded-tl-sm text-[#E4E1ED]'
+                        }`}
+                      style={
+                        !isMine
+                          ? {
+                            background: 'rgba(19, 19, 30, 0.8)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(201, 169, 110, 0.08)',
+                          }
+                          : undefined
+                      }
+                    >
+                      <div className="font-body text-xs whitespace-pre-wrap break-words leading-relaxed relative z-10">
+                        {contentNode}
+                      </div>
+                      <div
+                        className={`flex items-center justify-end gap-1 text-[9px] select-none mt-1 ${isMine ? 'text-[var(--bg-primary)]/60' : 'text-[#8A8799]'
+                          }`}
+                      >
+                        <span>{time}</span>
+                        {isMine && tickIcon}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
+            <div ref={messagesEndRef} />
           </div>
+
+          {/* Input Form */}
+          <form onSubmit={handleSendChat} className="p-3 border-t border-white/5 flex gap-2 flex-none bg-white/[0.01]">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="Type a message..."
+              className="flex-1 bg-white/5 hover:bg-white/10 focus:bg-white/10 focus:ring-1 focus:ring-[var(--gold)]/30 text-white rounded-xl px-3 py-1.5 text-xs outline-none transition-all placeholder-white/30 border border-white/5"
+            />
+            <button
+              type="submit"
+              disabled={!chatInput.trim()}
+              className="w-8 h-8 rounded-xl bg-[var(--gold)] text-black flex items-center justify-center hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:hover:opacity-40 transition-all shadow-md shrink-0"
+            >
+              <Send className="w-3.5 h-3.5" />
+            </button>
+          </form>
         </aside>
       </div>
 
       {/* Fullscreen Video/Photo Viewer */}
       <AnimatePresence>
         {selectedMedia && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
           >
-            <button 
+            <button
               onClick={() => setSelectedMedia(null)}
               className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
             >
@@ -657,7 +740,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   const decryptedUrlRef = useRef<string | null>(null);
   // Guard: prevent double decrypt from StrictMode double-invoke
   const hasDecryptedRef = useRef(false);
-  const tag = `[FeedPost][${item.id?.slice(0,8)}]`;
+  const tag = `[FeedPost][${item.id?.slice(0, 8)}]`;
 
   const { isMuted, toggleMute } = useGlobalMute();
   const [isPaused, setIsPaused] = useState(false);
@@ -669,7 +752,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     if (!video) return;
 
     if (video.paused) {
-      video.play().catch(() => {});
+      video.play().catch(() => { });
       setIsPaused(false);
       setShowStatusIcon('play');
       setTimeout(() => setShowStatusIcon(null), 500);
@@ -757,7 +840,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
 
       if (entry.isIntersecting) {
         if (!isPaused) {
-          video.play().catch(() => {});
+          video.play().catch(() => { });
         }
       } else {
         video.pause();
@@ -913,7 +996,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       active = false;
       observer.disconnect();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo]);
 
   // Determine sender info
@@ -927,14 +1010,14 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   if (decryptionFailed) return null;
 
   return (
-    <div 
+    <div
       ref={postRef}
-      className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl overflow-hidden shadow-xl aspect-[9/16] w-full flex flex-col"
+      className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl overflow-hidden shadow-xl aspect-[2/3] w-full flex flex-col lg:h-[calc((100vh-57px)*0.85)] lg:max-h-[calc((100vh-57px)*0.85)] lg:w-auto lg:aspect-[2/3] mx-auto"
     >
       {/* Post Header */}
       <div className="p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-3">
-          <div 
+          <div
             className={`w-9 h-9 rounded-full overflow-hidden border border-white/10 ${!isMine ? 'cursor-pointer hover:opacity-85 active:scale-95 transition-all' : ''}`}
             onClick={() => {
               if (!isMine) {
@@ -943,17 +1026,17 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
               }
             }}
           >
-            <EncryptedImage 
-              url={avatarUrl} 
+            <EncryptedImage
+              url={avatarUrl}
               encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
               nonce={avatarNonce ? (typeof avatarNonce === 'string' ? avatarNonce : JSON.stringify(avatarNonce)) : null}
-              alt={senderName} 
-              className="w-full h-full object-cover" 
+              alt={senderName}
+              className="w-full h-full object-cover"
               placeholder={placeholder}
             />
           </div>
           <div>
-            <h4 
+            <h4
               className={`text-xs font-bold text-white/90 ${!isMine ? 'cursor-pointer hover:underline' : ''}`}
               onClick={() => {
                 if (!isMine) {
@@ -974,7 +1057,6 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
             </p>
           </div>
         </div>
-        <span className="material-symbols-outlined text-white/30 text-lg">more_horiz</span>
       </div>
 
       {/* Post Media Container */}
@@ -986,24 +1068,24 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           </div>
         ) : decryptedUrl ? (
           item.type === 'video' ? (
-            <div 
+            <div
               className="relative w-full h-full cursor-pointer flex items-center justify-center"
               onClick={handleVideoTap}
             >
-              <video 
+              <video
                 ref={videoRef}
-                src={decryptedUrl} 
-                className="w-full h-full object-cover" 
+                src={decryptedUrl}
+                className="w-full h-full object-cover"
                 loop
                 playsInline
                 preload="metadata"
                 muted={isMuted}
               />
-              
+
               {/* Play overlay when paused */}
               {isPaused && !showStatusIcon && (
                 <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-                  <motion.div 
+                  <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
@@ -1040,22 +1122,20 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
                 }}
                 className="absolute bottom-3 right-3 z-30 w-9 h-9 rounded-full bg-black/50 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-90 transition-transform"
               >
-                <span className="material-symbols-outlined text-lg">
-                  {isMuted ? 'volume_off' : 'volume_up'}
-                </span>
+                {isMuted ? <VolumeX className="w-4 h-4 text-white" /> : <Volume2 className="w-4 h-4 text-white" />}
               </button>
             </div>
           ) : (
-            <img 
-              src={decryptedUrl} 
-              alt="Post media" 
+            <img
+              src={decryptedUrl}
+              alt="Post media"
               className="w-full h-full object-cover"
             />
           )
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 text-white/20">
-            <span className="material-symbols-outlined text-3xl">lock</span>
-            <span className="text-[9px] uppercase tracking-widest">Securely Encrypted</span>
+            <Lock className="w-8 h-8 animate-pulse" />
+            <span className="text-[9px] uppercase tracking-widest font-bold">Securely Encrypted</span>
           </div>
         )}
       </div>
@@ -1063,35 +1143,29 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       {/* Post Actions Bar */}
       <div className="p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={onLikeToggle}
-            className={`flex items-center justify-center transition-all active:scale-75 ${isLiked ? 'text-rose-500 animate-heart-burst' : 'text-white/60 hover:text-white'}`}
+            className={`flex items-center justify-center transition-all active:scale-75 ${isLiked ? 'text-rose-500 scale-110' : 'text-white/60 hover:text-white hover:scale-110'}`}
           >
-            <span className={`material-symbols-outlined text-2xl ${isLiked ? 'fill-current' : ''}`}>
-              favorite
-            </span>
+            <Heart className={`w-6 h-6 transition-all duration-300 ${isLiked ? 'fill-rose-500 stroke-rose-500' : 'stroke-current'}`} />
           </button>
-          <span className="material-symbols-outlined text-2xl text-white/60 hover:text-white cursor-pointer">
-            chat_bubble
+          <span className="text-white/60 hover:text-white cursor-pointer hover:scale-110 transition-transform">
+            <MessageSquare className="w-6 h-6" />
           </span>
-          <button 
+          <button
             onClick={handleSharePost}
-            className="flex items-center justify-center transition-all active:scale-75 text-white/60 hover:text-white cursor-pointer rotate-[-15deg] translate-y-[-1px]"
+            className="flex items-center justify-center transition-all active:scale-75 text-white/60 hover:text-white cursor-pointer hover:scale-110"
             title="Share to chat"
           >
-            <span className="material-symbols-outlined text-2xl">
-              send
-            </span>
+            <Send className="w-6 h-6" />
           </button>
         </div>
-        <button 
+        <button
           onClick={onSaveToggle}
-          className={`flex items-center justify-center transition-all active:scale-75 ${isSaved ? 'text-[var(--gold)]' : 'text-white/60 hover:text-white'}`}
+          className={`flex items-center justify-center transition-all active:scale-75 ${isSaved ? 'text-[var(--gold)] scale-110' : 'text-white/60 hover:text-white hover:scale-110'}`}
           title="Save post"
         >
-          <span className={`material-symbols-outlined text-2xl ${isSaved ? 'fill-current' : ''}`}>
-            bookmark
-          </span>
+          <Bookmark className={`w-6 h-6 transition-all duration-300 ${isSaved ? 'fill-[var(--gold)] stroke-[var(--gold)]' : 'stroke-current'}`} />
         </button>
       </div>
     </div>

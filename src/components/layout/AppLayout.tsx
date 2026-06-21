@@ -3,6 +3,8 @@ import type { Tab } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStreak } from '../../contexts/StreakContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Home, Search, MessageCircle, User, LogOut } from 'lucide-react';
+import { ReelsIcon } from '../common/CustomIcons';
 
 interface AppLayoutProps {
   activeTab: Tab;
@@ -174,34 +176,34 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
             <nav className={`flex flex-col gap-8 flex-grow ${isSidebarShrunk ? 'items-center w-full' : ''}`}>
               <button
                 onClick={() => onTabChange('home')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'home' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'home' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Home"
               >
-                <span className="material-symbols-outlined text-2xl">home</span>
+                <Home className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'home' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
                 {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Home</span>}
               </button>
               <button
                 onClick={() => onTabChange('explore')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'explore' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Explore"
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'explore' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                title="Search"
               >
-                <span className="material-symbols-outlined text-2xl">search</span>
-                {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Explore</span>}
+                <Search className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'explore' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
+                {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Search</span>}
               </button>
               <button
                 onClick={() => onTabChange('chat')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'chat' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Chat"
               >
-                <span className="material-symbols-outlined text-2xl">chat_bubble</span>
+                <MessageCircle className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'chat' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
                 {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Chat</span>}
               </button>
               <button
                 onClick={() => onTabChange('reels')}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'reels' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'reels' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Reels"
               >
-                <span className="material-symbols-outlined text-2xl">movie</span>
+                <ReelsIcon className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'reels' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
                 {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Reels</span>}
               </button>
               <button
@@ -209,10 +211,10 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
                   onTabChange('profile');
                   document.dispatchEvent(new CustomEvent('view-my-profile'));
                 }}
-                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'profile' ? 'text-black bg-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
+                className={`flex items-center gap-4 font-medium transition-all duration-300 py-3 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4'} ${activeTab === 'profile' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
                 title="Profile"
               >
-                <span className="material-symbols-outlined text-2xl">person</span>
+                <User className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'profile' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
                 {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Profile</span>}
               </button>
             </nav>
@@ -226,18 +228,18 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
                     <span className="font-sans text-[8px] font-bold text-[var(--gold)]">{streakCount}</span>
                  </div>
               )}
-              <button 
+            <button 
                 onClick={signOut}
                 className={`flex items-center gap-4 text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)] transition-colors ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0' : 'px-4 w-full'}`}
                 title="Sign Out"
               >
-                <span className="material-symbols-outlined text-xl">logout</span>
+                <LogOut className="w-5 h-5 transition-transform duration-300 group-hover:-translate-x-0.5" />
                 {!isSidebarShrunk && <span className="font-sans text-[10px] font-bold tracking-widest uppercase">Sign Out</span>}
               </button>
             </div>
           </aside>
         )}
-
+ 
         {/* Main Content Area */}
         <main className="relative h-full w-full overflow-hidden">
           {children}
@@ -245,7 +247,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
       </div>
     );
   }
-
+ 
   // Mobile Layout
   return (
     <div className="fixed inset-0 bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans flex flex-col overflow-hidden">
@@ -253,7 +255,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
       <main className="flex-1 w-full relative z-0 min-h-0 overflow-hidden">
         {children}
       </main>
-
+ 
       {/* Bottom Navigation Bar */}
       {!isStealthActive && (
         <nav className={`fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-8 pt-2 bg-[var(--bg-secondary)] backdrop-blur-2xl z-50 rounded-t-3xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-transform duration-300 safe-bottom ${(activeTab === 'chat' && !forceNav) || hideNav ? 'translate-y-full' : 'translate-y-[1px]'}`}>
@@ -262,37 +264,37 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
             onClick={() => changeTab('home')}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'home' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'home' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'home' ? "'FILL' 1" : "" }}>home</span>
+            <Home className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'home' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Home</span>
           </button>
-
+ 
           {/* Explore */}
           <button
             onClick={() => changeTab('explore')}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'explore' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'explore' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'explore' ? "'FILL' 1" : "" }}>search</span>
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Explore</span>
+            <Search className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'explore' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Search</span>
           </button>
-
+ 
           {/* Chat */}
           <button
             onClick={() => changeTab('chat')}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'chat' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'chat' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'chat' ? "'FILL' 1" : "" }}>forum</span>
+            <MessageCircle className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'chat' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Chat</span>
           </button>
-
+ 
           {/* Reels */}
           <button
             onClick={() => changeTab('reels')}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'reels' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'reels' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'reels' ? "'FILL' 1" : "" }}>movie</span>
+            <ReelsIcon className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'reels' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Reels</span>
           </button>
-
+ 
           {/* Profile */}
           <button
             onClick={() => {
@@ -301,7 +303,7 @@ export default function AppLayout({ activeTab, onTabChange, children }: AppLayou
             }}
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'profile' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
-            <span className={`material-symbols-outlined text-3xl mb-1 ${activeTab === 'profile' ? 'fill-current' : ''}`} style={{ fontVariationSettings: activeTab === 'profile' ? "'FILL' 1" : "" }}>person</span>
+            <User className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'profile' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
             <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Profile</span>
           </button>
         </nav>

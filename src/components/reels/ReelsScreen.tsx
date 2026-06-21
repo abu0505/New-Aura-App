@@ -12,6 +12,7 @@ import { fetchDiverseMediaPool } from '../../utils/feedPool';
 import { useGlobalMute } from '../../hooks/useGlobalMute';
 import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import type { Database } from '../../integrations/supabase/types';
+import { Heart, MessageSquare, Bookmark, Volume2, VolumeX, Lock, Star, Share2 } from 'lucide-react';
 
 // Semaphore to limit parallel decryptions
 class DecryptionSemaphore {
@@ -765,8 +766,8 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
             )
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 text-white/20">
-              <span className="material-symbols-outlined text-4xl">lock</span>
-              <span className="text-[10px] uppercase tracking-widest">Secure Memory</span>
+              <Lock className="w-8 h-8 animate-pulse" />
+              <span className="text-[10px] uppercase tracking-widest font-bold">Secure Memory</span>
             </div>
           )}
         </div>
@@ -813,15 +814,13 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
           className="absolute top-5 left-4 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-75 transition-all hover:bg-black/60"
           title={isMuted ? "Unmute" : "Mute"}
         >
-          <span className="material-symbols-outlined text-[20px]">
-            {isMuted ? 'volume_off' : 'volume_up'}
-          </span>
+          {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
         </button>
 
         {/* Reel Upload Badge (shown if this was a dedicated upload, shifted to left-16 to avoid mute button) */}
         {item.is_reel_upload && (
           <div className="absolute top-5 left-16 z-20 flex items-center gap-1.5 bg-[var(--gold)]/20 backdrop-blur-md border border-[var(--gold)]/30 px-2.5 py-1 rounded-full pointer-events-none">
-            <span className="material-symbols-outlined text-[12px] text-[var(--gold)]">star</span>
+            <Star className="w-3.5 h-3.5 fill-[var(--gold)] text-[var(--gold)]" />
             <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--gold)]">Featured Reel</span>
           </div>
         )}
@@ -878,8 +877,8 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
             onClick={(e) => { e.stopPropagation(); onLikeToggle(); }}
             className="flex flex-col items-center gap-1.5"
           >
-            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isLiked ? 'text-rose-500' : 'text-white'}`}>
-              <span className={`material-symbols-outlined text-2xl ${isLiked ? 'fill-current' : ''}`}>favorite</span>
+            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isLiked ? 'text-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.2)]' : 'text-white'}`}>
+              <Heart className={`w-6 h-6 transition-all duration-300 ${isLiked ? 'fill-rose-500 stroke-rose-500 scale-110' : 'stroke-current'}`} />
             </div>
             <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{isLiked ? 'Liked' : 'Like'}</span>
           </button>
@@ -890,7 +889,7 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
             className="flex flex-col items-center gap-1.5"
           >
             <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white">
-              <span className="material-symbols-outlined text-2xl">chat_bubble</span>
+              <MessageSquare className="w-6 h-6 stroke-white" />
             </div>
             <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Note</span>
           </button>
@@ -900,8 +899,8 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
             onClick={(e) => { e.stopPropagation(); handleShareReel(); }}
             className="flex flex-col items-center gap-1.5"
           >
-            <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white rotate-[-15deg] translate-y-[-1px]">
-              <span className="material-symbols-outlined text-2xl">send</span>
+            <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:scale-105 active:scale-95 transition-transform">
+              <Share2 className="w-5.5 h-5.5 stroke-white" />
             </div>
             <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Share</span>
           </button>
@@ -911,8 +910,8 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
             onClick={(e) => { e.stopPropagation(); onSaveToggle(); }}
             className="flex flex-col items-center gap-1.5"
           >
-            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isSaved ? 'text-[var(--gold)]' : 'text-white'}`}>
-              <span className={`material-symbols-outlined text-2xl ${isSaved ? 'fill-current' : ''}`}>bookmark</span>
+            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isSaved ? 'text-[var(--gold)] shadow-[0_0_12px_rgba(201,169,110,0.2)]' : 'text-white'}`}>
+              <Bookmark className={`w-6 h-6 transition-all duration-300 ${isSaved ? 'fill-[var(--gold)] stroke-[var(--gold)] scale-110' : 'stroke-current'}`} />
             </div>
             <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{isSaved ? 'Saved' : 'Save'}</span>
           </button>

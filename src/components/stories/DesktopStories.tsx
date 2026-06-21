@@ -1,6 +1,7 @@
 import { usePartner } from '../../hooks/usePartner';
 import type { Story } from '../../hooks/useStories';
 import EncryptedImage from '../common/EncryptedImage';
+import { Search, Bell, Heart, Plus, Type, Lock, Camera, CheckCheck, Image } from 'lucide-react';
 
 interface DesktopStoriesProps {
   stories: Story[];
@@ -16,7 +17,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
       {/* Top Navigation / Search */}
       <header className="flex justify-between items-center px-12 h-24 sticky top-0 bg-[var(--bg-primary)]/80 backdrop-blur-xl z-40 border-b border-white/5">
         <div className="relative w-96">
-          <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#998f81]/50 text-xl">search</span>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#998f81]/50 w-5 h-5" />
           <input 
             type="text" 
             placeholder="Search memories..." 
@@ -25,10 +26,10 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
         </div>
         <div className="flex items-center gap-8">
           <button className="text-[#998f81] hover:text-[var(--gold)] transition-colors duration-300">
-            <span className="material-symbols-outlined">notifications</span>
+            <Bell size={20} />
           </button>
           <button className="text-[#998f81] hover:text-[var(--gold)] transition-colors duration-300">
-            <span className="material-symbols-outlined">favorite</span>
+            <Heart size={20} />
           </button>
         </div>
       </header>
@@ -46,7 +47,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
           {/* Add Story */}
           <div onClick={onAddStory} className="flex flex-col items-center gap-4 flex-shrink-0 cursor-pointer group">
             <div className="w-24 h-24 rounded-full border-2 border-dashed border-[#998f81]/30 flex items-center justify-center group-hover:border-[var(--gold)] group-active:scale-95 transition-all duration-300 bg-[var(--bg-elevated)]">
-              <span className="material-symbols-outlined text-[#998f81] group-hover:text-[var(--gold)] text-3xl transition-colors duration-300">add</span>
+              <Plus className="text-[#998f81] group-hover:text-[var(--gold)] w-7.5 h-7.5 transition-colors duration-300" />
             </div>
             <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[#998f81]">Add Story</span>
           </div>
@@ -90,7 +91,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
                   <div className="absolute inset-0 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-primary)]"></div>
                   <div className="absolute inset-0 bg-[rgba(var(--primary-rgb),_0.05)] opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
                   <div className="p-12 h-full flex flex-col justify-center items-center text-center relative z-10 text-[#e4e1ed]">
-                     <span className="material-symbols-outlined text-[rgba(var(--primary-rgb),_0.1)] text-8xl mb-8">title</span>
+                     <Type className="text-[rgba(var(--primary-rgb),_0.1)] w-24 h-24 mb-8" />
                      <h2 className="text-2xl font-serif italic leading-relaxed px-4 text-[var(--gold)] line-clamp-4">
                         {story.decrypted_content || 'Text Story'}
                      </h2>
@@ -99,7 +100,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
               ) : (
                 <>
                   <div className="absolute inset-0 flex items-center justify-center flex-col gap-4 bg-[var(--bg-elevated)]">
-                    <span className="material-symbols-outlined text-6xl text-[rgba(var(--primary-rgb),_0.3)] group-hover:scale-110 transition-transform duration-500">lock</span>
+                    <Lock className="w-16 h-16 text-[rgba(var(--primary-rgb),_0.3)] group-hover:scale-110 transition-transform duration-500" />
                     <span className="font-label text-xs uppercase tracking-widest text-[#998f81]/50">Encrypted Memory</span>
                   </div>
                 </>
@@ -109,7 +110,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
               
               <div className="absolute top-8 right-8">
                 <div className="bg-black/40 backdrop-blur-md p-3 rounded-full border border-white/10 text-[var(--gold)]">
-                   <span className="material-symbols-outlined text-xl">{story.media_url ? 'photo_camera' : 'title'}</span>
+                   {story.media_url ? <Camera size={20} /> : <Type size={20} />}
                 </div>
               </div>
               
@@ -139,7 +140,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
                   </div>
                   {story.is_mine && story.viewed_at && (
                     <div className="flex items-center gap-2 bg-[rgba(var(--primary-rgb),_0.1)] px-3 py-2 rounded-full border border-[rgba(var(--primary-rgb),_0.2)] shadow-xl">
-                      <span className="material-symbols-outlined text-xs text-[var(--gold)]">done_all</span>
+                      <CheckCheck className="w-3.5 h-3.5 text-[var(--gold)]" />
                       <span className="text-[9px] text-[var(--gold)] uppercase font-bold tracking-widest">Seen</span>
                     </div>
                   )}
@@ -174,7 +175,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div onClick={onAddStory} className="bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-elevated)] border border-white/5 p-10 rounded-[2.5rem] transition-all duration-500 cursor-pointer group/btn text-center flex flex-col items-center">
               <div className="w-20 h-20 rounded-3xl bg-[rgba(var(--primary-rgb),_0.05)] flex items-center justify-center text-[var(--gold)] mb-8 group-hover/btn:scale-110 group-hover/btn:bg-[var(--gold)] group-hover/btn:text-[var(--on-accent)] transition-all duration-500">
-                <span className="material-symbols-outlined text-4xl">photo_camera</span>
+                <Camera size={36} />
               </div>
               <h3 className="font-serif italic text-2xl mb-2 text-white">Take Photo</h3>
               <p className="text-sm text-[#998f81]/70 px-4 leading-relaxed font-light italic">Open the camera and capture the now.</p>
@@ -182,7 +183,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
 
             <div onClick={onAddStory} className="bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-elevated)] border border-white/5 p-10 rounded-[2.5rem] transition-all duration-500 cursor-pointer group/btn text-center flex flex-col items-center">
               <div className="w-20 h-20 rounded-3xl bg-[rgba(var(--primary-rgb),_0.05)] flex items-center justify-center text-[var(--gold)] mb-8 group-hover/btn:scale-110 group-hover/btn:bg-[var(--gold)] group-hover/btn:text-[var(--on-accent)] transition-all duration-500">
-                <span className="material-symbols-outlined text-4xl">image</span>
+                <Image size={36} />
               </div>
               <h3 className="font-serif italic text-2xl mb-2 text-white">From Gallery</h3>
               <p className="text-sm text-[#998f81]/70 px-4 leading-relaxed font-light italic">Upload a memory from your library.</p>
@@ -190,7 +191,7 @@ export default function DesktopStories({ stories, onStoryClick, onAddStory }: De
 
             <div onClick={onAddStory} className="bg-[var(--bg-primary)]/50 hover:bg-[var(--bg-elevated)] border border-white/5 p-10 rounded-[2.5rem] transition-all duration-500 cursor-pointer group/btn text-center flex flex-col items-center">
               <div className="w-20 h-20 rounded-3xl bg-[rgba(var(--primary-rgb),_0.05)] flex items-center justify-center text-[var(--gold)] mb-8 group-hover/btn:scale-110 group-hover/btn:bg-[var(--gold)] group-hover/btn:text-[var(--on-accent)] transition-all duration-500">
-                <span className="material-symbols-outlined text-4xl">title</span>
+                <Type size={36} />
               </div>
               <h3 className="font-serif italic text-2xl mb-2 text-white">Text Story</h3>
               <p className="text-sm text-[#998f81]/70 px-4 leading-relaxed font-light italic">Write a private note or status update.</p>
