@@ -20,7 +20,7 @@ import type { Database } from '../../integrations/supabase/types';
 import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import { toast } from 'sonner';
 import { useChat } from '../../hooks/useChat';
-import { Plus, Search, MessageCircle, Heart, MessageSquare, Send, Bookmark, Volume2, VolumeX, Lock } from 'lucide-react';
+import { Plus, Search, MessageCircle, Heart, MessageSquare, Send, Bookmark, Volume2, VolumeX, Lock, Maximize2, Minimize2 } from 'lucide-react';
 
 type MessageRow = Database['public']['Tables']['messages']['Row'];
 
@@ -736,6 +736,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [decryptionFailed, setDecryptionFailed] = useState(false);
+  const [showOriginalRatio, setShowOriginalRatio] = useState(false);
   const postRef = useRef<HTMLDivElement>(null);
   const decryptedUrlRef = useRef<string | null>(null);
   // Guard: prevent double decrypt from StrictMode double-invoke
@@ -761,6 +762,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       setIsPaused(true);
       setShowStatusIcon('pause');
       setTimeout(() => setShowStatusIcon(null), 500);
+    }
+  };
+
+  const handleMediaLoad = (width: number, height: number) => {
+    if (window.innerWidth < 1024 && width > 0 && height > 0) {
+      const ratio = height / width;
+      if (ratio < 1.5) {
+        setShowOriginalRatio(true);
+      }
     }
   };
 
@@ -1012,10 +1022,10 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   return (
     <div
       ref={postRef}
-      className="bg-[var(--bg-secondary)] border border-white/5 rounded-3xl overflow-hidden shadow-xl aspect-[2/3] w-full flex flex-col lg:h-[calc((100vh-57px)*0.85)] lg:max-h-[calc((100vh-57px)*0.85)] lg:w-auto lg:aspect-[2/3] mx-auto"
+      className="bg-transparent border-none rounded-none shadow-none w-full flex flex-col mx-auto pb-6 border-b border-white/5 last:border-b-0 lg:bg-[var(--bg-secondary)] lg:border lg:border-white/5 lg:rounded-3xl lg:overflow-hidden lg:shadow-xl lg:w-auto lg:h-[calc((100vh-57px)*0.85)] lg:max-h-[calc((100vh-57px)*0.85)] lg:aspect-[2/3] lg:pb-0"
     >
       {/* Post Header */}
-      <div className="p-4 flex items-center justify-between flex-none">
+      <div className="py-3 px-0 lg:p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-3">
           <div
             className={`w-9 h-9 rounded-full overflow-hidden border border-white/10 ${!isMine ? 'cursor-pointer hover:opacity-85 active:scale-95 transition-all' : ''}`}
@@ -1060,7 +1070,9 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       </div>
 
       {/* Post Media Container */}
-      <div className="relative flex-1 w-full bg-black/40 flex items-center justify-center overflow-hidden border-y border-white/5">
+      <div className={`relative flex-1 -mx-4 w-[calc(100%+2rem)] lg:mx-0 lg:w-full bg-black/40 flex items-center justify-center overflow-hidden border-y border-white/5 ${
+        showOriginalRatio && decryptedUrl ? 'aspect-auto h-auto' : 'aspect-[2/3] lg:aspect-auto'
+      }`}>
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -1075,11 +1087,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
               <video
                 ref={videoRef}
                 src={decryptedUrl}
-                className="w-full h-full object-cover"
+                className={`w-full ${showOriginalRatio ? 'h-auto object-contain' : 'h-full object-cover'}`}
                 loop
                 playsInline
                 preload="metadata"
                 muted={isMuted}
+                onLoadedMetadata={(e) => {
+                  const video = e.currentTarget;
+                  handleMediaLoad(video.videoWidth, video.videoHeight);
+                }}
               />
 
               {/* Play overlay when paused */}
@@ -1129,7 +1145,11 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
             <img
               src={decryptedUrl}
               alt="Post media"
-              className="w-full h-full object-cover"
+              className={`w-full ${showOriginalRatio ? 'h-auto object-contain' : 'h-full object-cover'}`}
+              onLoad={(e) => {
+                const img = e.currentTarget;
+                handleMediaLoad(img.naturalWidth, img.naturalHeight);
+              }}
             />
           )
         ) : (
@@ -1141,7 +1161,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       </div>
 
       {/* Post Actions Bar */}
-      <div className="p-4 flex items-center justify-between flex-none">
+      <div className="py-3 px-0 lg:p-4 flex items-center justify-between flex-none">
         <div className="flex items-center gap-4">
           <button
             onClick={onLikeToggle}
@@ -1158,6 +1178,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
             title="Share to chat"
           >
             <Send className="w-6 h-6" />
+          </button>
+          <button
+            onClick={() => setShowOriginalRatio(!showOriginalRatio)}
+            className={`flex items-center justify-center transition-all active:scale-75 ${
+              showOriginalRatio ? 'text-[var(--gold)] scale-110' : 'text-white/60 hover:text-white hover:scale-110'
+            }`}
+            title={showOriginalRatio ? "Crop to fit (2:3)" : "Original ratio"}
+          >
+            {showOriginalRatio ? <Minimize2 className="w-6 h-6" /> : <Maximize2 className="w-6 h-6" />}
           </button>
         </div>
         <button

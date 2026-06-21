@@ -705,20 +705,39 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Mode</span>
                 </div>
               )}
-              <button 
-                onClick={() => initiateCall(false)}
-                className="hover:text-primary cursor-pointer hover:scale-110 active:scale-95 transition-all flex items-center justify-center p-1 text-aura-text-secondary"
-                title="Voice Call"
-              >
-                <Phone className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => initiateCall(true)}
-                className="hover:text-primary cursor-pointer hover:scale-110 active:scale-95 transition-all flex items-center justify-center p-1 text-aura-text-secondary"
-                title="Video Call"
-              >
-                <VideoCallIcon className="w-5 h-5" />
-              </button>
+              <div className="relative" ref={callDropdownRef}>
+                <button 
+                  onClick={() => setShowCallDropdown(!showCallDropdown)}
+                  className="hover:text-primary cursor-pointer hover:scale-110 active:scale-95 transition-all flex items-center justify-center p-1 text-aura-text-secondary"
+                  title="Call Options"
+                >
+                  <Phone className="w-5 h-5" />
+                </button>
+                {showCallDropdown && (
+                  <div className="absolute right-0 top-full mt-4 w-44 rounded-xl bg-[#161626] border border-white/10 shadow-2xl z-50 overflow-hidden py-1 backdrop-blur-md">
+                    <button
+                      onClick={() => {
+                        initiateCall(false);
+                        setShowCallDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-white/80 hover:bg-white/5 hover:text-white"
+                    >
+                      <Phone className="w-4 h-4 text-emerald-400" />
+                      Voice Call
+                    </button>
+                    <button
+                      onClick={() => {
+                        initiateCall(true);
+                        setShowCallDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm transition-colors flex items-center gap-3 text-white/80 hover:bg-white/5 hover:text-white"
+                    >
+                      <VideoCallIcon className="w-4 h-4 text-sky-400" />
+                      Video Call
+                    </button>
+                  </div>
+                )}
+              </div>
               {/* SnapCapture Button */}
               <button
                 onClick={() => snapCapture.initiateSnapCapture()}

@@ -1,15 +1,30 @@
 # App Version
-VersionName: 2.8.2
-VersionCode: 55
+VersionName: 2.9.0
+VersionCode: 63
 Date: 2026-06-21
 Changes:
+- Implemented smart automated aspect-ratio detection on mobile: if an image or video's original height-to-width ratio is less than 1.5 (meaning it is shorter in height than 2:3, e.g., 4:5, 1:1, or 16:9), it is automatically displayed in its original ratio by default instead of cropping to 2:3.
+
+## Previous Versions
+### Version 2.8.9 (Code 62)
+- Added aspect ratio toggle button (Maximize2/Minimize2) after the Share button in the post feed to let users view media in its original aspect ratio (aspect-auto/h-auto/object-contain) or crop to fit (2:3 aspect ratio).
+### Version 2.8.8 (Code 61)
+- Refined mobile post layout: changed the edge-to-edge media aspect ratio from 4:5 to 2:3 on mobile devices to present a slightly taller, more balanced media representation.
+### Version 2.8.7 (Code 60)
+- Overhauled mobile post layout to Instagram-style: removed post card container background, borders, shadows, and rounded corners on mobile, making it flat. Adjusted mobile media aspect ratio to standard Instagram portrait 4:5 and stretched the media edge-to-edge (-mx-4) for a premium, native-looking scroll experience.
+### Version 2.8.6 (Code 59)
+- Refined mobile post layout: adjusted the post media container aspect ratio on mobile devices to 9:15, reducing the height slightly by ~6.25% to prevent the post from stretching too long while keeping the media and card height aligned.
+### Version 2.8.5 (Code 58)
+- Refined mobile post layout: adjusted the post media container aspect ratio on mobile devices to 9:16 (keeping the desktop layout as flex-grow/auto within the 2/3 aspect ratio card) so that the media is displayed perfectly without scaling or cropping issues, allowing the overall card to take necessary height.
+### Version 2.8.4 (Code 57)
+- Refined mobile post layout: adjusted the post card aspect ratio on mobile devices to 9:16, while maintaining the 2/3 aspect ratio on desktop viewports for an optimal experience across different screen sizes.
+### Version 2.8.3 (Code 56)
+- Reorganized the chat header calling options: combined Voice and Video calling options into a single call button dropdown menu, utilizing the custom Video Call icon.
+### Version 2.8.2 (Code 55)
 - Replaced the Reels tab navigation icon with a custom Instagram-style Reels clapperboard icon (featuring a play triangle and slanted top lines).
 - Added a custom Video Call icon (video camera with an embedded play button) to the direct call controls in the chat headers.
 - Implemented curvy chevrons with smooth, rounded tips for all media, carousel, and collage viewers.
 - Replaced the Explore tab labels with "Search" to match the Search icon in bottom and sidebar navigation.
-
-## Previous Versions
-### Version 2.8.1 (Code 54)
 - Refined desktop post height and layout: adjusted post card aspect ratio from 9:16 to 2:3 on both mobile and desktop to present a slightly wider, more balanced post view.
 - Consolidated desktop right sidebar: merged the partner status and chat widget into a single, elegant card container, removing call shortcuts, streak badges, and vault headers to focus purely on the conversation.
 - Polished direct chat UI in sidebar: styled chat bubbles to match the original chat interface, including NaCl-box style bubble cards, time formatting, and dynamic double-tick status indicators.

@@ -114,7 +114,7 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
   if (moments.length === 0) return null;
 
   return (
-    <div className="relative w-full mb-8 select-none group/carousel">
+    <div className="relative w-full select-none group/carousel">
       {/* Title */}
       <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
         <div>
