@@ -1,9 +1,9 @@
 # App Version
-VersionName: 2.10.17
-VersionCode: 95
+VersionName: 2.10.18
+VersionCode: 96
 Date: 2026-06-22
 Changes:
-- Fixed screen freeze / stuck issue on native mobile when reacting to GIFs and Snapshot photos by disabling native touch callouts, user selection, and media pointer events.
+- Fixed "Extract & Send Frame" feature sending a black/blank image. Root causes: (1) `chunked_video` type was not finding the correct video element (videoRef is only for standard videos), (2) `document.querySelector('video')` could grab the wrong element, (3) frame was captured while the video was still playing (decoder hadn't settled on the current frame). Fix: search for the best ready video inside the viewer overlay, pause the video, seek to the current time to trigger a decoder flush via the `seeked` event, capture the frame after the decoder settles, resume playback, and add a blank-frame sanity check with an automatic retry.
 
 ## Previous Versions
 ### Version 2.10.16 (Code 94)

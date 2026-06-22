@@ -146,30 +146,99 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   const extractFrameAndSend = () => {
-    const video = videoRef.current || document.querySelector('video');
+    // For chunked_video: find the video inside the ChunkedVideoPlayer wrapper.
+    // For regular video: use the direct ref.
+    let video: HTMLVideoElement | null = videoRef.current;
+
     if (!video) {
-      toast.error("Video not found");
+      // Fallback: find the most-likely playing video in the viewer overlay
+      const overlay = overlayRef.current;
+      if (overlay) {
+        const videos = Array.from(overlay.querySelectorAll('video'));
+        // Prefer a video that has loaded data (readyState >= 2) and has valid dimensions
+        video = videos.find(v => v.readyState >= 2 && v.videoWidth > 0) || videos[0] || null;
+      }
+    }
+
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      toast.error("Video not ready yet — please wait for it to load");
       return;
     }
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || video.clientWidth;
-      canvas.height = video.videoHeight || video.clientHeight;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          toast.error("Could not capture frame");
+
+    const doCapture = (v: HTMLVideoElement) => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = v.videoWidth;
+        canvas.height = v.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          toast.error("Could not get canvas context");
           return;
         }
-        const file = new File([blob], 'extracted_frame.jpg', { type: 'image/jpeg' });
-        document.dispatchEvent(new CustomEvent('send-extracted-frame', { detail: { file, caption: 'Extracted frame' } }));
-        toast.success("Frame extracted and sent!");
-      }, 'image/jpeg', 0.9);
-    } catch(err) {
-      console.error("Frame extraction error", err);
-      toast.error("Failed to extract frame");
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+
+        // Sanity check: make sure it's not a blank/black frame
+        const pixelData = ctx.getImageData(0, 0, Math.min(10, canvas.width), Math.min(10, canvas.height)).data;
+        const isBlank = pixelData.every((val, i) => i % 4 === 3 ? true : val === 0);
+        if (isBlank) {
+          console.warn('[extractFrameAndSend] Captured frame appears blank/black, retrying after a short delay...');
+          // Try again after a small delay to let the decoder catch up
+          setTimeout(() => {
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob((blob) => {
+              if (!blob) { toast.error("Could not capture frame"); return; }
+              const file = new File([blob], 'extracted_frame.jpg', { type: 'image/jpeg' });
+              document.dispatchEvent(new CustomEvent('send-extracted-frame', { detail: { file, caption: 'Extracted frame' } }));
+              toast.success("Frame extracted and sent! 📸");
+            }, 'image/jpeg', 0.92);
+          }, 150);
+          return;
+        }
+
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            toast.error("Could not capture frame");
+            return;
+          }
+          const file = new File([blob], 'extracted_frame.jpg', { type: 'image/jpeg' });
+          document.dispatchEvent(new CustomEvent('send-extracted-frame', { detail: { file, caption: 'Extracted frame' } }));
+          toast.success("Frame extracted and sent! 📸");
+        }, 'image/jpeg', 0.92);
+      } catch (err) {
+        console.error("Frame extraction error", err);
+        toast.error("Failed to extract frame");
+      }
+    };
+
+    // If the video is playing, we need to pause briefly, let the current frame
+    // fully decode, then capture it, then resume.
+    const wasPlaying = !video.paused;
+    if (wasPlaying) {
+      video.pause();
+      // 'seeked' fires when the decoder has settled on the current frame.
+      // Use a one-time handler with a fallback timeout.
+      let captured = false;
+      const onSeeked = () => {
+        if (captured) return;
+        captured = true;
+        video!.removeEventListener('seeked', onSeeked);
+        doCapture(video!);
+        video!.play().catch(() => {});
+      };
+      video.addEventListener('seeked', onSeeked);
+      // Seek to the exact same currentTime to trigger 'seeked' and force frame decode
+      video.currentTime = video.currentTime;
+      // Fallback in case 'seeked' never fires (e.g. already at same time)
+      setTimeout(() => {
+        if (!captured) {
+          captured = true;
+          video!.removeEventListener('seeked', onSeeked);
+          doCapture(video!);
+          video!.play().catch(() => {});
+        }
+      }, 300);
+    } else {
+      doCapture(video);
     }
   };
 
