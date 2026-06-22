@@ -936,10 +936,10 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             <div className="absolute bottom-24 right-4 z-[100]">
               <button 
                 onClick={handleJumpToLatest} 
-                className="bg-primary text-background px-4 py-2 rounded-full shadow-lg font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-transform"
+                className="bg-primary text-background p-3 rounded-full shadow-lg flex items-center justify-center active:scale-95 transition-transform"
+                title="Jump to Latest"
               >
-                <ChevronDown className="w-4 h-4" />
-                Jump to Latest
+                <ChevronDown className="w-5 h-5" />
               </button>
             </div>
           )}

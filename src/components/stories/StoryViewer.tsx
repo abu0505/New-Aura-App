@@ -51,6 +51,26 @@ export default function StoryViewer({
   }, [currentIndex]);
 
   useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.getAttribute('contenteditable') === 'true')) {
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrev();
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleNext, handlePrev, onClose]);
+
+  useEffect(() => {
     let active = true;
     if (isOpen && activeStory?.media_url && activeStory.media_key && activeStory.media_nonce && partnerPublicKey) {
       setLoading(true);

@@ -4,6 +4,8 @@ import { useMedia } from '../../hooks/useMedia';
 import MomentViewer, { type MomentGroup } from './MomentViewer';
 import { supabase } from '../../lib/supabase';
 
+import { useVideoChunks } from '../../hooks/useVideoChunks';
+
 interface MomentsCarouselProps {
   moments: MomentGroup[];
   partnerPublicKey: string;
@@ -11,6 +13,7 @@ interface MomentsCarouselProps {
 
 export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCarouselProps) {
   const { getDecryptedBlob } = useMedia();
+  const { loadExistingChunks, getChunksForMessage } = useVideoChunks();
   const [coverUrls, setCoverUrls] = useState<Map<string, string>>(new Map());
   const coverUrlsRef = useRef<Map<string, string>>(new Map()); // sync ref to avoid stale closure
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -84,11 +87,61 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
       coverUrlsRef.current.set(moment.id, '__failed__');
       setCoverUrls(prev => new Map(prev).set(moment.id, '__failed__'));
     }
-  }, [partnerPublicKey, getDecryptedBlob]); // removed coverUrls from deps to fix stale closure
+  }, [partnerPublicKey, getDecryptedBlob]);
+
+  // Preload first item video if it is a video post
+  const preloadFirstItemVideo = useCallback(async (moment: MomentGroup) => {
+    const firstItem = moment.items[0];
+    if (!firstItem || firstItem.type !== 'video') return;
+
+    const isChunked = !firstItem.media_url;
+
+    if (isChunked) {
+      // Check if it is already loaded/decrypted
+      const existingChunks = getChunksForMessage(firstItem.id);
+      if (existingChunks && existingChunks.some(c => c.isDecrypted && c.blobUrl)) {
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('video_chunks')
+          .select('message_id, chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+          .eq('message_id', firstItem.id)
+          .order('chunk_index', { ascending: true });
+
+        if (!error && data && data.length > 0 && partnerPublicKey) {
+          // Preload/decrypt chunks in the background
+          loadExistingChunks(firstItem.id, data, partnerPublicKey);
+        }
+      } catch (err) {
+        console.error('[MomentsCarousel] Background chunk preload error:', err);
+      }
+    } else {
+      // Standard video: decrypt and store in global decryptedBlobCache
+      if (!firstItem.media_url || !firstItem.media_key || !firstItem.media_nonce || !partnerPublicKey) return;
+      try {
+        await getDecryptedBlob(
+          firstItem.media_url,
+          firstItem.media_key,
+          firstItem.media_nonce,
+          partnerPublicKey,
+          firstItem.sender_public_key,
+          undefined,
+          'video'
+        );
+      } catch (err) {
+        console.error('[MomentsCarousel] Background standard video preload error:', err);
+      }
+    }
+  }, [partnerPublicKey, getDecryptedBlob, loadExistingChunks, getChunksForMessage]);
 
   useEffect(() => {
-    moments.forEach(m => decryptCover(m));
-  }, [moments, decryptCover]);
+    moments.forEach(m => {
+      decryptCover(m);
+      preloadFirstItemVideo(m);
+    });
+  }, [moments, decryptCover, preloadFirstItemVideo]);
 
   // Track scroll for arrow visibility
   const updateScroll = () => {

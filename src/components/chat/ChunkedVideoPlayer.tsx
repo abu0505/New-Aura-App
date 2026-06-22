@@ -37,6 +37,8 @@ interface ChunkedVideoPlayerProps {
   muted?: boolean;
   loop?: boolean;
   messageId?: string;
+  onToggleFullscreen?: () => void;
+  isFullscreen?: boolean;
 }
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -62,6 +64,8 @@ export default function ChunkedVideoPlayer({
   muted = false,
   loop = false,
   messageId,
+  onToggleFullscreen,
+  isFullscreen: propsIsFullscreen,
 }: ChunkedVideoPlayerProps) {
   /* ── Refs ────────────────────────────────────────────────────────────── */
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,7 +95,8 @@ export default function ChunkedVideoPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [bufferedEnd, setBufferedEnd] = useState(0);
   const [isBuffering, setIsBuffering] = useState(autoPlay);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [internalIsFullscreen, setInternalIsFullscreen] = useState(false);
+  const isFullscreen = propsIsFullscreen !== undefined ? propsIsFullscreen : internalIsFullscreen;
   const [showControls, setShowControls] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [isLooping, setIsLooping] = useState(loop);
@@ -223,7 +228,7 @@ export default function ChunkedVideoPlayer({
 
   /* ── Fullscreen listener ────────────────────────────────────────────── */
   useEffect(() => {
-    const h = () => setIsFullscreen(!!document.fullscreenElement);
+    const h = () => setInternalIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', h);
     return () => document.removeEventListener('fullscreenchange', h);
   }, []);
@@ -367,6 +372,10 @@ export default function ChunkedVideoPlayer({
   );
 
   const toggleFS = useCallback(() => {
+    if (onToggleFullscreen) {
+      onToggleFullscreen();
+      return;
+    }
     const c = containerRef.current;
     if (!c) return;
     if (document.fullscreenElement) {
@@ -374,7 +383,7 @@ export default function ChunkedVideoPlayer({
     } else {
       c.requestFullscreen().catch(() => {});
     }
-  }, []);
+  }, [onToggleFullscreen]);
 
   const flashControls = useCallback(() => {
     setShowControls(true);

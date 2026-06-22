@@ -983,10 +983,10 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
             <div className="absolute bottom-32 right-10 z-[100]">
               <button 
                 onClick={handleJumpToLatest} 
-                className="bg-primary text-background px-4 py-2 rounded-full shadow-lg font-bold text-sm flex items-center gap-2 hover:scale-105 transition-transform"
+                className="bg-primary text-background p-3 rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+                title="Jump to Latest"
               >
-                <ChevronDown className="w-4 h-4" />
-                Jump to Latest
+                <ChevronDown className="w-5 h-5" />
               </button>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// motion and AnimatePresence removed
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePartner } from '../../hooks/usePartner';
@@ -7,6 +7,7 @@ import { useMedia } from '../../hooks/useMedia';
 import { useVideoChunks } from '../../hooks/useVideoChunks';
 import { Capacitor } from '@capacitor/core';
 import { Search } from 'lucide-react';
+import MediaViewer from '../chat/MediaViewer';
 
 // Lazy load the sub-screens to preserve codebase architecture
 const MemoriesScreen = lazy(() => import('../memories/MemoriesScreen'));
@@ -38,10 +39,46 @@ export default function ExploreScreen() {
   const [exploreItems, setExploreItems] = useState<ExploreItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string } | null>(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
+  const [decryptedCache, setDecryptedCache] = useState<Record<string, string>>({});
 
-  const handleOpenMedia = (url: string, type: string) => {
-    setSelectedMedia({ url, type });
+  // Decrypt items in the explore viewer on the fly (current, next, previous)
+  useEffect(() => {
+    const partnerKey = partner?.public_key;
+    if (selectedMediaIndex === null || !partnerKey || exploreItems.length === 0) return;
+    
+    const indices = [selectedMediaIndex, selectedMediaIndex + 1, selectedMediaIndex - 1];
+    indices.forEach(async (idx) => {
+      if (idx < 0 || idx >= exploreItems.length) return;
+      const item = exploreItems[idx];
+      if (!item || decryptedCache[item.id]) return;
+      
+      const isChunked = item.type === 'video' && !item.media_url;
+      try {
+        if (isChunked) {
+          // Set type placeholder so we trigger the ChunkedVideoFetcher
+          setDecryptedCache(prev => ({ ...prev, [item.id]: 'chunked_video' }));
+        } else {
+          const blob = await getDecryptedBlob(
+            item.media_url!,
+            item.media_key!,
+            item.media_nonce!,
+            partnerKey,
+            item.sender_public_key
+          );
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            setDecryptedCache(prev => ({ ...prev, [item.id]: url }));
+          }
+        }
+      } catch (err) {
+        console.error('Error decrypting explore item in viewer:', err);
+      }
+    });
+  }, [selectedMediaIndex, exploreItems, decryptedCache, partner, getDecryptedBlob]);
+
+  const handleOpenMedia = (index: number) => {
+    setSelectedMediaIndex(index);
   };
 
   // Sync stealth mode changes
@@ -141,9 +178,9 @@ export default function ExploreScreen() {
   }
 
   return (
-    <div className={`h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24 lg:px-8 lg:py-6 ${isNative ? 'safe-top' : ''}`}>
-      {/* Search Header */}
-      <div className="px-4 py-3 bg-[var(--bg-primary)] sticky top-0 z-30 lg:px-0 lg:max-w-4xl lg:mx-auto lg:mb-6">
+    <div className={`h-full w-full bg-[var(--bg-primary)] flex flex-col overflow-hidden ${isNative ? 'safe-top' : ''}`}>
+      {/* Search Header - Stationary at the top */}
+      <div className="shrink-0 w-full px-4 py-3 bg-[var(--bg-primary)] border-b border-white/5 z-30 lg:max-w-4xl lg:mx-auto">
         <div className="relative flex items-center w-full bg-white/5 rounded-full border border-white/10 px-4 py-2.5">
           <Search className="text-white/40 mr-2 w-5 h-5" />
           <input 
@@ -156,92 +193,90 @@ export default function ExploreScreen() {
         </div>
       </div>
 
-      {/* Discovery Hub Card Grid */}
-      <div className="px-4 py-4 grid grid-cols-3 gap-3 lg:px-0 lg:max-w-4xl lg:mx-auto lg:gap-6 lg:mb-8">
-        {/* Gallery */}
-        <button 
-          onClick={() => setSubView('gallery')}
-          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300"
-        >
-          <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center text-[var(--gold)]">
-            <span className="material-symbols-outlined text-xl">photo_library</span>
-          </div>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Gallery</span>
-        </button>
-
-        {/* Notes */}
-        <button 
-          onClick={() => setSubView('notes')}
-          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300"
-        >
-          <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
-            <span className="material-symbols-outlined text-xl">sticky_note_2</span>
-          </div>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Notes</span>
-        </button>
-
-        {/* Games */}
-        <button 
-          onClick={() => setSubView('games')}
-          className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300"
-        >
-          <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
-            <span className="material-symbols-outlined text-xl">sports_esports</span>
-          </div>
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Games</span>
-        </button>
-      </div>
-
-      {/* Explore Grid */}
-      <div className="px-4 py-4 space-y-4 lg:px-0 lg:max-w-4xl lg:mx-auto">
-        <h3 className="font-serif italic text-base text-[var(--gold)] tracking-wide">Explore Shared Grid</h3>
-
-        {loading ? (
-          <div className="py-12 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
-          </div>
-        ) : exploreItems.length === 0 ? (
-          <div className="py-12 text-center text-white/30 text-xs font-label uppercase tracking-widest">
-            No memories to explore.
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 lg:grid-cols-4 gap-1 rounded-3xl overflow-hidden">
-            {exploreItems.map((item) => (
-              <ExploreGridThumb 
-                key={item.id} 
-                item={item} 
-                partnerPublicKey={partner?.public_key || ''} 
-                getDecryptedBlob={getDecryptedBlob}
-                onClick={handleOpenMedia}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Fullscreen Video/Photo Viewer */}
-      <AnimatePresence>
-        {selectedMedia && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+      {/* Scrollable Content Container */}
+      <div className="flex-grow overflow-y-auto social-feed-scroll pb-24 lg:px-8 lg:py-6">
+        {/* Discovery Hub Card Grid */}
+        <div className="px-4 py-4 grid grid-cols-3 gap-3 lg:px-0 lg:max-w-4xl lg:mx-auto lg:gap-6 lg:mb-8">
+          {/* Gallery */}
+          <button 
+            onClick={() => setSubView('gallery')}
+            className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300 w-full"
           >
-            <button 
-              onClick={() => setSelectedMedia(null)}
-              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-            {selectedMedia.type === 'video' ? (
-              <video src={selectedMedia.url} controls autoPlay className="max-w-full max-h-full rounded-2xl" />
-            ) : (
-              <img src={selectedMedia.url} alt="" className="max-w-full max-h-full rounded-2xl object-contain" />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <div className="w-10 h-10 rounded-full bg-[var(--gold)]/10 flex items-center justify-center text-[var(--gold)]">
+              <span className="material-symbols-outlined text-xl">photo_library</span>
+            </div>
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Gallery</span>
+          </button>
+
+          {/* Notes */}
+          <button 
+            onClick={() => setSubView('notes')}
+            className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300 w-full"
+          >
+            <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
+              <span className="material-symbols-outlined text-xl">sticky_note_2</span>
+            </div>
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Notes</span>
+          </button>
+
+          {/* Games */}
+          <button 
+            onClick={() => setSubView('games')}
+            className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300 w-full"
+          >
+            <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <span className="material-symbols-outlined text-xl">sports_esports</span>
+            </div>
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Games</span>
+          </button>
+        </div>
+
+        {/* Explore Grid */}
+        <div className="px-4 py-4 space-y-4 lg:px-0 lg:max-w-4xl lg:mx-auto">
+          <h3 className="font-serif italic text-base text-[var(--gold)] tracking-wide">Explore Shared Grid</h3>
+
+          {loading ? (
+            <div className="py-12 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
+            </div>
+          ) : exploreItems.length === 0 ? (
+            <div className="py-12 text-center text-white/30 text-xs font-label uppercase tracking-widest">
+              No memories to explore.
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 lg:grid-cols-4 gap-1 rounded-3xl overflow-hidden">
+              {exploreItems.map((item, idx) => (
+                <ExploreGridThumb 
+                  key={item.id} 
+                  item={item} 
+                  partnerPublicKey={partner?.public_key || ''} 
+                  getDecryptedBlob={getDecryptedBlob}
+                  decryptedUrl={decryptedCache[item.id]}
+                  onDecrypted={(url) => setDecryptedCache(prev => ({ ...prev, [item.id]: url }))}
+                  onClick={() => handleOpenMedia(idx)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Fullscreen Video/Photo Viewer with Swipability */}
+      {selectedMediaIndex !== null && exploreItems[selectedMediaIndex] && (
+        <MediaViewer
+          url={decryptedCache[exploreItems[selectedMediaIndex].id] || ''}
+          type={(exploreItems[selectedMediaIndex].type === 'video' && !exploreItems[selectedMediaIndex].media_url ? 'chunked_video' : exploreItems[selectedMediaIndex].type) as any}
+          messageId={exploreItems[selectedMediaIndex].id}
+          onClose={() => setSelectedMediaIndex(null)}
+          allMedia={exploreItems.map(item => ({
+            id: item.id,
+            url: decryptedCache[item.id] || '',
+            type: (item.type === 'video' && !item.media_url ? 'chunked_video' : item.type) as any
+          }))}
+          initialIndex={selectedMediaIndex}
+          onIndexChange={(index) => setSelectedMediaIndex(index)}
+        />
+      )}
     </div>
   );
 }
@@ -250,11 +285,12 @@ interface ExploreGridThumbProps {
   item: ExploreItem;
   partnerPublicKey: string;
   getDecryptedBlob: any;
-  onClick: (url: string, type: string) => void;
+  decryptedUrl?: string;
+  onDecrypted: (url: string) => void;
+  onClick: () => void;
 }
 
-function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }: ExploreGridThumbProps) {
-  const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
+function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, decryptedUrl, onDecrypted, onClick }: ExploreGridThumbProps) {
   const [loading, setLoading] = useState(false);
   const [decryptionFailed, setDecryptionFailed] = useState(false);
   const thumbRef = useRef<HTMLButtonElement>(null);
@@ -270,16 +306,15 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
   useEffect(() => {
     if (!isChunkedVideo || !videoChunks?.length) return;
     const chunk = videoChunks[0];
-    if (chunk?.blobUrl && chunk.isDecrypted) {
-      setDecryptedUrl(chunk.blobUrl);
+    if (chunk?.blobUrl && chunk.isDecrypted && !decryptedUrl) {
+      onDecrypted(chunk.blobUrl);
       setLoading(false);
       hasDecryptedRef.current = true;
     }
-  }, [isChunkedVideo, videoChunks]);
+  }, [isChunkedVideo, videoChunks, decryptedUrl, onDecrypted]);
 
   // Clean up Object URL on unmount or item change
   useEffect(() => {
-    setDecryptedUrl(null);
     setLoading(false);
     hasDecryptedRef.current = false;
     return () => {
@@ -301,7 +336,7 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
 
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting || !active) return;
-      if (hasDecryptedRef.current) {
+      if (hasDecryptedRef.current || decryptedUrl) {
         observer.disconnect();
         return;
       }
@@ -337,7 +372,7 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
             if (blob && active) {
               const url = URL.createObjectURL(blob);
               decryptedUrlRef.current = url;
-              setDecryptedUrl(url);
+              onDecrypted(url);
               observer.disconnect();
             } else if (!blob) {
               console.error(`${tag} FAILED — null blob`);
@@ -365,14 +400,14 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, onClick }:
       observer.disconnect();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo]);
+  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo, decryptedUrl]);
 
   if (decryptionFailed) return null;
 
   return (
     <button 
       ref={thumbRef}
-      onClick={() => decryptedUrl && onClick(decryptedUrl, item.type)}
+      onClick={() => decryptedUrl && onClick()}
       className="aspect-square relative w-full bg-black/20 flex items-center justify-center overflow-hidden active:scale-95 transition-transform"
     >
       {loading ? (

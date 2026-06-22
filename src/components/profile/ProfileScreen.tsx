@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, lazy, Suspense, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, lazy, Suspense, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -254,25 +254,39 @@ export default function ProfileScreen() {
     });
   }, [user, fetchProfileData]);
 
-  // Scroll to selected item when swiper viewer opens
-  useEffect(() => {
+  // Scroll to selected item when swiper viewer opens (using useLayoutEffect for instant jump before paint)
+  useLayoutEffect(() => {
     if (activeReelIndex !== null && isInitialScrollRef.current) {
-      let attempts = 0;
-      const scroll = () => {
-        const container = reelContainerRef.current;
-        if (container && container.clientHeight > 0) {
-          container.scrollTop = activeReelIndex * container.clientHeight;
-          setTimeout(() => {
+      const container = reelContainerRef.current;
+      if (container) {
+        container.style.scrollBehavior = 'auto';
+        
+        // Use clientHeight if available, fallback to window.innerHeight
+        const itemHeight = container.clientHeight || window.innerHeight;
+        container.scrollTop = activeReelIndex * itemHeight;
+        
+        // A single frame check to ensure alignment and reset the initial scroll ref
+        let attempts = 0;
+        const alignScroll = () => {
+          const c = reelContainerRef.current;
+          if (c) {
+            c.style.scrollBehavior = 'auto';
+            const h = c.clientHeight || window.innerHeight;
+            c.scrollTop = activeReelIndex * h;
+            
+            // Mark initial scroll as complete so normal scroll events are processed
+            setTimeout(() => {
+              isInitialScrollRef.current = false;
+            }, 50);
+          } else if (attempts < 10) {
+            attempts++;
+            requestAnimationFrame(alignScroll);
+          } else {
             isInitialScrollRef.current = false;
-          }, 150);
-        } else if (attempts < 15) {
-          attempts++;
-          requestAnimationFrame(scroll);
-        } else {
-          isInitialScrollRef.current = false;
-        }
-      };
-      scroll();
+          }
+        };
+        requestAnimationFrame(alignScroll);
+      }
     }
   }, [activeReelIndex]);
 
@@ -287,6 +301,32 @@ export default function ProfileScreen() {
       setActiveReelIndex(newIndex);
     }
   };
+
+  // Keyboard navigation for Profile reels swiper (ArrowUp / ArrowDown)
+  useEffect(() => {
+    if (activeReelIndex === null || reelViewerItems.length === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.getAttribute('contenteditable') === 'true')) {
+        return;
+      }
+
+      const container = reelContainerRef.current;
+      if (!container) return;
+      const clientHeight = container.clientHeight || window.innerHeight;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        container.scrollBy({ top: clientHeight, behavior: 'smooth' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        container.scrollBy({ top: -clientHeight, behavior: 'smooth' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeReelIndex, reelViewerItems.length]);
 
   useEffect(() => {
     if (viewMode === 'profile') {
@@ -688,7 +728,7 @@ export default function ProfileScreen() {
           {/* Reels Swiper */}
           <div
             onScroll={handleReelScroll}
-            className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth"
+            className="h-full w-full overflow-y-scroll snap-y snap-mandatory"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             ref={reelContainerRef}
           >
@@ -701,7 +741,7 @@ export default function ProfileScreen() {
                   <div
                     key={item.id}
                     className="h-full w-full snap-start relative bg-black flex items-center justify-center lg:py-6"
-                    style={{ height: '100dvh' }}
+                    style={{ height: '100dvh', scrollSnapStop: 'always' }}
                   />
                 );
               }

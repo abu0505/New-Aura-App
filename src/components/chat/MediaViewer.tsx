@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import ChunkedVideoPlayer from './ChunkedVideoPlayer';
@@ -27,9 +26,22 @@ interface MediaViewerProps {
   duration?: number;
   messageId?: string;
   showViewInChat?: boolean;
+  onIndexChange?: (index: number) => void;
 }
 
-function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration }: { messageId: string, thumbnailUrl?: string, duration?: number }) {
+function ChunkedVideoFetcher({ 
+  messageId, 
+  thumbnailUrl, 
+  duration, 
+  onToggleFullscreen, 
+  isFullscreen 
+}: { 
+  messageId: string; 
+  thumbnailUrl?: string; 
+  duration?: number; 
+  onToggleFullscreen?: () => void; 
+  isFullscreen?: boolean; 
+}) {
   const { chunks, getChunksForMessage, loadExistingChunks } = useVideoChunks(messageId);
   const { partner } = usePartner();
 
@@ -87,15 +99,46 @@ function ChunkedVideoFetcher({ messageId, thumbnailUrl, duration }: { messageId:
       autoPlay
       loop={true}
       messageId={messageId}
+      onToggleFullscreen={onToggleFullscreen}
+      isFullscreen={isFullscreen}
       className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
     />
   );
 }
 
-export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration, messageId, showViewInChat = false }: MediaViewerProps) {
+export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration, messageId, showViewInChat = false, onIndexChange }: MediaViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [direction, setDirection] = useState(0);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const touchStartX = useRef<number | null>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
+
+  useEffect(() => {
+    onIndexChange?.(currentIndex);
+  }, [currentIndex, onIndexChange]);
+
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsViewerFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  const toggleViewerFullscreen = () => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err) => console.error("Exit fullscreen error", err));
+    } else {
+      overlay.requestFullscreen().catch((err) => console.error("Request fullscreen error", err));
+    }
+  };
   
   const { folders, createFolder, addItemsToFolder } = useMediaFolders();
   const [showFolderPicker, setShowFolderPicker] = useState(false);
@@ -280,8 +323,8 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   useEffect(() => {
     const handleFullscreenChange = () => {
       const video = videoRef.current;
-      if (video && document.fullscreenElement === video) {
-        console.log('[MediaViewer] Standard video entered fullscreen — enabling auto-loop');
+      if (video && (document.fullscreenElement === video || document.fullscreenElement === overlayRef.current)) {
+        console.log('[MediaViewer] Video container entered fullscreen — enabling auto-loop');
         video.loop = true;
       }
     };
@@ -294,7 +337,6 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (allMedia && currentIndex < allMedia.length - 1) {
-      setDirection(1);
       setCurrentIndex(prev => prev + 1);
     }
   };
@@ -302,51 +344,68 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (allMedia && currentIndex > 0) {
-      setDirection(-1);
       setCurrentIndex(prev => prev - 1);
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.getAttribute('contenteditable') === 'true')) {
+        return;
+      }
+      if (e.key === 'ArrowRight') {
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrev();
+      } else if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [allMedia, currentIndex, onClose]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
+    touchStartX.current = e.touches[0].clientX;
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null) return;
+    if (touchStartX.current === null) return;
     const touchEndX = e.changedTouches[0].clientX;
-    const distance = touchStartX - touchEndX;
+    const distance = touchStartX.current - touchEndX;
 
     if (distance > 50) {
       handleNext();
     } else if (distance < -50) {
       handlePrev();
     }
-    setTouchStartX(null);
+    touchStartX.current = null;
   };
 
   const slideVariants = {
-    enter: (direction: number) => ({
-      x: direction > 0 ? 50 : -50,
+    enter: {
       opacity: 0,
-      scale: 0.95
-    }),
+      scale: 0.98
+    },
     center: {
       zIndex: 1,
-      x: 0,
       opacity: 1,
       scale: 1
     },
-    exit: (direction: number) => ({
+    exit: {
       zIndex: 0,
-      x: direction < 0 ? 50 : -50,
       opacity: 0,
-      scale: 0.95
-    })
+      scale: 0.98
+    }
   };
 
   const content = (
     <AnimatePresence mode="wait">
       <motion.div
+        ref={overlayRef}
         key="media-viewer-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -354,6 +413,18 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
         style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         onClick={onClose}
       >
+        <style>{`
+          /* Hide native fullscreen button from video element to prevent black frames in native video fullscreen */
+          video::-webkit-media-controls-fullscreen-button {
+            display: none !important;
+          }
+          video::-type-selector-media-controls-fullscreen-button {
+            display: none !important;
+          }
+          video::gesture-media-controls-fullscreen-button {
+            display: none !important;
+          }
+        `}</style>
         {/* Top left info */}
         <div className="absolute top-4 left-4 md:top-6 md:left-6 z-[10000]">
           {allMedia && allMedia.length > 1 && (
@@ -533,6 +604,18 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
             <span className="material-symbols-outlined text-2xl">download</span>
           </a>
           <button
+            title={isViewerFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleViewerFullscreen();
+            }}
+            className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
+          >
+            <span className="material-symbols-outlined text-2xl">
+              {isViewerFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+            </span>
+          </button>
+          <button
             onClick={(e) => { e.stopPropagation(); onClose(); }}
             className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
           >
@@ -566,12 +649,11 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={currentMedia.id ?? currentMedia.url}
-            custom={direction}
             variants={slideVariants}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            transition={{ duration: 0.2 }}
             style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={(e) => e.stopPropagation()}
             onTouchStart={handleTouchStart}
@@ -629,53 +711,36 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
 
               {/* Actual image — only render when URL is ready */}
               {currentMedia.url && (
-                <TransformWrapper
-                  initialScale={1}
-                  minScale={0.5}
-                  maxScale={6}
-                  centerOnInit
-                  centerZoomedOut
-                >
-                  <TransformComponent
-                    wrapperStyle={{ width: '100vw', height: '100vh' }}
-                    contentStyle={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    <img
-                      src={currentMedia.url}
-                      alt=""
-                      onLoad={() => {
-                        console.log('[MediaViewer] image loaded successfully. Src:', currentMedia.url);
-                        setImgLoading(false);
-                        setImgError(false);
-                      }}
-                      onError={() => {
-                        console.error('[MediaViewer] image load error! Src:', currentMedia.url, 'retryAttempt:', imgRetryRef.current);
-                        if (imgRetryRef.current < 1) {
-                          imgRetryRef.current++;
-                          // Force reload by appending a dummy param
-                          setImgLoading(true);
-                          setImgError(false);
-                        } else {
-                          setImgLoading(false);
-                          setImgError(true);
-                        }
-                      }}
-                      style={{
-                        maxWidth: '100vw',
-                        maxHeight: '100vh',
-                        width: 'auto',
-                        height: 'auto',
-                        objectFit: 'contain',
-                        userSelect: 'none',
-                        borderRadius: '.5rem',
-                        boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
-                        opacity: imgLoading ? 0 : 1,
-                        transition: 'opacity 0.3s ease',
-                      }}
-                      draggable={false}
-                    />
-                  </TransformComponent>
-                </TransformWrapper>
+                <img
+                  src={currentMedia.url}
+                  alt=""
+                  onLoad={() => {
+                    console.log('[MediaViewer] image loaded successfully. Src:', currentMedia.url);
+                    setImgLoading(false);
+                    setImgError(false);
+                  }}
+                  onError={() => {
+                    console.error('[MediaViewer] image load error! Src:', currentMedia.url, 'retryAttempt:', imgRetryRef.current);
+                    if (imgRetryRef.current < 1) {
+                      imgRetryRef.current++;
+                      // Force reload by appending a dummy param
+                      setImgLoading(true);
+                      setImgError(false);
+                    } else {
+                      setImgLoading(false);
+                      setImgError(true);
+                    }
+                  }}
+                  className="w-full h-full object-contain"
+                  style={{
+                    userSelect: 'none',
+                    borderRadius: '.5rem',
+                    boxShadow: '0 25px 60px rgba(0,0,0,0.8)',
+                    opacity: imgLoading ? 0 : 1,
+                    transition: 'opacity 0.3s ease',
+                  }}
+                  draggable={false}
+                />
               )}
             </div>
           ) : currentMedia.type === 'chunked_video' ? (
@@ -688,6 +753,8 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                   autoPlay
                   loop={true}
                   messageId={messageId || currentMedia.id}
+                  onToggleFullscreen={toggleViewerFullscreen}
+                  isFullscreen={isViewerFullscreen}
                   className="w-full h-full max-h-full object-contain rounded-lg shadow-[0_25px_60px_rgba(0,0,0,0.8)]" 
                 />
               ) : currentMedia.id ? (
@@ -695,6 +762,8 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                   messageId={currentMedia.id}
                   thumbnailUrl={thumbnailUrl || currentMedia.url}
                   duration={duration}
+                  onToggleFullscreen={toggleViewerFullscreen}
+                  isFullscreen={isViewerFullscreen}
                 />
               ) : (
                 <div className="text-white/50 text-sm">Cannot load video</div>
@@ -712,6 +781,8 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
                 ref={videoRef}
                 src={currentMedia.url}
                 controls
+                controlsList="nofullscreen"
+                crossOrigin="anonymous"
                 autoPlay
                 loop={true}
                 playsInline

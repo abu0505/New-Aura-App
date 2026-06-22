@@ -186,10 +186,10 @@ export default function AppLayout({ activeTab, onTabChange, children, hasUnreadC
               <button
                 onClick={() => onTabChange('explore')}
                 className={`flex items-center gap-4 font-medium transition-all duration-300 rounded-full group ${isSidebarShrunk ? 'justify-center w-10 h-10 px-0 py-3' : activeTab === 'explore' ? 'py-5 px-6' : 'py-3 px-4'} ${activeTab === 'explore' ? 'text-black bg-[var(--gold)] shadow-lg shadow-[var(--gold)]/10' : 'text-[var(--text-secondary)]/60 hover:text-[var(--text-primary)]'}`}
-                title="Search"
+                title="Explore"
               >
                 <Search className={`w-5 h-5 transition-all duration-300 group-hover:scale-110 ${activeTab === 'explore' ? 'stroke-[2.5px]' : 'stroke-[1.75px]'}`} />
-                {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Search</span>}
+                {!isSidebarShrunk && <span className="font-sans text-[11px] font-bold tracking-[0.15em] uppercase">Explore</span>}
               </button>
               <button
                 onClick={() => onTabChange('chat')}
@@ -285,7 +285,7 @@ export default function AppLayout({ activeTab, onTabChange, children, hasUnreadC
             className={`flex flex-col items-center justify-center p-3 transition-all duration-300 active:scale-90 ${activeTab === 'explore' ? 'text-[var(--gold)]' : 'text-[var(--text-secondary)]/60 hover:text-[var(--gold)]'}`}
           >
             <Search className={`w-6 h-6 mb-1.5 transition-all duration-300 ${activeTab === 'explore' ? 'stroke-[2.5px] fill-[var(--gold)]/10 text-[var(--gold)] scale-110' : 'stroke-[1.75px] text-[var(--text-secondary)]/60'}`} />
-            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Search</span>
+            <span className="font-sans text-[9px] uppercase tracking-[0.1em] font-bold">Explore</span>
           </button>
  
           {/* Chat */}

@@ -1,11 +1,50 @@
 # App Version
-VersionName: 2.9.19
-VersionCode: 82
-Date: 2026-06-21
+VersionName: 2.10.16
+VersionCode: 94
+Date: 2026-06-22
 Changes:
-- Cleaned up profile screen tab labels: changed the tab label from displaying the partner's name ("Wife's Posts") to a simpler "Posts" label when viewing the partner's profile page.
+- Fixed video frame capture black screen issues in fullscreen mode by implementing a parent-container-level fullscreen mode for MediaViewer.
+- Added a custom fullscreen toggle button in the MediaViewer toolbar and hid native browser video player fullscreen controls.
+- Integrated parent fullscreen triggers with ChunkedVideoPlayer.
 
 ## Previous Versions
+### Version 2.10.15 (Code 93)
+- Batched the Memories Gallery fullscreen media viewer dynamically by day so swiping only scrolls through media shared on that same date.
+- Fixed TypeScript compiler errors in ExploreScreen by typing partner's public key safely and removing unused motion imports.
+### Version 2.10.14 (Code 92)
+- Added ArrowUp and ArrowDown keyboard arrow keys navigation to dedicated and profile Reels screen viewports on desktop.
+- Prevented double/triple reel snapping skipping (momentum snapping) on both desktop and mobile devices by adding `scrollSnapStop: 'always'` to all Reels container items and placeholders.
+### Version 2.10.13 (Code 91)
+- Overhauled the profile full-screen reels swiper viewer: replaced the initial scrolling/sliding animation with an instant positioning jump using `useLayoutEffect` and removing `scroll-smooth`, allowing the clicked item to open immediately with normal swiping behavior (just like Instagram).
+
+### Version 2.10.12 (Code 90)
+- Added left and right keyboard arrow navigation (with input-focus safety) to the full-screen MediaViewer and StoryViewer on desktop viewports.
+- Replaced the "Jump to Latest" button in both desktop and mobile chat screens with a simple circular down-arrow button.
+
+### Version 2.10.11 (Code 89)
+- Replaced the "Jump to Latest" button in both desktop and mobile chat screens with a simple circular down-arrow button.
+
+### Version 2.10.10 (Code 88)
+- Replaced the `react-zoom-pan-pinch` wrapper (`TransformWrapper`) with a plain containerized image in the full-screen MediaViewer. This completely solves the issue on mobile where swiping multiple images caused them to get grabbed and panned around, allowing the touch events to bubble up cleanly and behave exactly like standard moments swiping.
+
+### Version 2.10.9 (Code 87)
+- Cleaned up unused `direction` state and its references from `MediaViewer.tsx` to fix TypeScript/ESLint warnings about declared but unread variables.
+
+### Version 2.10.8 (Code 86)
+- Refactored the full-screen chat MediaViewer swipe gesture to use a state-independent useRef tracking mechanism, matching the high-performance implementation in MomentViewer. This eliminates intermediate re-renders during drag starts, resulting in an exceptionally smooth and responsive swipe transition. Also aligned the slide animation to use the clean fade-and-scale effect.
+
+### Version 2.10.7 (Code 85)
+- Curated moments loading optimization: if the first item in any moment card is a video (either standard or chunked), it is automatically pre-loaded and pre-decrypted in the background upon mounting. This makes it instantly available for playback without loading delay when opened.
+
+### Version 2.10.6 (Code 84)
+- Implemented hover-to-play video playback for feed posts on desktop viewports. When hovering over a video post card, it will automatically play, and when the mouse leaves, it will automatically pause. Auto-playback via viewport entry is disabled for desktop viewports.
+
+### Version 2.10.5 (Code 83)
+- Removed sticky positioning from the homepage header on both mobile and desktop viewports, allowing it to stay in normal layout flow and scroll away with the page content.
+
+### Version 2.10.4 (Code 82)
+- Cleaned up profile screen tab labels: changed the tab label from displaying the partner's name ("Wife's Posts") to a simpler "Posts" label when viewing the partner's profile page.
+
 ### Version 2.9.18 (Code 81)
 - Added double-tap/double-click to like feature for feed posts on the HomeScreen, featuring a premium animated heart burst overlay effect and custom click delay to separate media play/pause from like triggers.
 

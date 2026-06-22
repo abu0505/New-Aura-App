@@ -66,8 +66,35 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [savedItems, setSavedItems] = useState<Set<string>>(new Set());
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const userId = user?.id;
+
+  // Keyboard navigation for reels (ArrowUp / ArrowDown)
+  useEffect(() => {
+    if (!isActive || reels.length === 0) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.getAttribute('contenteditable') === 'true')) {
+        return;
+      }
+      
+      const container = scrollContainerRef.current;
+      if (!container) return;
+      const clientHeight = container.clientHeight || window.innerHeight;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        container.scrollBy({ top: clientHeight, behavior: 'smooth' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        container.scrollBy({ top: -clientHeight, behavior: 'smooth' });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isActive, reels.length]);
 
   // Load favorites
   useEffect(() => {
@@ -326,6 +353,7 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
         </div>
       ) : (
         <div
+          ref={scrollContainerRef}
           onScroll={handleScroll}
           className="h-full w-full overflow-y-scroll snap-y snap-mandatory scroll-smooth"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -339,7 +367,7 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
                 <div
                   key={item.id}
                   className="h-full w-full snap-start relative bg-black flex items-center justify-center lg:py-6"
-                  style={{ height: '100dvh' }}
+                  style={{ height: '100dvh', scrollSnapStop: 'always' }}
                 />
               );
             }
@@ -728,7 +756,7 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
   return (
     <div
       className="h-full w-full snap-start relative bg-black flex items-center justify-center lg:py-[0.4rem]"
-      style={{ height: '100dvh' }}
+      style={{ height: '100dvh', scrollSnapStop: 'always' }}
     >
       <div className="relative w-full h-full lg:w-[420px] lg:h-full flex items-center justify-center overflow-visible">
         <div

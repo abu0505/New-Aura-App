@@ -495,7 +495,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
       className="h-full w-full bg-[var(--bg-primary)] overflow-y-auto social-feed-scroll pb-24"
     >
       {/* Top Bar Header */}
-      <header className={`sticky top-0 z-30 bg-[var(--bg-primary)]/80 backdrop-blur-md px-4 py-2 grid grid-cols-3 items-center border-b border-white/5 ${isNative ? 'safe-top' : ''}`}>
+      <header className={`relative z-30 bg-[var(--bg-primary)]/80 backdrop-blur-md px-4 py-2 grid grid-cols-3 items-center border-b border-white/5 ${isNative ? 'safe-top' : ''}`}>
         {/* Left Side: Upload Reel Button */}
         <div className="flex justify-start">
           <button
@@ -1059,13 +1059,24 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     }
   };
 
-  // Play/pause video when active in viewport
+  // Play/pause video when active in viewport (non-desktop)
   useEffect(() => {
     if (item.type !== 'video' || !decryptedUrl) return;
+
+    const isDesktop = window.innerWidth >= 1024;
 
     const observer = new IntersectionObserver(([entry]) => {
       const video = videoRef.current;
       if (!video) return;
+
+      if (isDesktop) {
+        // On desktop, if it goes out of viewport, always pause it
+        if (!entry.isIntersecting) {
+          video.pause();
+          setIsPaused(true);
+        }
+        return;
+      }
 
       if (entry.isIntersecting) {
         if (!isPaused) {
@@ -1236,11 +1247,27 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
   const avatarNonce = isMine ? user?.user_metadata?.avatar_nonce : partner?.avatar_nonce;
   const placeholder = `https://ui-avatars.com/api/?name=${senderName}&background=c9a96e&color=13131b`;
 
+  const handleMouseEnter = () => {
+    if (window.innerWidth >= 1024 && item.type === 'video' && videoRef.current) {
+      videoRef.current.play().catch(() => {});
+      setIsPaused(false);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (window.innerWidth >= 1024 && item.type === 'video' && videoRef.current) {
+      videoRef.current.pause();
+      setIsPaused(true);
+    }
+  };
+
   if (decryptionFailed) return null;
 
   return (
     <div
       ref={postRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className="bg-transparent border-none rounded-none shadow-none w-full flex flex-col mx-auto pb-6 border-b border-white/5 last:border-b-0 lg:bg-[var(--bg-secondary)] lg:border lg:border-white/5 lg:rounded-3xl lg:overflow-hidden lg:shadow-xl lg:w-full lg:h-auto lg:pb-0"
     >
       {/* Post Header */}

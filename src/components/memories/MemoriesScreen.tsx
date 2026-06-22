@@ -49,7 +49,23 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
   useEffect(() => {
     favoritesRef.current = favorites;
   }, [favorites]);
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string, type: string, messageId?: string, initialIndex?: number } | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ 
+    url: string; 
+    type: string; 
+    messageId?: string; 
+    dateKey?: string;
+    initialIndex?: number;
+    allMedia?: { id: string; url: string; type: 'image' | 'video' | 'gif' | 'chunked_video' }[];
+  } | null>(null);
+  const [fetchedDates, setFetchedDates] = useState<Set<string>>(new Set());
+  const [viewerPriorityIds, setViewerPriorityIds] = useState<Set<string>>(new Set());
+
+  const filteredMemories = memories.filter(m => {
+    if (m.failed) return false;
+    if (filter === 'all') return true;
+    if (filter === 'favorites') return favorites.has(m.id);
+    return m.type === filter;
+  });
   const [hasMore, setHasMore] = useState(true);
   const LIMIT = 12;
 
@@ -509,7 +525,34 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     }
   }, [partner?.public_key, getDecryptedBlob]);
 
-  // Update queue based on visibility and proximity
+  // On-the-fly decryption prioritization for active date batch in fullscreen viewer
+  useEffect(() => {
+    const partnerKey = partner?.public_key;
+    if (!selectedMedia || !selectedMedia.dateKey || !partnerKey) {
+      setViewerPriorityIds(new Set());
+      return;
+    }
+    
+    const list = filteredMemories.filter(m => {
+      const d = new Date(m.created_at);
+      const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      return dk === selectedMedia.dateKey;
+    });
+    
+    const activeIdx = list.findIndex(m => m.id === selectedMedia.messageId);
+    if (activeIdx === -1) return;
+    
+    const priority = new Set<string>();
+    const indices = [activeIdx, activeIdx + 1, activeIdx - 1];
+    indices.forEach(idx => {
+      if (idx >= 0 && idx < list.length && list[idx]) {
+        priority.add(list[idx].id);
+      }
+    });
+    setViewerPriorityIds(priority);
+  }, [selectedMedia, filteredMemories, partner?.public_key]);
+
+  // Update queue based on visibility, proximity, and active viewer priority
   const lastMemoriesCountRef = useRef(0);
   useEffect(() => {
     if (memories.length === 0 || !partner?.public_key) return;
@@ -530,6 +573,11 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     const maxVisibleIdx = visibleIndices.length > 0 ? Math.max(...visibleIndices) : -1;
     
     const sorted = [...itemsToDecrypt].sort((a, b) => {
+      const aViewerPriority = viewerPriorityIds.has(a.id);
+      const bViewerPriority = viewerPriorityIds.has(b.id);
+      if (aViewerPriority && !bViewerPriority) return -1;
+      if (!aViewerPriority && bViewerPriority) return 1;
+
       const aIdx = filteredMemories.findIndex(m => m.id === a.id);
       const bIdx = filteredMemories.findIndex(m => m.id === b.id);
       const aVisible = visibleIds.has(a.id);
@@ -549,7 +597,7 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     for (let i = 0; i < MAX_CONCURRENT_DECRYPTIONS; i++) {
       processQueue();
     }
-  }, [visibleIds, partner?.public_key, processQueue, memories.length]);
+  }, [visibleIds, partner?.public_key, processQueue, memories.length, viewerPriorityIds, filteredMemories]);
 
   // Robust IntersectionObserver for visibility tracking
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -586,12 +634,7 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     }
   }, []);
 
-  const filteredMemories = memories.filter(m => {
-    if (m.failed) return false;
-    if (filter === 'all') return true;
-    if (filter === 'favorites') return favorites.has(m.id);
-    return m.type === filter;
-  });
+
 
   const groupedMemories = useMemo(() => {
     // Use a Map to accumulate items per date so that same-date items from
@@ -620,16 +663,7 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     });
   }, [filteredMemories]);
   
-  // Media Viewer Navigation List
-  const allMediaForViewer = useMemo(() => {
-    return filteredMemories
-      .filter(m => m.decryptedUrl)
-      .map(m => ({
-        id: m.id,
-        url: m.decryptedUrl!,
-        type: (m.isChunkedVideo ? 'chunked_video' : ((m.type === 'video') ? 'video' : 'image')) as 'image' | 'video' | 'gif' | 'chunked_video'
-      }));
-  }, [filteredMemories]);
+  // Media Viewer Navigation List is now built dynamically per-date inside handleTap
 
   // Selection handlers
   const handleLongPress = (id: string) => {
@@ -639,7 +673,7 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     }
   };
 
-  const handleTap = (memory: MemoryItem) => {
+  const handleTap = async (memory: MemoryItem) => {
     if (selectionMode) {
       setSelectedIds(prev => {
         const next = new Set(prev);
@@ -654,13 +688,84 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
       });
     } else {
       if (memory.decryptedUrl) {
-        const index = allMediaForViewer.findIndex(m => m.id === memory.id);
+        // Group and batch media day-wise for fullscreen viewer swiping
+        const clickedDate = new Date(memory.created_at);
+        const clickedDateKey = `${clickedDate.getFullYear()}-${String(clickedDate.getMonth() + 1).padStart(2, '0')}-${String(clickedDate.getDate()).padStart(2, '0')}`;
+        
+        // Find existing same date items in current state memories
+        const getSameDateList = (itemsList: MemoryItem[]) => {
+          return itemsList
+            .filter(m => {
+              const d = new Date(m.created_at);
+              const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              return dk === clickedDateKey;
+            });
+        };
+
+        const currentSameDate = getSameDateList(memories);
+        const initialIndex = currentSameDate.findIndex(m => m.id === memory.id);
+        
         setSelectedMedia({ 
           url: memory.decryptedUrl, 
           type: memory.isChunkedVideo ? 'chunked_video' : (memory.type || 'image'), 
           messageId: memory.id,
-          initialIndex: index !== -1 ? index : 0
+          dateKey: clickedDateKey,
+          initialIndex: initialIndex !== -1 ? initialIndex : 0,
         });
+
+        // Trigger background fetching for all media of this date from Supabase
+        if (!fetchedDates.has(clickedDateKey) && user && partner) {
+          try {
+            const parts = clickedDateKey.split('-');
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            const day = parseInt(parts[2], 10);
+            
+            const startOfDay = new Date(year, month, day, 0, 0, 0, 0);
+            const endOfDay = new Date(year, month, day, 23, 59, 59, 999);
+            
+            let query = supabase
+              .from('messages')
+              .select('id,sender_id,receiver_id,media_url,media_key,media_nonce,thumbnail_url,type,created_at,sender_public_key,duration')
+              .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partner.id}),and(sender_id.eq.${partner.id},receiver_id.eq.${user.id})`)
+              .neq('type', 'gif')
+              .gte('created_at', startOfDay.toISOString())
+              .lte('created_at', endOfDay.toISOString());
+              
+            if (filter === 'all') {
+              query = query.in('type', ['image', 'video']);
+            } else if (filter === 'video') {
+              query = query.eq('type', 'video');
+            } else if (filter === 'favorites') {
+              const favs = Array.from(favoritesRef.current);
+              query = query.in('id', favs);
+            } else {
+              query = query.eq('type', filter).not('media_url', 'is', null);
+            }
+            
+            const { data, error } = await query.order('created_at', { ascending: false });
+            
+            if (!error && data) {
+              setFetchedDates(prev => {
+                const next = new Set(prev);
+                next.add(clickedDateKey);
+                return next;
+              });
+              
+              setMemories(prev => {
+                const merged = [...prev];
+                (data as MemoryItem[]).forEach(item => {
+                  if (!merged.some(m => m.id === item.id)) {
+                    merged.push(item);
+                  }
+                });
+                return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+              });
+            }
+          } catch (e) {
+            console.error('Error fetching date batch:', e);
+          }
+        }
       }
     }
   };
@@ -1004,10 +1109,49 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
             url={selectedMedia.url}
             type={selectedMedia.type as any}
             messageId={selectedMedia.messageId}
-            allMedia={allMediaForViewer}
-            initialIndex={selectedMedia.initialIndex ?? 0}
+            allMedia={(() => {
+              if (!selectedMedia.dateKey) return [];
+              return filteredMemories
+                .filter(m => {
+                  const d = new Date(m.created_at);
+                  const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                  return dk === selectedMedia.dateKey;
+                })
+                .map(m => ({
+                  id: m.id,
+                  url: m.decryptedUrl || '',
+                  type: (m.isChunkedVideo ? 'chunked_video' : ((m.type === 'video') ? 'video' : 'image')) as any
+                }));
+            })()}
+            initialIndex={(() => {
+              if (!selectedMedia.dateKey) return 0;
+              const list = filteredMemories.filter(m => {
+                const d = new Date(m.created_at);
+                const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return dk === selectedMedia.dateKey;
+              });
+              const idx = list.findIndex(m => m.id === selectedMedia.messageId);
+              return idx !== -1 ? idx : 0;
+            })()}
             showViewInChat={true}
             onClose={() => setSelectedMedia(null)}
+            onIndexChange={(index) => {
+              if (!selectedMedia.dateKey) return;
+              const list = filteredMemories.filter(m => {
+                const d = new Date(m.created_at);
+                const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                return dk === selectedMedia.dateKey;
+              });
+              const item = list[index];
+              if (item) {
+                setSelectedMedia(prev => prev ? {
+                  ...prev,
+                  url: item.decryptedUrl || '',
+                  type: item.isChunkedVideo ? 'chunked_video' : (item.type || 'image'),
+                  messageId: item.id
+                } : null);
+              }
+            }}
           />
         )}
       </AnimatePresence>
