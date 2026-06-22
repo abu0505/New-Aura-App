@@ -1,13 +1,16 @@
 # App Version
-VersionName: 2.10.16
-VersionCode: 94
+VersionName: 2.10.17
+VersionCode: 95
 Date: 2026-06-22
 Changes:
+- Fixed screen freeze / stuck issue on native mobile when reacting to GIFs and Snapshot photos by disabling native touch callouts, user selection, and media pointer events.
+
+## Previous Versions
+### Version 2.10.16 (Code 94)
 - Fixed video frame capture black screen issues in fullscreen mode by implementing a parent-container-level fullscreen mode for MediaViewer.
 - Added a custom fullscreen toggle button in the MediaViewer toolbar and hid native browser video player fullscreen controls.
 - Integrated parent fullscreen triggers with ChunkedVideoPlayer.
 
-## Previous Versions
 ### Version 2.10.15 (Code 93)
 - Batched the Memories Gallery fullscreen media viewer dynamically by day so swiping only scrolls through media shared on that same date.
 - Fixed TypeScript compiler errors in ExploreScreen by typing partner's public key safely and removing unused motion imports.

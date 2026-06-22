@@ -246,7 +246,7 @@ function MediaGridBubble({
         }}
       >
         {msg.type === 'video' ? (
-          <div className="w-full h-full relative">
+          <div className="w-full h-full relative pointer-events-none select-none">
             {/* preload="none": blob is already in memory, "metadata" causes blank frames on mobile */}
             <video src={url} className={`w-full h-full object-cover ${isUploading ? 'opacity-60 blur-[2px] grayscale-[20%]' : ''}`} preload="none" playsInline muted />
             {!isUploading && (
@@ -256,7 +256,7 @@ function MediaGridBubble({
             )}
           </div>
         ) : (
-          <img src={url} alt="" className={`w-full h-full object-cover ${!isUploading ? 'group-hover:scale-105 transition-transform duration-500' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} />
+          <img src={url} alt="" className={`w-full h-full object-cover pointer-events-none select-none ${!isUploading ? 'group-hover:scale-105 transition-transform duration-500' : 'opacity-60 blur-[2px] grayscale-[20%]'}`} />
         )}
 
         {isUploading && (
@@ -294,6 +294,11 @@ function MediaGridBubble({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      style={{
+        WebkitTouchCallout: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}
     >
       {/* Reply Icon Indicator for Swipe (Mobile) */}
       <motion.div

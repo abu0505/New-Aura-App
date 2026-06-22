@@ -642,13 +642,15 @@ function ChatBubble({
     switch (message.type) {
       case 'image':
         return (
-          <div className={`relative group max-w-[240px] ${isMine ? 'ml-auto' : 'mr-auto'}`}>
+          <div 
+            className={`relative group max-w-[240px] ${isMine ? 'ml-auto' : 'mr-auto'} ${!message.is_uploading ? 'cursor-pointer hover:opacity-90' : ''}`}
+            onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true); }}
+          >
             <motion.img 
               initial={{ opacity: 0 }}
               animate={{ opacity: message.is_uploading ? 0.6 : 1 }}
               src={decryptedMediaUrl ?? undefined} 
-              className={`w-full h-auto ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 ${!message.is_uploading ? 'cursor-pointer hover:opacity-90' : ''} transition-opacity ${message.is_uploading ? 'blur-[2px] grayscale-[20%]' : ''}`}
-              onClick={() => { if (!message.is_uploading) setIsPreviewOpen(true); }}
+              className={`w-full h-auto ${isOnlyMedia ? 'rounded-2xl' : 'rounded-xl'} overflow-hidden shadow-lg border border-white/5 transition-opacity ${message.is_uploading ? 'blur-[2px] grayscale-[20%]' : ''} pointer-events-none select-none`}
             />
             {message.is_uploading && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
@@ -680,13 +682,13 @@ function ChatBubble({
                   {isChunkedVideo(message) ? (
                     <img 
                       src={decryptedMediaUrl} 
-                      className="w-full h-auto object-cover pointer-events-none" 
+                      className="w-full h-auto object-cover pointer-events-none select-none" 
                       alt="Video thumbnail"
                     />
                   ) : (
                     <video
                       src={decryptedMediaUrl}
-                      className="w-full pointer-events-none"
+                      className="w-full pointer-events-none select-none"
                       preload="none"
                       playsInline
                       muted
@@ -752,12 +754,12 @@ function ChatBubble({
                   loop 
                   muted 
                   playsInline
-                  className="w-full h-auto object-cover"
+                  className="w-full h-auto object-cover pointer-events-none select-none"
                 />
               ) : (
                 <img 
                   src={(decryptedMediaUrl || message.media_url) ?? undefined} 
-                  className="w-full h-auto object-cover"
+                  className="w-full h-auto object-cover pointer-events-none select-none"
                   alt="GIF"
                 />
               )}
@@ -1066,15 +1068,18 @@ function ChatBubble({
                  ? `px-4 py-3 bg-primary text-background rounded-2xl ${!isFirst ? 'rounded-tr-sm' : ''} ${!isLast ? 'rounded-br-sm' : ''}` 
                  : `px-4 py-3 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5`
           } ${message.is_deleted_for_everyone ? 'opacity-60 italic' : ''} ${decryptionError ? 'border-dashed border-red-500/50 bg-red-500/5' : ''}`}
-          style={
-            isNoteHighlight && !((message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker)
+          style={{
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
+            userSelect: 'none',
+            ...(isNoteHighlight && !((message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker)
               ? {
                   background: noteHighlightStyles.bubbleBg,
                   border: noteHighlightStyles.bubbleBorder,
                   boxShadow: `0 8px 32px ${noteHighlightStyles.accentColor}14, inset 0 0 12px ${noteHighlightStyles.accentColor}0a`,
                 }
-              : undefined
-          }
+              : {})
+          }}
         >
         {decryptionError ? (
           <div className="flex items-center gap-2 py-1 px-1">
