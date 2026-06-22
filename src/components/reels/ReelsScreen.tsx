@@ -727,109 +727,126 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
 
   return (
     <div
-      className="h-full w-full snap-start relative bg-black flex items-center justify-center lg:py-6"
+      className="h-full w-full snap-start relative bg-black flex items-center justify-center lg:py-[0.4rem]"
       style={{ height: '100dvh' }}
     >
-      <div
-        onClick={handleTap}
-        onMouseDown={handlePressStart}
-        onMouseUp={handlePressEnd}
-        onMouseLeave={handlePressCancel}
-        onTouchStart={handlePressStart}
-        onTouchEnd={handlePressEnd}
-        onTouchCancel={handlePressCancel}
-        className="relative w-full h-full lg:max-w-[420px] lg:h-[90dvh] lg:rounded-3xl lg:overflow-hidden lg:border lg:border-white/10 lg:shadow-[0_24px_64px_rgba(0,0,0,0.8)] lg:bg-[#0c0c14] flex items-center justify-center cursor-pointer select-none"
-      >
-        {/* Media Rendering */}
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center gap-2">
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-              <span className="text-xs text-white/40 tracking-wider">Decrypting Reel...</span>
-            </div>
-          ) : decryptedUrl ? (
-            item.type === 'video' ? (
-              <video
-                ref={videoRef}
-                src={decryptedUrl}
-                className="w-full h-full object-cover"
-                loop
-                playsInline
-                muted={isMuted}
-              />
+      <div className="relative w-full h-full lg:w-[420px] lg:h-full flex items-center justify-center overflow-visible">
+        <div
+          onClick={handleTap}
+          onMouseDown={handlePressStart}
+          onMouseUp={handlePressEnd}
+          onMouseLeave={handlePressCancel}
+          onTouchStart={handlePressStart}
+          onTouchEnd={handlePressEnd}
+          onTouchCancel={handlePressCancel}
+          className="relative w-full h-full lg:rounded-3xl lg:overflow-hidden lg:border lg:border-white/10 lg:shadow-[0_24px_64px_rgba(0,0,0,0.8)] lg:bg-[#0c0c14] flex items-center justify-center cursor-pointer select-none"
+        >
+          {/* Media Rendering */}
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center gap-2">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                <span className="text-xs text-white/40 tracking-wider">Decrypting Reel...</span>
+              </div>
+            ) : decryptedUrl ? (
+              item.type === 'video' ? (
+                <video
+                  ref={videoRef}
+                  src={decryptedUrl}
+                  className="w-full h-full object-cover"
+                  loop
+                  playsInline
+                  muted={isMuted}
+                />
+              ) : (
+                <img
+                  src={decryptedUrl}
+                  alt="Reel Media"
+                  className="w-full h-full object-cover"
+                />
+              )
             ) : (
-              <img
-                src={decryptedUrl}
-                alt="Reel Media"
-                className="w-full h-full object-cover"
-              />
-            )
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 text-white/20">
-              <Lock className="w-8 h-8 animate-pulse" />
-              <span className="text-[10px] uppercase tracking-widest font-bold">Secure Memory</span>
+              <div className="flex flex-col items-center justify-center gap-2 text-white/20">
+                <Lock className="w-8 h-8 animate-pulse" />
+                <span className="text-[10px] uppercase tracking-widest font-bold">Secure Memory</span>
+              </div>
+            )}
+          </div>
+
+          {/* Play overlay when paused (but not when held) */}
+          {isPaused && !isHeldPaused && !showStatusIcon && (
+            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+              <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
+              >
+                <span className="material-symbols-outlined text-4xl">play_arrow</span>
+              </motion.div>
             </div>
           )}
+
+          {/* Play/Pause status flash overlay */}
+          <AnimatePresence>
+            {showStatusIcon && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1.2, opacity: 0.8 }}
+                exit={{ scale: 1.5, opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none"
+              >
+                <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center text-white">
+                  <span className="material-symbols-outlined text-4xl">
+                    {showStatusIcon === 'play' ? 'play_arrow' : 'pause'}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Dark overlays for UI readability only (leaving center media colors untouched) */}
+          <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/75 to-transparent pointer-events-none lg:hidden" />
+
+          {/* Top Left Mute Button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+            className="absolute top-5 left-4 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-75 transition-all hover:bg-black/60"
+            title={isMuted ? "Unmute" : "Mute"}
+          >
+            {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
+          </button>
+
+          {/* Reel Upload Badge (shown if this was a dedicated upload, shifted to left-16 to avoid mute button) */}
+          {item.is_reel_upload && (
+            <div className="absolute top-5 left-16 z-20 flex items-center gap-1.5 bg-[var(--gold)]/20 backdrop-blur-md border border-[var(--gold)]/30 px-2.5 py-1 rounded-full pointer-events-none">
+              <Star className="w-3.5 h-3.5 fill-[var(--gold)] text-[var(--gold)]" />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--gold)]">Featured Reel</span>
+            </div>
+          )}
+
+          {/* Double-Tap Heart Burst */}
+          <AnimatePresence>
+            {showHeartBurst && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0.5, 1.2, 1], opacity: [0, 0.9, 0] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8 }}
+                className="absolute z-30 pointer-events-none text-rose-500"
+              >
+                <span className="material-symbols-outlined text-8xl fill-current drop-shadow-2xl">favorite</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Play overlay when paused (but not when held) */}
-        {isPaused && !isHeldPaused && !showStatusIcon && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="w-16 h-16 rounded-full bg-black/40 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
-            >
-              <span className="material-symbols-outlined text-4xl">play_arrow</span>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Play/Pause status flash overlay */}
-        <AnimatePresence>
-          {showStatusIcon && (
-            <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1.2, opacity: 0.8 }}
-              exit={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none"
-            >
-              <div className="w-16 h-16 rounded-full bg-black/50 flex items-center justify-center text-white">
-                <span className="material-symbols-outlined text-4xl">
-                  {showStatusIcon === 'play' ? 'play_arrow' : 'pause'}
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Dark overlays for UI readability only (leaving center media colors untouched) */}
-        <div className="absolute top-0 left-0 right-0 h-28 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 h-44 bg-gradient-to-t from-black/75 to-transparent pointer-events-none" />
-
-        {/* Top Left Mute Button */}
-        <button
-          onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-          className="absolute top-5 left-4 z-20 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white active:scale-75 transition-all hover:bg-black/60"
-          title={isMuted ? "Unmute" : "Mute"}
-        >
-          {isMuted ? <VolumeX className="w-5 h-5 text-white" /> : <Volume2 className="w-5 h-5 text-white" />}
-        </button>
-
-        {/* Reel Upload Badge (shown if this was a dedicated upload, shifted to left-16 to avoid mute button) */}
-        {item.is_reel_upload && (
-          <div className="absolute top-5 left-16 z-20 flex items-center gap-1.5 bg-[var(--gold)]/20 backdrop-blur-md border border-[var(--gold)]/30 px-2.5 py-1 rounded-full pointer-events-none">
-            <Star className="w-3.5 h-3.5 fill-[var(--gold)] text-[var(--gold)]" />
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[var(--gold)]">Featured Reel</span>
-          </div>
-        )}
-
-        {/* Slide Details (Left Bottom - Spans full width) */}
-        <div className="absolute bottom-28 lg:bottom-8 left-4 right-4 z-20 flex flex-col gap-2 pointer-events-none">
+        {/* Slide Details (Left Bottom - Spans full width, outside on desktop) */}
+        <div className="absolute bottom-24 left-4 right-4 z-20 flex flex-col gap-2 pointer-events-none lg:absolute lg:bottom-6 lg:-left-[280px] lg:right-auto lg:w-[250px]">
           <div className="flex items-center gap-3">
             <div 
-              className={`w-14 h-14 rounded-full border border-white/20 overflow-hidden bg-white/5 flex items-center justify-center flex-shrink-0 ${!isMine ? 'pointer-events-auto cursor-pointer active:scale-95 hover:opacity-85 transition-all' : ''}`}
+              className={`w-10 h-10 rounded-full border border-white/20 overflow-hidden bg-white/5 flex items-center justify-center flex-shrink-0 ${!isMine ? 'pointer-events-auto cursor-pointer active:scale-95 hover:opacity-85 transition-all' : ''}`}
               onClick={(e) => {
                 if (!isMine) {
                   e.stopPropagation();
@@ -870,67 +887,52 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
           </p>
         </div>
 
-        {/* Action Controls (Right Middle-High, pushed up above slide details) */}
-        <div className="absolute bottom-[240px] lg:bottom-[170px] right-4 z-20 flex flex-col items-center gap-6 no-pause-trigger">
+        {/* Action Controls (Right Middle-High, pushed up above slide details, outside on desktop) */}
+        <div className="absolute bottom-[240px] right-3 z-20 flex flex-col items-center gap-6 no-pause-trigger lg:absolute lg:bottom-6 lg:-right-[72px] lg:left-auto">
           {/* Like */}
           <button
             onClick={(e) => { e.stopPropagation(); onLikeToggle(); }}
-            className="flex flex-col items-center gap-1.5"
+            className="flex flex-col items-center gap-1.5 group"
           >
-            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isLiked ? 'text-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.2)]' : 'text-white'}`}>
-              <Heart className={`w-6 h-6 transition-all duration-300 ${isLiked ? 'fill-rose-500 stroke-rose-500 scale-110' : 'stroke-current'}`} />
+            <div className={`w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200 ${isLiked ? 'text-rose-500 lg:shadow-[0_0_12px_rgba(244,63,94,0.2)]' : 'text-white'}`}>
+              <Heart className={`w-[28px] h-[28px] transition-all duration-300 ${isLiked ? 'fill-rose-500 stroke-rose-500 scale-110' : 'stroke-current'}`} />
             </div>
-            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{isLiked ? 'Liked' : 'Like'}</span>
+            <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">{isLiked ? 'Liked' : 'Like'}</span>
           </button>
 
           {/* Comment */}
           <button
             onClick={(e) => { e.stopPropagation(); toast.info('Add a message in Chat to reply!'); }}
-            className="flex flex-col items-center gap-1.5"
+            className="flex flex-col items-center gap-1.5 group"
           >
-            <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white">
-              <MessageSquare className="w-6 h-6 stroke-white" />
+            <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
+              <MessageSquare className="w-[28px] h-[28px] stroke-white" />
             </div>
-            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Note</span>
+            <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">Note</span>
           </button>
 
           {/* Share */}
           <button
             onClick={(e) => { e.stopPropagation(); handleShareReel(); }}
-            className="flex flex-col items-center gap-1.5"
+            className="flex flex-col items-center gap-1.5 group"
           >
-            <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 text-white hover:scale-105 active:scale-95 transition-transform">
-              <Share2 className="w-5.5 h-5.5 stroke-white" />
+            <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
+              <Share2 className="w-[26px] h-[26px] stroke-white" />
             </div>
-            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">Share</span>
+            <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">Share</span>
           </button>
 
           {/* Save */}
           <button
             onClick={(e) => { e.stopPropagation(); onSaveToggle(); }}
-            className="flex flex-col items-center gap-1.5"
+            className="flex flex-col items-center gap-1.5 group"
           >
-            <div className={`w-12 h-12 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-75 transition-transform ${isSaved ? 'text-[var(--gold)] shadow-[0_0_12px_rgba(201,169,110,0.2)]' : 'text-white'}`}>
-              <Bookmark className={`w-6 h-6 transition-all duration-300 ${isSaved ? 'fill-[var(--gold)] stroke-[var(--gold)] scale-110' : 'stroke-current'}`} />
+            <div className={`w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200 ${isSaved ? 'text-[var(--gold)] lg:shadow-[0_0_12px_rgba(201,169,110,0.2)]' : 'text-white'}`}>
+              <Bookmark className={`w-[28px] h-[28px] transition-all duration-300 ${isSaved ? 'fill-[var(--gold)] stroke-[var(--gold)] scale-110' : 'stroke-current'}`} />
             </div>
-            <span className="text-[10px] text-white/80 font-bold uppercase tracking-wider">{isSaved ? 'Saved' : 'Save'}</span>
+            <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">{isSaved ? 'Saved' : 'Save'}</span>
           </button>
         </div>
-
-        {/* Double-Tap Heart Burst */}
-        <AnimatePresence>
-          {showHeartBurst && (
-            <motion.div
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: [0.5, 1.2, 1], opacity: [0, 0.9, 0] }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-              className="absolute z-30 pointer-events-none text-rose-500"
-            >
-              <span className="material-symbols-outlined text-8xl fill-current drop-shadow-2xl">favorite</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
