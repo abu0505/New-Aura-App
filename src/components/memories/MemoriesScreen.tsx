@@ -597,7 +597,8 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     for (let i = 0; i < MAX_CONCURRENT_DECRYPTIONS; i++) {
       processQueue();
     }
-  }, [visibleIds, partner?.public_key, processQueue, memories.length, viewerPriorityIds, filteredMemories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleIds, partner?.public_key, processQueue, memories.length, viewerPriorityIds, filter]);
 
   // Robust IntersectionObserver for visibility tracking
   const observerRef = useRef<IntersectionObserver | null>(null);

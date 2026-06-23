@@ -43,7 +43,7 @@ export default function StoryCircles() {
   };
 
   return (
-    <div className="w-full py-4 border-b border-white/5 bg-[var(--bg-primary)] px-4">
+    <div className="w-full py-4 5 bg-[var(--bg-primary)] px-4">
       <div className="flex gap-4 items-center overflow-x-auto scrollbar-hide py-1">
         
         {/* User Story Circle */}

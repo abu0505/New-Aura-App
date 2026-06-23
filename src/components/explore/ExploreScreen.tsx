@@ -41,6 +41,25 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [decryptedCache, setDecryptedCache] = useState<Record<string, string>>({});
+  const decryptedCacheRef = useRef(decryptedCache);
+  useEffect(() => {
+    decryptedCacheRef.current = decryptedCache;
+  }, [decryptedCache]);
+
+  // Clean up all object URLs from the decrypted cache when the ExploreScreen unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(decryptedCacheRef.current).forEach(url => {
+        if (url && url !== 'chunked_video') {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            console.error('Error revoking explore item URL on unmount:', e);
+          }
+        }
+      });
+    };
+  }, []);
 
   // Decrypt items in the explore viewer on the fly (current, next, previous)
   useEffect(() => {
@@ -112,6 +131,18 @@ export default function ExploreScreen() {
     if (!user || !partner) return;
     setLoading(true);
     try {
+      // Clear and revoke existing cache before fetching new items to prevent memory leaks
+      Object.values(decryptedCacheRef.current).forEach(url => {
+        if (url && url !== 'chunked_video') {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            console.error('Error revoking explore item URL during fetch:', e);
+          }
+        }
+      });
+      setDecryptedCache({});
+
       const { data, error } = await supabase
         .from('messages')
         .select('id,media_url,media_key,media_nonce,sender_public_key,type,created_at')
@@ -313,15 +344,13 @@ function ExploreGridThumb({ item, partnerPublicKey, getDecryptedBlob, decryptedU
     }
   }, [isChunkedVideo, videoChunks, decryptedUrl, onDecrypted]);
 
-  // Clean up Object URL on unmount or item change
+  // Clean up loading state and decrypted ref on item change/unmount
   useEffect(() => {
     setLoading(false);
     hasDecryptedRef.current = false;
     return () => {
-      if (decryptedUrlRef.current && !isChunkedVideo) {
-        URL.revokeObjectURL(decryptedUrlRef.current);
-        decryptedUrlRef.current = null;
-      }
+      // The parent (ExploreScreen) manages the decryptedCache and will revoke URLs on unmount/reload.
+      decryptedUrlRef.current = null;
     };
   }, [item.id, item.media_url, isChunkedVideo]);
 

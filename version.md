@@ -1,11 +1,35 @@
 # App Version
-VersionName: 2.10.18
-VersionCode: 96
-Date: 2026-06-22
+VersionName: 2.12.2
+VersionCode: 101
+Date: 2026-06-23
 Changes:
-- Fixed "Extract & Send Frame" feature sending a black/blank image. Root causes: (1) `chunked_video` type was not finding the correct video element (videoRef is only for standard videos), (2) `document.querySelector('video')` could grab the wrong element, (3) frame was captured while the video was still playing (decoder hadn't settled on the current frame). Fix: search for the best ready video inside the viewer overlay, pause the video, seek to the current time to trigger a decoder flush via the `seeked` event, capture the frame after the decoder settles, resume playback, and add a blank-frame sanity check with an automatic retry.
+- Overlaid post header over tall aspect ratio media (> 2:3 ratio) on mobile viewports to mimic native Instagram style, showing such media in its original height.
 
 ## Previous Versions
+### Version 2.12.1 (Code 100)
+- Fixed TypeScript compiler errors in `HomeScreen.tsx` caused by references to the renamed `setDecryptedUrl` state.
+
+### Version 2.12.0 (Code 99)
+- Major performance overhaul: Posts (Home Feed) now use a Memories-style central priority decryption queue with 8 parallel workers, 1500px look-ahead, and visibility-based prioritization. Media for upcoming posts is decrypted before the user even scrolls to them, making the feed feel instant.
+- Reels media loading optimized: increased parallel decryption semaphore from 3 to 8 slots and extended look-ahead pre-loading from 2 to 4 adjacent reels, so the next reels are fully decrypted and ready before swiping.
+
+### Version 2.11.1 (Code 98)
+- Fixed a critical "Maximum update depth exceeded" infinite loop bug in Memories Gallery screen by properly optimizing the useEffect dependency array for the decryption priority queue.
+- Fixed a bug where media grid items in the Explore screen appeared broken after returning from the Memories Gallery screen, by centralizing object URL cache management and cleanup inside the parent ExploreScreen component and preventing premature URL revocation on child unmount.
+- Fixed a DOMException "Node cannot be found in the current page" crash when toggling laser mode/drawing mode in the NoteEditor by wrapping the EditorContent inside a stable container div to avoid DOM reconciliation conflicts.
+
+## Previous Versions
+### Version 2.11.0 (Code 97)
+- Overhauled the mobile Notes editor: replaced the modal dialog with a fully-immersive, full-screen page including a premium slide-in transition from the right, removing backdrops, borders, and margins on mobile while keeping centered cards on larger screens.
+- Fixed the Drawing Canvas laser mode: resolved pointer move latency by utilizing synchronous ref event tracking instead of async React state updates, and added a glowing core laser dot at the pointer tip for enhanced visibility.
+
+### Version 2.10.19 (Code 96)
+- Removed margin top and bottom from the moments carousel element on the home page.
+- Removed margin top from where the post feed starts on the home page.
+
+### Version 2.10.18 (Code 96)
+- Fixed "Extract & Send Frame" feature sending a black/blank image. Root causes: (1) `chunked_video` type was not finding the correct video element (videoRef is only for standard videos), (2) `document.querySelector('video')` could grab the wrong element, (3) frame was captured while the video was still playing (decoder hadn't settled on the current frame). Fix: search for the best ready video inside the viewer overlay, pause the video, seek to the current time to trigger a decoder flush via the `seeked` event, capture the frame after the decoder settles, resume playback, and add a blank-frame sanity check with an automatic retry.
+
 ### Version 2.10.16 (Code 94)
 - Fixed video frame capture black screen issues in fullscreen mode by implementing a parent-container-level fullscreen mode for MediaViewer.
 - Added a custom fullscreen toggle button in the MediaViewer toolbar and hid native browser video player fullscreen controls.

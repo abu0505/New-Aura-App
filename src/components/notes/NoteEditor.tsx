@@ -1412,6 +1412,29 @@ export default function NoteEditor({
 
             ctx.restore();
           }
+
+          // Render laser dot at the pointer tip if currently drawing (pointer down)
+          if (points.length >= 1 && isInlineDrawingRef.current && drawTool === 'laser') {
+            const tip = points[points.length - 1];
+            ctx.save();
+            ctx.translate(cam.x, cam.y);
+            ctx.scale(cam.scale, cam.scale);
+            
+            ctx.beginPath();
+            ctx.arc(tip.x, tip.y, drawSize * 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = GLOW_COLOR;
+            ctx.shadowColor = GLOW_COLOR;
+            ctx.shadowBlur = 15;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(tip.x, tip.y, drawSize * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = CORE_COLOR;
+            ctx.shadowBlur = 0;
+            ctx.fill();
+            
+            ctx.restore();
+          }
         }
       }
 
@@ -1502,7 +1525,7 @@ export default function NoteEditor({
       return;
     }
 
-    if (!isDrawing) return;
+    if (!isInlineDrawingRef.current) return;
     const pos = getDrawPos(e); // WORLD coords
 
     if (drawTool === 'laser') {
@@ -1537,7 +1560,7 @@ export default function NoteEditor({
 
   const handleDrawPointerUp = () => {
     inlineIsPanningRef.current = false;
-    if (!isDrawing) return;
+    if (!isInlineDrawingRef.current) return;
     setIsDrawing(false);
     isInlineDrawingRef.current = false;
 
@@ -2010,15 +2033,12 @@ export default function NoteEditor({
 
   return (
     <motion.div
-      initial={!isInline ? { opacity: 0 } : undefined}
-      animate={!isInline ? { opacity: 1 } : undefined}
-      exit={!isInline ? { opacity: 0 } : undefined}
-      className={isInline ? "w-full h-full flex flex-col relative" : "fixed inset-0 z-[200] flex items-center justify-center"}
-      onClick={!isInline ? handleClose : undefined}
+      initial={!isInline ? { x: '100%' } : undefined}
+      animate={!isInline ? { x: 0 } : undefined}
+      exit={!isInline ? { x: '100%' } : undefined}
+      transition={!isInline ? { type: 'spring', damping: 26, stiffness: 220 } : undefined}
+      className={isInline ? "w-full h-full flex flex-col relative" : "fixed inset-0 z-[200] flex flex-col bg-[var(--bg-primary)]"}
     >
-      {/* Backdrop */}
-      {!isInline && <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />}
-
       {/* Selection Tooltip */}
       {selectionDetails.show && !isStealthActive && (
         <div
@@ -2041,17 +2061,11 @@ export default function NoteEditor({
       )}
 
       {/* Editor card */}
-      <motion.div
-        initial={!isInline ? { scale: 0.92, opacity: 0, y: 30 } : undefined}
-        animate={!isInline ? { scale: 1, opacity: 1, y: 0 } : undefined}
-        exit={!isInline ? { scale: 0.92, opacity: 0, y: 30 } : undefined}
-        transition={!isInline ? { type: 'spring', damping: 28, stiffness: 350 } : undefined}
-        className={isInline 
-          ? "relative z-10 w-full h-full flex flex-col overflow-hidden" 
-          : "relative z-10 w-full max-w-lg lg:max-w-2xl mx-4 max-h-[95dvh] flex flex-col rounded-3xl overflow-hidden shadow-2xl"}
+      <div
+        className="relative z-10 w-full h-full flex flex-col overflow-hidden"
         style={{
           background: note.customColor || colorStyle.bg,
-          border: `1px solid ${note.customColor ? `${note.customColor}44` : colorStyle.border}`,
+          border: isInline ? `1px solid ${note.customColor ? `${note.customColor}44` : colorStyle.border}` : 'none',
           backgroundImage: isStealthActive
             ? undefined
             : decryptedBg
@@ -2686,11 +2700,12 @@ export default function NoteEditor({
                 }}
               >
                 {/* Content editable editor div */}
-                <EditorContent
-                  editor={editor}
+                <div
                   className={`w-full bg-transparent text-[var(--text-primary)] text-sm focus:outline-none min-h-[150px] leading-relaxed ${drawMode ? 'cursor-default pointer-events-none select-none' : 'cursor-text'
                     }`}
-                />
+                >
+                  <EditorContent editor={editor} />
+                </div>
 
                 {/* Inline drawing canvas overlay */}
                 {drawMode && (
@@ -3261,7 +3276,7 @@ export default function NoteEditor({
             </button>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Drawing canvas is now inline — no full-screen overlay needed */}
     </motion.div>

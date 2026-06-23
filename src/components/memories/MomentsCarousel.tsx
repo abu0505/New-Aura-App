@@ -9,9 +9,10 @@ import { useVideoChunks } from '../../hooks/useVideoChunks';
 interface MomentsCarouselProps {
   moments: MomentGroup[];
   partnerPublicKey: string;
+  className?: string;
 }
 
-export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCarouselProps) {
+export default function MomentsCarousel({ moments, partnerPublicKey, className = '' }: MomentsCarouselProps) {
   const { getDecryptedBlob } = useMedia();
   const { loadExistingChunks, getChunksForMessage } = useVideoChunks();
   const [coverUrls, setCoverUrls] = useState<Map<string, string>>(new Map());
@@ -167,9 +168,9 @@ export default function MomentsCarousel({ moments, partnerPublicKey }: MomentsCa
   if (moments.length === 0) return null;
 
   return (
-    <div className="relative w-full select-none group/carousel">
+    <div className={`relative w-full select-none group/carousel ${className}`}>
       {/* Title */}
-      <div className="flex items-center justify-between mb-4 px-4 sm:px-0">
+      <div className="flex items-center justify-between mb-4 sm:px-0">
         <div>
           <h2 className="font-serif italic text-2xl text-[var(--gold)]">Moments</h2>
           <p className="text-xs font-label uppercase tracking-widest text-white/40">Shared memories, curated daily</p>

@@ -17,7 +17,7 @@ import { Heart, MessageSquare, Bookmark, Volume2, VolumeX, Lock, Star, Share2 } 
 // Semaphore to limit parallel decryptions
 class DecryptionSemaphore {
   private activeCount = 0;
-  private maxParallel = 3;
+  private maxParallel = 8;
   private queue: (() => void)[] = [];
 
   async acquire(): Promise<void> {
@@ -360,7 +360,7 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
         >
           {reels.map((item, idx) => {
             const isVisible = Math.abs(idx - activeIndex) <= 5;
-            const isNearby = Math.abs(idx - activeIndex) <= 2;
+            const isNearby = Math.abs(idx - activeIndex) <= 4;
 
             if (!isVisible) {
               return (

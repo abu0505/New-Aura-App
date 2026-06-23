@@ -32,6 +32,70 @@ interface FeedPostItem extends MessageRow {
   decryptedUrl?: string;
   decrypted_content?: string;
   loading?: boolean;
+  failed?: boolean;
+}
+
+// ── Central Feed Decryption Queue (Memories-style) ─────────────────────────────
+// Manages 8 parallel decryptions with look-ahead so posts are ready before scroll.
+const MAX_FEED_CONCURRENT = 8;
+const FEED_LOOK_AHEAD = 20;
+const feedProcessingIds = new Set<string>();
+const feedDecryptionQueue: string[] = [];
+
+async function processFeedQueue(
+  feedItemsRef: React.MutableRefObject<FeedPostItem[]>,
+  setFeedItems: React.Dispatch<React.SetStateAction<FeedPostItem[]>>,
+  getDecryptedBlob: any,
+  partnerPublicKey: string
+): Promise<void> {
+  if (feedProcessingIds.size >= MAX_FEED_CONCURRENT) return;
+  if (feedDecryptionQueue.length === 0) return;
+
+  const nextId = feedDecryptionQueue.find(id => !feedProcessingIds.has(id));
+  if (!nextId) return;
+
+  const item = feedItemsRef.current.find(m => m.id === nextId);
+  if (!item || item.decryptedUrl || item.loading || item.failed) {
+    const idx = feedDecryptionQueue.indexOf(nextId);
+    if (idx !== -1) feedDecryptionQueue.splice(idx, 1);
+    processFeedQueue(feedItemsRef, setFeedItems, getDecryptedBlob, partnerPublicKey);
+    return;
+  }
+
+  // Skip chunked videos — they use a different loading path
+  const isChunked = item.type === 'video' && !item.media_url;
+  if (isChunked || !item.media_url || !item.media_key || !item.media_nonce) {
+    const idx = feedDecryptionQueue.indexOf(nextId);
+    if (idx !== -1) feedDecryptionQueue.splice(idx, 1);
+    processFeedQueue(feedItemsRef, setFeedItems, getDecryptedBlob, partnerPublicKey);
+    return;
+  }
+
+  feedProcessingIds.add(nextId);
+  setFeedItems(prev => prev.map(m => m.id === nextId ? { ...m, loading: true } : m));
+
+  try {
+    const blob = await getDecryptedBlob(
+      item.media_url!,
+      item.media_key!,
+      item.media_nonce!,
+      partnerPublicKey,
+      item.sender_public_key
+    );
+    if (blob) {
+      const url = URL.createObjectURL(blob);
+      setFeedItems(prev => prev.map(m => m.id === nextId ? { ...m, decryptedUrl: url, loading: false } : m));
+    } else {
+      setFeedItems(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, failed: true } : m));
+    }
+  } catch {
+    setFeedItems(prev => prev.map(m => m.id === nextId ? { ...m, loading: false, failed: true } : m));
+  } finally {
+    feedProcessingIds.delete(nextId);
+    const idx = feedDecryptionQueue.indexOf(nextId);
+    if (idx !== -1) feedDecryptionQueue.splice(idx, 1);
+    processFeedQueue(feedItemsRef, setFeedItems, getDecryptedBlob, partnerPublicKey);
+  }
 }
 
 import type { Tab } from '../../types';
@@ -185,6 +249,12 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
   const seenVideoIds = useRef<string[]>([]);
   const seenImageIds = useRef<string[]>([]);
   const lastMarkedIndexRef = useRef(-1);
+
+  // ── Central feed decryption queue refs ────────────────────────────────────
+  const feedItemsRef = useRef<FeedPostItem[]>([]);
+  const [visibleFeedIds, setVisibleFeedIds] = useState<Set<string>>(new Set());
+  const feedObserverRef = useRef<IntersectionObserver | null>(null);
+  useEffect(() => { feedItemsRef.current = feedItems; }, [feedItems]);
 
   // Load favorites
   useEffect(() => {
@@ -437,6 +507,73 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
     fetchAuxiliaryData();
   }, [fetchFeed, fetchAuxiliaryData]);
 
+  // ── Kick off central decryption queue whenever feed items or visibility change ──
+  useEffect(() => {
+    const partnerKey = partner?.public_key;
+    if (!partnerKey || feedItems.length === 0) return;
+
+    const undecrypted = feedItems.filter(
+      m => !m.decryptedUrl && !m.loading && !m.failed
+        && !(m.type === 'video' && !m.media_url) // skip chunked
+        && m.media_url && m.media_key && m.media_nonce
+    );
+    if (undecrypted.length === 0) return;
+
+    // Sort: visible items first, then look-ahead
+    const visibleIndices = Array.from(visibleFeedIds)
+      .map(id => feedItems.findIndex(m => m.id === id))
+      .filter(i => i !== -1);
+    const maxVisibleIdx = visibleIndices.length > 0 ? Math.max(...visibleIndices) : -1;
+
+    const sorted = [...undecrypted].sort((a, b) => {
+      const aIdx = feedItems.findIndex(m => m.id === a.id);
+      const bIdx = feedItems.findIndex(m => m.id === b.id);
+      const aVisible = visibleFeedIds.has(a.id);
+      const bVisible = visibleFeedIds.has(b.id);
+      if (aVisible && !bVisible) return -1;
+      if (!aVisible && bVisible) return 1;
+      const aAhead = aIdx > maxVisibleIdx && aIdx <= maxVisibleIdx + FEED_LOOK_AHEAD;
+      const bAhead = bIdx > maxVisibleIdx && bIdx <= maxVisibleIdx + FEED_LOOK_AHEAD;
+      if (aAhead && !bAhead) return -1;
+      if (!aAhead && bAhead) return 1;
+      return aIdx - bIdx;
+    });
+
+    // Rebuild queue without losing in-progress items
+    feedDecryptionQueue.length = 0;
+    sorted.forEach(m => feedDecryptionQueue.push(m.id));
+
+    // Kick off workers up to max concurrency
+    for (let i = 0; i < MAX_FEED_CONCURRENT; i++) {
+      processFeedQueue(feedItemsRef, setFeedItems, getDecryptedBlob, partnerKey);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedItems.length, visibleFeedIds, partner?.public_key]);
+
+  // ── IntersectionObserver for feed visibility tracking (1500px lookahead) ──
+  useEffect(() => {
+    feedObserverRef.current = new IntersectionObserver((entries) => {
+      setVisibleFeedIds(prev => {
+        const next = new Set(prev);
+        entries.forEach(entry => {
+          const id = entry.target.getAttribute('data-feed-id');
+          if (!id) return;
+          if (entry.isIntersecting) next.add(id);
+          else next.delete(id);
+        });
+        return next;
+      });
+    }, { rootMargin: '1500px', threshold: 0.01 });
+
+    return () => feedObserverRef.current?.disconnect();
+  }, []);
+
+  const feedCardRef = useCallback((node: HTMLDivElement | null) => {
+    if (node && feedObserverRef.current) {
+      feedObserverRef.current.observe(node);
+    }
+  }, []);
+
   // Mark the first loaded feed item as seen on initial load
   useEffect(() => {
     if (feedItems.length > 0 && lastMarkedIndexRef.current === -1) {
@@ -615,10 +752,13 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                     item={item}
                     partnerPublicKey={partner?.public_key || ''}
                     getDecryptedBlob={getDecryptedBlob}
+                    preDecryptedUrl={item.decryptedUrl}
+                    isLoading={item.loading}
                     isLiked={favorites.has(item.id)}
                     onLikeToggle={() => toggleFavorite(item.id)}
                     isSaved={savedItems.has(item.id)}
                     onSaveToggle={() => toggleSaved(item.id)}
+                    observerRef={feedCardRef}
                   />
                 ))}
               </div>
@@ -631,10 +771,13 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                       item={item}
                       partnerPublicKey={partner?.public_key || ''}
                       getDecryptedBlob={getDecryptedBlob}
+                      preDecryptedUrl={item.decryptedUrl}
+                      isLoading={item.loading}
                       isLiked={favorites.has(item.id)}
                       onLikeToggle={() => toggleFavorite(item.id)}
                       isSaved={savedItems.has(item.id)}
                       onSaveToggle={() => toggleSaved(item.id)}
+                      observerRef={feedCardRef}
                     />
                   ))}
                 </div>
@@ -645,10 +788,13 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                       item={item}
                       partnerPublicKey={partner?.public_key || ''}
                       getDecryptedBlob={getDecryptedBlob}
+                      preDecryptedUrl={item.decryptedUrl}
+                      isLoading={item.loading}
                       isLiked={favorites.has(item.id)}
                       onLikeToggle={() => toggleFavorite(item.id)}
                       isSaved={savedItems.has(item.id)}
                       onSaveToggle={() => toggleSaved(item.id)}
+                      observerRef={feedCardRef}
                     />
                   ))}
                 </div>
@@ -907,19 +1053,26 @@ interface FeedPostProps {
   item: FeedPostItem;
   partnerPublicKey: string;
   getDecryptedBlob: any;
+  preDecryptedUrl?: string;   // Passed by central queue if already decrypted
+  isLoading?: boolean;        // Passed by central queue loading state
+  observerRef?: (node: HTMLDivElement | null) => void; // For visibility tracking
   isLiked: boolean;
   onLikeToggle: () => void;
   isSaved: boolean;
   onSaveToggle: () => void;
 }
 
-function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeToggle, isSaved, onSaveToggle }: FeedPostProps) {
+function FeedPost({ item, partnerPublicKey, getDecryptedBlob, preDecryptedUrl, isLoading: externalLoading, observerRef, isLiked, onLikeToggle, isSaved, onSaveToggle }: FeedPostProps) {
   const { user } = useAuth();
   const { partner } = usePartner();
-  const [decryptedUrl, setDecryptedUrl] = useState<string | null>(null);
+  // Use pre-decrypted URL from central queue if available, otherwise decrypt locally
+  const [localDecryptedUrl, setLocalDecryptedUrl] = useState<string | null>(null);
+  const decryptedUrl = preDecryptedUrl || localDecryptedUrl;
   const [loading, setLoading] = useState(false);
+  const isLoadingState = externalLoading || loading;
   const [decryptionFailed, setDecryptionFailed] = useState(false);
   const [showOriginalRatio, setShowOriginalRatio] = useState(false);
+  const [isTallMedia, setIsTallMedia] = useState(false);
   const postRef = useRef<HTMLDivElement>(null);
   const decryptedUrlRef = useRef<string | null>(null);
   // Guard: prevent double decrypt from StrictMode double-invoke
@@ -984,11 +1137,15 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
       const ratio = height / width;
       // On desktop/tablet (2-column layout width >= 768), always show the original aspect ratio
       // to let cards size themselves dynamically and stack in a clean masonry/bento grid.
-      // On mobile, show original ratio for landscape/square media, but keep 2:3 for tall media.
+      // On mobile, show original ratio for all media. If it is tall media (> 2/3 ratio, i.e., ratio > 1.5),
+      // we also mark it as tall media so the post header can overlay on the top side of the media.
       if (window.innerWidth >= 768) {
         setShowOriginalRatio(true);
-      } else if (ratio < 1.5) {
+      } else {
         setShowOriginalRatio(true);
+        if (ratio > 1.5) {
+          setIsTallMedia(true);
+        }
       }
     }
   };
@@ -1109,7 +1266,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     if (!isChunkedVideo || !videoChunks?.length) return;
     const chunk = videoChunks[0];
     if (chunk?.blobUrl && chunk.isDecrypted) {
-      setDecryptedUrl(chunk.blobUrl);
+      setLocalDecryptedUrl(chunk.blobUrl);
       setLoading(false);
       hasDecryptedRef.current = true;
     }
@@ -1117,8 +1274,10 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
 
   // Clean up Object URL on unmount or item change
   useEffect(() => {
-    setDecryptedUrl(null);
+    setLocalDecryptedUrl(null);
     setLoading(false);
+    setIsTallMedia(false);
+    setShowOriginalRatio(false);
     hasDecryptedRef.current = false;
     return () => {
       if (decryptedUrlRef.current && !isChunkedVideo) {
@@ -1128,11 +1287,14 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     };
   }, [item.id, item.media_url, isChunkedVideo]);
 
-  // Handle decryption on viewport entry
+  // Handle decryption on viewport entry — only used as FALLBACK if central queue hasn't pre-decrypted yet
   useEffect(() => {
+    // If central queue already provided a URL, skip local decryption entirely
+    if (preDecryptedUrl) return;
+
     let active = true;
 
-    // Chunked video path
+    // Chunked video path — always local (chunked videos not handled by central queue)
     if (isChunkedVideo) {
       if (!partnerPublicKey || !item.media_key || !item.media_nonce) {
         setDecryptionFailed(true);
@@ -1141,10 +1303,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
 
       const observer = new IntersectionObserver(([entry]) => {
         if (!entry.isIntersecting || !active) return;
-        if (hasDecryptedRef.current) {
-          observer.disconnect();
-          return;
-        }
+        if (hasDecryptedRef.current) { observer.disconnect(); return; }
 
         hasDecryptedRef.current = true;
         setLoading(true);
@@ -1162,27 +1321,21 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
               if (active) setDecryptionFailed(true);
               return;
             }
-
             await loadExistingChunks(item.id, data, partnerPublicKey);
-            // useEffect watching videoChunks will pick up the blobUrl
           } catch (e) {
             console.error(`${tag} Chunked video load error`, e);
-            if (active) {
-              hasDecryptedRef.current = false;
-              setDecryptionFailed(true);
-              setLoading(false);
-            }
+            if (active) { hasDecryptedRef.current = false; setDecryptionFailed(true); setLoading(false); }
           }
         })();
 
         observer.disconnect();
-      }, { rootMargin: '600px' });
+      }, { rootMargin: '1500px' });
 
       if (postRef.current) observer.observe(postRef.current);
       return () => { active = false; observer.disconnect(); };
     }
 
-    // Regular media path
+    // Regular media path — fallback if central queue missed this item
     if (!partnerPublicKey || !item.media_url || !item.media_key || !item.media_nonce) {
       setDecryptionFailed(true);
       return;
@@ -1190,10 +1343,7 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
 
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting || !active) return;
-      if (hasDecryptedRef.current) {
-        observer.disconnect();
-        return;
-      }
+      if (hasDecryptedRef.current || preDecryptedUrl) { observer.disconnect(); return; }
 
       hasDecryptedRef.current = true;
 
@@ -1210,10 +1360,9 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           if (blob && active) {
             const url = URL.createObjectURL(blob);
             decryptedUrlRef.current = url;
-            setDecryptedUrl(url);
+            setLocalDecryptedUrl(url);
             observer.disconnect();
           } else if (!blob) {
-            console.error(`${tag} FAILED — null blob`);
             hasDecryptedRef.current = false;
             setDecryptionFailed(true);
           }
@@ -1226,18 +1375,13 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
         }
       };
       decrypt();
-    }, { rootMargin: '600px' });
+    }, { rootMargin: '1500px' });
 
-    if (postRef.current) {
-      observer.observe(postRef.current);
-    }
+    if (postRef.current) observer.observe(postRef.current);
 
-    return () => {
-      active = false;
-      observer.disconnect();
-    };
+    return () => { active = false; observer.disconnect(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo]);
+  }, [item.id, item.media_url, item.media_key, item.media_nonce, partnerPublicKey, getDecryptedBlob, isChunkedVideo, preDecryptedUrl]);
 
   // Determine sender info
   const isMine = item.sender_id === user?.id;
@@ -1261,39 +1405,27 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
     }
   };
 
-  if (decryptionFailed) return null;
+  if (decryptionFailed && !preDecryptedUrl) return null;
+
+  const overlayHeader = window.innerWidth < 768 && isTallMedia;
 
   return (
     <div
-      ref={postRef}
+      ref={(node) => {
+        (postRef as any).current = node;
+        if (observerRef) observerRef(node);
+      }}
+      data-feed-id={item.id}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       className="bg-transparent border-none rounded-none shadow-none w-full flex flex-col mx-auto pb-6 border-b border-white/5 last:border-b-0 lg:bg-[var(--bg-secondary)] lg:border lg:border-white/5 lg:rounded-3xl lg:overflow-hidden lg:shadow-xl lg:w-full lg:h-auto lg:pb-0"
     >
       {/* Post Header */}
-      <div className="py-3 px-0 lg:p-4 flex items-center justify-between flex-none">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-9 h-9 rounded-full overflow-hidden border border-white/10 ${!isMine ? 'cursor-pointer hover:opacity-85 active:scale-95 transition-all' : ''}`}
-            onClick={() => {
-              if (!isMine) {
-                document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
-                document.dispatchEvent(new CustomEvent('view-partner-profile'));
-              }
-            }}
-          >
-            <EncryptedImage
-              url={avatarUrl}
-              encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
-              nonce={avatarNonce ? (typeof avatarNonce === 'string' ? avatarNonce : JSON.stringify(avatarNonce)) : null}
-              alt={senderName}
-              className="w-full h-full object-cover"
-              placeholder={placeholder}
-            />
-          </div>
-          <div>
-            <h4
-              className={`text-xs font-bold text-white/90 ${!isMine ? 'cursor-pointer hover:underline' : ''}`}
+      {!overlayHeader && (
+        <div className="py-3 px-0 lg:p-4 flex items-center justify-between flex-none">
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-9 h-9 rounded-full overflow-hidden border border-white/10 ${!isMine ? 'cursor-pointer hover:opacity-85 active:scale-95 transition-all' : ''}`}
               onClick={() => {
                 if (!isMine) {
                   document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
@@ -1301,19 +1433,39 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
                 }
               }}
             >
-              {senderName}
-            </h4>
-            <p className="text-[10px] text-white/40">
-              {new Date(item.created_at).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </p>
+              <EncryptedImage
+                url={avatarUrl}
+                encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
+                nonce={avatarNonce ? (typeof avatarNonce === 'string' ? avatarNonce : JSON.stringify(avatarNonce)) : null}
+                alt={senderName}
+                className="w-full h-full object-cover"
+                placeholder={placeholder}
+              />
+            </div>
+            <div>
+              <h4
+                className={`text-xs font-bold text-white/90 ${!isMine ? 'cursor-pointer hover:underline' : ''}`}
+                onClick={() => {
+                  if (!isMine) {
+                    document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                    document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                  }
+                }}
+              >
+                {senderName}
+              </h4>
+              <p className="text-[10px] text-white/40">
+                {new Date(item.created_at).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Post Media Container */}
       <div 
@@ -1322,7 +1474,54 @@ function FeedPost({ item, partnerPublicKey, getDecryptedBlob, isLiked, onLikeTog
           showOriginalRatio && decryptedUrl ? 'aspect-auto h-auto flex-none' : 'aspect-[2/3] lg:aspect-[2/3] flex-1'
         }`}
       >
-        {loading ? (
+        {overlayHeader && decryptedUrl && (
+          <div className="absolute top-0 left-0 right-0 z-30 py-3 px-4 flex items-center justify-between bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-auto">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-9 h-9 rounded-full overflow-hidden border border-white/10 ${!isMine ? 'cursor-pointer hover:opacity-85 active:scale-95 transition-all' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!isMine) {
+                    document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                    document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                  }
+                }}
+              >
+                <EncryptedImage
+                  url={avatarUrl}
+                  encryptionKey={avatarKey ? (typeof avatarKey === 'string' ? avatarKey : JSON.stringify(avatarKey)) : null}
+                  nonce={avatarNonce ? (typeof avatarNonce === 'string' ? avatarNonce : JSON.stringify(avatarNonce)) : null}
+                  alt={senderName}
+                  className="w-full h-full object-cover"
+                  placeholder={placeholder}
+                />
+              </div>
+              <div>
+                <h4
+                  className={`text-xs font-bold text-white/95 drop-shadow-sm ${!isMine ? 'cursor-pointer hover:underline' : ''}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!isMine) {
+                      document.dispatchEvent(new CustomEvent('switch-tab', { detail: 'profile' }));
+                      document.dispatchEvent(new CustomEvent('view-partner-profile'));
+                    }
+                  }}
+                >
+                  {senderName}
+                </h4>
+                <p className="text-[10px] text-white/70 drop-shadow-sm">
+                  {new Date(item.created_at).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {isLoadingState ? (
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="w-6 h-6 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
             <span className="text-[10px] uppercase tracking-widest text-white/30">Decrypting...</span>
