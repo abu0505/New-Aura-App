@@ -13,6 +13,7 @@ import MediaViewer from '../chat/MediaViewer';
 const MemoriesScreen = lazy(() => import('../memories/MemoriesScreen'));
 const NotesScreen = lazy(() => import('../notes/NotesScreen'));
 const GamesScreen = lazy(() => import('../games/GamesScreen'));
+const MathGraphScreen = lazy(() => import('../math/MathGraphScreen'));
 
 interface ExploreItem {
   id: string;
@@ -32,7 +33,7 @@ export default function ExploreScreen() {
   const { getDecryptedBlob } = useMedia();
   const isNative = Capacitor.isNativePlatform();
 
-  const [subView, setSubView] = useState<'grid' | 'gallery' | 'notes' | 'games'>(() => {
+  const [subView, setSubView] = useState<'grid' | 'gallery' | 'notes' | 'games' | 'math'>(() => {
     const isStealth = typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
     return isStealth ? 'notes' : 'grid';
   });
@@ -208,6 +209,18 @@ export default function ExploreScreen() {
     );
   }
 
+  if (subView === 'math') {
+    return (
+      <div className="w-full h-full flex flex-col bg-[var(--bg-primary)]">
+        <div className="flex-1 overflow-hidden">
+          <Suspense fallback={<div className="p-6 text-center text-xs uppercase tracking-widest text-white/30 animate-pulse">Loading math lab...</div>}>
+            <MathGraphScreen onBack={handleBack} />
+          </Suspense>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`h-full w-full bg-[var(--bg-primary)] flex flex-col overflow-hidden ${isNative ? 'safe-top' : ''}`}>
       {/* Search Header - Stationary at the top */}
@@ -227,7 +240,7 @@ export default function ExploreScreen() {
       {/* Scrollable Content Container */}
       <div className="flex-grow overflow-y-auto social-feed-scroll pb-24 lg:px-8 lg:py-6">
         {/* Discovery Hub Card Grid */}
-        <div className="px-4 py-4 grid grid-cols-3 gap-3 lg:px-0 lg:max-w-4xl lg:mx-auto lg:gap-6 lg:mb-8">
+        <div className="px-4 py-4 grid grid-cols-4 gap-2.5 lg:px-0 lg:max-w-4xl lg:mx-auto lg:gap-6 lg:mb-8">
           {/* Gallery */}
           <button 
             onClick={() => setSubView('gallery')}
@@ -259,6 +272,17 @@ export default function ExploreScreen() {
               <span className="material-symbols-outlined text-xl">sports_esports</span>
             </div>
             <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Games</span>
+          </button>
+
+          {/* Math Lab */}
+          <button 
+            onClick={() => setSubView('math')}
+            className="aspect-square rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.02] to-white/[0.04] p-3 flex flex-col items-center justify-center gap-2 active:scale-95 hover:bg-white/10 hover:border-white/10 transition-all duration-300 w-full"
+          >
+            <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+              <span className="material-symbols-outlined text-xl">show_chart</span>
+            </div>
+            <span className="text-[10px] font-bold tracking-wider uppercase text-white/80">Math Lab</span>
           </button>
         </div>
 

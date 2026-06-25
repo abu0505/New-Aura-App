@@ -1,11 +1,50 @@
 # App Version
-VersionName: 2.12.2
-VersionCode: 101
-Date: 2026-06-23
+VersionName: 2.13.7
+VersionCode: 109
+Date: 2026-06-25
 Changes:
-- Overlaid post header over tall aspect ratio media (> 2:3 ratio) on mobile viewports to mimic native Instagram style, showing such media in its original height.
+- Fixed coordinate scaling mismatch under responsive layout resize by normalizing client-screen pointer pixels back to function-plot's internal coordinate dimensions before inverting via D3 scales.
 
 ## Previous Versions
+### Version 2.13.6 (Code 108)
+- Replaced manual coordinate mapping math in mousemove and click handlers with function-plot D3 linear scale inverters (xScale.invert/yScale.invert), achieving 100% pixel-perfect point-plotting and hover coordinate accuracy.
+
+### Version 2.13.5 (Code 107)
+- Fixed a bug where plotted lines/shapes temporarily turned grayish after less than a second by copying presentation stroke attributes directly to inline style overrides.
+
+### Version 2.13.4 (Code 106)
+- Added point label indicators rendered directly above plotted points on the graph canvas.
+- Added support for direct point connection on the graph (click an existing point to set as start, select solid/dotted style, and click a second point to connect).
+- Fixed a bug where custom grid lines disappeared on zoom-out by generating grid lines using robust polyline paths instead of implicit/built-in function samplers.
+- Fixed layout clipping inside the Point Lab by setting overflow-visible on the sub-tab container, resolving dropdown menu cutoffs.
+
+### Version 2.13.3 (Code 105)
+- Wired the custom shape rendering prop in the Math Lab screen to the Canvas, enabling rendering of multi-point lines, polygons, triangles, rectangles, and squares.
+- Implemented dynamic auto spacing grid lines that scale and display reference grid lines automatically on zoom and pan.
+- Removed the "Spacing" text label from the grid spacing selector in the toolbar for a cleaner look.
+
+### Version 2.13.2 (Code 104)
+- Redesigned and positioned Point & Line Lab and Intersection Solver select menus downward with custom dark-themed menus, fully fixing the layout alignment, and implemented a click-outside listener to automatically close open popovers.
+- Added a "Snap to Grid" toggle, allowing clicked points on the graph to snap to perfect integer/grid coordinates.
+- Added an adjustable "Grid Spacing" control, enabling fine-grained, dynamic reference grid lines spaced at Auto, 1, 2, or 5 units.
+
+### Version 2.13.1 (Code 103)
+- Fixed default CommonJS import issue with `function-plot` in ES modules/Vite by wrapping the invocation in a fallback resolver.
+- Redesigned the Math Lab sidebar layout to use pure Tailwind responsive visibility and height classes, fixing the collapsed/hidden layout rendering bug.
+- Implemented the interactive **Point & Line Lab** section, allowing manual point plotting (by entering X/Y coordinates) and interactive click-to-plot directly on the graph canvas.
+- Added a Point Joiner tool to construct straight lines (including horizontal/vertical boundary lines) between any two plotted points and render their equations (e.g., $y = mx + c$).
+- Developed a numerical intersection solver to calculate and highlight intersection points (rendered as green dots) between any functions or lines.
+- Prominently styled X and Y zero-axis lines to draw through the origin and remain visible at all times, dividing the view clearly into four quadrants.
+- Centered zoom controls symmetrically around $(0, 0)$ to keep the origin centered in the canvas viewport.
+
+## Previous Versions
+### Version 2.13.0 (Code 102)
+- Added "Math Lab" feature, providing a dedicated graph plotting and mathematical analysis tool customized for IIT Madras BS Degree Qualifier Exam preparation.
+- Supports plotting up to 5 simultaneous functions in real-time, custom math-symbol keyboard, preset categories grouped by weekly syllabus topics, derivative curve overlays, zoom controls, coordinate tracking on hover, custom coordinate domains, and full responsive dark-mode styling.
+
+### Version 2.12.2 (Code 101)
+- Overlaid post header over tall aspect ratio media (> 2:3 ratio) on mobile viewports to mimic native Instagram style, showing such media in its original height.
+
 ### Version 2.12.1 (Code 100)
 - Fixed TypeScript compiler errors in `HomeScreen.tsx` caused by references to the renamed `setDecryptedUrl` state.
 
