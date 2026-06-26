@@ -396,8 +396,33 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
 
 // ─── Reel Card ────────────────────────────────────────────────────────────────
 
+const getAspectClass = (fileName: string | null) => {
+  if (!fileName) return 'w-full h-full';
+  if (fileName.startsWith('aspect_ratio:')) {
+    const ratio = fileName.replace('aspect_ratio:', '');
+    switch (ratio) {
+      case '1:1':
+        return 'w-full aspect-square max-h-full max-w-full';
+      case '9:16':
+        return 'w-full aspect-[9/16] max-h-full max-w-full';
+      case '2:3':
+        return 'w-full aspect-[2/3] max-h-full max-w-full';
+      case '4:5':
+        return 'w-full aspect-[4/5] max-h-full max-w-full';
+      case '16:9':
+        return 'w-full aspect-[16/9] max-h-full max-w-full';
+      case '21:9':
+        return 'w-full aspect-[21/9] max-h-full max-w-full';
+      default:
+        return 'w-full h-full';
+    }
+  }
+  return 'w-full h-full';
+};
+
 interface ReelCardProps {
   item: ReelItem;
+
   isActive: boolean;
   isNearby: boolean;
   partnerPublicKey: string;
@@ -777,23 +802,26 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
                 <span className="text-xs text-white/40 tracking-wider">Decrypting Reel...</span>
               </div>
             ) : decryptedUrl ? (
-              item.type === 'video' ? (
-                <video
-                  ref={videoRef}
-                  src={decryptedUrl}
-                  className="w-full h-full object-cover"
-                  loop
-                  playsInline
-                  muted={isMuted}
-                />
-              ) : (
-                <img
-                  src={decryptedUrl}
-                  alt="Reel Media"
-                  className="w-full h-full object-cover"
-                />
-              )
+              <div className={`relative overflow-hidden flex items-center justify-center ${getAspectClass(item.file_name)}`}>
+                {item.type === 'video' ? (
+                  <video
+                    ref={videoRef}
+                    src={decryptedUrl}
+                    className="w-full h-full object-cover"
+                    loop
+                    playsInline
+                    muted={isMuted}
+                  />
+                ) : (
+                  <img
+                    src={decryptedUrl}
+                    alt="Reel Media"
+                    className="w-full h-full object-cover"
+                  />
+                )}
+              </div>
             ) : (
+
               <div className="flex flex-col items-center justify-center gap-2 text-white/20">
                 <Lock className="w-8 h-8 animate-pulse" />
                 <span className="text-[10px] uppercase tracking-widest font-bold">Secure Memory</span>

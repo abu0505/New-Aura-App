@@ -1,12 +1,45 @@
 # App Version
-VersionName: 2.13.7
-VersionCode: 109
-Date: 2026-06-25
+VersionName: 2.15.4
+VersionCode: 115
+Date: 2026-06-26
 Changes:
-- Fixed coordinate scaling mismatch under responsive layout resize by normalizing client-screen pointer pixels back to function-plot's internal coordinate dimensions before inverting via D3 scales.
+- Fixed a bug where video playback was interrupted after 3 seconds with `ERR_FILE_NOT_FOUND` errors by resolving `useEffect` dependency cleanup issues that prematurely revoked video blob URLs.
+- Fixed a layout shift on the left column (Reel Upload preview UI) when toggling the custom date picker on the right side.
+- Relocated the Reel Cover Frame selection interface to the right column above the custom date picker.
+- Removed the priority placement element from the upload screen.
+
+## Previous Version (2.15.3)
+- Cleaned up unused imports (Calendar) and unused local declarations (day) to ensure clean compiler builds.
+
+## Previous Version (2.15.2)
+- Added video cover/thumbnail frame selector feature to the manual reel creator.
+- Users can now pause/seek the video to any preferred frame and capture it instantly using a new "Use Current Frame" action.
+- Automatically generates and displays a first-frame fallback cover on video selection.
+
+## Previous Version (2.15.1)
+- Replaced native date inputs with a custom, premium calendar picker on the upload reel screen that adapts to the app theme.
+- Added quick anniversary shortcuts (e.g., 1 Year Ago, 5 Years Ago) to easily target past events.
+- Features custom Month/Year quick selectors and Chevron navigation for easy backdating.
+
+## Previous Version (2.15.0)
+- Raised reel video upload limit from 200 MB to **1 GB** by routing all video uploads through `processAndUploadChunked` instead of the single-blob `processAndUpload` path.
+- Videos are now split into 1 MB encrypted blocks, uploaded in parallel (up to 5 at a time), and streamed progressively.
+- Pre-inserts the `messages` row (with `is_reel_upload: true`) before chunking starts, so the recipient sees the thumbnail instantly.
+- Live per-chunk progress bar (20–95%) in the upload UI with readable status strings.
+- Updated `FILE_SIZE_LIMITS.video` in `useMedia.ts` to 1 GB to keep all validation consistent.
+
+### Version 2.14.0
+- Added image and video cropping features when uploading reels manually.
+- Integrated `react-easy-crop` inside manual reel creator with 6 preset aspect ratios (9:16, 2:3, 4:5, 1:1, 16:9, 21:9).
+- Image crops are processed via client-side canvas drawing before encryption and upload.
+- Video aspect ratio choices are stored in metadata and rendered dynamically with proper containment/clipping in the feed.
 
 ## Previous Versions
+### Version 2.13.7 (Code 109)
+- Fixed coordinate scaling mismatch under responsive layout resize by normalizing client-screen pointer pixels back to function-plot's internal coordinate dimensions before inverting via D3 scales.
+
 ### Version 2.13.6 (Code 108)
+
 - Replaced manual coordinate mapping math in mousemove and click handlers with function-plot D3 linear scale inverters (xScale.invert/yScale.invert), achieving 100% pixel-perfect point-plotting and hover coordinate accuracy.
 
 ### Version 2.13.5 (Code 107)

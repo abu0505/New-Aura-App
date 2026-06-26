@@ -47,11 +47,12 @@ const inflightDecryptions = new Map<string, Promise<Blob | null>>();
 
 // Fix 4.4: File size limits to prevent runaway uploads
 export const FILE_SIZE_LIMITS = {
-  image: 50 * 1024 * 1024,   // 50 MB
-  video: 200 * 1024 * 1024,  // 200 MB (video before compression)
-  audio: 25 * 1024 * 1024,   // 25 MB
-  document: 100 * 1024 * 1024, // 100 MB
+  image: 50 * 1024 * 1024,        // 50 MB
+  video: 1024 * 1024 * 1024,      // 1 GB  — chunked upload via processAndUploadChunked
+  audio: 25 * 1024 * 1024,        // 25 MB
+  document: 100 * 1024 * 1024,    // 100 MB
 } as const;
+
 
 // ─── Image Compression: Canvas → WebP ────────────────────────────────────────
 // Bypasses browser-image-compression for better format support.

@@ -1,7 +1,8 @@
 {
   "name": "aura-social",
   "private": true,
-  "version": "2.13.7",
+  "version": "2.15.4",
+
   "type": "module",
   "scripts": {
     "dev": "vite",
