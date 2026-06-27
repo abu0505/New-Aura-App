@@ -630,3 +630,32 @@ a {
   justify-content: flex-end !important;
   margin-left: auto !important;
 }
+
+/* Message Jump Highlight Animation */
+@keyframes message-jump-highlight {
+  0% {
+    background-color: var(--accent-medium, rgba(201, 169, 110, 0.3));
+  }
+  30% {
+    background-color: var(--accent-medium, rgba(201, 169, 110, 0.3));
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.message-highlight-active {
+  position: relative;
+  z-index: 20 !important;
+}
+
+.message-highlight-active::before {
+  content: '';
+  position: absolute;
+  inset: -6px -16px;
+  background-color: transparent;
+  pointer-events: none;
+  border-radius: 16px;
+  z-index: -1;
+  animation: message-jump-highlight 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}

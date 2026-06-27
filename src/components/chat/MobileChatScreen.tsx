@@ -339,6 +339,15 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     const el = document.querySelector(`[data-message-id="${id}"]`) || document.getElementById(`msg-${id}`);
     const container = scrollContainerRef.current;
 
+    const highlightMessage = (element: Element) => {
+      element.classList.remove('message-highlight-active');
+      void (element as HTMLElement).offsetWidth; // force reflow
+      element.classList.add('message-highlight-active');
+      setTimeout(() => {
+        element.classList.remove('message-highlight-active');
+      }, 3500);
+    };
+
     if (el && container) {
       isBottomLocked.current = false;
       const containerRect = container.getBoundingClientRect();
@@ -346,6 +355,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
       const offset = elRect.top - containerRect.top + container.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
       container.scrollTo({ top: offset, behavior: 'smooth' });
       setIsJumpingToPinned(null);
+      highlightMessage(el);
     } else {
       setIsJumpingToPinned(id);
       await jumpToMessageWindow(id);
@@ -359,6 +369,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
           const elRect = newEl.getBoundingClientRect();
           const offset = elRect.top - containerRect.top + newContainer.scrollTop - (containerRect.height / 2) + (elRect.height / 2);
           newContainer.scrollTo({ top: offset, behavior: 'auto' });
+          highlightMessage(newEl);
         }
         setIsJumpingToPinned(null);
       }, 150);

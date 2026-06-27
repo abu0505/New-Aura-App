@@ -1,12 +1,17 @@
 # App Version
-VersionName: 2.15.4
-VersionCode: 115
-Date: 2026-06-26
+VersionName: 2.16.1
+VersionCode: 117
+Date: 2026-06-27
 Changes:
-- Fixed a bug where video playback was interrupted after 3 seconds with `ERR_FILE_NOT_FOUND` errors by resolving `useEffect` dependency cleanup issues that prematurely revoked video blob URLs.
-- Fixed a layout shift on the left column (Reel Upload preview UI) when toggling the custom date picker on the right side.
-- Relocated the Reel Cover Frame selection interface to the right column above the custom date picker.
-- Removed the priority placement element from the upload screen.
+- **Message Jump Highlighting:** Added dynamic highlighting for scrolled-to messages when clicking reply links, viewing pinned messages, or clicking chat search results. The targeted message glows with the current theme's accent color for 3.5 seconds before fading out (similar to WhatsApp).
+
+## Previous Version (2.16.0)
+- **Adaptive Chunk Sizing (Solution B):** Web uploads now use 8MB chunks on fast connections (3-8MB adaptive via Network Information API), down to 3MB on slow connections. Native Android uses 2MB chunks (safe for Capacitor bridge Base64 limits). Previous 1MB fixed size caused excessive API calls.
+- **Memory-Efficient Native Encryption (Solution A):** Rewrote Android native upload path to encrypt+enqueue one chunk at a time (3 in parallel) instead of holding all encrypted blocks in memory simultaneously. Eliminates OOM risk on large videos. Sequential bridge calls → 3-concurrent rolling bridge calls.
+- **Web Parallel Limit Tuned (Solution C):** Reduced web parallel upload limit from 5 to 3 to prevent bandwidth saturation with the new larger 8MB chunks. Net result: fewer, larger requests with cleaner pipeline.
+- **MSE Streaming Re-enabled with Race Condition Fix (Solution D):** Receiver-side video now starts playing after first chunk arrives (YouTube-style) via MediaSource Extensions. Fixed the previous ERR_FILE_NOT_FOUND race condition: MSE blobUrl is now kept stable for the life of MediaSource; reusableBlobUrl (plain Blob) is assembled in background after all chunks arrive for fullscreen/second-mount use. Non-fragmented videos auto-fall-back to blob-assembly.
+
+
 
 ## Previous Version (2.15.3)
 - Cleaned up unused imports (Calendar) and unused local declarations (day) to ensure clean compiler builds.

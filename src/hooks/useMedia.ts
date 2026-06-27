@@ -16,10 +16,12 @@ import {
   encodeBase64
 } from '../lib/encryption';
 import { usePartner } from './usePartner';
-import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb } from '../utils/videoChunker';
+import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb, getAdaptiveChunkSize } from '../utils/videoChunker';
+
 import nacl from 'tweetnacl';
 import { supabase } from '../lib/supabase';
-import { isNativeUploadAvailable, enqueueChunkedUpload as nativeEnqueueChunkedUpload, getUploadStatusForMessage } from '../lib/backgroundUpload';
+import { isNativeUploadAvailable, enqueueSingleChunk as nativeEnqueueSingleChunk, getUploadStatusForMessage } from '../lib/backgroundUpload';
+
 
 export interface ProcessedMedia {
   url: string;
@@ -671,11 +673,14 @@ export function useMedia() {
       const packedKey = `${receiverKeyNonce}:${receiverEncKey}|${senderKeyNonce}:${senderEncKey}`;
       const baseNonceB64 = encodeBase64(baseNonce);
 
-      // ── Step 4: Split plaintext into 5MB blocks ─────────────────────────
+      // ── Step 4: Split plaintext into adaptive-size blocks ───────────────
+      // Web: up to 8MB per chunk (no bridge overhead, fewer API calls).
+      // Native: 2MB per chunk (bridge Base64 safety limit).
+      const chunkSize = getAdaptiveChunkSize(isNativeUploadAvailable());
       onStatusChange('Encrypting video...');
       const arrayBuffer = await fileToChunk.arrayBuffer();
       const plaintext = new Uint8Array(arrayBuffer);
-      const blocks = splitIntoByteChunks(plaintext); // splits plaintext, not ciphertext
+      const blocks = splitIntoByteChunks(plaintext, chunkSize);
       const totalChunks = blocks.length;
 
       // ── Step 5 & 6: Per-block encrypt → upload → IMMEDIATELY insert DB ─
@@ -685,33 +690,51 @@ export function useMedia() {
       // so receiver gets realtime events as each block finishes — streaming!
 
       // ── NATIVE BACKGROUND PATH ─────────────────────────────────────────
-      // On Android native, encrypt all blocks in JS, then hand off to
-      // WorkManager for upload + DB insert. This survives app kill.
+      // Encrypt + enqueue one block at a time (3 in parallel) to WorkManager.
+      // This avoids holding ALL encrypted blocks in memory simultaneously
+      // (previously caused OOM on large videos), and keeps bridge calls
+      // overlapped for faster enqueue throughput.
       if (isNativeUploadAvailable()) {
-        onStatusChange('Encrypting video...');
+        onStatusChange('Encrypting & queuing video...');
 
-        const encryptedChunks: Uint8Array[] = [];
+        let enqueuedCount = 0;
+        let allEnqueued = true;
+
+        // Encrypt + enqueue with rolling parallelism (3 concurrent bridge calls)
+        const NATIVE_PARALLEL = 3;
+        const nativeTasks = new Set<Promise<void>>();
+
         for (let i = 0; i < totalChunks; i++) {
-          const blockNonce = deriveBlockNonce(baseNonce, i);
-          const encryptedBlock = nacl.secretbox(blocks[i].data, blockNonce, fileKey);
-          if (!encryptedBlock) throw new Error(`Encryption failed for block ${i}`);
-          encryptedChunks.push(encryptedBlock);
+          const blockIndex = i;
+          const task = (async () => {
+            const blockNonce = deriveBlockNonce(baseNonce, blockIndex);
+            const encryptedBlock = nacl.secretbox(blocks[blockIndex].data, blockNonce, fileKey);
+            if (!encryptedBlock) throw new Error(`Encryption failed for block ${blockIndex}`);
+
+            const ok = await nativeEnqueueSingleChunk(
+              encryptedBlock,
+              blockIndex,
+              messageId,
+              totalChunks,
+              packedKey,
+              baseNonceB64,
+              Math.round(videoDuration!),
+              senderId,
+              receiverId,
+            );
+            if (!ok) allEnqueued = false;
+            enqueuedCount++;
+            onStatusChange(`Queuing ${enqueuedCount}/${totalChunks} chunks...`);
+          })();
+
+          nativeTasks.add(task);
+          task.finally(() => nativeTasks.delete(task));
+          if (nativeTasks.size >= NATIVE_PARALLEL) await Promise.race(nativeTasks);
         }
+        await Promise.all(nativeTasks);
 
-        onStatusChange('Queuing background upload...');
-        const enqueued = await nativeEnqueueChunkedUpload(
-          encryptedChunks,
-          messageId,
-          totalChunks,
-          packedKey,
-          baseNonceB64,
-          Math.round(videoDuration!),
-          senderId,
-          receiverId,
-        );
-
-        if (enqueued) {
-          // Poll the status of native workers until they are complete or failed
+        if (allEnqueued) {
+          // Poll WorkManager status until all chunks uploaded
           let isDone = false;
           let retryCount = 0;
           while (!isDone) {
@@ -719,7 +742,7 @@ export function useMedia() {
             const status = await getUploadStatusForMessage(messageId);
             if (!status) {
               retryCount++;
-              if (retryCount > 10) break; // Break if status check fails repeatedly
+              if (retryCount > 10) break;
               continue;
             }
             retryCount = 0;
@@ -734,19 +757,17 @@ export function useMedia() {
                 throw new Error('Some video chunks failed to upload');
               }
 
-              if (uploaded === total) {
-                isDone = true;
-              }
+              if (uploaded === total) isDone = true;
             } else {
               onStatusChange('Uploading in background...');
             }
           }
         } else {
-          // Fall through to JS path below
+          // Some chunks failed to enqueue — fall through to web JS path
           await jsUploadPath();
         }
       } else {
-        // ── WEB FALLBACK PATH (original JS fetch-based uploads) ──────────
+        // ── WEB PATH (fetch-based uploads) ───────────────────────────────
         await jsUploadPath();
       }
 
@@ -796,8 +817,10 @@ export function useMedia() {
           if (error) throw new Error(`DB insert failed for block ${blockIndex}: ${error.message}`);
         };
 
-        // Parallel upload with limit 5 (prevent connection saturation)
-        const PARALLEL_LIMIT = 5;
+        // Parallel upload with limit 3.
+        // With 8MB chunks, 3 concurrent uploads fills most connections without
+        // saturating the upload bandwidth or stalling the JS event loop.
+        const PARALLEL_LIMIT = 3;
         const activeTasks = new Set<Promise<void>>();
         for (let i = 0; i < totalChunks; i++) {
           const task = encryptAndUploadAndInsert(i);

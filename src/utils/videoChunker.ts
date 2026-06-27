@@ -31,8 +31,58 @@
 
 /* ── Byte-level chunking (transport only) ─────────────────────────────── */
 
-/** Default chunk size: 1MB — optimized for Capacitor bridge transfer limits */
-export const DEFAULT_BYTE_CHUNK_SIZE = 1 * 1024 * 1024;
+/**
+ * Web chunk size: 8MB
+ * No Capacitor bridge overhead on web — bigger chunks = fewer HTTP calls,
+ * fewer Supabase rows, faster overall upload on good connections.
+ */
+export const WEB_CHUNK_SIZE = 8 * 1024 * 1024;
+
+/**
+ * Native chunk size: 2MB
+ * Capacitor JS→Native bridge passes chunk data as Base64 string.
+ * Base64 inflates 2MB → ~2.7MB which is safely within WebView memory limits
+ * on budget Android devices. Going higher risks OOM crashes on the bridge.
+ */
+export const NATIVE_CHUNK_SIZE = 2 * 1024 * 1024;
+
+/** @deprecated Use WEB_CHUNK_SIZE / NATIVE_CHUNK_SIZE or getAdaptiveChunkSize() */
+export const DEFAULT_BYTE_CHUNK_SIZE = WEB_CHUNK_SIZE;
+
+/**
+ * Returns the optimal chunk size for the current environment and network.
+ *
+ * Web (isNative = false):
+ *   - Uses the Network Information API (if available) to pick between 3MB–8MB.
+ *   - Fast WiFi / 4G  → 8MB  (fewest API calls, maximum throughput)
+ *   - Decent 4G       → 5MB
+ *   - 3G / slow       → 3MB  (smaller retry cost on failure)
+ *   - Unknown         → 8MB  (optimistic default)
+ *
+ * Native Android (isNative = true):
+ *   - Always 2MB regardless of network (Capacitor bridge constraint).
+ */
+export function getAdaptiveChunkSize(isNative: boolean): number {
+  if (isNative) return NATIVE_CHUNK_SIZE;
+
+  try {
+    const nav = navigator as any;
+    const conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+    if (conn) {
+      const type = conn.effectiveType as string | undefined; // '4g'|'3g'|'2g'|'slow-2g'
+      const dl   = typeof conn.downlink === 'number' ? conn.downlink : 0; // Mbps
+
+      if (type === '4g' && dl >= 10) return 8 * 1024 * 1024; // blazing fast
+      if (type === '4g' || dl >= 2)  return 5 * 1024 * 1024; // solid 4G
+      if (type === '3g')             return 3 * 1024 * 1024; // 3G
+      return 3 * 1024 * 1024; // slow / unknown mobile
+    }
+  } catch {
+    // Network Information API not available — use safe default
+  }
+
+  return WEB_CHUNK_SIZE; // 8MB on desktop / unknown
+}
 
 export interface ByteChunk {
   data: Uint8Array;

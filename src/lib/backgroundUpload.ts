@@ -184,23 +184,29 @@ export async function enqueueMediaUpload(
   }
 }
 
-// ── Public API: Enqueue Chunked Video Upload ──────────────────────────────
+// ── Public API: Enqueue a Single Video Chunk ─────────────────────────────
 
 /**
- * Enqueue all encrypted video chunks for background upload.
+ * Enqueues ONE encrypted video chunk for background upload via WorkManager.
  *
- * @param encryptedChunks - Array of encrypted chunk Uint8Arrays
- * @param messageId - The message UUID
- * @param totalChunks - Total number of chunks
- * @param packedKey - The packed encryption key string
- * @param baseNonce - Base nonce (base64)
- * @param duration - Video duration in seconds
- * @param senderId - Sender user ID
- * @param receiverId - Receiver user ID
- * @returns true if all chunks were enqueued
+ * Called in a rolling-parallel loop from useMedia.ts (3 concurrent calls max).
+ * This replaces the old "encrypt all → pass array" approach which held the
+ * entire encrypted video in JS heap simultaneously and caused OOM on large files.
+ *
+ * @param encryptedChunk  - Encrypted bytes for this block (Uint8Array)
+ * @param chunkIndex      - 0-based index of this block
+ * @param messageId       - The message UUID
+ * @param totalChunks     - Total number of blocks in the video
+ * @param packedKey       - The packed dual-wrapped encryption key string
+ * @param baseNonce       - Base nonce (base64) — receiver derives per-block nonce
+ * @param duration        - Video duration in seconds
+ * @param senderId        - Sender user ID
+ * @param receiverId      - Receiver user ID
+ * @returns true if successfully enqueued into WorkManager, false on error
  */
-export async function enqueueChunkedUpload(
-  encryptedChunks: Uint8Array[],
+export async function enqueueSingleChunk(
+  encryptedChunk: Uint8Array,
+  chunkIndex: number,
   messageId: string,
   totalChunks: number,
   packedKey: string,
@@ -215,37 +221,34 @@ export async function enqueueChunkedUpload(
   if (!creds) return false;
 
   try {
-    console.log(`[BackgroundUpload] Enqueuing ${totalChunks} chunks one-by-one to avoid bridge limits...`);
-    
-    for (let i = 0; i < totalChunks; i++) {
-      const chunkBase64 = uint8ArrayToBase64(encryptedChunks[i]);
-      
-      const result = await BackgroundUpload.enqueueChunkedUpload({
-        messageId,
-        totalChunks,
-        chunkIndex: i,
-        chunk: chunkBase64,
-        cloudinaryPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
-        cloudinaryCloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
-        supabaseUrl: creds.url,
-        supabaseKey: creds.key,
-        supabaseAccessToken: creds.accessToken,
-        packedKey,
-        baseNonce,
-        duration,
-        senderId,
-        receiverId,
-      });
-      
-      console.log(`[BackgroundUpload] Chunk ${i + 1}/${totalChunks} enqueued:`, result.enqueued);
-    }
+    const chunkBase64 = uint8ArrayToBase64(encryptedChunk);
 
-    return true;
+    const result = await BackgroundUpload.enqueueChunkedUpload({
+      messageId,
+      totalChunks,
+      chunkIndex,
+      chunk: chunkBase64,
+      cloudinaryPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
+      cloudinaryCloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+      supabaseUrl: creds.url,
+      supabaseKey: creds.key,
+      supabaseAccessToken: creds.accessToken,
+      packedKey,
+      baseNonce,
+      duration,
+      senderId,
+      receiverId,
+    });
+
+    console.log(`[BackgroundUpload] Chunk ${chunkIndex + 1}/${totalChunks} enqueued:`, result.enqueued);
+    return result.enqueued;
   } catch (err) {
-    console.error('[BackgroundUpload] Failed to enqueue chunked upload:', err);
+    console.error(`[BackgroundUpload] Failed to enqueue chunk ${chunkIndex}:`, err);
     return false;
   }
 }
+
+
 
 export async function getUploadStatusForMessage(messageId: string): Promise<{
   pending: number;
