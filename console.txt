@@ -1,202 +1,1271 @@
-react-dom_client.js?v=10d5509a:14338 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
 content.js:22 [SmartLens Content] Initializing...
 content.js:438 [SmartLens] Content script loaded
-script.debug.js:1 [Vercel Speed Insights] Debug mode is enabled by default in development. No requests will be sent to the server.
-main.tsx:14 [🔔 NOTIF] Registering service worker: /sw.js
-main.tsx:17 [🔔 NOTIF] ✅ Service Worker registered successfully
-main.tsx:18 [🔔 NOTIF]   scope: http://localhost:5173/
-main.tsx:19 [🔔 NOTIF]   active: activated
-main.tsx:20 [🔔 NOTIF]   waiting: none
-CallOverlay.tsx:114 [Intervention] Blocked call to navigator.vibrate because user hasn't tapped on the frame or any embedded frame yet: https://www.chromestatus.com/feature/5644273861001216.
-(anonymous) @ CallOverlay.tsx:114
-react_stack_bottom_frame @ react-dom_client.js?v=10d5509a:12908
-runWithFiberInDEV @ react-dom_client.js?v=10d5509a:851
-commitHookEffectListUnmount @ react-dom_client.js?v=10d5509a:6642
-commitHookPassiveUnmountEffects @ react-dom_client.js?v=10d5509a:6655
-disconnectPassiveEffect @ react-dom_client.js?v=10d5509a:7842
-recursivelyTraverseDisconnectPassiveEffects @ react-dom_client.js?v=10d5509a:7834
-disconnectPassiveEffect @ react-dom_client.js?v=10d5509a:7849
-recursivelyTraverseDisconnectPassiveEffects @ react-dom_client.js?v=10d5509a:7834
-disconnectPassiveEffect @ react-dom_client.js?v=10d5509a:7843
-doubleInvokeEffectsOnFiber @ react-dom_client.js?v=10d5509a:8924
-runWithFiberInDEV @ react-dom_client.js?v=10d5509a:851
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8917
-commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=10d5509a:8932
-flushPassiveEffects @ react-dom_client.js?v=10d5509a:8809
-(anonymous) @ react-dom_client.js?v=10d5509a:8562
-performWorkUntilDeadline @ react-dom_client.js?v=10d5509a:36
-<CallOverlay>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=10d5509a:193
-InnerApp @ App.tsx:406
-react_stack_bottom_frame @ react-dom_client.js?v=10d5509a:12868
-renderWithHooksAgain @ react-dom_client.js?v=10d5509a:4268
-renderWithHooks @ react-dom_client.js?v=10d5509a:4219
-updateFunctionComponent @ react-dom_client.js?v=10d5509a:5569
-beginWork @ react-dom_client.js?v=10d5509a:6140
-runWithFiberInDEV @ react-dom_client.js?v=10d5509a:851
-performUnitOfWork @ react-dom_client.js?v=10d5509a:8429
-workLoopSync @ react-dom_client.js?v=10d5509a:8325
-renderRootSync @ react-dom_client.js?v=10d5509a:8309
-performWorkOnRoot @ react-dom_client.js?v=10d5509a:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=10d5509a:9059
-performWorkUntilDeadline @ react-dom_client.js?v=10d5509a:36
-<InnerApp>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=10d5509a:193
-(anonymous) @ App.tsx:528
-react_stack_bottom_frame @ react-dom_client.js?v=10d5509a:12868
-renderWithHooksAgain @ react-dom_client.js?v=10d5509a:4268
-renderWithHooks @ react-dom_client.js?v=10d5509a:4219
-updateFunctionComponent @ react-dom_client.js?v=10d5509a:5569
-beginWork @ react-dom_client.js?v=10d5509a:6140
-runWithFiberInDEV @ react-dom_client.js?v=10d5509a:851
-performUnitOfWork @ react-dom_client.js?v=10d5509a:8429
-workLoopSync @ react-dom_client.js?v=10d5509a:8325
-renderRootSync @ react-dom_client.js?v=10d5509a:8309
-performWorkOnRoot @ react-dom_client.js?v=10d5509a:7957
-performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=10d5509a:9059
-performWorkUntilDeadline @ react-dom_client.js?v=10d5509a:36
-<App>
-exports.jsxDEV @ react_jsx-dev-runtime.js?v=10d5509a:193
-(anonymous) @ main.tsx:65
-useSnapCapture.ts:424 [SnapCapture] 📡 Channel status: CLOSED
-useSnapCapture.ts:424 [SnapCapture] 📡 Channel status: SUBSCRIBED
-App.tsx:263 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
-pushNotifications.ts:119 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
-pushNotifications.ts:127 [🔔 NOTIF] 🔑 Notification.permission = "granted"
-pushNotifications.ts:135 [🔔 NOTIF] ⏳ Waiting for ServiceWorker to be ready...
-pushNotifications.ts:137 [🔔 NOTIF] ✅ ServiceWorker is ready. Scope: http://localhost:5173/
-pushNotifications.ts:138 [🔔 NOTIF]   SW state: activated
-pushNotifications.ts:143 [🔔 NOTIF] 📬 Found existing subscription
-pushNotifications.ts:144 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/eFyk6W88STY:APA91bFDVirYd0wE91qb4h8YiJNGA7P3...
-pushNotifications.ts:39 [🔔 NOTIF] 💾 Saving subscription to DB...
-pushNotifications.ts:40 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/eFyk6W88STY:APA91bFDVirYd0wE91qb4h8YiJNGA7P3...
-pushNotifications.ts:64 [🔔 NOTIF] ✅ Subscription saved to DB successfully
-pushNotifications.ts:182 [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
-App.tsx:265 [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
-AppLockContext.tsx:11 [AppLockContext] Starting background prefetch of diverse feed pool...
-useVideoChunks.ts:47 [VideoChunks] Block 2: failed (attempt 1), retrying in 1s... Error: NaCl MAC check failed for block 2
-    at downloadAndDecryptBlock (useVideoChunks.ts:297:27)
-    at async processBlock (useVideoChunks.ts:414:17)
-    at async Promise.all (:5173/index 2)
-    at async useVideoChunks.ts:710:7
-    at async ReelsScreen.tsx:542:11
-(anonymous) @ useVideoChunks.ts:47
-downloadAndDecryptBlock @ useVideoChunks.ts:303
-useVideoChunks.ts:47 [VideoChunks] Block 1: failed (attempt 1), retrying in 1s... Error: NaCl MAC check failed for block 1
-    at downloadAndDecryptBlock (useVideoChunks.ts:297:27)
-    at async processBlock (useVideoChunks.ts:414:17)
-    at async Promise.all (:5173/index 1)
-    at async useVideoChunks.ts:710:7
-    at async ReelsScreen.tsx:542:11
-(anonymous) @ useVideoChunks.ts:47
-downloadAndDecryptBlock @ useVideoChunks.ts:303
-useVideoChunks.ts:47 [VideoChunks] Block 2: failed (attempt 2), retrying in 2s... Error: NaCl MAC check failed for block 2
-    at downloadAndDecryptBlock (useVideoChunks.ts:297:27)
-    at async processBlock (useVideoChunks.ts:414:17)
-    at async Promise.all (:5173/index 2)
-    at async useVideoChunks.ts:710:7
-    at async ReelsScreen.tsx:542:11
-(anonymous) @ useVideoChunks.ts:47
-downloadAndDecryptBlock @ useVideoChunks.ts:303
-await in downloadAndDecryptBlock
-downloadAndDecryptBlock @ useVideoChunks.ts:305
-useVideoChunks.ts:47 [VideoChunks] Block 1: failed (attempt 2), retrying in 2s... Error: NaCl MAC check failed for block 1
-    at downloadAndDecryptBlock (useVideoChunks.ts:297:27)
-    at async processBlock (useVideoChunks.ts:414:17)
-    at async Promise.all (:5173/index 1)
-    at async useVideoChunks.ts:710:7
-    at async ReelsScreen.tsx:542:11
-(anonymous) @ useVideoChunks.ts:47
-downloadAndDecryptBlock @ useVideoChunks.ts:303
-await in downloadAndDecryptBlock
-downloadAndDecryptBlock @ useVideoChunks.ts:305
-ChatBubble.tsx:294 [ChatBubble] fetchInitialChunks for msg=e8a6a9fd-7bb0-45c2-a084-1edb274c1a04
-ChatBubble.tsx:294 [ChatBubble] fetchInitialChunks for msg=38694982-8da7-4395-bf2b-047477713551
-ChatBubble.tsx:294 [ChatBubble] fetchInitialChunks for msg=e8a6a9fd-7bb0-45c2-a084-1edb274c1a04
-ChatBubble.tsx:294 [ChatBubble] fetchInitialChunks for msg=38694982-8da7-4395-bf2b-047477713551
-ChatBubble.tsx:310 [ChatBubble] Found 6 chunks in DB for msg=e8a6a9fd-7bb0-45c2-a084-1edb274c1a04, loading...
-ChatBubble.tsx:310 [ChatBubble] Found 8 chunks in DB for msg=38694982-8da7-4395-bf2b-047477713551, loading...
-useVideoChunks.ts:48 [VideoChunks] Block 2: all 3 attempts failed Error: NaCl MAC check failed for block 2
-    at downloadAndDecryptBlock (useVideoChunks.ts:297:27)
-    at async processBlock (useVideoChunks.ts:414:17)
-    at async Promise.all (:5173/index 2)
-    at async useVideoChunks.ts:710:7
-    at async ReelsScreen.tsx:542:11
-(anonymous) @ useVideoChunks.ts:48
-downloadAndDecryptBlock @ useVideoChunks.ts:307
-await in downloadAndDecryptBlock
-downloadAndDecryptBlock @ useVideoChunks.ts:305
-useVideoChunks.ts:48 [VideoChunks] Block 2: permanently failed, removing from processedIndices for potential retry
-(anonymous) @ useVideoChunks.ts:48
-processBlock @ useVideoChunks.ts:418
-useVideoChunks.ts:48 [VideoChunks] Block 1: all 3 attempts failed Error: NaCl MAC check failed for block 1
-    at downloadAndDecryptBlock (useVideoChunks.ts:297:27)
-    at async processBlock (useVideoChunks.ts:414:17)
-    at async Promise.all (:5173/index 1)
-    at async useVideoChunks.ts:710:7
-    at async ReelsScreen.tsx:542:11
-(anonymous) @ useVideoChunks.ts:48
-downloadAndDecryptBlock @ useVideoChunks.ts:307
-await in downloadAndDecryptBlock
-downloadAndDecryptBlock @ useVideoChunks.ts:305
-useVideoChunks.ts:48 [VideoChunks] Block 1: permanently failed, removing from processedIndices for potential retry
-(anonymous) @ useVideoChunks.ts:48
-processBlock @ useVideoChunks.ts:418
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
-blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be:1  GET blob:http://localhost:5173/fc85a9d4-25de-4b66-8ee0-004f50a576be net::ERR_FILE_NOT_FOUND
+index-CIX9vtBG.js:62 [🔔 NOTIF] Registering service worker: /sw.js
+index-CIX9vtBG.js:62 [🔔 NOTIF] ✅ Service Worker registered successfully
+index-CIX9vtBG.js:62 [🔔 NOTIF]   scope: https://new-aura-v2.vercel.app/
+index-CIX9vtBG.js:62 [🔔 NOTIF]   active: activated
+index-CIX9vtBG.js:62 [🔔 NOTIF]   waiting: none
+index-CIX9vtBG.js:62 [🔔 NOTIF] 🚀 Push setup triggered — reason: app-load (2s delay)
+index-CIX9vtBG.js:62 [🔔 NOTIF] 🚀 initPushNotifications() called for user: 2dfb823f...
+index-CIX9vtBG.js:62 [🔔 NOTIF] 🔑 Notification.permission = "granted"
+index-CIX9vtBG.js:62 [🔔 NOTIF] ⏳ Waiting for ServiceWorker to be ready...
+index-CIX9vtBG.js:62 [🔔 NOTIF] ✅ ServiceWorker is ready. Scope: https://new-aura-v2.vercel.app/
+index-CIX9vtBG.js:62 [🔔 NOTIF]   SW state: activated
+index-CIX9vtBG.js:62 [🔔 NOTIF] 📬 Found existing subscription
+index-CIX9vtBG.js:62 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
+index-CIX9vtBG.js:62 [🔔 NOTIF] 💾 Saving subscription to DB...
+index-CIX9vtBG.js:62 [🔔 NOTIF]   endpoint: https://fcm.googleapis.com/fcm/send/fTdekZfgJLk:APA91bHlpE8fmK1xHydUUWEp2bZlKpyL...
+ChatScreen-CIHzvope.js:24 [SnapCapture] 📡 Channel status: SUBSCRIBED
+index-CIX9vtBG.js:62 [AppLockContext] Starting background prefetch of diverse feed pool...
+index-CIX9vtBG.js:62 [🔔 NOTIF] ✅ Subscription saved to DB successfully
+index-CIX9vtBG.js:62 [🔔 NOTIF] 📋 Final result: subscription ACTIVE ✅
+index-CIX9vtBG.js:62 [🔔 NOTIF] 📋 Push setup result: SUCCESS ✅
+supabase-BCSFHzmL.js:1  HEAD https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&receiver_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&is_read=eq.false 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  HEAD https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=*&or=%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Csender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29&type=in.%28image%2Cvideo%29 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  POST https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_diverse_reels_pool 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+feedPool-gH_u-B-h.js:1 [feedPool] RPC failed or returned empty. Falling back to client-side queries: {code: '57014', details: null, hint: null, message: 'canceling statement due to statement timeout'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Ctype%2Ccreated_at%2Csender_id%2Creceiver_id%2Cthumbnail_url%2Cis_reel_upload&sender_id=eq.2dfb823f-bb93-4e46-86cd-a520c5be7868&or=%28type.eq.image%2Ctype.eq.video%29&order=created_at.desc 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ProfileScreen-B9_2zz2s.js:2 Error fetching profile stats/posts: {code: '57014', details: null, hint: null, message: 'canceling statement due to statement timeout'}
+(anonymous) @ ProfileScreen-B9_2zz2s.js:2
+await in (anonymous)
+(anonymous) @ ProfileScreen-B9_2zz2s.js:2
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Ctype%2Ccreated_at&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&order=created_at.desc&limit=24 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ExploreScreen-4HrYdWhf.js:2 Error loading explore items: {code: '57014', details: null, hint: null, message: 'canceling statement due to statement timeout'}
+(anonymous) @ ExploreScreen-4HrYdWhf.js:2
+await in (anonymous)
+(anonymous) @ ExploreScreen-4HrYdWhf.js:2
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  POST https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_diverse_reels_pool 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+feedPool-gH_u-B-h.js:1 [feedPool] RPC failed or returned empty. Falling back to client-side queries: {code: '57014', details: null, hint: null, message: 'canceling statement due to statement timeout'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  POST https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/rpc/get_diverse_reels_pool 500 (Internal Server Error)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+feedPool-gH_u-B-h.js:1 [feedPool] RPC failed or returned empty. Falling back to client-side queries: {code: '57014', details: null, hint: null, message: 'canceling statement due to statement timeout'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ index-CIX9vtBG.js:62
+Ee @ index-CIX9vtBG.js:62
+onChange @ index-CIX9vtBG.js:62
+bd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+yn @ vendor-react-B6Wscfr5.js:8
+Td @ vendor-react-B6Wscfr5.js:8
+up @ vendor-react-B6Wscfr5.js:9
+cp @ vendor-react-B6Wscfr5.js:9
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Csender_id%2Creceiver_id%2Cencrypted_content%2Cnonce%2Ctype%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Cthumbnail_url%2Cfile_name%2Cfile_size%2Cduration%2Creaction%2Creply_to%2Cis_read%2Cis_delivered%2Cis_edited%2Cis_deleted_for_everyone%2Cis_deleted_for_sender%2Cis_deleted_for_receiver%2Cupdated_at%2Cread_at%2Cdelivered_at%2Ccreated_at%2Csender_public_key&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_reel_upload=eq.false&order=created_at.desc&limit=25 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+usePartner-B0eePCzm.js:2 Uncaught (in promise) {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+u @ usePartner-B0eePCzm.js:2
+await in u
+(anonymous) @ usePartner-B0eePCzm.js:2
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=gte.2026-03-30T16%3A15%3A09.776Z&created_at=lt.2026-06-14T16%3A15%3A09.776Z&order=created_at.desc&limit=80 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=lt.2026-03-30T16%3A15%3A09.776Z&order=created_at.desc&limit=80 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=gte.2026-06-14T16%3A15%3A09.776Z&order=created_at.desc&limit=40 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+feedPool-gH_u-B-h.js:1 [feedPool] Recent bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+feedPool-gH_u-B-h.js:1 [feedPool] Middle bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+feedPool-gH_u-B-h.js:1 [feedPool] Old bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+(anonymous) @ ReelsScreen-ZkjXorhg.js:1
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=lt.2026-03-30T16%3A15%3A11.030Z&order=created_at.desc&limit=60 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=gte.2026-03-30T16%3A15%3A11.068Z&created_at=lt.2026-06-14T16%3A15%3A11.068Z&order=created_at.desc&limit=60 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=gte.2026-03-30T16%3A15%3A11.030Z&created_at=lt.2026-06-14T16%3A15%3A11.030Z&order=created_at.desc&limit=60 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=gte.2026-06-14T16%3A15%3A11.030Z&order=created_at.desc&limit=30 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+feedPool-gH_u-B-h.js:1 [feedPool] Recent bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+feedPool-gH_u-B-h.js:1 [feedPool] Middle bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+feedPool-gH_u-B-h.js:1 [feedPool] Old bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+(anonymous) @ HomeScreen-CsCC_vFt.js:11
+Kc @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+Al @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Ol @ vendor-react-B6Wscfr5.js:8
+kl @ vendor-react-B6Wscfr5.js:8
+Wu @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+ae @ vendor-react-B6Wscfr5.js:1
+postMessage
+oe @ vendor-react-B6Wscfr5.js:1
+e.unstable_scheduleCallback @ vendor-react-B6Wscfr5.js:1
+cd @ vendor-react-B6Wscfr5.js:8
+sd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=gte.2026-06-14T16%3A15%3A11.068Z&order=created_at.desc&limit=30 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+supabase-BCSFHzmL.js:1  GET https://ugfxjjakpsngfdrjlsdr.supabase.co/rest/v1/messages?select=id%2Ctype%2Ccreated_at%2Cis_reel_upload%2Cmedia_url%2Cmedia_key%2Cmedia_nonce%2Csender_public_key%2Csender_id%2Creceiver_id%2Cthumbnail_url&type=in.%28image%2Cvideo%29&or=%28and%28sender_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%2Creceiver_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%29%2Cand%28sender_id.eq.8bb51234-4a86-470f-9f7d-96a95f551952%2Creceiver_id.eq.2dfb823f-bb93-4e46-86cd-a520c5be7868%29%29&is_deleted_for_everyone=eq.false&created_at=lt.2026-03-30T16%3A15%3A11.068Z&order=created_at.desc&limit=60 503 (Service Unavailable)
+fetch @ supabase-BCSFHzmL.js:1
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+(anonymous) @ vendor-supabase-Ct8MCOPW.js:24
+await in (anonymous)
+then @ vendor-supabase-Ct8MCOPW.js:1
+feedPool-gH_u-B-h.js:1 [feedPool] Recent bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ index-CIX9vtBG.js:62
+Ee @ index-CIX9vtBG.js:62
+onChange @ index-CIX9vtBG.js:62
+bd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+yn @ vendor-react-B6Wscfr5.js:8
+Td @ vendor-react-B6Wscfr5.js:8
+up @ vendor-react-B6Wscfr5.js:9
+cp @ vendor-react-B6Wscfr5.js:9
+feedPool-gH_u-B-h.js:1 [feedPool] Middle bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}code: "PGRST002"details: nullhint: nullmessage: "Could not query the database for the schema cache. Retrying."[[Prototype]]: Objectconstructor: ƒ Object()hasOwnProperty: ƒ hasOwnProperty()isPrototypeOf: ƒ isPrototypeOf()propertyIsEnumerable: ƒ propertyIsEnumerable()toLocaleString: ƒ toLocaleString()toString: ƒ toString()valueOf: ƒ valueOf()__defineGetter__: ƒ __defineGetter__()__defineSetter__: ƒ __defineSetter__()__lookupGetter__: ƒ __lookupGetter__()__lookupSetter__: ƒ __lookupSetter__()__proto__: (...)get __proto__: ƒ __proto__()set __proto__: ƒ __proto__()
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ index-CIX9vtBG.js:62
+Ee @ index-CIX9vtBG.js:62
+onChange @ index-CIX9vtBG.js:62
+bd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+yn @ vendor-react-B6Wscfr5.js:8
+Td @ vendor-react-B6Wscfr5.js:8
+up @ vendor-react-B6Wscfr5.js:9
+cp @ vendor-react-B6Wscfr5.js:9
+feedPool-gH_u-B-h.js:1 [feedPool] Old bucket error: {code: 'PGRST002', details: null, hint: null, message: 'Could not query the database for the schema cache. Retrying.'}
+n @ feedPool-gH_u-B-h.js:1
+await in n
+(anonymous) @ index-CIX9vtBG.js:62
+Ee @ index-CIX9vtBG.js:62
+onChange @ index-CIX9vtBG.js:62
+bd @ vendor-react-B6Wscfr5.js:8
+(anonymous) @ vendor-react-B6Wscfr5.js:8
+yn @ vendor-react-B6Wscfr5.js:8
+Td @ vendor-react-B6Wscfr5.js:8
+up @ vendor-react-B6Wscfr5.js:9
+cp @ vendor-react-B6Wscfr5.js:9

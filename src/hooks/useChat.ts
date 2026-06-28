@@ -344,16 +344,34 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const currentKeyHistory = partnerKeyHistoryRef.current;
       
       try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-          .eq('is_reel_upload', false)
-          .gt('created_at', lastMessageTimeRef.current)
-          .order('created_at', { ascending: true });
+        const [sentResult, receivedResult] = await Promise.all([
+          supabase
+            .from('messages')
+            .select(MSG_COLUMNS)
+            .eq('sender_id', user.id)
+            .eq('receiver_id', partnerId)
+            .eq('is_reel_upload', false)
+            .gt('created_at', lastMessageTimeRef.current)
+            .order('created_at', { ascending: true }),
+          supabase
+            .from('messages')
+            .select(MSG_COLUMNS)
+            .eq('sender_id', partnerId)
+            .eq('receiver_id', user.id)
+            .eq('is_reel_upload', false)
+            .gt('created_at', lastMessageTimeRef.current)
+            .order('created_at', { ascending: true })
+        ]);
 
-        if (error) throw error;
+        if (sentResult.error) throw sentResult.error;
+        if (receivedResult.error) throw receivedResult.error;
 
+        const combinedData = [
+          ...(sentResult.data || []),
+          ...(receivedResult.data || [])
+        ];
+        combinedData.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        const data = combinedData;
         if (data && data.length > 0) {
           let newMessages: ChatMessage[] = [];
           if (myKeyPair) {
@@ -405,15 +423,34 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const currentPartnerKey = partnerKeyRef.current;
       const currentKeyHistory = partnerKeyHistoryRef.current;
       try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-          .eq('is_reel_upload', false)
-          .order('created_at', { ascending: false })
-          .limit(PAGE_SIZE);
+        const [sentResult, receivedResult] = await Promise.all([
+          supabase
+            .from('messages')
+            .select(MSG_COLUMNS)
+            .eq('sender_id', user.id)
+            .eq('receiver_id', partnerId)
+            .eq('is_reel_upload', false)
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE),
+          supabase
+            .from('messages')
+            .select(MSG_COLUMNS)
+            .eq('sender_id', partnerId)
+            .eq('receiver_id', user.id)
+            .eq('is_reel_upload', false)
+            .order('created_at', { ascending: false })
+            .limit(PAGE_SIZE)
+        ]);
 
-        if (error) throw error;
+        if (sentResult.error) throw sentResult.error;
+        if (receivedResult.error) throw receivedResult.error;
+
+        const combinedData = [
+          ...(sentResult.data || []),
+          ...(receivedResult.data || [])
+        ];
+        combinedData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const data = combinedData.slice(0, PAGE_SIZE);
 
         if (myKeyPair && data) {
           // Reverse data because we fetched most recent but want to display ascending
@@ -1451,15 +1488,37 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
 
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(MSG_COLUMNS)
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-        .lt('created_at', oldestTimestamp)
-        .order('created_at', { ascending: false })
-        .limit(PAGE_SIZE);
+      const [sentResult, receivedResult] = await Promise.all([
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', user.id)
+          .eq('receiver_id', partnerId)
+          .eq('is_reel_upload', false)
+          .lt('created_at', oldestTimestamp)
+          .order('created_at', { ascending: false })
+          .limit(PAGE_SIZE),
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', partnerId)
+          .eq('receiver_id', user.id)
+          .eq('is_reel_upload', false)
+          .lt('created_at', oldestTimestamp)
+          .order('created_at', { ascending: false })
+          .limit(PAGE_SIZE)
+      ]);
 
-      if (error) throw error;
+      if (sentResult.error) throw sentResult.error;
+      if (receivedResult.error) throw receivedResult.error;
+
+      const combinedData = [
+        ...(sentResult.data || []),
+        ...(receivedResult.data || [])
+      ];
+      combinedData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const data = combinedData.slice(0, PAGE_SIZE);
+
       if (!data || data.length === 0) {
         setHasMore(false);
         return;
@@ -1499,15 +1558,37 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
 
     try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select(MSG_COLUMNS)
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-        .gt('created_at', newestTimestamp)
-        .order('created_at', { ascending: true })
-        .limit(PAGE_SIZE);
+      const [sentResult, receivedResult] = await Promise.all([
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', user.id)
+          .eq('receiver_id', partnerId)
+          .eq('is_reel_upload', false)
+          .gt('created_at', newestTimestamp)
+          .order('created_at', { ascending: true })
+          .limit(PAGE_SIZE),
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', partnerId)
+          .eq('receiver_id', user.id)
+          .eq('is_reel_upload', false)
+          .gt('created_at', newestTimestamp)
+          .order('created_at', { ascending: true })
+          .limit(PAGE_SIZE)
+      ]);
 
-      if (error) throw error;
+      if (sentResult.error) throw sentResult.error;
+      if (receivedResult.error) throw receivedResult.error;
+
+      const combinedData = [
+        ...(sentResult.data || []),
+        ...(receivedResult.data || [])
+      ];
+      combinedData.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const data = combinedData.slice(0, PAGE_SIZE);
+
       if (!data || data.length === 0) {
         setHasMoreNewer(false);
         return;
@@ -1549,26 +1630,68 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const targetDate = targetData.created_at;
 
       // 2. Fetch older messages (including target itself by using lte)
-      const { data: olderData, error: olderError } = await supabase
-        .from('messages')
-        .select(MSG_COLUMNS)
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-        .lte('created_at', targetDate)
-        .order('created_at', { ascending: false })
-        .limit(20);
+      const [olderSent, olderReceived] = await Promise.all([
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', user.id)
+          .eq('receiver_id', partnerId)
+          .eq('is_reel_upload', false)
+          .lte('created_at', targetDate)
+          .order('created_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', partnerId)
+          .eq('receiver_id', user.id)
+          .eq('is_reel_upload', false)
+          .lte('created_at', targetDate)
+          .order('created_at', { ascending: false })
+          .limit(20)
+      ]);
+
+      if (olderSent.error) throw olderSent.error;
+      if (olderReceived.error) throw olderReceived.error;
+
+      const combinedOlder = [
+        ...(olderSent.data || []),
+        ...(olderReceived.data || [])
+      ];
+      combinedOlder.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      const olderData = combinedOlder.slice(0, 20);
 
       // 3. Fetch newer messages
-      const { data: newerData, error: newerError } = await supabase
-        .from('messages')
-        .select(MSG_COLUMNS)
-        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
-        .gt('created_at', targetDate)
-        .order('created_at', { ascending: true })
-        .limit(20);
+      const [newerSent, newerReceived] = await Promise.all([
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', user.id)
+          .eq('receiver_id', partnerId)
+          .eq('is_reel_upload', false)
+          .gt('created_at', targetDate)
+          .order('created_at', { ascending: true })
+          .limit(20),
+        supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .eq('sender_id', partnerId)
+          .eq('receiver_id', user.id)
+          .eq('is_reel_upload', false)
+          .gt('created_at', targetDate)
+          .order('created_at', { ascending: true })
+          .limit(20)
+      ]);
 
-      if (olderError) throw olderError;
-      if (newerError) throw newerError;
+      if (newerSent.error) throw newerSent.error;
+      if (newerReceived.error) throw newerReceived.error;
 
+      const combinedNewer = [
+        ...(newerSent.data || []),
+        ...(newerReceived.data || [])
+      ];
+      combinedNewer.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      const newerData = combinedNewer.slice(0, 20);
       const olderSorted = olderData ? [...olderData].reverse() : [];
       const newerSorted = newerData || [];
       

@@ -52,23 +52,36 @@ export async function fetchDiverseMediaPool(
   const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
   const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString();
 
-  const userFilter = `and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`;
+  const buildFallbackQuery = async (gte?: string, lt?: string, limitValue = 80) => {
+    const runQueryForPair = (sender: string, receiver: string) => {
+      let query = supabase
+        .from('messages')
+        .select(FEED_COLUMNS)
+        .eq('sender_id', sender)
+        .eq('receiver_id', receiver)
+        .in('type', ['image', 'video'])
+        .eq('is_deleted_for_everyone', false);
 
-  const buildFallbackQuery = (gte?: string, lt?: string, limitValue = 80) => {
-    let query = supabase
-      .from('messages')
-      .select(FEED_COLUMNS)
-      .in('type', ['image', 'video'])
-      .or(userFilter)
-      .eq('is_deleted_for_everyone', false);
+      if (gte) query = query.gte('created_at', gte);
+      if (lt) query = query.lt('created_at', lt);
+      if (excludeIds.length > 0) {
+        query = query.not('id', 'in', `(${excludeIds.join(',')})`);
+      }
 
-    if (gte) query = query.gte('created_at', gte);
-    if (lt) query = query.lt('created_at', lt);
-    if (excludeIds.length > 0) {
-      query = query.not('id', 'in', `(${excludeIds.join(',')})`);
-    }
+      return query.order('created_at', { ascending: false }).limit(limitValue);
+    };
 
-    return query.order('created_at', { ascending: false }).limit(limitValue);
+    const [sent, received] = await Promise.all([
+      runQueryForPair(userId, partnerId),
+      runQueryForPair(partnerId, userId)
+    ]);
+
+    if (sent.error) return { data: null, error: sent.error };
+    if (received.error) return { data: null, error: received.error };
+
+    const combined = [...(sent.data || []), ...(received.data || [])];
+    combined.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return { data: combined.slice(0, limitValue), error: null };
   };
 
   // Fire all 3 time-bucket queries in parallel

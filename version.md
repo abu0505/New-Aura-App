@@ -1,9 +1,11 @@
 # App Version
-VersionName: 2.16.1
-VersionCode: 117
+VersionName: 2.16.2
+VersionCode: 118
 Date: 2026-06-27
 Changes:
-- **Message Jump Highlighting:** Added dynamic highlighting for scrolled-to messages when clicking reply links, viewing pinned messages, or clicking chat search results. The targeted message glows with the current theme's accent color for 3.5 seconds before fading out (similar to WhatsApp).
+- **Hotfix — processBlock null-guard:** Added early bail-out when `chunk_key`, `chunk_nonce`, `chunk_url`, or `chunk_index` are missing/undefined in a Realtime event payload. Previously caused `TypeError: Cannot read properties of undefined (reading 'split')` crash in `unwrapSymmetricKey` for Reels rows that don't carry a `chunk_key` field.
+- **Faster decryption retry:** Reduced retry backoff from 1s/2s to 200ms/400ms. For permanently-corrupted old chunks (NaCl MAC check failed), all 3 attempts now finish in ~600ms instead of ~9 seconds, unblocking the UI significantly faster.
+
 
 ## Previous Version (2.16.0)
 - **Adaptive Chunk Sizing (Solution B):** Web uploads now use 8MB chunks on fast connections (3-8MB adaptive via Network Information API), down to 3MB on slow connections. Native Android uses 2MB chunks (safe for Capacitor bridge Base64 limits). Previous 1MB fixed size caused excessive API calls.

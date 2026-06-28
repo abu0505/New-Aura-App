@@ -24,13 +24,26 @@ export default function StorageDashboard() {
       if (!user) return;
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from('messages')
-          .select('type, file_size')
-          .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-          .not('type', 'is', null);
+        const [sentResult, receivedResult] = await Promise.all([
+          supabase
+            .from('messages')
+            .select('type, file_size')
+            .eq('sender_id', user.id)
+            .not('type', 'is', null),
+          supabase
+            .from('messages')
+            .select('type, file_size')
+            .eq('receiver_id', user.id)
+            .not('type', 'is', null)
+        ]);
 
-        if (error) throw error;
+        if (sentResult.error) throw sentResult.error;
+        if (receivedResult.error) throw receivedResult.error;
+
+        const data = [
+          ...(sentResult.data || []),
+          ...(receivedResult.data || [])
+        ];
 
         const defaultStats = {
           image: { count: 0, size: 0 },

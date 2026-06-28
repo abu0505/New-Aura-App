@@ -18,6 +18,7 @@ import {
 import { usePartner } from './usePartner';
 import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb, getAdaptiveChunkSize } from '../utils/videoChunker';
 
+
 import nacl from 'tweetnacl';
 import { supabase } from '../lib/supabase';
 import { isNativeUploadAvailable, enqueueSingleChunk as nativeEnqueueSingleChunk, getUploadStatusForMessage } from '../lib/backgroundUpload';
