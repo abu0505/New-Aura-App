@@ -1,8 +1,12 @@
 # App Version
-VersionName: 2.16.2
-VersionCode: 118
-Date: 2026-06-27
+VersionName: 2.16.5
+VersionCode: 121
+Date: 2026-06-29
 Changes:
+- **Fix — Point & Line Lab Coordinate Accuracy (content-group CTM):** The real root cause: function-plot's d3 scales (`xScale`/`yScale`) operate in a nested `<g>` element's local coordinate system (offset from the SVG root by `translate(marginLeft, marginTop)`). Previous code was using `getScreenCTM()` on the SVG root, passing SVG-root coords to scales that expected group-local coords — causing every coordinate to be shifted by the margin. Now uses `getScreenCTM()` on the actual content group element, so the matrix inverse automatically accounts for the translate offset. Manual fallback also reads the actual margin values from the SVG's `translate` transform instead of hardcoded guesses.
+
+
+## Previous Version (2.16.2)
 - **Hotfix — processBlock null-guard:** Added early bail-out when `chunk_key`, `chunk_nonce`, `chunk_url`, or `chunk_index` are missing/undefined in a Realtime event payload. Previously caused `TypeError: Cannot read properties of undefined (reading 'split')` crash in `unwrapSymmetricKey` for Reels rows that don't carry a `chunk_key` field.
 - **Faster decryption retry:** Reduced retry backoff from 1s/2s to 200ms/400ms. For permanently-corrupted old chunks (NaCl MAC check failed), all 3 attempts now finish in ~600ms instead of ~9 seconds, unblocking the UI significantly faster.
 

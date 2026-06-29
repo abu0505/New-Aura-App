@@ -369,112 +369,131 @@ export default function GraphCanvas({
     const container = containerRef.current;
     if (!container) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const svgEl = container.querySelector('svg');
-      if (!svgEl) return;
+    /**
+     * Convert screen (client) coordinates to math coordinates.
+     *
+     * KEY INSIGHT: function-plot renders all content inside a <g> element with
+     * transform="translate(marginLeft, marginTop)". Its d3 scales (xScale, yScale)
+     * operate in THIS GROUP's local coordinate system:
+     *   xScale: [0 … plotWidth]  → [xMin … xMax]
+     *   yScale: [plotHeight … 0] → [yMin … yMax]
+     *
+     * So we must use getScreenCTM() on the CONTENT GROUP (not the SVG root)
+     * to convert screen pixels → group-local coords that the scales expect.
+     */
+    const screenToMath = (clientX: number, clientY: number): { x: number; y: number } | null => {
+      const svgEl = container.querySelector('svg') as SVGSVGElement | null;
+      if (!svgEl) return null;
 
-      const rect = svgEl.getBoundingClientRect();
-      const screenX = e.clientX - rect.left;
-      const screenY = e.clientY - rect.top;
-
-      // Scale screen pixels back to function-plot's internal coordinate dimensions
-      const relX = (screenX / rect.width) * dimensions.width;
-      const relY = (screenY / rect.height) * dimensions.height;
-
-      // Try using function-plot xScale / yScale for 100% accuracy
       const instance = plotInstanceRef.current;
+
+      // ── Method 1: Content-group CTM + d3 scales (pixel-perfect) ──
       if (instance?.meta?.xScale?.invert && instance?.meta?.yScale?.invert) {
         try {
-          const xVal = instance.meta.xScale.invert(relX);
-          const yVal = instance.meta.yScale.invert(relY);
-          
-          // Check bounds
-          if (xVal >= domain[0] && xVal <= domain[1] && yVal >= range[0] && yVal <= range[1]) {
-            setHoverCoords({ x: parseFloat(xVal.toFixed(3)), y: parseFloat(yVal.toFixed(3)) });
-            onCoordinateHover?.(xVal, yVal);
-            return;
+          // Find function-plot's content group — the <g> with translate(margin) transform.
+          // function-plot uses class "top-group-container" on this element.
+          let contentGroup: SVGGElement | null =
+            svgEl.querySelector('g.top-group-container') as SVGGElement | null;
+
+          // Fallback: first direct <g> child of SVG that has a translate transform
+          if (!contentGroup) {
+            for (const child of svgEl.children) {
+              if (child.tagName === 'g' && child.getAttribute('transform')?.includes('translate')) {
+                contentGroup = child as SVGGElement;
+                break;
+              }
+            }
+          }
+
+          const targetEl = contentGroup || svgEl;
+          const ctm = (targetEl as SVGGraphicsElement).getScreenCTM();
+          if (ctm) {
+            const pt = svgEl.createSVGPoint();
+            pt.x = clientX;
+            pt.y = clientY;
+            // This converts screen coords → group-local coords,
+            // automatically subtracting the translate(margin) offset
+            const localPt = pt.matrixTransform(ctm.inverse());
+
+            const xVal = instance.meta.xScale.invert(localPt.x);
+            const yVal = instance.meta.yScale.invert(localPt.y);
+
+            if (xVal >= domain[0] && xVal <= domain[1] &&
+                yVal >= range[0] && yVal <= range[1]) {
+              return {
+                x: parseFloat(xVal.toFixed(3)),
+                y: parseFloat(yVal.toFixed(3)),
+              };
+            }
           }
         } catch (err) {
-          console.error('[GraphCanvas] scale.invert error:', err);
+          console.error('[GraphCanvas] SVG coordinate transform error:', err);
         }
       }
 
-      // Fallback: Map pixel position to math coordinates using margins
-      const marginLeft = 55;
-      const marginTop = 20;
-      const marginRight = 15;
-      const marginBottom = 45;
+      // ── Method 2: Parse SVG structure to find margins, then map manually ──
+      try {
+        const ctm = svgEl.getScreenCTM();
+        if (!ctm) return null;
+        const pt = svgEl.createSVGPoint();
+        pt.x = clientX;
+        pt.y = clientY;
+        const svgPt = pt.matrixTransform(ctm.inverse());
 
-      const plotWidth = dimensions.width - marginLeft - marginRight;
-      const plotHeight = dimensions.height - marginTop - marginBottom;
+        // Read the actual margin from the content group's translate transform
+        let marginLeft = 30, marginTop = 20;
+        const firstG = svgEl.querySelector('g[transform]');
+        if (firstG) {
+          const t = firstG.getAttribute('transform') || '';
+          const m = t.match(/translate\(\s*([\d.]+)\s*[,\s]\s*([\d.]+)\s*\)/);
+          if (m) {
+            marginLeft = parseFloat(m[1]);
+            marginTop = parseFloat(m[2]);
+          }
+        }
 
-      if (relX < marginLeft || relX > dimensions.width - marginRight ||
-          relY < marginTop || relY > dimensions.height - marginBottom) {
-        setHoverCoords(null);
-        return;
+        // Read SVG internal dimensions
+        const svgW = parseFloat(svgEl.getAttribute('width') || String(dimensions.width));
+        const svgH = parseFloat(svgEl.getAttribute('height') || String(dimensions.height));
+        const marginRight = 30;
+        const marginBottom = 20;
+        const plotW = svgW - marginLeft - marginRight;
+        const plotH = svgH - marginTop - marginBottom;
+
+        const localX = svgPt.x - marginLeft;
+        const localY = svgPt.y - marginTop;
+
+        if (localX < 0 || localX > plotW || localY < 0 || localY > plotH) {
+          return null;
+        }
+
+        return {
+          x: parseFloat((domain[0] + (localX / plotW) * (domain[1] - domain[0])).toFixed(3)),
+          y: parseFloat((range[1] - (localY / plotH) * (range[1] - range[0])).toFixed(3)),
+        };
+      } catch (err) {
+        console.error('[GraphCanvas] fallback coordinate error:', err);
       }
 
-      const xRatio = (relX - marginLeft) / plotWidth;
-      const yRatio = (relY - marginTop) / plotHeight;
+      return null;
+    };
 
-      const xVal = domain[0] + xRatio * (domain[1] - domain[0]);
-      const yVal = range[1] - yRatio * (range[1] - range[0]); // y is flipped in screen coords
-
-      setHoverCoords({ x: parseFloat(xVal.toFixed(3)), y: parseFloat(yVal.toFixed(3)) });
-      onCoordinateHover?.(xVal, yVal);
+    const handleMouseMove = (e: MouseEvent) => {
+      const coords = screenToMath(e.clientX, e.clientY);
+      if (coords) {
+        setHoverCoords(coords);
+        onCoordinateHover?.(coords.x, coords.y);
+      } else {
+        setHoverCoords(null);
+      }
     };
 
     const handleMouseClick = (e: MouseEvent) => {
       if (!onGraphClick) return;
-
-      const svgEl = container.querySelector('svg');
-      if (!svgEl) return;
-
-      const rect = svgEl.getBoundingClientRect();
-      const screenX = e.clientX - rect.left;
-      const screenY = e.clientY - rect.top;
-
-      // Scale screen pixels back to function-plot's internal coordinate dimensions
-      const relX = (screenX / rect.width) * dimensions.width;
-      const relY = (screenY / rect.height) * dimensions.height;
-
-      // Try using function-plot xScale / yScale for 100% accuracy
-      const instance = plotInstanceRef.current;
-      if (instance?.meta?.xScale?.invert && instance?.meta?.yScale?.invert) {
-        try {
-          const xVal = instance.meta.xScale.invert(relX);
-          const yVal = instance.meta.yScale.invert(relY);
-          
-          if (xVal >= domain[0] && xVal <= domain[1] && yVal >= range[0] && yVal <= range[1]) {
-            onGraphClick(parseFloat(xVal.toFixed(3)), parseFloat(yVal.toFixed(3)));
-            return;
-          }
-        } catch (err) {
-          console.error('[GraphCanvas] scale.invert error:', err);
-        }
+      const coords = screenToMath(e.clientX, e.clientY);
+      if (coords) {
+        onGraphClick(coords.x, coords.y);
       }
-
-      // Fallback
-      const marginLeft = 55;
-      const marginTop = 20;
-      const marginRight = 15;
-      const marginBottom = 45;
-
-      const plotWidth = dimensions.width - marginLeft - marginRight;
-      const plotHeight = dimensions.height - marginTop - marginBottom;
-
-      if (relX < marginLeft || relX > dimensions.width - marginRight ||
-          relY < marginTop || relY > dimensions.height - marginBottom) {
-        return;
-      }
-
-      const xRatio = (relX - marginLeft) / plotWidth;
-      const yRatio = (relY - marginTop) / plotHeight;
-
-      const xVal = domain[0] + xRatio * (domain[1] - domain[0]);
-      const yVal = range[1] - yRatio * (range[1] - range[0]);
-
-      onGraphClick(parseFloat(xVal.toFixed(2)), parseFloat(yVal.toFixed(2)));
     };
 
     const handleMouseLeave = () => {
