@@ -21,6 +21,7 @@ export interface MediaFolder {
   // Decrypted fields (client-side only)
   name?: string;
   item_count?: number;
+  last_item_added_at?: string | null;
 }
 
 interface MediaFoldersContextType {
@@ -46,8 +47,10 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
   // Use refs to prevent dependency cascading
   const userRef = useRef(user);
   const partnerRef = useRef(partner);
+  const foldersRef = useRef(folders);
   useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => { partnerRef.current = partner; }, [partner]);
+  useEffect(() => { foldersRef.current = folders; }, [folders]);
 
   const decryptFolderName = useCallback((folder: MediaFolder, currentPartner: PartnerProfile | null): string => {
     try {
@@ -80,6 +83,14 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
     }
   }, []);
 
+  const sortFolders = useCallback((foldersList: MediaFolder[]): MediaFolder[] => {
+    return [...foldersList].sort((a, b) => {
+      const timeA = new Date(a.last_item_added_at || a.created_at).getTime();
+      const timeB = new Date(b.last_item_added_at || b.created_at).getTime();
+      return timeB - timeA;
+    });
+  }, []);
+
   const fetchFolders = useCallback(async (currUser = userRef.current, currPartner = partnerRef.current) => {
     if (!currUser || !currPartner) return;
     setLoading(true);
@@ -93,19 +104,25 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
 
       if (error) throw error;
 
-      // Fetch item counts for all folders
+      // Fetch item counts and last item added times for all folders
       const folderIds = (foldersData || []).map(f => f.id);
       let itemCounts: Record<string, number> = {};
+      let maxAddedAt: Record<string, string> = {};
 
       if (folderIds.length > 0) {
         const { data: countData } = await supabase
           .from('media_folder_items')
-          .select('folder_id')
+          .select('folder_id, added_at')
           .in('folder_id', folderIds);
 
         if (countData) {
           countData.forEach(item => {
             itemCounts[item.folder_id] = (itemCounts[item.folder_id] || 0) + 1;
+            
+            const currentMax = maxAddedAt[item.folder_id];
+            if (!currentMax || new Date(item.added_at) > new Date(currentMax)) {
+              maxAddedAt[item.folder_id] = item.added_at;
+            }
           });
         }
       }
@@ -114,15 +131,16 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
         ...f,
         name: decryptFolderName(f, currPartner),
         item_count: itemCounts[f.id] || 0,
+        last_item_added_at: maxAddedAt[f.id] || null,
       }));
 
-      setFolders(decryptedFolders);
+      setFolders(sortFolders(decryptedFolders));
     } catch (err) {
       // Error fetching folders
     } finally {
       setLoading(false);
     }
-  }, [decryptFolderName]);
+  }, [decryptFolderName, sortFolders]);
 
   useEffect(() => {
     if (user?.id && partner?.id) {
@@ -180,14 +198,15 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
         ...data,
         name,
         item_count: 0,
+        last_item_added_at: null,
       };
 
-      setFolders(prev => [newFolder, ...prev]);
+      setFolders(prev => sortFolders([newFolder, ...prev]));
       return data.id;
     } catch (err) {
       return null;
     }
-  }, []);
+  }, [sortFolders]);
 
   const deleteFolder = useCallback(async (folderId: string) => {
     try {
@@ -217,7 +236,7 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
       if (error) throw error;
 
       // Update cover if folder has none
-      const folder = folders.find(f => f.id === folderId);
+      const folder = foldersRef.current.find(f => f.id === folderId);
       if (folder && !folder.cover_message_id && messageIds.length > 0) {
         await supabase
           .from('media_folders')
@@ -225,22 +244,26 @@ export function MediaFoldersProvider({ children }: { children: React.ReactNode }
           .eq('id', folderId);
       }
 
-      // Refresh counts
-      setFolders(prev => prev.map(f =>
-        f.id === folderId
-          ? { 
-              ...f, 
-              item_count: (f.item_count || 0) + messageIds.length, 
-              cover_message_id: f.cover_message_id || messageIds[0] 
-            }
-          : f
-      ));
+      // Refresh counts and sort
+      setFolders(prev => {
+        const updated = prev.map(f =>
+          f.id === folderId
+            ? { 
+                ...f, 
+                item_count: (f.item_count || 0) + messageIds.length, 
+                cover_message_id: f.cover_message_id || messageIds[0],
+                last_item_added_at: new Date().toISOString()
+              }
+            : f
+        );
+        return sortFolders(updated);
+      });
 
       return true;
     } catch (err) {
       return false;
     }
-  }, [folders]);
+  }, [sortFolders]);
 
   const removeItemFromFolder = useCallback(async (folderId: string, messageId: string) => {
     try {

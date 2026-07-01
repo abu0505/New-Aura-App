@@ -62,6 +62,17 @@ export default function ExploreScreen() {
     };
   }, []);
 
+  // Listen for redirection to memories gallery
+  useEffect(() => {
+    const handleRedirect = (e: any) => {
+      if (e.detail && (e.detail.feature === 'rename-collections' || e.detail.feature === 'frequent-folders')) {
+        setSubView('gallery');
+      }
+    };
+    window.addEventListener('open-whats-new-feature', handleRedirect);
+    return () => window.removeEventListener('open-whats-new-feature', handleRedirect);
+  }, []);
+
   // Decrypt items in the explore viewer on the fly (current, next, previous)
   useEffect(() => {
     const partnerKey = partner?.public_key;

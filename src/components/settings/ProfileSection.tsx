@@ -17,7 +17,7 @@ export default function ProfileSection() {
   const { user, refreshUser } = useAuth();
   const { partner } = usePartner();
   const { isNative } = usePlatform();
-  const [appVersion, setAppVersion] = useState('2.16.2');
+  const [appVersion, setAppVersion] = useState('2.17.3');
 
 
   useEffect(() => {

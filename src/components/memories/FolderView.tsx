@@ -26,12 +26,44 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
-  const { fetchFolderItems, removeItemFromFolder } = useMediaFolders();
+  const { folders, fetchFolderItems, removeItemFromFolder, renameFolder } = useMediaFolders();
   const [items, setItems] = useState<MemoryItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(true);
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; messageId?: string } | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('bento');
+
+  const currentFolder = folders.find(f => f.id === folder.id) || folder;
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState(currentFolder.name || '');
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('show_rename_walkthrough') === 'true') {
+      setShowWalkthrough(true);
+      localStorage.removeItem('show_rename_walkthrough');
+    }
+  }, []);
+
+  const closeWalkthrough = () => {
+    localStorage.removeItem('show_rename_walkthrough');
+    setShowWalkthrough(false);
+  };
+
+  useEffect(() => {
+    if (currentFolder.name) {
+      setEditName(currentFolder.name);
+    }
+  }, [currentFolder.name]);
+
+  const handleRenameName = async () => {
+    if (!editName.trim() || editName.trim() === currentFolder.name) {
+      setIsEditingName(false);
+      return;
+    }
+    await renameFolder(currentFolder.id, editName.trim());
+    setIsEditingName(false);
+  };
 
   const getLayoutClasses = () => {
     switch (layoutMode) {
@@ -267,12 +299,58 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
           <button onClick={onClose} className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] transition-all">
             <span className="material-symbols-outlined text-[20px] block">arrow_back</span>
           </button>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-serif italic text-xl text-[var(--gold)] truncate">{folder.name || 'Encrypted Folder'}</h2>
-            <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">
-              {items.length} item{items.length !== 1 ? 's' : ''}
-            </p>
-          </div>
+          
+          {isEditingName ? (
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+              <input
+                type="text"
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                maxLength={50}
+                autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleRenameName();
+                  if (e.key === 'Escape') {
+                    setIsEditingName(false);
+                    setEditName(currentFolder.name || '');
+                  }
+                }}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-white/80 text-sm focus:outline-none focus:border-[rgba(var(--primary-rgb),_0.4)] transition-colors"
+              />
+              <button
+                onClick={handleRenameName}
+                disabled={!editName.trim() || editName.trim() === currentFolder.name}
+                className="p-2 rounded-xl bg-[var(--gold)] text-[var(--on-accent)] disabled:opacity-30 hover:bg-[var(--gold-deep)] transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px] block">check</span>
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditingName(false);
+                  setEditName(currentFolder.name || '');
+                }}
+                className="p-2 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px] block">close</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex-1 min-w-0 flex items-center gap-2 group/title">
+              <div className="flex-1 min-w-0">
+                <h2 className="font-serif italic text-xl text-[var(--gold)] truncate">{currentFolder.name || 'Encrypted Folder'}</h2>
+                <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81]">
+                  {items.length} item{items.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsEditingName(true)}
+                className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/40 hover:text-[var(--gold)] hover:border-[rgba(var(--primary-rgb),_0.2)] transition-all shrink-0"
+                title="Rename collection"
+              >
+                <span className="material-symbols-outlined text-[16px] block">edit</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -478,6 +556,40 @@ export default function FolderView({ folder, onClose }: FolderViewProps) {
           onClose={() => setSelectedMedia(null)}
         />
       )}
+
+      {/* Walkthrough Tooltip */}
+      <AnimatePresence>
+        {showWalkthrough && !isEditingName && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute top-[88px] right-4 z-[70] bg-gradient-to-br from-[var(--bg-elevated)] to-[#191926]/90 border border-[var(--gold)]/30 rounded-2xl p-3.5 shadow-[0_10px_30px_rgba(0,0,0,0.5)] w-[240px]"
+          >
+            <div className="flex gap-2.5">
+              <div className="p-1.5 rounded-lg bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] h-fit shrink-0">
+                <span className="material-symbols-outlined text-[16px] block">help</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-serif italic text-xs text-[var(--gold)] mb-0.5">Rename Collection</h4>
+                <p className="text-[10px] text-white/60 leading-relaxed mb-2.5">
+                  Click the <span className="text-[var(--gold)] font-bold">pencil</span> button to rename this collection folder.
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeWalkthrough}
+                    className="px-2.5 py-1 rounded-md bg-[var(--gold)] text-[var(--on-accent)] font-bold text-[9px] uppercase tracking-wider hover:bg-[var(--gold-deep)] transition-colors"
+                  >
+                    Got it!
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Little pointer triangle pointing up, aligned to the edit button on the right */}
+            <div className="absolute -top-1.5 right-[18px] w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[var(--bg-elevated)]" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

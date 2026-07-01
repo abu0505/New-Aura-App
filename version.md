@@ -1,12 +1,19 @@
 # App Version
-VersionName: 2.16.5
-VersionCode: 121
-Date: 2026-06-29
+VersionName: 2.17.3
+VersionCode: 125
+Date: 2026-07-01
 Changes:
+- **Fix — WhatsNew Modal display count:** Removed testing phase always-show behavior. The What's New modal and its walkthrough tooltips are now displayed exactly once and never shown again once skipped or completed.
+
+## Previous Version (2.17.2)
+- **Feature — Frequent & Recent Folders:** Automatically sort collections/folders by the time media was last added to them. Whichever folder media was recently added to will rise to the top of the list.
+- **Walkthrough — Contextual Tutorial:** Implemented a new walkthrough banner in the Memories screen and a walkthrough tooltip inside the Media Viewer directing users on how to use the folder sorting.
+- **UX Update — WhatsNew Modal Glassmorphism:** Restyled the What's New modal to have a premium glassmorphic frosted glass design matching Image 2's aesthetic.
+- **Fix — Modal Display timing:** Relocated the What's New modal trigger so it only displays after the user enters their correct security PIN, instead of showing on the Cart / PIN-lock screen.
+
+## Previous Version (2.17.0)
+- **Feature — Collection Folder Renaming:** Users can now rename their media folders (collections) directly from the collection list panel or within the collection details view.
 - **Fix — Point & Line Lab Coordinate Accuracy (content-group CTM):** The real root cause: function-plot's d3 scales (`xScale`/`yScale`) operate in a nested `<g>` element's local coordinate system (offset from the SVG root by `translate(marginLeft, marginTop)`). Previous code was using `getScreenCTM()` on the SVG root, passing SVG-root coords to scales that expected group-local coords — causing every coordinate to be shifted by the margin. Now uses `getScreenCTM()` on the actual content group element, so the matrix inverse automatically accounts for the translate offset. Manual fallback also reads the actual margin values from the SVG's `translate` transform instead of hardcoded guesses.
-
-
-## Previous Version (2.16.2)
 - **Hotfix — processBlock null-guard:** Added early bail-out when `chunk_key`, `chunk_nonce`, `chunk_url`, or `chunk_index` are missing/undefined in a Realtime event payload. Previously caused `TypeError: Cannot read properties of undefined (reading 'split')` crash in `unwrapSymmetricKey` for Reels rows that don't carry a `chunk_key` field.
 - **Faster decryption retry:** Reduced retry backoff from 1s/2s to 200ms/400ms. For permanently-corrupted old chunks (NaCl MAC check failed), all 3 attempts now finish in ~600ms instead of ~9 seconds, unblocking the UI significantly faster.
 

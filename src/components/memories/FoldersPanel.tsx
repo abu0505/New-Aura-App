@@ -155,12 +155,15 @@ function FolderCover({ folderId, initialMessageId }: { folderId: string; initial
 }
 
 export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProps) {
-  const { folders, loading, createFolder, deleteFolder } = useMediaFolders();
+  const { folders, loading, createFolder, deleteFolder, renameFolder } = useMediaFolders();
   const [showCreate, setShowCreate] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [layoutMode, setLayoutMode] = useState<'2col' | '3col' | '4col'>('3col');
+  const [editingFolder, setEditingFolder] = useState<MediaFolder | null>(null);
+  const [renameName, setRenameName] = useState('');
+  const [renaming, setRenaming] = useState(false);
 
   const getLayoutClasses = () => {
     switch (layoutMode) {
@@ -180,6 +183,17 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
     }
   };
 
+  const handleCreateOpen = () => {
+    setShowCreate(true);
+    setEditingFolder(null);
+  };
+
+  const handleEditOpen = (folder: MediaFolder) => {
+    setEditingFolder(folder);
+    setRenameName(folder.name || '');
+    setShowCreate(false);
+  };
+
   const handleCreate = async () => {
     if (!newFolderName.trim()) return;
     setCreating(true);
@@ -187,6 +201,15 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
     setNewFolderName('');
     setShowCreate(false);
     setCreating(false);
+  };
+
+  const handleRename = async () => {
+    if (!editingFolder || !renameName.trim()) return;
+    setRenaming(true);
+    await renameFolder(editingFolder.id, renameName.trim());
+    setEditingFolder(null);
+    setRenameName('');
+    setRenaming(false);
   };
 
   const handleDelete = async (folderId: string) => {
@@ -219,7 +242,7 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setShowCreate(true)}
+              onClick={handleCreateOpen}
               className="p-2 rounded-xl bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] hover:bg-[rgba(var(--primary-rgb),_0.2)] transition-all"
             >
               <span className="material-symbols-outlined text-[20px] block">create_new_folder</span>
@@ -315,6 +338,47 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
         )}
       </AnimatePresence>
 
+      {/* Rename Folder Dialog */}
+      <AnimatePresence>
+        {editingFolder && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden border-b border-white/5"
+          >
+            <div className="p-4 bg-white/[0.02]">
+              <p className="font-label text-[10px] uppercase tracking-[0.2em] text-[#998f81] mb-3">Rename Collection</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={renameName}
+                  onChange={e => setRenameName(e.target.value)}
+                  placeholder="New collection name"
+                  maxLength={50}
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleRename()}
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white/80 text-sm placeholder:text-white/20 focus:outline-none focus:border-[rgba(var(--primary-rgb),_0.4)] transition-colors"
+                />
+                <button
+                  onClick={handleRename}
+                  disabled={!renameName.trim() || renaming || renameName.trim() === editingFolder.name}
+                  className="px-4 py-2.5 rounded-xl bg-[var(--gold)] text-[var(--on-accent)] font-bold text-xs uppercase tracking-wider disabled:opacity-30 hover:bg-[var(--gold-deep)] transition-colors"
+                >
+                  {renaming ? '...' : 'Rename'}
+                </button>
+                <button
+                  onClick={() => { setEditingFolder(null); setRenameName(''); }}
+                  className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-white transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px] block">close</span>
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Folder List */}
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {loading ? (
@@ -361,10 +425,20 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
                   </p>
                 </div>
 
+                {/* Edit button */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleEditOpen(folder); }}
+                  className="absolute top-2 right-11 p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-[var(--gold)] transition-all"
+                  title="Rename Collection"
+                >
+                  <span className="material-symbols-outlined text-[16px] block">edit</span>
+                </button>
+
                 {/* Delete button */}
                 <button
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(folder.id); }}
-                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white/40 opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all"
+                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/40 backdrop-blur-sm text-white/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:text-red-400 transition-all"
+                  title="Delete Collection"
                 >
                   <span className="material-symbols-outlined text-[16px] block">delete</span>
                 </button>
@@ -411,6 +485,7 @@ export default function FoldersPanel({ onClose, onOpenFolder }: FoldersPanelProp
           </motion.div>
         )}
       </AnimatePresence>
+
     </motion.div>
   );
 }

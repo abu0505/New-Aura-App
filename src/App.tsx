@@ -33,6 +33,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import { GarbageProvider } from './contexts/GarbageContext';
 import { ChatSettingsProvider } from './contexts/ChatSettingsContext';
 import { StreakProvider, useStreak } from './contexts/StreakContext';
+import WhatsNewModal from './components/common/WhatsNewModal';
 
 function InnerApp({ 
   session, 
@@ -297,6 +298,17 @@ function InnerApp({
     return () => document.removeEventListener('switch-tab', handleSwitchTab);
   }, [isLocked]);
 
+  // Listen for redirection to a new feature
+  useEffect(() => {
+    const handleRedirect = (e: any) => {
+      if (e.detail && (e.detail.feature === 'rename-collections' || e.detail.feature === 'frequent-folders')) {
+        setActiveTab('explore');
+      }
+    };
+    window.addEventListener('open-whats-new-feature', handleRedirect);
+    return () => window.removeEventListener('open-whats-new-feature', handleRedirect);
+  }, []);
+
   const handleTabChangeWrapper = (tab: Tab) => {
     const isStealth = localStorage.getItem('aura_stealth_mode') === 'true';
     if (isLocked || isStealth) {
@@ -367,6 +379,7 @@ function InnerApp({
         />
         <AppLockModal />
       <KeySetupModal />
+      {!isLocked && <WhatsNewModal currentVersion="2.17.3" />}
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} hasUnreadChat={hasUnreadChat}>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center bg-background w-full h-full">

@@ -72,6 +72,29 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('gallery');
   const [activeFolderView, setActiveFolderView] = useState<MediaFolder | null>(null);
+  const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
+
+  useEffect(() => {
+    const checkWalkthrough = () => {
+      const show = localStorage.getItem('show_frequent_folders_walkthrough') === 'true';
+      setShowWalkthroughBanner(!!(show && viewMode === 'gallery' && !selectedMedia));
+    };
+    checkWalkthrough();
+    
+    window.addEventListener('storage', checkWalkthrough);
+    const handleRedirect = (e: any) => {
+      if (e.detail && e.detail.feature === 'frequent-folders') {
+        setViewMode('gallery');
+        setShowWalkthroughBanner(true);
+      }
+    };
+    window.addEventListener('open-whats-new-feature', handleRedirect);
+    
+    return () => {
+      window.removeEventListener('storage', checkWalkthrough);
+      window.removeEventListener('open-whats-new-feature', handleRedirect);
+    };
+  }, [viewMode, selectedMedia]);
 
   // Selection mode
   const [selectionMode, setSelectionMode] = useState(false);
@@ -122,6 +145,17 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     return () => {
       generatedUrlsRef.current.forEach((url: string) => URL.revokeObjectURL(url));
     };
+  }, []);
+
+  // Listen for redirection to collections panel
+  useEffect(() => {
+    const handleRedirect = (e: any) => {
+      if (e.detail && e.detail.feature === 'rename-collections') {
+        setViewMode('folders');
+      }
+    };
+    window.addEventListener('open-whats-new-feature', handleRedirect);
+    return () => window.removeEventListener('open-whats-new-feature', handleRedirect);
   }, []);
 
   // Fix 5.2: Load favorites from Supabase DB (cross-device), fall back to localStorage
@@ -969,6 +1003,37 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
           </div>
         ) : (
           <div className="flex flex-col gap-8 pb-32">
+            {showWalkthroughBanner && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden flex flex-col gap-2 mx-1"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                  backdropFilter: 'blur(30px)',
+                }}
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="flex justify-between items-start gap-4 z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">create_new_folder</span>
+                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Try Frequent Folders!</h4>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_frequent_folders_walkthrough');
+                      setShowWalkthroughBanner(false);
+                    }}
+                    className="text-white/40 hover:text-white/85 text-xs font-bold"
+                  >
+                    Skip
+                  </button>
+                </div>
+                <p className="text-xs text-white/60 leading-relaxed font-medium z-10">
+                  Tap on any image or video below to open it, then click the <strong>Add to Folder</strong> button at the top right to see how folders are sorted based on recent additions!
+                </p>
+              </motion.div>
+            )}
             {/* ── Moments Carousel (only in 'all' mode, not selection mode) ── */}
             {!selectionMode && filter === 'all' && (() => {
               const now = new Date();

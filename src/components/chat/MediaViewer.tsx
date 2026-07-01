@@ -108,6 +108,7 @@ function ChunkedVideoFetcher({
 
 export default function MediaViewer({ url: initialUrl, type: initialType, onClose, allMedia, initialIndex = 0, chunks, thumbnailUrl, duration, messageId, showViewInChat = false, onIndexChange }: MediaViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const currentMedia = allMedia ? allMedia[currentIndex] : { id: messageId, url: initialUrl, type: initialType };
   const touchStartX = useRef<number | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isViewerFullscreen, setIsViewerFullscreen] = useState(false);
@@ -144,6 +145,20 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const [showFolderPicker, setShowFolderPicker] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+  useEffect(() => {
+    if (showFolderPicker) {
+      localStorage.removeItem('show_frequent_folders_walkthrough');
+      setShowWalkthrough(false);
+    } else {
+      const show = localStorage.getItem('show_frequent_folders_walkthrough') === 'true';
+      if (show && currentMedia.id) {
+        setShowWalkthrough(true);
+        localStorage.removeItem('show_frequent_folders_walkthrough');
+      }
+    }
+  }, [showFolderPicker, currentMedia.id]);
 
   const extractFrameAndSend = () => {
     // For chunked_video: find the video inside the ChunkedVideoPlayer wrapper.
@@ -282,8 +297,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
   const [imgLoading, setImgLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const imgRetryRef = useRef(0);
-  
-  const currentMedia = allMedia ? allMedia[currentIndex] : { id: messageId, url: initialUrl, type: initialType };
+
 
   // Log initial props on mount
   useEffect(() => {
@@ -549,6 +563,51 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               >
                 <span className="material-symbols-outlined text-2xl">create_new_folder</span>
               </button>
+
+              <AnimatePresence>
+                {showWalkthrough && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 top-full mt-3 w-72 p-4 rounded-2xl border border-white/10 shadow-2xl z-[10002] flex flex-col gap-2"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(30, 27, 38, 0.95) 0%, rgba(20, 18, 26, 0.95) 100%)',
+                      backdropFilter: 'blur(20px)',
+                    }}
+                  >
+                    <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                      Frequent Folders! <span className="text-[var(--gold)]">✨</span>
+                    </h4>
+                    <p className="text-xs text-white/70 leading-relaxed">
+                      Whichever folder you add media to will now automatically rise to the top of the list!
+                    </p>
+                    <div className="flex justify-between items-center mt-1">
+                      <button 
+                        onClick={() => {
+                          localStorage.removeItem('show_frequent_folders_walkthrough');
+                          setShowWalkthrough(false);
+                        }}
+                        className="text-[10px] text-white/40 hover:text-white/80 transition-colors uppercase tracking-wider font-bold cursor-pointer"
+                      >
+                        Skip
+                      </button>
+                      <button 
+                        onClick={() => {
+                          localStorage.removeItem('show_frequent_folders_walkthrough');
+                          setShowWalkthrough(false);
+                          setShowFolderPicker(true);
+                        }}
+                        className="px-3 py-1.5 bg-[var(--gold)] text-black text-[10px] uppercase tracking-wider font-bold rounded-lg hover:brightness-110 transition-all cursor-pointer"
+                      >
+                        Try it
+                      </button>
+                    </div>
+                    {/* Speech bubble arrow */}
+                    <div className="absolute right-4 -top-1.5 w-3 h-3 rotate-45 border-t border-l border-white/10 bg-[#1e1b26]" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               
               <AnimatePresence>
                 {showFolderPicker && (
