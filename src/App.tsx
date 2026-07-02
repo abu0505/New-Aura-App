@@ -303,6 +303,8 @@ function InnerApp({
     const handleRedirect = (e: any) => {
       if (e.detail && (e.detail.feature === 'rename-collections' || e.detail.feature === 'frequent-folders')) {
         setActiveTab('explore');
+      } else if (e.detail && e.detail.feature === 'save-to-folders') {
+        setActiveTab('chat');
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);
@@ -379,7 +381,7 @@ function InnerApp({
         />
         <AppLockModal />
       <KeySetupModal />
-      {!isLocked && <WhatsNewModal currentVersion="2.17.3" />}
+      {!isLocked && <WhatsNewModal currentVersion="2.18.1" />}
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} hasUnreadChat={hasUnreadChat}>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center bg-background w-full h-full">

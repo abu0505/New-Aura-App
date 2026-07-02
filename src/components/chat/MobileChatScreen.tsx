@@ -27,6 +27,7 @@ import type { useSnapCapture } from '../../hooks/useSnapCapture';
 import { toast } from 'sonner';
 import { ArrowLeft, Phone, Camera, MoreVertical, Search, MessageSquare, Pin, User, CheckSquare, BookOpen, ChevronDown } from 'lucide-react';
 import { VideoCallIcon } from '../common/CustomIcons';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 
@@ -75,6 +76,12 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     setShowPinDropdown(false);
   };
   const messageInputRef = useRef<any>(null); // Type imported from MessageInput if needed, using any for now to avoid circular deps if missing
+  const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
+
+  useEffect(() => {
+    const show = localStorage.getItem('show_save_to_folders_walkthrough') === 'true';
+    setShowWalkthroughBanner(show);
+  }, []);
 
   // Click outside listener for the dropdowns
   useEffect(() => {
@@ -786,6 +793,37 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
 
         {/* Main Content Area */}
         <main className="flex-1 flex flex-col relative overflow-hidden">
+          {/* Walkthrough Banner */}
+          <AnimatePresence>
+            {showWalkthroughBanner && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 py-3 bg-[rgba(var(--primary-rgb),_0.08)] border-b border-white/10 relative overflow-hidden flex flex-col gap-2 shrink-0 z-20"
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="flex justify-between items-start gap-4 z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">folder</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">New: Save Media from Chat!</h4>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_save_to_folders_walkthrough');
+                      setShowWalkthroughBanner(false);
+                    }}
+                    className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer"
+                  >
+                    Got it
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/60 leading-relaxed font-medium z-10">
+                  Tap and hold (or click 3-dots on desktop) any photo, video, or multi-media grid in chat, then select <strong>Save to Folder</strong> to organize your shared memories instantly!
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           
           {viewMode === 'pinned' && (

@@ -75,6 +75,8 @@ interface StoreEntry {
    * multiple <video> elements (e.g., inline player + fullscreen MediaViewer).
    */
   reusableBlobUrl: string | null;
+  /** Strong reference to the decrypted Blob object to prevent garbage collection */
+  blobObject?: Blob | null;
   /** Total video duration in seconds */
   duration: number;
   /** True once endOfStream() has been called (MSE) or blob assembled */
@@ -350,6 +352,7 @@ function tryAssembleBlobFallback(messageId: string) {
   const blob = new Blob(blobParts, { type: blobMime });
   entry.blobUrl = URL.createObjectURL(blob);
   entry.reusableBlobUrl = entry.blobUrl; // Blob fallback URLs are already reusable
+  entry.blobObject = blob; // Keep strong reference to prevent GC
   entry.isComplete = true;
   entry.blobFallbackBlocks = null; // free memory
   videoStore.set(messageId, { ...entry });
@@ -386,6 +389,7 @@ async function processBlock(
     entry = {
       blobUrl: null,
       reusableBlobUrl: null,
+      blobObject: null,
       duration,
       isComplete: false,
       receivedCount: 0,
@@ -480,6 +484,7 @@ export function addLocalVideoForSender(messageId: string, file: Blob, duration: 
   videoStore.set(messageId, {
     blobUrl,
     reusableBlobUrl: blobUrl, // Sender blob URLs are already reusable
+    blobObject: file, // Store the local Blob reference to prevent GC
     duration,
     isComplete: true,
     receivedCount: 1,
@@ -639,9 +644,8 @@ export function useVideoChunks(messageId?: string) {
   ) => {
     const existing = videoStore.get(msgId);
 
-    // FIX: Only skip if FULLY complete. A partial entry (e.g. from a dropped realtime
-    // event) should NOT block a fresh load from DB on page reload.
-    if (existing?.blobUrl && existing.isComplete) {
+    // FIX: Only skip if FULLY complete, has no playback error, and has a strong blobObject reference.
+    if (existing?.blobUrl && existing.isComplete && !existing.error && existing.blobObject) {
       LOG(`loadExistingChunks: msg=${msgId} already fully buffered, skipping`);
       return;
     }
@@ -666,6 +670,7 @@ export function useVideoChunks(messageId?: string) {
         entry = {
           blobUrl: null,
           reusableBlobUrl: null,
+          blobObject: null,
           duration,
           isComplete: false,
           receivedCount: 0,
@@ -691,6 +696,7 @@ export function useVideoChunks(messageId?: string) {
         entry.error = null;
         entry.processedIndices.clear();
         entry.receivedCount = 0;
+        entry.blobObject = null;
         if (entry.blobFallbackBlocks) {
           entry.blobFallbackBlocks.clear();
         }
@@ -749,6 +755,10 @@ export function clearVideoChunksError(messageId: string) {
   const entry = videoStore.get(messageId);
   if (entry) {
     entry.error = null;
+    entry.blobUrl = null;
+    entry.reusableBlobUrl = null;
+    entry.blobObject = null;
+    entry.isComplete = false;
     entry.processedIndices.clear();
     entry.receivedCount = 0;
     if (entry.blobFallbackBlocks) {

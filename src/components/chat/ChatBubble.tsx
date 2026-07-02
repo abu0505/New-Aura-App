@@ -1034,6 +1034,8 @@ function ChatBubble({
                     setTimeout(() => editInputRef.current?.focus(), 0);
                   } : undefined}
                   onMoveToGarbage={hasCloudinaryMedia && !message.is_deleted_for_everyone ? handleMoveToGarbage : undefined}
+                  messageIds={['image', 'video', 'gif', 'audio', 'document'].includes(message.type || '') ? [message.id] : undefined}
+                  onCloseMenu={() => setInteractionType('none')}
                 />
               )
             )}

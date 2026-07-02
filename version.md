@@ -1,11 +1,16 @@
 # App Version
-VersionName: 2.17.3
-VersionCode: 125
-Date: 2026-07-01
+VersionName: 2.18.1
+VersionCode: 127
+Date: 2026-07-02
 Changes:
-- **Fix — WhatsNew Modal display count:** Removed testing phase always-show behavior. The What's New modal and its walkthrough tooltips are now displayed exactly once and never shown again once skipped or completed.
+- **Fix — Streaming Video Playback & Loop:** Kept strong JS references to decrypted Blob objects to prevent garbage collection and resolve ERR_FILE_NOT_FOUND error on loop or seek. Properly clear store states on playback error retry.
+- **UX Fix — Folders List Styling:** Increased padding of folder items in chat menu and hid the scrollbar for a premium presentation.
 
-## Previous Version (2.17.2)
+## Previous Version (2.18.0)
+- **Feature — Save Chat Media to Folders:** Added a new menu item to the chat media context menu (3-dots) to save all images/videos inside single or multi-media message bubbles to a folder at once.
+- **Walkthrough — Save to Folder Tutorial:** Introduced a dismissible contextual walkthrough banner at the top of the chat view when clicking "Get Started" from the What's New modal.
+
+## Previous Version (2.17.3)
 - **Feature — Frequent & Recent Folders:** Automatically sort collections/folders by the time media was last added to them. Whichever folder media was recently added to will rise to the top of the list.
 - **Walkthrough — Contextual Tutorial:** Implemented a new walkthrough banner in the Memories screen and a walkthrough tooltip inside the Media Viewer directing users on how to use the folder sorting.
 - **UX Update — WhatsNew Modal Glassmorphism:** Restyled the What's New modal to have a premium glassmorphic frosted glass design matching Image 2's aesthetic.

@@ -78,6 +78,13 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   };
 
   const messageInputRef = useRef<MessageInputHandle>(null);
+  const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
+
+  useEffect(() => {
+    const show = localStorage.getItem('show_save_to_folders_walkthrough') === 'true';
+    setShowWalkthroughBanner(show);
+  }, []);
+
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dragCounterRef = useRef(0);
 
@@ -831,6 +838,40 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               </div>
             </div>
           </header>
+
+          {/* Walkthrough Banner */}
+          <AnimatePresence>
+            {showWalkthroughBanner && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="w-full bg-[rgba(var(--primary-rgb),_0.08)] border-b border-white/10 relative overflow-hidden flex flex-col gap-2 p-6 z-30 shrink-0"
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="max-w-[800px] mx-auto w-full flex flex-col gap-1 z-10">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">folder</span>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">New Feature: Save Media from Chat!</h4>
+                    </div>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('show_save_to_folders_walkthrough');
+                        setShowWalkthroughBanner(false);
+                      }}
+                      className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/60 leading-relaxed font-medium">
+                    Right-click or click 3-dots on any photo, video, or multi-media grid in chat, then select <strong>Save to Folder</strong> to organize your shared memories instantly!
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* PINNED MESSAGES HEADER - Grid Row 2 */}
           {viewMode === 'pinned' && (
