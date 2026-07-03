@@ -663,7 +663,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     // Find message IDs that are NOT already in the pinned message details cache
     const missingIds = (pinnedMessages as any[])
       .map((p: any) => p.message_id)
-      .filter((id: string) => !pinnedMessageDetailsRef.current[id]);
+      .filter((id: string) => !!id && id !== 'undefined' && id !== 'null' && !pinnedMessageDetailsRef.current[id]);
 
     if (missingIds.length === 0) return;
 
@@ -727,7 +727,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     const replyTargetIds = new Set(
       messages
         .map(m => m.reply_to)
-        .filter((id): id is string => !!id)
+        .filter((id): id is string => !!id && id !== 'undefined' && id !== 'null')
     );
 
     // For each reply target that IS in the loaded window, cache it proactively

@@ -1,13 +1,17 @@
 # App Version
-VersionName: 2.19.0
-VersionCode: 128
-Date: 2026-07-03
+VersionName: 2.20.0
+VersionCode: 129
+Date: 2026-07-04
 Changes:
+- **Feature — YouTube-Style Video Streaming:** Restored progressive video playback via MediaSource Extensions (MSE) allowing receivers to play chunked videos instantly as soon as first few blocks land.
+- **Fix — NaCl Decryption MAC Failures:** Resolved decryption failures on video resume/reload by adding `downloadingIndices` track queue to prevent race conditions between Realtime and loadExistingChunks fetches, and ensuring already-decrypted blocks are preserved.
+- **Fix — Supabase 400 & 406 Errors:** Filtered out undefined/null/empty ID inputs to `.in('id', ...)` Supabase filters, and gracefully handle PGRST116 (missing profile row) on profile stats load to prevent screen crashes.
+- **Walkthrough — Video Streaming Onboarding:** Added contextual tutorial walkthrough banner for the streaming video feature.
+
+## Previous Version (2.19.0)
 - **Feature — Retry Failed Messages:** Added a context menu option "Retry Resend" (3-dots/right-click for desktop, long-press for mobile) for failed outgoing messages (both text and media), allowing users to resend them instantly without retyping.
 - **Walkthrough — Retry Message Tutorial:** Integrated an interactive walkthrough banner on Chat Screens (desktop & mobile) with a "Try Demo Now" button to simulate a failed message and guide the user.
 - **What's New Modal Update:** Updated the "What's New" modal to feature the resend capability with guided onboarding.
-
-## Previous Version (2.18.1)
 - **Fix — Streaming Video Playback & Loop:** Kept strong JS references to decrypted Blob objects to prevent garbage collection and resolve ERR_FILE_NOT_FOUND error on loop or seek. Properly clear store states on playback error retry.
 - **UX Fix — Folders List Styling:** Increased padding of folder items in chat menu and hid the scrollbar for a premium presentation.
 

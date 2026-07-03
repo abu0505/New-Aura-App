@@ -78,6 +78,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const messageInputRef = useRef<any>(null); // Type imported from MessageInput if needed, using any for now to avoid circular deps if missing
   const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
   const [showRetryWalkthrough, setShowRetryWalkthrough] = useState(false);
+  const [showStreamingWalkthrough, setShowStreamingWalkthrough] = useState(false);
 
   useEffect(() => {
     const show = localStorage.getItem('show_save_to_folders_walkthrough') === 'true';
@@ -90,9 +91,16 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   }, []);
 
   useEffect(() => {
+    const show = localStorage.getItem('show_video_streaming_walkthrough') === 'true';
+    setShowStreamingWalkthrough(show);
+  }, []);
+
+  useEffect(() => {
     const handleRedirect = (e: any) => {
       if (e.detail && e.detail.feature === 'retry-failed-message') {
         setShowRetryWalkthrough(true);
+      } else if (e.detail && e.detail.feature === 'video-streaming') {
+        setShowStreamingWalkthrough(true);
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);
@@ -881,6 +889,58 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                     onClick={() => {
                       localStorage.removeItem('show_retry_message_walkthrough');
                       setShowRetryWalkthrough(false);
+                    }}
+                    className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Video streaming Walkthrough Banner */}
+          <AnimatePresence>
+            {showStreamingWalkthrough && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 py-3 bg-[rgba(var(--primary-rgb),_0.08)] border-b border-white/10 relative overflow-hidden flex flex-col gap-2 shrink-0 z-20"
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="flex justify-between items-start gap-4 z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">movie</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">New: Instant Video Streaming! 🎥</h4>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_video_streaming_walkthrough');
+                      setShowStreamingWalkthrough(false);
+                    }}
+                    className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer"
+                  >
+                    Got it
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/60 leading-relaxed font-medium z-10">
+                  YouTube-style progressive playback is now active! Received chunked videos will start playing instantly as soon as the first few blocks arrive.
+                </p>
+                <div className="flex items-center gap-3 mt-1 z-10">
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_video_streaming_walkthrough');
+                      setShowStreamingWalkthrough(false);
+                    }}
+                    className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-gradient-to-r from-primary to-primary-600 text-background font-bold hover:shadow-glow-gold transition-all active:scale-95 cursor-pointer"
+                  >
+                    Awesome
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_video_streaming_walkthrough');
+                      setShowStreamingWalkthrough(false);
                     }}
                     className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer"
                   >

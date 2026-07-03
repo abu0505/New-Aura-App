@@ -115,6 +115,8 @@ interface StoreEntry {
   mseInitialised: boolean;
   /** Track which block indices have already been processed (prevents duplicates) */
   processedIndices: Set<number>;
+  /** Track block indices that are currently in-flight downloading/decrypting */
+  downloadingIndices: Set<number>;
   /**
    * FIX: Store decrypted block data so we can build a reusable Blob URL
    * once all blocks have been received. This is needed because the MSE blob URL
@@ -362,6 +364,129 @@ function tryAssembleBlobFallback(messageId: string) {
 
 
 /* ─────────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  MSE Helpers & Blob Assembly                                               */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+function assembleReusableBlob(messageId: string) {
+  const entry = videoStore.get(messageId);
+  if (!entry || entry.reusableBlobUrl) return;
+
+  if (entry.decryptedBlocks.size < entry.totalChunks) {
+    return;
+  }
+
+  const ordered: Uint8Array[] = [];
+  for (let i = 0; i < entry.totalChunks; i++) {
+    const block = entry.decryptedBlocks.get(i);
+    if (!block) return;
+    ordered.push(block);
+  }
+
+  const sniffedMime = sniffMime(ordered[0]);
+  const blobMime = sniffedMime.split(';')[0].trim();
+  // Create a clean ArrayBuffer slice for each block to ensure compatibility with Blob
+  const blobParts: BlobPart[] = ordered.map(b => b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength) as ArrayBuffer);
+  const blob = new Blob(blobParts, { type: blobMime });
+  entry.reusableBlobUrl = URL.createObjectURL(blob);
+  entry.blobObject = blob;
+  
+  if (entry.useBlobFallback) {
+    entry.blobUrl = entry.reusableBlobUrl;
+  }
+  
+  videoStore.set(messageId, { ...entry });
+  LOG(`Assembled reusable Blob URL for msg=${messageId} (${(blob.size / 1024 / 1024).toFixed(2)}MB) ✓`);
+}
+
+function fallbackToBlobMode(messageId: string, reason: string) {
+  const entry = videoStore.get(messageId);
+  if (!entry || entry.useBlobFallback) return;
+
+  WARN(`Switching to Blob Fallback mode for msg=${messageId}. Reason: ${reason}`);
+  entry.useBlobFallback = true;
+  entry.blobFallbackBlocks = new Map();
+  
+  for (const [idx, bytes] of entry.decryptedBlocks.entries()) {
+    entry.blobFallbackBlocks.set(idx, bytes);
+  }
+
+  if (entry.sourceBuffer) {
+    try {
+      if (entry.mediaSource && entry.mediaSource.readyState === 'open') {
+        entry.mediaSource.removeSourceBuffer(entry.sourceBuffer);
+      }
+    } catch {}
+    entry.sourceBuffer = null;
+  }
+  
+  if (entry.mediaSource) {
+    try {
+      if (entry.mediaSource.readyState === 'open') {
+        entry.mediaSource.endOfStream();
+      }
+    } catch {}
+    entry.mediaSource = null;
+  }
+
+  if (entry.blobUrl && entry.blobUrl.startsWith('blob:') && !entry.reusableBlobUrl) {
+    try {
+      URL.revokeObjectURL(entry.blobUrl);
+    } catch {}
+    entry.blobUrl = null;
+  }
+
+  entry.isAppending = false;
+  videoStore.set(messageId, { ...entry });
+  
+  tryAssembleBlobFallback(messageId);
+  notifyAll();
+}
+
+function flushAppendQueue(messageId: string) {
+  const entry = videoStore.get(messageId);
+  if (!entry || entry.useBlobFallback || !entry.sourceBuffer || entry.isAppending) return;
+
+  const sb = entry.sourceBuffer;
+  if (sb.updating) return;
+
+  const idx = entry.nextAppendIndex;
+  
+  if (idx >= entry.totalChunks) {
+    if (!entry.isComplete) {
+      try {
+        if (entry.mediaSource && entry.mediaSource.readyState === 'open') {
+          entry.mediaSource.endOfStream();
+        }
+        entry.isComplete = true;
+        assembleReusableBlob(messageId);
+        LOG(`MSE streaming: complete for msg=${messageId} ✓`);
+        notifyAll();
+      } catch (err) {
+        WARN(`endOfStream failed:`, err);
+      }
+    }
+    return;
+  }
+
+  if (!entry.appendQueue.has(idx)) {
+    return;
+  }
+
+  const bytes = entry.appendQueue.get(idx)!;
+  entry.appendQueue.delete(idx);
+  entry.isAppending = true;
+
+  try {
+    LOG(`MSE append: appending block ${idx} (${bytes.length} bytes) to SourceBuffer`);
+    sb.appendBuffer(bytes);
+  } catch (err) {
+    ERR(`MSE append failed for block ${idx}:`, err);
+    fallbackToBlobMode(messageId, `MSE append failed: ${err}`);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
 /*  Process a received/fetched block                                          */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
@@ -405,6 +530,7 @@ async function processBlock(
       mimeType: null,
       mseInitialised: false,
       processedIndices: new Set(),
+      downloadingIndices: new Set(),
       blobFallbackBlocks: null,
       useBlobFallback: false,
       decryptedBlocks: new Map(),
@@ -418,12 +544,18 @@ async function processBlock(
     return;
   }
 
-  // FIX: Skip duplicate block processing (realtime may deliver the same chunk twice)
-  if (entry.processedIndices.has(chunkIndex)) {
-    LOG(`Block ${chunkIndex}: skipped — already processed`);
+  // Skip if block is already decrypted
+  if (entry.decryptedBlocks.has(chunkIndex)) {
+    LOG(`Block ${chunkIndex}: already decrypted, skipping download`);
     return;
   }
-  entry.processedIndices.add(chunkIndex);
+
+  // Skip duplicate block processing or active download
+  if (entry.processedIndices.has(chunkIndex) || entry.downloadingIndices.has(chunkIndex)) {
+    LOG(`Block ${chunkIndex}: skipped — already processed or downloading`);
+    return;
+  }
+  entry.downloadingIndices.add(chunkIndex);
 
   // Download + decrypt this block
   let decrypted: Uint8Array;
@@ -432,10 +564,10 @@ async function processBlock(
       chunkUrl, chunkIndex, packedKey, baseNonce, partnerPublicKey
     );
   } catch (err) {
-    ERR(`Block ${chunkIndex}: permanently failed, removing from processedIndices for potential retry`);
-    // Allow retry by removing from processedIndices
+    ERR(`Block ${chunkIndex}: permanently failed, removing from downloadingIndices/processedIndices for potential retry`);
     const currentEntry = videoStore.get(messageId);
     if (currentEntry) {
+      currentEntry.downloadingIndices.delete(chunkIndex);
       currentEntry.processedIndices.delete(chunkIndex);
       currentEntry.error = 'Video decryption failed. The decryption key or file may be corrupted.';
       videoStore.set(messageId, { ...currentEntry });
@@ -445,28 +577,85 @@ async function processBlock(
   }
 
   entry = videoStore.get(messageId)!;
+  entry.downloadingIndices.delete(chunkIndex);
+  entry.processedIndices.add(chunkIndex);
   entry.receivedCount++;
 
-  // ── Always store decrypted block for reusable Blob assembly ────────────
+  // Store decrypted block for final assembly
   entry.decryptedBlocks.set(chunkIndex, decrypted);
 
-  // ── Blob-assembly path (stable, works for all video containers) ─────────
-  // MSE streaming requires the video to be in fragmented MP4/WebM format.
-  // Gallery videos sent by users are typically non-fragmented MP4s which MSE
-  // cannot handle — attempting MSE then falling back causes ERR_FILE_NOT_FOUND
-  // because the mediasource: URL is revoked while ChunkedVideoPlayer still holds it.
-  // Blob-assembly waits for all chunks then plays the full file, which works
-  // correctly for every video format without any URL lifecycle issues.
-  if (!entry.useBlobFallback) {
-    entry.useBlobFallback = true;
-    entry.blobFallbackBlocks = new Map();
-    entry.mseInitialised = true; // prevent any MSE init attempts
+  if (entry.useBlobFallback) {
+    if (!entry.blobFallbackBlocks) {
+      entry.blobFallbackBlocks = new Map();
+    }
+    entry.blobFallbackBlocks.set(chunkIndex, decrypted);
+    videoStore.set(messageId, { ...entry });
+    tryAssembleBlobFallback(messageId);
+  } else {
+    entry.appendQueue.set(chunkIndex, decrypted);
+    videoStore.set(messageId, { ...entry });
+
+    // Initialize MediaSource on block 0
+    if (!entry.mediaSource && chunkIndex === 0) {
+      const mimeType = sniffMime(decrypted);
+      entry.mimeType = mimeType;
+      
+      try {
+        const ms = new MediaSource();
+        entry.mediaSource = ms;
+        
+        ms.addEventListener('sourceopen', () => {
+          const e = videoStore.get(messageId);
+          if (!e || !e.mediaSource || e.useBlobFallback) return;
+          
+          try {
+            LOG(`MSE sourceopen: creating SourceBuffer for type: ${mimeType}`);
+            const sb = e.mediaSource.addSourceBuffer(mimeType);
+            e.sourceBuffer = sb;
+            
+            sb.addEventListener('updateend', () => {
+              const currentE = videoStore.get(messageId);
+              if (!currentE) return;
+              currentE.isAppending = false;
+              currentE.nextAppendIndex++;
+              videoStore.set(messageId, currentE);
+              flushAppendQueue(messageId);
+              notifyAll();
+            });
+            
+            sb.addEventListener('error', (sbErr) => {
+              ERR(`SourceBuffer error for msg=${messageId}:`, sbErr);
+              fallbackToBlobMode(messageId, 'SourceBuffer error event');
+            });
+            
+            videoStore.set(messageId, e);
+            flushAppendQueue(messageId);
+            notifyAll();
+          } catch (sbErr) {
+            ERR(`Failed to add SourceBuffer for mime=${mimeType}:`, sbErr);
+            fallbackToBlobMode(messageId, `addSourceBuffer error: ${sbErr}`);
+          }
+        });
+        
+        entry.blobUrl = URL.createObjectURL(ms);
+        entry.mseInitialised = true;
+        videoStore.set(messageId, { ...entry });
+        notifyAll();
+      } catch (mseErr) {
+        ERR(`MediaSource creation failed:`, mseErr);
+        fallbackToBlobMode(messageId, `MediaSource construction error: ${mseErr}`);
+      }
+    } else {
+      if (entry.sourceBuffer) {
+        flushAppendQueue(messageId);
+      }
+    }
   }
 
-  entry.blobFallbackBlocks!.set(chunkIndex, decrypted);
-  videoStore.set(messageId, { ...entry });
-  LOG(`Block ${chunkIndex}: stored in blob assembly. have=${entry.blobFallbackBlocks!.size}/${entry.totalChunks}`);
-  tryAssembleBlobFallback(messageId);
+  // Check if fully loaded
+  if (entry.decryptedBlocks.size === entry.totalChunks) {
+    assembleReusableBlob(messageId);
+  }
   notifyAll();
 }
 
@@ -500,6 +689,7 @@ export function addLocalVideoForSender(messageId: string, file: Blob, duration: 
     mimeType: null,
     mseInitialised: true,
     processedIndices: new Set([0]),
+    downloadingIndices: new Set(),
     blobFallbackBlocks: null,
     useBlobFallback: false,
     decryptedBlocks: new Map(),
@@ -686,21 +876,33 @@ export function useVideoChunks(messageId?: string) {
           mimeType: null,
           mseInitialised: false,
           processedIndices: new Set(),
+          downloadingIndices: new Set(),
           blobFallbackBlocks: null,
           useBlobFallback: false,
           decryptedBlocks: new Map(),
         };
         videoStore.set(msgId, entry);
       } else {
-        // Reset error on reload/retry attempt
-        entry.error = null;
-        entry.processedIndices.clear();
-        entry.receivedCount = 0;
-        entry.blobObject = null;
-        if (entry.blobFallbackBlocks) {
-          entry.blobFallbackBlocks.clear();
+        // Reset/clean retry only if error exists, to preserve already decrypted blocks
+        if (entry.error) {
+          entry.error = null;
+          entry.processedIndices.clear();
+          entry.downloadingIndices.clear();
+          entry.receivedCount = 0;
+          entry.blobObject = null;
+          entry.blobUrl = null;
+          entry.reusableBlobUrl = null;
+          entry.decryptedBlocks.clear();
+          if (entry.blobFallbackBlocks) {
+            entry.blobFallbackBlocks.clear();
+          }
+          entry.appendQueue.clear();
+          entry.nextAppendIndex = 0;
+          entry.isAppending = false;
+          entry.mseInitialised = false;
+          entry.useBlobFallback = false;
+          videoStore.set(msgId, entry);
         }
-        videoStore.set(msgId, entry);
       }
 
       if (rows.length < totalChunks) {
@@ -760,10 +962,17 @@ export function clearVideoChunksError(messageId: string) {
     entry.blobObject = null;
     entry.isComplete = false;
     entry.processedIndices.clear();
+    entry.downloadingIndices.clear();
     entry.receivedCount = 0;
     if (entry.blobFallbackBlocks) {
       entry.blobFallbackBlocks.clear();
     }
+    entry.decryptedBlocks.clear();
+    entry.appendQueue.clear();
+    entry.nextAppendIndex = 0;
+    entry.isAppending = false;
+    entry.mseInitialised = false;
+    entry.useBlobFallback = false;
     videoStore.set(messageId, { ...entry });
     notifyAll();
   }

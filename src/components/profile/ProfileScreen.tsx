@@ -87,13 +87,25 @@ export default function ProfileScreen() {
       });
 
       // 3. Fetch liked and saved posts/reels from profiles table for current user
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('favorited_message_ids, saved_message_ids')
-        .eq('id', user.id)
-        .single();
+      let profileData = null;
+      try {
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('favorited_message_ids, saved_message_ids')
+          .eq('id', user.id)
+          .single();
 
-      if (profileError) throw profileError;
+        if (profileError) {
+          if (profileError.code !== 'PGRST116') {
+            throw profileError;
+          }
+          console.log('Profile row not found for user', user.id);
+        } else {
+          profileData = data;
+        }
+      } catch (err) {
+        console.error('Error fetching user profile data:', err);
+      }
 
       const favIds = (profileData?.favorited_message_ids as string[]) || [];
       setLikedIdsSet(new Set(favIds));
@@ -157,13 +169,25 @@ export default function ProfileScreen() {
         });
 
         // Fetch liked and saved posts/reels from profiles table for partner
-        const { data: partnerProfileData, error: partnerProfileError } = await supabase
-          .from('profiles')
-          .select('favorited_message_ids, saved_message_ids')
-          .eq('id', partner.id)
-          .single();
+        let partnerProfileData = null;
+        try {
+          const { data, error: partnerProfileError } = await supabase
+            .from('profiles')
+            .select('favorited_message_ids, saved_message_ids')
+            .eq('id', partner.id)
+            .single();
 
-        if (partnerProfileError) throw partnerProfileError;
+          if (partnerProfileError) {
+            if (partnerProfileError.code !== 'PGRST116') {
+              throw partnerProfileError;
+            }
+            console.log('Profile row not found for partner', partner.id);
+          } else {
+            partnerProfileData = data;
+          }
+        } catch (err) {
+          console.error('Error fetching partner profile data:', err);
+        }
 
         const partnerFavIds = (partnerProfileData?.favorited_message_ids as string[]) || [];
         if (partnerFavIds.length > 0) {
