@@ -1,8 +1,13 @@
 # App Version
-VersionName: 2.18.1
-VersionCode: 127
-Date: 2026-07-02
+VersionName: 2.19.0
+VersionCode: 128
+Date: 2026-07-03
 Changes:
+- **Feature — Retry Failed Messages:** Added a context menu option "Retry Resend" (3-dots/right-click for desktop, long-press for mobile) for failed outgoing messages (both text and media), allowing users to resend them instantly without retyping.
+- **Walkthrough — Retry Message Tutorial:** Integrated an interactive walkthrough banner on Chat Screens (desktop & mobile) with a "Try Demo Now" button to simulate a failed message and guide the user.
+- **What's New Modal Update:** Updated the "What's New" modal to feature the resend capability with guided onboarding.
+
+## Previous Version (2.18.1)
 - **Fix — Streaming Video Playback & Loop:** Kept strong JS references to decrypted Blob objects to prevent garbage collection and resolve ERR_FILE_NOT_FOUND error on loop or seek. Properly clear store states on playback error retry.
 - **UX Fix — Folders List Styling:** Increased padding of folder items in chat menu and hid the scrollbar for a premium presentation.
 

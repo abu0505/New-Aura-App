@@ -1390,6 +1390,159 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }).eq('id', messageId);
   };
 
+  const triggerDemoFailedMessage = useCallback(() => {
+    if (!user || !partnerId) return;
+
+    if (messagesRef.current.some(m => m.id === 'mock-failed-msg-id')) {
+      toast.info('Demo message is already added!');
+      return;
+    }
+
+    const mockMsg: ChatMessage = {
+      id: 'mock-failed-msg-id',
+      sender_id: user.id,
+      receiver_id: partnerId,
+      decrypted_content: 'This is a demo message that failed to send. Try right-clicking or long-pressing this message and select "Retry Resend" to try sending it again! 🔄',
+      encrypted_content: '',
+      nonce: '',
+      type: 'text',
+      media_url: null,
+      media_key: null,
+      media_nonce: null,
+      thumbnail_url: null,
+      file_name: null,
+      file_size: null,
+      duration: null,
+      reaction: null,
+      reply_to: null,
+      is_read: false,
+      is_delivered: false,
+      is_edited: false,
+      is_deleted_for_sender: false,
+      is_deleted_for_receiver: false,
+      is_deleted_for_everyone: false,
+      read_at: null,
+      delivered_at: null,
+      sender_public_key: '',
+      is_mine: true,
+      is_send_failed: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setMessages(prev => [...prev, mockMsg]);
+    toast.success('Demo failed message added to your chat! Try it now.');
+  }, [user, partnerId]);
+  
+  const retrySendMessage = useCallback(async (messageId: string) => {
+    if (!user || !partnerId) return;
+
+    if (messageId === 'mock-failed-msg-id') {
+      // Demo resend
+      setMessages(prev => prev.map(m => 
+        m.id === 'mock-failed-msg-id' ? { ...m, is_pending: true, is_send_failed: false } : m
+      ));
+      setTimeout(() => {
+        setMessages(prev => prev.map(m => 
+          m.id === 'mock-failed-msg-id' ? { ...m, is_pending: false, decrypted_content: 'Demo message sent successfully! 🎉' } : m
+        ));
+        toast.success('Demo message sent successfully!');
+      }, 1500);
+      return;
+    }
+
+    const msg = messagesRef.current.find(m => m.id === messageId);
+    if (!msg || !msg.is_send_failed) return;
+
+    // Reset status to pending and not failed
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? { ...m, is_pending: true, is_send_failed: false } : m
+    ));
+
+    const dbInsertPayload = {
+      id: msg.id,
+      sender_id: user.id,
+      receiver_id: partnerId,
+      encrypted_content: msg.encrypted_content,
+      nonce: msg.nonce,
+      type: msg.type as any,
+      media_url: msg.media_url,
+      media_key: msg.media_key,
+      media_nonce: msg.media_nonce,
+      reply_to: msg.reply_to,
+      sender_public_key: msg.sender_public_key,
+    };
+
+    if (isNativeUploadAvailable()) {
+      console.log('[useChat] Native background available — re-enqueuing message to WorkManager');
+      const enqueued = await nativeEnqueueTextMessage(dbInsertPayload, true);
+      if (enqueued) {
+        setMessages(prev => prev.map(m =>
+          m.id === messageId ? { ...m, is_pending: false } : m
+        ));
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from('messages')
+      .insert(dbInsertPayload);
+
+    if (error) {
+      console.error('[❌ RETRY SEND MSG] Insert failed:', error);
+      if (error.code === '23505' || error.code === 'PGRST301') {
+        // Unique constraint violation means it was actually inserted, so we succeed
+        setMessages(prev => prev.map(m => 
+          m.id === messageId ? { ...m, is_pending: false, is_send_failed: false } : m
+        ));
+        toast.success('Message sent successfully!');
+        return;
+      }
+      
+      if (error.message?.includes('fetch')) {
+        setMessages(prev => prev.map(m => m.id === messageId ? { ...m, is_pending: true } : m));
+        setPendingMessages(prev => {
+          if (prev.some(m => m.id === messageId)) return prev;
+          return [...prev, { ...msg, retry_count: 0 }];
+        });
+      } else {
+        setMessages(prev => prev.map(m => 
+          m.id === messageId ? { ...m, is_pending: false, is_send_failed: true } : m
+        ));
+        toast.error('Failed to send message. Please try again.');
+      }
+    } else {
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, is_pending: false, is_send_failed: false } : m
+      ));
+      toast.success('Message sent!');
+
+      const isThrottled = pushDebounceTimers.has(partnerId);
+      if (!isThrottled) {
+        const lockTimer = setTimeout(() => {
+          pushDebounceTimers.delete(partnerId);
+        }, 5000);
+        pushDebounceTimers.set(partnerId, lockTimer);
+        
+        setTimeout(async () => {
+          const stillValid = messagesRef.current.find(m => m.id === messageId && !m.is_send_failed);
+          if (!stillValid) return;
+          try {
+            const { data: { session: freshSession } } = await supabase.auth.getSession();
+            if (freshSession) {
+              await supabase.functions.invoke('send-push', {
+                body: { record: { id: messageId, sender_id: user.id, receiver_id: partnerId } }
+              });
+            }
+          } catch (err) {
+            console.error('Push invoke error during retry resend:', err);
+          }
+        }, 500);
+      }
+    }
+  }, [user, partnerId]);
+
+
 
 
   const markAsRead = useCallback(async (messageIds: string[]) => {
@@ -1751,5 +1904,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     updateChunkStatus,
     commitChunkedVideoMessage,
     finalizeChunkedVideoMessage,
+    retrySendMessage,
+    triggerDemoFailedMessage,
   };
 }

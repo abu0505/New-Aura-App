@@ -41,6 +41,7 @@ interface ChatBubbleProps {
   repliedMessage?: ChatMessage;
   onJumpToMessage?: (msgId: string) => void;
   quickEmojis?: string[];
+  onRetry?: (msgId: string) => void;
 }
 
 function ChatBubble({ 
@@ -56,7 +57,8 @@ function ChatBubble({
   onReply,
   repliedMessage,
   onJumpToMessage,
-  quickEmojis
+  quickEmojis,
+  onRetry
 }: ChatBubbleProps) {
   const { getDecryptedBlob } = useMedia();
   const { chunks: hookChunks, getChunksForMessage, loadExistingChunks, isChunkedVideo } = useVideoChunks(message.id);
@@ -1036,6 +1038,10 @@ function ChatBubble({
                   onMoveToGarbage={hasCloudinaryMedia && !message.is_deleted_for_everyone ? handleMoveToGarbage : undefined}
                   messageIds={['image', 'video', 'gif', 'audio', 'document'].includes(message.type || '') ? [message.id] : undefined}
                   onCloseMenu={() => setInteractionType('none')}
+                  onRetry={message.is_send_failed && onRetry ? () => {
+                    onRetry(message.id);
+                    setInteractionType('none');
+                  } : undefined}
                 />
               )
             )}
@@ -1284,6 +1290,7 @@ function arePropsEqual(prev: ChatBubbleProps, next: ChatBubbleProps): boolean {
     && prev.onReply === next.onReply
     && prev.onRedirect === next.onRedirect
     && prev.onJumpToMessage === next.onJumpToMessage
+    && prev.onRetry === next.onRetry
   ) {
     return true;
   }

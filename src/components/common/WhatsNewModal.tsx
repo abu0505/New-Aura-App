@@ -26,12 +26,12 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
   const handleGetStarted = () => {
     localStorage.setItem('seen_whats_new_version', currentVersion);
     // Set walkthrough flag for new feature
-    localStorage.setItem('show_save_to_folders_walkthrough', 'true');
+    localStorage.setItem('show_retry_message_walkthrough', 'true');
     setIsOpen(false);
     
     // Dispatch redirect event
     window.dispatchEvent(new CustomEvent('open-whats-new-feature', { 
-      detail: { feature: 'save-to-folders' } 
+      detail: { feature: 'retry-failed-message' } 
     }));
   };
 
@@ -79,7 +79,29 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
 
               {/* Updates List */}
               <div className="w-full text-left space-y-4 mb-6 overflow-y-auto scrollbar-hide flex-1 min-h-0">
-                {/* Update 1: Save Media from Chat */}
+                {/* Update 1: Retry Failed Messages */}
+                <div 
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(30px)',
+                    WebkitBackdropFilter: 'blur(30px)',
+                  }}
+                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
+                >
+                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                    <span className="material-symbols-outlined text-[22px] block">sync</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white/90 mb-1">Retry Resending Failed Messages</h3>
+                    <p className="text-xs text-white/50 leading-relaxed font-medium">
+                      If a message fails to deliver, you can now resend it with a single tap/click! No more retyping or copying long messages.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Update 2: Save Media from Chat */}
                 <div 
                   style={{
                     background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
@@ -96,29 +118,7 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
                   <div>
                     <h3 className="text-sm font-semibold text-white/90 mb-1">Save Chat Media to Folders</h3>
                     <p className="text-xs text-white/50 leading-relaxed font-medium">
-                      Easily save any photo, video, or multi-media grid directly to your folders from the 3-dots chat menu. Save all images at once with a single click!
-                    </p>
-                  </div>
-                </div>
-
-                {/* Update 2: Frequent & Recent Folders */}
-                <div 
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(30px)',
-                    WebkitBackdropFilter: 'blur(30px)',
-                  }}
-                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
-                >
-                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                    <span className="material-symbols-outlined text-[22px] block">folder_open</span>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white/90 mb-1">Frequent & Recent Folders</h3>
-                    <p className="text-xs text-white/50 leading-relaxed font-medium">
-                      Folders you add media to are now automatically sorted to the top. Keep your most active and frequent folders easily accessible!
+                      Easily save any photo, video, or multi-media grid directly to your folders from the chat options menu.
                     </p>
                   </div>
                 </div>

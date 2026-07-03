@@ -11,10 +11,11 @@ interface MessageContextMenuProps {
   onMoveToGarbage?: () => void;
   messageIds?: string[];
   onCloseMenu?: () => void;
+  onRetry?: () => void;
 }
 
 export default function MessageContextMenu({
-  isMine, hasMedia, onEdit, onPin, onMoveToGarbage, messageIds, onCloseMenu
+  isMine, hasMedia, onEdit, onPin, onMoveToGarbage, messageIds, onCloseMenu, onRetry
 }: MessageContextMenuProps) {
   const [showFolders, setShowFolders] = useState(false);
   const { folders, addItemsToFolder, createFolder, loading } = useMediaFolders();
@@ -71,6 +72,16 @@ export default function MessageContextMenu({
             transition={{ duration: 0.15 }}
             className="flex flex-col w-full"
           >
+            {onRetry && (
+              <button 
+                onClick={onRetry}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-emerald-500/10 text-emerald-400 transition-colors text-sm text-left font-body border-b border-white/5 font-bold"
+              >
+                <span className="material-symbols-outlined text-[18px]">sync</span>
+                Retry Resend
+              </button>
+            )}
+
             <button 
               onClick={onPin}
               className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(var(--primary-rgb),_0.1)] text-[#e4e1ed] transition-colors text-sm text-left font-body"

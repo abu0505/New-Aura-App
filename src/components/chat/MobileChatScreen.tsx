@@ -77,10 +77,26 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   };
   const messageInputRef = useRef<any>(null); // Type imported from MessageInput if needed, using any for now to avoid circular deps if missing
   const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
+  const [showRetryWalkthrough, setShowRetryWalkthrough] = useState(false);
 
   useEffect(() => {
     const show = localStorage.getItem('show_save_to_folders_walkthrough') === 'true';
     setShowWalkthroughBanner(show);
+  }, []);
+
+  useEffect(() => {
+    const show = localStorage.getItem('show_retry_message_walkthrough') === 'true';
+    setShowRetryWalkthrough(show);
+  }, []);
+
+  useEffect(() => {
+    const handleRedirect = (e: any) => {
+      if (e.detail && e.detail.feature === 'retry-failed-message') {
+        setShowRetryWalkthrough(true);
+      }
+    };
+    window.addEventListener('open-whats-new-feature', handleRedirect);
+    return () => window.removeEventListener('open-whats-new-feature', handleRedirect);
   }, []);
 
   // Click outside listener for the dropdowns
@@ -111,7 +127,8 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     hasMore, hasMoreNewer, sendMessage, loadMore, loadMoreNewer, jumpToMessageWindow, jumpToLatest, reactToMessage, editMessage, 
     pinMessage, firstUnreadId, isOnline, markAsRead,
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
-    addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage
+    addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage,
+    retrySendMessage, triggerDemoFailedMessage
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettingsContext();
   const { initiateCall } = useCall();
@@ -825,6 +842,55 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             )}
           </AnimatePresence>
 
+          {/* Retry failed message Walkthrough Banner */}
+          <AnimatePresence>
+            {showRetryWalkthrough && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 py-3 bg-[rgba(var(--primary-rgb),_0.08)] border-b border-white/10 relative overflow-hidden flex flex-col gap-2 shrink-0 z-20"
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="flex justify-between items-start gap-4 z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">sync</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">New: Retry Failed Messages! 🔄</h4>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_retry_message_walkthrough');
+                      setShowRetryWalkthrough(false);
+                    }}
+                    className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer"
+                  >
+                    Got it
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/60 leading-relaxed font-medium z-10">
+                  Tap and hold (or right-click) any failed message (showing <strong>Not delivered</strong>), and select <strong>Retry Resend</strong> to resend it instantly!
+                </p>
+                <div className="flex items-center gap-3 mt-1 z-10">
+                  <button
+                    onClick={triggerDemoFailedMessage}
+                    className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-gradient-to-r from-primary to-primary-600 text-background font-bold hover:shadow-glow-gold transition-all active:scale-95 cursor-pointer"
+                  >
+                    Try Demo Now
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_retry_message_walkthrough');
+                      setShowRetryWalkthrough(false);
+                    }}
+                    className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           
           {viewMode === 'pinned' && (
             <div className="bg-primary/10 backdrop-blur-md border-b border-primary/20 px-4 py-3 flex items-center justify-between shadow-lg z-30 relative shrink-0">
@@ -965,6 +1031,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
                             repliedMessage={item.reply_to ? (messageMap.get(item.reply_to) ?? replyMessageCache[item.reply_to]) : undefined}
                             onJumpToMessage={stableHandleJumpToMessage}
                             quickEmojis={settings?.quick_emojis}
+                            onRetry={retrySendMessage}
                           />
                         )}
                       </ChatBubbleErrorBoundary>
