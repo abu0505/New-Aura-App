@@ -479,7 +479,7 @@ function flushAppendQueue(messageId: string) {
 
   try {
     LOG(`MSE append: appending block ${idx} (${bytes.length} bytes) to SourceBuffer`);
-    sb.appendBuffer(bytes);
+    sb.appendBuffer(bytes as any);
   } catch (err) {
     ERR(`MSE append failed for block ${idx}:`, err);
     fallbackToBlobMode(messageId, `MSE append failed: ${err}`);
