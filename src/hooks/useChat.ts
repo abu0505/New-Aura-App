@@ -50,6 +50,17 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   const [hasMoreNewer, setHasMoreNewer] = useState(false); // NEW
   const [isOnline, setIsOnline] = useState(typeof window !== 'undefined' ? window.navigator.onLine : true);
   const [firstUnreadId, setFirstUnreadId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const refreshResolverRef = useRef<(() => void) | null>(null);
+  const refresh = useCallback(async () => {
+    return new Promise<void>((resolve) => {
+      if (refreshResolverRef.current) {
+        refreshResolverRef.current();
+      }
+      refreshResolverRef.current = resolve;
+      setRefreshTrigger(prev => prev + 1);
+    });
+  }, []);
   const PAGE_SIZE = 25;
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Stable ref for encryptionStatus so realtime handlers have fresh value
@@ -486,6 +497,10 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
       } finally {
         setDataLoading(false);
+        if (refreshResolverRef.current) {
+          refreshResolverRef.current();
+          refreshResolverRef.current = null;
+        }
       }
     };
 
@@ -650,7 +665,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   // 1. Re-fetch only the latest 10 messages, wiping 100+ loaded messages
   // 2. Destroy and recreate the realtime channel
   // Encryption readiness is handled by the separate re-decrypt effect below.
-  }, [user?.id, partnerId]);
+  }, [user?.id, partnerId, refreshTrigger]);
 
   // Fetch missing pinned message details
   // ══ FIXED: Removed `messages` and `pinnedMessageDetails` from deps ══
@@ -1906,5 +1921,6 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     finalizeChunkedVideoMessage,
     retrySendMessage,
     triggerDemoFailedMessage,
+    refresh,
   };
 }

@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Phone, Camera, MoreVertical, Search, MessageSquare, Pin, User, CheckSquare, BookOpen, ChevronDown } from 'lucide-react';
 import { VideoCallIcon } from '../common/CustomIcons';
 import { motion, AnimatePresence } from 'framer-motion';
+import PullToRefresh from '../common/PullToRefresh';
 
 
 
@@ -79,6 +80,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
   const [showRetryWalkthrough, setShowRetryWalkthrough] = useState(false);
   const [showStreamingWalkthrough, setShowStreamingWalkthrough] = useState(false);
+  const [showRefreshWalkthrough, setShowRefreshWalkthrough] = useState(false);
 
   useEffect(() => {
     const show = localStorage.getItem('show_save_to_folders_walkthrough') === 'true';
@@ -96,11 +98,18 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   }, []);
 
   useEffect(() => {
+    const show = localStorage.getItem('show_chat_refresh_walkthrough') === 'true';
+    setShowRefreshWalkthrough(show);
+  }, []);
+
+  useEffect(() => {
     const handleRedirect = (e: any) => {
       if (e.detail && e.detail.feature === 'retry-failed-message') {
         setShowRetryWalkthrough(true);
       } else if (e.detail && e.detail.feature === 'video-streaming') {
         setShowStreamingWalkthrough(true);
+      } else if (e.detail && e.detail.feature === 'chat-refresh') {
+        setShowRefreshWalkthrough(true);
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);
@@ -136,7 +145,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
     pinMessage, firstUnreadId, isOnline, markAsRead,
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage,
-    retrySendMessage, triggerDemoFailedMessage
+    retrySendMessage, triggerDemoFailedMessage, refresh
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettingsContext();
   const { initiateCall } = useCall();
@@ -641,6 +650,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             </div>
           )}
         </div>
+        <PullToRefresh onRefresh={refresh} triggerSelector=".glass-header, header">
         {/* TopAppBar */}
         <header className={`shrink-0 sticky top-0 z-50 w-full glass-header flex items-center justify-between px-2 pb-4 border-b border-white/5 gap-2 ${isNative ? 'safe-top' : 'pt-2'}`}>
           <div className="flex items-center gap-3 min-w-0">
@@ -951,6 +961,58 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             )}
           </AnimatePresence>
 
+          {/* Pull to Refresh Walkthrough Banner */}
+          <AnimatePresence>
+            {showRefreshWalkthrough && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="px-4 py-3 bg-[rgba(var(--primary-rgb),_0.08)] border-b border-white/10 relative overflow-hidden flex flex-col gap-2 shrink-0 z-20"
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="flex justify-between items-start gap-4 z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">sync</span>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">New: Pull-to-Refresh & Chat Reload 🔄</h4>
+                  </div>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_chat_refresh_walkthrough');
+                      setShowRefreshWalkthrough(false);
+                    }}
+                    className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer"
+                  >
+                    Got it
+                  </button>
+                </div>
+                <p className="text-[11px] text-white/60 leading-relaxed font-medium z-10">
+                  Swipe down from the top on mobile, or click the <strong>Sync (🔄)</strong> header icon to reload chat data and rebuild Realtime database connections!
+                </p>
+                <div className="flex items-center gap-3 mt-1 z-10">
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_chat_refresh_walkthrough');
+                      setShowRefreshWalkthrough(false);
+                    }}
+                    className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-gradient-to-r from-primary to-primary-600 text-background font-bold hover:shadow-glow-gold transition-all active:scale-95 cursor-pointer"
+                  >
+                    Awesome
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('show_chat_refresh_walkthrough');
+                      setShowRefreshWalkthrough(false);
+                    }}
+                    className="px-3 py-1 rounded-full text-[9px] font-label uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           
           {viewMode === 'pinned' && (
             <div className="bg-primary/10 backdrop-blur-md border-b border-primary/20 px-4 py-3 flex items-center justify-between shadow-lg z-30 relative shrink-0">
@@ -985,11 +1047,11 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             ref={scrollContainerRef} 
             onScroll={handleScroll}
             className="flex-1 overflow-y-auto overflow-x-hidden px-2 pt-6 pb-6 flex flex-col gap-1 custom-scrollbar anchor-none"
-            style={{
-              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
-            }}
-          >
+              style={{
+                maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
+              }}
+            >
             {hasMore && !loading && viewMode === 'chat' && (
               <div className="flex justify-center py-4 anchor-none">
                 {loadingMore ? (
@@ -1143,6 +1205,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
             </div>
           )}
         </main>
+        </PullToRefresh>
       </div>
 
       {/* Chat Search Overlay */}

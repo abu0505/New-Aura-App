@@ -15,6 +15,7 @@ import TypingIndicator from './TypingIndicator';
 import { SeenIndicator } from './SeenIndicator';
 import EncryptedImage from '../common/EncryptedImage';
 import { AnimatePresence, motion } from 'framer-motion';
+import PullToRefresh from '../common/PullToRefresh';
 // ── PERF: Lazy-load DesktopCameraStudio (37KB) — only loaded when user clicks camera ──
 const DesktopCameraStudio = lazy(() => import('./DesktopCameraStudio'));
 import { LastSeenStatus } from './LastSeenStatus';
@@ -81,6 +82,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
   const [showRetryWalkthrough, setShowRetryWalkthrough] = useState(false);
   const [showStreamingWalkthrough, setShowStreamingWalkthrough] = useState(false);
+  const [showRefreshWalkthrough, setShowRefreshWalkthrough] = useState(false);
 
   useEffect(() => {
     const show = localStorage.getItem('show_save_to_folders_walkthrough') === 'true';
@@ -98,11 +100,18 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
   }, []);
 
   useEffect(() => {
+    const show = localStorage.getItem('show_chat_refresh_walkthrough') === 'true';
+    setShowRefreshWalkthrough(show);
+  }, []);
+
+  useEffect(() => {
     const handleRedirect = (e: any) => {
       if (e.detail && e.detail.feature === 'retry-failed-message') {
         setShowRetryWalkthrough(true);
       } else if (e.detail && e.detail.feature === 'video-streaming') {
         setShowStreamingWalkthrough(true);
+      } else if (e.detail && e.detail.feature === 'chat-refresh') {
+        setShowRefreshWalkthrough(true);
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);
@@ -141,7 +150,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
     pinMessage, firstUnreadId, isOnline, markAsRead,
     addOptimisticMediaMessage, commitOptimisticMediaMessage,
     addChunkedVideoMessage, updateChunkStatus, commitChunkedVideoMessage, finalizeChunkedVideoMessage,
-    retrySendMessage, triggerDemoFailedMessage
+    retrySendMessage, triggerDemoFailedMessage, refresh
   } = useChat(partner.id, partner.public_key, partner.key_history?.map(h => h.public_key));
   const { settings } = useChatSettingsContext();
   const { initiateCall } = useCall();
@@ -748,6 +757,19 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
                   <span className="text-[10px] uppercase tracking-[0.2em] text-red-200 font-bold">Offline Mode</span>
                 </div>
               )}
+              <button
+                onClick={async () => {
+                  toast.promise(refresh(), {
+                    loading: 'Refreshing chat data...',
+                    success: 'Chat refreshed successfully! 💬',
+                    error: 'Failed to refresh chat. Please try again.'
+                  });
+                }}
+                className="hover:text-primary cursor-pointer hover:scale-110 active:scale-95 transition-all flex items-center justify-center p-1 text-aura-text-secondary"
+                title="Refresh Chat"
+              >
+                <span className="material-symbols-outlined text-xl">sync</span>
+              </button>
               <div className="relative" ref={callDropdownRef}>
                 <button 
                   onClick={() => setShowCallDropdown(!showCallDropdown)}
@@ -1003,6 +1025,60 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
             )}
           </AnimatePresence>
 
+          {/* Pull to Refresh Walkthrough Banner */}
+          <AnimatePresence>
+            {showRefreshWalkthrough && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="w-full bg-[rgba(var(--primary-rgb),_0.08)] border-b border-white/10 relative overflow-hidden flex flex-col gap-2 p-6 z-30 shrink-0"
+              >
+                <div className="absolute -top-12 -left-12 w-24 h-24 bg-[rgba(var(--primary-rgb),_0.15)] rounded-full blur-2xl pointer-events-none" />
+                <div className="max-w-[800px] mx-auto w-full flex flex-col gap-1.5 z-10">
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">sync</span>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">New: Pull-to-Refresh & Desktop Reload 🔄</h4>
+                    </div>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('show_chat_refresh_walkthrough');
+                        setShowRefreshWalkthrough(false);
+                      }}
+                      className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/70 leading-relaxed font-medium">
+                    If connection is lost or messages fail to load, you can pull down from the top on mobile, or click the <strong>Sync (🔄)</strong> button in the header on desktop to reload the chat data instantly!
+                  </p>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('show_chat_refresh_walkthrough');
+                        setShowRefreshWalkthrough(false);
+                      }}
+                      className="px-4 py-1.5 rounded-full text-[10px] font-label uppercase tracking-widest bg-gradient-to-r from-primary to-primary-600 text-background font-bold hover:shadow-glow-gold transition-all active:scale-95 cursor-pointer"
+                    >
+                      Awesome
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('show_chat_refresh_walkthrough');
+                        setShowRefreshWalkthrough(false);
+                      }}
+                      className="px-4 py-1.5 rounded-full text-[10px] font-label uppercase tracking-widest bg-white/5 hover:bg-white/10 text-white transition-colors cursor-pointer"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* PINNED MESSAGES HEADER - Grid Row 2 */}
           {viewMode === 'pinned' && (
             <div className="w-full relative z-30 bg-primary/5 backdrop-blur-md border-b border-primary/20 px-8 py-3 flex items-center justify-between shadow-lg">
@@ -1033,15 +1109,16 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
           )}
 
           {/* SCROLLABLE CONTENT - Grid Row 3 (1fr) */}
-          <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className="min-h-0 w-full overflow-y-auto custom-scrollbar relative z-10 anchor-auto"
-            style={{
-              maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
-            }}
-          >
+          <PullToRefresh onRefresh={refresh} disabled={true}>
+            <div
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              className="min-h-0 w-full overflow-y-auto custom-scrollbar relative z-10 anchor-auto"
+              style={{
+                maskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black calc(100% - 20px), transparent 100%)',
+              }}
+            >
             <div className="max-w-[800px] mx-auto px-6 md:px-14 pt-10 pb-6 flex flex-col gap-1 min-h-full">
               {!partner.public_key && (
                 <div className="text-center p-8 bg-primary/5 border border-primary/20 text-primary rounded-[3rem] text-xs font-label uppercase tracking-widest leading-loose">
@@ -1160,6 +1237,7 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
               <div ref={messagesEndRef} />
             </div>
           </div>
+        </PullToRefresh>
 
           {/* Jump to Latest Floating Button */}
           {(hasMoreNewer || showScrollDown) && viewMode === 'chat' && (

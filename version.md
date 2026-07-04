@@ -1,14 +1,17 @@
 # App Version
-VersionName: 2.20.0
-VersionCode: 129
+VersionName: 2.21.0
+VersionCode: 130
 Date: 2026-07-04
 Changes:
+- **Feature — Pull-to-Refresh & Chat Reload:** Implemented a physics-based, glassmorphic swipe-to-refresh component wrapper for mobile (touch drag) and desktop (mouse drag) scrolling containers. Added a header-sync refresh button for instant manual re-fetching and rebuilding of Realtime database subscriptions to recover from 503/500 connection drops.
+- **Fix — Supabase 500/503 Connection Dropouts:** Handled database schema caching timeouts and sleep-mode disconnects by allowing a full-scope clean re-query without resetting the application state.
+- **Walkthrough — Reload & Refresh Tutorial:** Added contextual onboarding tutorials and walkthrough banners to both desktop and mobile chat screens.
+
+## Previous Version (2.20.0)
 - **Feature — YouTube-Style Video Streaming:** Restored progressive video playback via MediaSource Extensions (MSE) allowing receivers to play chunked videos instantly as soon as first few blocks land.
 - **Fix — NaCl Decryption MAC Failures:** Resolved decryption failures on video resume/reload by adding `downloadingIndices` track queue to prevent race conditions between Realtime and loadExistingChunks fetches, and ensuring already-decrypted blocks are preserved.
 - **Fix — Supabase 400 & 406 Errors:** Filtered out undefined/null/empty ID inputs to `.in('id', ...)` Supabase filters, and gracefully handle PGRST116 (missing profile row) on profile stats load to prevent screen crashes.
 - **Walkthrough — Video Streaming Onboarding:** Added contextual tutorial walkthrough banner for the streaming video feature.
-
-## Previous Version (2.19.0)
 - **Feature — Retry Failed Messages:** Added a context menu option "Retry Resend" (3-dots/right-click for desktop, long-press for mobile) for failed outgoing messages (both text and media), allowing users to resend them instantly without retyping.
 - **Walkthrough — Retry Message Tutorial:** Integrated an interactive walkthrough banner on Chat Screens (desktop & mobile) with a "Try Demo Now" button to simulate a failed message and guide the user.
 - **What's New Modal Update:** Updated the "What's New" modal to feature the resend capability with guided onboarding.
