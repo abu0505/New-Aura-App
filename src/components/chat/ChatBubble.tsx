@@ -11,7 +11,7 @@ import ChunkedVideoOverlay from './ChunkedVideoOverlay';
 const LazyEmojiPicker = lazy(() => import('emoji-picker-react'));
 import { Theme, EmojiStyle } from 'emoji-picker-react';
 import LinkPreview from './LinkPreview';
-import PremiumEmoji, { EmojiText } from '../common/PremiumEmoji';
+import PremiumEmoji, { EmojiText, isEmojiOnlyMessage, AnimatedEmoji } from '../common/PremiumEmoji';
 import { useMediaFolders } from '../../hooks/useMediaFolders';
 import { supabase } from '../../lib/supabase';
 import { useGarbageContext } from '../../contexts/GarbageContext';
@@ -105,6 +105,7 @@ function ChatBubble({
   }
   
   const rawContent = isNoteHighlight ? highlightText : (message.decrypted_content || '');
+  const { isEmojiOnly, emojis: emojiOnlyList } = (!message.type || message.type === 'text') ? isEmojiOnlyMessage(rawContent) : { isEmojiOnly: false, emojis: [] };
 
   // Calculate accent styles dynamically based on note colors
   const getNoteHighlightColors = () => {
@@ -1108,7 +1109,7 @@ function ChatBubble({
           onTouchEnd={handleTouchEnd}
           onTouchMove={handleTouchMove}
           className={`shadow-lg relative cursor-pointer transition-transform w-fit max-w-[85%] ${interactionType !== 'none' ? 'scale-95 z-40' : ''} ${
-          (message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker
+          (message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker || isEmojiOnly
              ? 'bg-transparent shadow-none px-0 py-0' 
              : isNoteHighlight
                ? `px-4 py-3 rounded-2xl ${!isFirst ? (isMine ? 'rounded-tr-sm' : 'rounded-tl-sm') : ''} ${!isLast ? (isMine ? 'rounded-br-sm' : 'rounded-bl-sm') : ''} border backdrop-blur-xl`
@@ -1120,7 +1121,7 @@ function ChatBubble({
             WebkitTouchCallout: 'none',
             WebkitUserSelect: 'none',
             userSelect: 'none',
-            ...(isNoteHighlight && !((message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker)
+            ...(isNoteHighlight && !((message.type === 'image' || message.type === 'video' || message.type === 'gif') || isSticker || isEmojiOnly)
               ? {
                   background: noteHighlightStyles.bubbleBg,
                   border: noteHighlightStyles.bubbleBorder,
@@ -1188,7 +1189,9 @@ function ChatBubble({
         )}
         {message.decrypted_content && !isSticker && (
           <div className={
-            isNoteHighlight 
+            isEmojiOnly
+              ? 'flex items-center justify-center flex-wrap gap-2 py-2 select-none filter drop-shadow-[0_8px_24px_rgba(0,0,0,0.6)] relative z-20'
+              : isNoteHighlight 
               ? 'flex flex-col gap-1.5 min-w-[180px]'
               : message.media_url ? 
                 (isMine 
@@ -1196,7 +1199,11 @@ function ChatBubble({
                   : `mt-1 px-3 py-2 bg-aura-bg-elevated text-aura-text-primary rounded-2xl ${!isFirst ? 'rounded-tl-sm' : ''} ${!isLast ? 'rounded-bl-sm' : ''} border border-white/5 shadow-lg w-fit mr-auto min-w-[80px]`) 
                 : 'text-[15px] leading-relaxed font-body whitespace-pre-wrap break-words'
           }>
-            {isNoteHighlight ? (
+            {isEmojiOnly ? (
+               emojiOnlyList.map((emoji, idx) => (
+                  <AnimatedEmoji key={idx} emoji={emoji} size={120} messageId={message.id} />
+               ))
+            ) : isNoteHighlight ? (
               <div className="flex flex-col gap-1.5 relative z-20">
                 <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.15em]" style={{ color: noteHighlightStyles.accentColor }}>
                   <span className="material-symbols-outlined text-[13px]" style={{ fontVariationSettings: "'FILL' 1" }}>sticky_note_2</span>
@@ -1256,10 +1263,10 @@ function ChatBubble({
         )}
 
         {/* Embedded Timestamp and Status Info */}
-        {(!message.media_url || isSticker || !message.decrypted_content) && (
-          <div className={`flex items-center justify-end gap-1 mt-1.5 ${isOnlyMedia || isSticker ? 'absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md' : ''}`}>
+        {(!message.media_url || isSticker || isEmojiOnly || !message.decrypted_content) && (
+          <div className={`flex items-center justify-end gap-1 mt-1.5 ${isOnlyMedia || isSticker || isEmojiOnly ? 'absolute bottom-2 right-2 px-2 py-0.5 rounded-full bg-black/40 backdrop-blur-md' : ''}`}>
             <span className={`text-[9px] uppercase tracking-tighter ${
-              isOnlyMedia || isSticker
+              isOnlyMedia || isSticker || isEmojiOnly
                 ? 'text-white/90'
                 : isMine 
                   ? 'text-background/80 font-bold' 
@@ -1273,7 +1280,7 @@ function ChatBubble({
             {isMine && !message.is_deleted_for_everyone && !message.is_send_failed && (
               <span 
                 className={`material-symbols-outlined text-[12px] transition-colors duration-300 ${
-                  isOnlyMedia || isSticker
+                  isOnlyMedia || isSticker || isEmojiOnly
                     ? (message.is_read ? 'text-blue-400' : 'text-white/60')
                     : (message.is_read ? 'text-blue-400' : (message.is_delivered ? 'text-background/50' : 'text-background/25'))
                 }`} 

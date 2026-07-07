@@ -1,5 +1,20 @@
 # App Version
-VersionName: 2.22.5
+VersionName: 2.24.2
+VersionCode: 142
+Date: 2026-07-08
+Changes:
+- **Feature — Synchronized Realtime Emoji Clicks:** Clicking/tapping an emoji-only message bubble triggers a broadcast event via Supabase Realtime, immediately replaying the animation on both users' screens simultaneously.
+- **Feature — Limited Animation Loops:** Animated emojis now animate exactly 2 times initially and stop (rendering the static Apple emoji). Replayed animations on click play exactly 1 time.
+- **Fix — Smiling Face with Hearts (🥰) Bug:** Forced both `🥰` and `😍` to use the Google Noto animated fallback to prevent `🥰` from incorrectly displaying the `😍` (heart-eyes) WebP animation from the Telegram CDN.
+
+## Previous Version (2.23.3)
+VersionCode: 139
+Date: 2026-07-08
+Changes:
+- **Feature — Telegram Animated Emojis:** Upgraded the animated emoji system from Google Noto to Telegram's native animated emojis. Utilizes a CDN mapping system using `unicode-emoji-json` to dynamically fetch high-quality animated WebP emojis based on their English names.
+- **Fix — Animated Emoji Fallbacks:** Restored proper multi-stage fallback logic where the app tries Telegram animated emojis first, falls back to Google Noto animations on error, and finally falls back to static Apple-style emojis.
+
+## Previous Version (2.22.5)
 VersionCode: 136
 Date: 2026-07-07
 Changes:

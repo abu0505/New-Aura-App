@@ -89,7 +89,7 @@ export default function StorageSection() {
 
       <footer className="text-center opacity-30 pt-10 pb-20">
         <h2 className="font-serif italic text-2xl text-[var(--gold)] mb-2 tracking-widest">AURA</h2>
-        <p className="font-label text-[8px] uppercase tracking-[0.5em] text-white">App Data Protocol v2.22.5</p>
+        <p className="font-label text-[8px] uppercase tracking-[0.5em] text-white">App Data Protocol v2.24.2</p>
       </footer>
     </div>
   );

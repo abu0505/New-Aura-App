@@ -4,6 +4,7 @@ import MobileChatScreen from './MobileChatScreen';
 import type { PartnerProfile } from '../../hooks/usePartner';
 import { useTypingIndicator } from '../../hooks/useTypingIndicator';
 import { useSnapCapture } from '../../hooks/useSnapCapture';
+import { useEmojiInteraction } from '../../hooks/useEmojiInteraction';
 import { useState, useEffect } from 'react';
 
 interface ChatScreenProps {
@@ -32,6 +33,19 @@ export default function ChatScreen({ partner, isActive }: ChatScreenProps) {
     partner?.id,
     partner?.is_online ?? false,
   );
+
+  // Emoji interaction: initialized here to manage single broadcast channel.
+  const { triggerEmojiClick } = useEmojiInteraction(partner?.id);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).triggerEmojiClick = triggerEmojiClick;
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).triggerEmojiClick;
+      }
+    };
+  }, [triggerEmojiClick]);
 
   if (!partner) {
     return (
