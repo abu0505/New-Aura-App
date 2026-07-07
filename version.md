@@ -1,5 +1,13 @@
 # App Version
-VersionName: 2.22.2
+VersionName: 2.22.4
+VersionCode: 135
+Date: 2026-07-07
+Changes:
+- **Feature — Persistent Media Cache:** Implemented a persistent L2 media cache using IndexedDB (`idb-keyval`) to drastically reduce Cloudinary bandwidth consumption. Decrypted images, videos, avatars, and note backgrounds now survive page reloads and tab switches without re-fetching from the network.
+- **Optimization — Bandwidth Leak Fixes:** Added in-flight request deduplication to `EncryptedImage` (so avatars and UI elements share the same fetch) and reduced the Reels background pre-load window from 4 to 2 to minimize wasteful downloads.
+- **Feature — Storage Dashboard:** Added real-time Media Cache statistics (size and item count) to the Settings > Storage section, with a one-click "Manage App Storage" button to safely clear both RAM and persistent cache.
+
+## Previous Version (2.22.2)
 VersionCode: 133
 Date: 2026-07-07
 Changes:

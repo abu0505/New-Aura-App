@@ -42,6 +42,7 @@ import {
   encodeBase64,
 } from '../lib/encryption';
 import { deriveBlockNonce } from '../utils/videoChunker';
+import { getCachedBlob, setCachedBlob } from '../lib/mediaCache';
 
 const LOG = (..._args: any[]) => {};
 const WARN = (...args: unknown[]) => console.warn('[VideoChunks]', ...args);
@@ -294,6 +295,13 @@ async function downloadAndDecryptBlock(
 ): Promise<Uint8Array> {
   LOG(`Block ${chunkIndex}: downloading (attempt ${attempt})...`);
   try {
+    // BANDWIDTH FIX: Check IndexedDB for previously decrypted chunk
+    const idbBlob = await getCachedBlob(chunkUrl);
+    if (idbBlob) {
+      LOG(`Block ${chunkIndex}: loaded from IndexedDB cache`);
+      return new Uint8Array(await idbBlob.arrayBuffer());
+    }
+
     const response = await fetch(chunkUrl);
     if (!response.ok) throw new Error(`Fetch failed: ${response.status} for chunk ${chunkIndex}`);
     const cipherBytes = new Uint8Array(await response.arrayBuffer());
@@ -309,6 +317,11 @@ async function downloadAndDecryptBlock(
     if (!decrypted) throw new Error(`NaCl MAC check failed for block ${chunkIndex}`);
 
     LOG(`Block ${chunkIndex}: decrypted OK → ${decrypted.length} bytes`);
+    
+    // BANDWIDTH FIX: Persist decrypted chunk to IndexedDB
+    const blob = new Blob([decrypted as unknown as BlobPart], { type: 'application/octet-stream' });
+    setCachedBlob(chunkUrl, blob).catch(() => {});
+
     return decrypted;
   } catch (err) {
     if (attempt < 3) {

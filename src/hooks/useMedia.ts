@@ -17,7 +17,8 @@ import {
 } from '../lib/encryption';
 import { usePartner } from './usePartner';
 import { splitIntoByteChunks, deriveBlockNonce, generateVideoThumbnail as splitAndGetThumb, getAdaptiveChunkSize } from '../utils/videoChunker';
-
+// ── BANDWIDTH FIX: Persistent IndexedDB cache to prevent re-downloading from Cloudinary ──
+import { getCachedBlob, setCachedBlob } from '../lib/mediaCache';
 
 import nacl from 'tweetnacl';
 import { supabase } from '../lib/supabase';
@@ -456,9 +457,26 @@ export function useMedia() {
     if (!mediaNonce) { console.warn(`${tag} SKIP — mediaNonce is empty`); return null; }
     if (!partnerPublicKey) { console.warn(`${tag} SKIP — partnerPublicKey is empty`); return null; }
 
-    // Fix 4.1: Return cached blob immediately
+    // Fix 4.1: Return L1 (in-memory) cached blob immediately
     if (decryptedBlobCache.has(url)) {
       return decryptedBlobCache.get(url)!;
+    }
+
+    // ── BANDWIDTH FIX: Check L2 (IndexedDB persistent cache) ──
+    // This prevents re-downloading from Cloudinary after page reload/tab switch.
+    try {
+      const idbBlob = await getCachedBlob(url);
+      if (idbBlob) {
+        // Promote to L1 cache for instant subsequent access
+        if (decryptedBlobCache.size >= MAX_CACHE_SIZE) {
+          const firstKey = decryptedBlobCache.keys().next().value;
+          if (firstKey) decryptedBlobCache.delete(firstKey);
+        }
+        decryptedBlobCache.set(url, idbBlob);
+        return idbBlob;
+      }
+    } catch {
+      // IndexedDB unavailable — continue to network fetch
     }
 
     // Fix 4.1: If same URL is already being decrypted, wait for that promise
@@ -562,12 +580,15 @@ export function useMedia() {
         const mimeType = sniffMime(decrypted, mediaType);
         const blob = new Blob([decrypted as any], { type: mimeType });
 
-        // Cache management (simple LRU by Map insertion order)
+        // L1 cache management (simple LRU by Map insertion order)
         if (decryptedBlobCache.size >= MAX_CACHE_SIZE) {
           const firstKey = decryptedBlobCache.keys().next().value;
           if (firstKey) decryptedBlobCache.delete(firstKey);
         }
         decryptedBlobCache.set(url, blob);
+
+        // ── BANDWIDTH FIX: Persist to L2 (IndexedDB) for cross-reload caching ──
+        setCachedBlob(url, blob).catch(() => {});
 
         return blob;
       } catch (error) {

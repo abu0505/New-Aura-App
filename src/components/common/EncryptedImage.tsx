@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { decryptFile } from '../../lib/encryption';
+import { getCachedBlob, setCachedBlob } from '../../lib/mediaCache';
 
 interface EncryptedImageProps {
   url: string | null;
@@ -12,6 +13,9 @@ interface EncryptedImageProps {
 
 // Global cache for decrypted image blobs to prevent re-decryption on remounts
 const imageCache = new Map<string, string>();
+
+// In-flight deduplication to prevent parallel fetch of same URL
+const inflightDecryptions = new Map<string, Promise<string | null>>();
 
 /**
  * EncryptedImage - AURA E2EE Image Viewer
@@ -50,6 +54,15 @@ export default function EncryptedImage({
       setLoading(true);
       setError(false);
       try {
+        // BANDWIDTH FIX: Check IndexedDB persistent cache first
+        const idbBlob = await getCachedBlob(url);
+        if (idbBlob) {
+          const objectUrl = URL.createObjectURL(idbBlob);
+          imageCache.set(url, objectUrl);
+          setDecryptedUrl(objectUrl);
+          return objectUrl;
+        }
+
         const response = await fetch(url);
         const encryptedBuffer = new Uint8Array(await response.arrayBuffer());
         
@@ -70,15 +83,34 @@ export default function EncryptedImage({
         
         imageCache.set(url, objectUrl);
         setDecryptedUrl(objectUrl);
+
+        // BANDWIDTH FIX: Persist to IndexedDB
+        setCachedBlob(url, blob).catch(() => {});
+
+        return objectUrl;
       } catch (err) {
-        
         setError(true);
+        return null;
       } finally {
         setLoading(false);
       }
     };
 
-    decrypt();
+    // BANDWIDTH FIX: In-flight deduplication
+    if (inflightDecryptions.has(url)) {
+      inflightDecryptions.get(url)!.then(objectUrl => {
+        if (objectUrl) {
+          setDecryptedUrl(objectUrl);
+        } else {
+          setError(true);
+        }
+      });
+      return;
+    }
+
+    const promise = decrypt();
+    inflightDecryptions.set(url, promise);
+    promise.then(() => inflightDecryptions.delete(url));
 
     // Intentionally omitting URL.revokeObjectURL here since we cache the blob URL globally
     // and multiple components might be referring to it.

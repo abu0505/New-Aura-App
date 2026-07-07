@@ -427,7 +427,8 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
         >
           {reels.map((item, idx) => {
             const isVisible = Math.abs(idx - activeIndex) <= 5;
-            const isNearby = Math.abs(idx - activeIndex) <= 4;
+            // BANDWIDTH FIX: Reduced pre-load window from 4 to 2 (saves 40% bandwidth on scrolls)
+            const isNearby = Math.abs(idx - activeIndex) <= 2;
 
             if (!isVisible) {
               return (

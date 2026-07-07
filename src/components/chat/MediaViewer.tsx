@@ -723,14 +723,7 @@ export default function MediaViewer({ url: initialUrl, type: initialType, onClos
               <span className="material-symbols-outlined text-2xl">content_copy</span>
             </button>
           )}
-          <a
-            href={currentMedia.url}
-            download
-            onClick={(e) => e.stopPropagation()}
-            className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-[#e4e1ed] backdrop-blur-md transition-colors cursor-pointer flex items-center justify-center"
-          >
-            <span className="material-symbols-outlined text-2xl">download</span>
-          </a>
+          {/* Download button removed per user request */}
           <button
             title={isViewerFullscreen ? "Exit Fullscreen" : "Fullscreen"}
             onClick={(e) => {

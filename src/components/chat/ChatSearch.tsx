@@ -132,6 +132,22 @@ export default function ChatSearch({
     isCommittedRef.current = isCommitted;
   }, [isCommitted]);
 
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const show = localStorage.getItem('show_chat_search_walkthrough') === 'true';
+      if (show) {
+        setShowWalkthrough(true);
+      }
+    }
+  }, [isOpen]);
+
+  const closeWalkthrough = () => {
+    localStorage.removeItem('show_chat_search_walkthrough');
+    setShowWalkthrough(false);
+  };
+
   const abortRef = useRef<AbortController | null>(null);
   const statusIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -160,6 +176,7 @@ export default function ChatSearch({
       poolRef.current = [];
       poolQueryRef.current = '';
       seenIdsRef.current = new Set();
+      setShowWalkthrough(false);
     }
   }, [isOpen]);
 
@@ -583,14 +600,14 @@ export default function ChatSearch({
             </span>
 
             <div className="relative flex-1 overflow-hidden">
-              {/* Animated status word */}
-              {(isActivelySearching || showWarmingHint) && query.trim() && (
+              {/* Animated status word with static searched text */}
+              {isActivelySearching && query.trim() && (
                 <div
-                  className="absolute inset-0 pointer-events-none flex items-center"
+                  className="absolute inset-x-0 inset-y-0 pointer-events-none flex items-center gap-1.5"
                   style={{ zIndex: 1 }}
                 >
                   <span
-                    className="text-primary"
+                    className="text-primary shrink-0"
                     style={{
                       opacity: wordVisible ? 1 : 0,
                       transform: wordVisible ? 'translateY(0)' : 'translateY(-12px)',
@@ -598,9 +615,20 @@ export default function ChatSearch({
                       fontSize: '0.8rem',
                       fontStyle: 'italic',
                       whiteSpace: 'nowrap',
+                      display: 'inline-block',
+                      width: '7.5rem', // stable width so dot and query don't shift
                     }}
                   >
                     {phaseLabel}
+                  </span>
+                  <span className="text-white/40 text-[10px] shrink-0">•</span>
+                  <span
+                    className="text-sm truncate"
+                    style={{
+                      color: 'var(--color-text-primary, #f0e6d3)',
+                    }}
+                  >
+                    {query}
                   </span>
                 </div>
               )}
@@ -613,8 +641,8 @@ export default function ChatSearch({
                 placeholder="Search messages..."
                 className="w-full bg-transparent outline-none focus:ring-0 border-none text-sm placeholder-aura-text-secondary"
                 style={{
-                  color: (isActivelySearching || showWarmingHint) && query.trim() ? 'transparent' : 'var(--color-text-primary, #f0e6d3)',
-                  caretColor: (isActivelySearching || showWarmingHint) && query.trim() ? 'transparent' : 'var(--color-primary, #e6c487)',
+                  color: isActivelySearching && query.trim() ? 'transparent' : 'var(--color-text-primary, #f0e6d3)',
+                  caretColor: isActivelySearching && query.trim() ? 'transparent' : 'var(--color-primary, #e6c487)',
                   transition: 'color 0.2s',
                 }}
               />
@@ -637,6 +665,29 @@ export default function ChatSearch({
               </button>
             )}
           </div>
+
+          {/* Walkthrough Tooltip */}
+          {showWalkthrough && (
+            <div className="mx-4 my-2 p-3 bg-gradient-to-br from-[var(--bg-elevated)] to-[#191926]/95 border border-[var(--gold)]/30 rounded-2xl shadow-xl relative z-[202] flex gap-2.5">
+              <div className="p-1.5 rounded-lg bg-[rgba(var(--primary-rgb),_0.1)] border border-[rgba(var(--primary-rgb),_0.2)] text-[var(--gold)] h-fit shrink-0">
+                <span className="material-symbols-outlined text-[16px] block">help</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-serif italic text-xs text-[var(--gold)] mb-0.5">Chat Search</h4>
+                <p className="text-[10px] text-white/60 leading-relaxed mb-2">
+                  Type your query. The field won't change while typing. Press <span className="text-[var(--gold)] font-bold">Enter</span> to commit your search. Once searching begins, you'll see animated progress alongside your query.
+                </p>
+                <div className="flex justify-end">
+                  <button
+                    onClick={closeWalkthrough}
+                    className="px-2.5 py-1 rounded-md bg-[var(--gold)] text-[var(--on-accent)] font-bold text-[9px] uppercase tracking-wider hover:bg-[var(--gold-deep)] transition-colors"
+                  >
+                    Got it!
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Results Area */}
           <div className="overflow-y-auto scrollbar-hide" style={{ maxHeight: 'calc(60dvh - 60px)' }}>

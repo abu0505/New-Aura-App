@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import type { Note } from '../../hooks/useNotes';
 import { NOTE_COLORS, NOTE_BACKGROUNDS, MOOD_CONFIG } from '../../hooks/useNotes';
 import { getStoredKeyPair, decodeBase64 } from '../../lib/encryption';
+import { getCachedBlob, setCachedBlob } from '../../lib/mediaCache';
 import nacl from 'tweetnacl';
 
 // Helper to strip HTML tags for plain text card previews
@@ -97,7 +98,17 @@ function NoteCard({
 
         // New format: { url, nonce } — fetch encrypted bytes from Cloudinary
         if ('url' in customBg && (customBg as any).url) {
-          const response = await fetch((customBg as any).url);
+          const url = (customBg as any).url;
+
+          // BANDWIDTH FIX: Check IndexedDB cache first
+          const idbBlob = await getCachedBlob(url);
+          if (idbBlob && isMounted) {
+            blobUrl = URL.createObjectURL(idbBlob);
+            setDecryptedBg(blobUrl);
+            return;
+          }
+
+          const response = await fetch(url);
           const arrayBuffer = await response.arrayBuffer();
           const cipherBytes = new Uint8Array(arrayBuffer);
           const decrypted = nacl.secretbox.open(
@@ -109,6 +120,8 @@ function NoteCard({
             const blob = new Blob([decrypted as unknown as BlobPart]);
             blobUrl = URL.createObjectURL(blob);
             setDecryptedBg(blobUrl);
+            // BANDWIDTH FIX: Save to IndexedDB
+            setCachedBlob(url, blob).catch(() => {});
           }
           return;
         }

@@ -806,10 +806,8 @@ function ChatBubble({
                onClick={(e) => {
                  e.stopPropagation();
                  if (decryptedMediaUrl) {
-                   const link = document.createElement('a');
-                   link.href = decryptedMediaUrl;
-                   link.download = message.file_name || 'document';
-                   link.click();
+                   // Open document in new tab instead of downloading per user request
+                   window.open(decryptedMediaUrl, '_blank');
                  }
                }}>
             <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -824,7 +822,7 @@ function ChatBubble({
             {!decryptedMediaUrl ? (
               <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin shrink-0" />
             ) : (
-              <span className="material-symbols-outlined text-primary/60 text-xl shrink-0">download</span>
+              <span className="material-symbols-outlined text-primary/60 text-xl shrink-0">open_in_new</span>
             )}
           </div>
         );

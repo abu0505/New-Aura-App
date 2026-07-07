@@ -1,8 +1,7 @@
 {
   "name": "aura-social",
   "private": true,
-  "version": "2.19.0",
-
+  "version": "2.22.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -37,6 +36,7 @@
     "emoji-picker-react": "^4.18.0",
     "framer-motion": "^12.38.0",
     "function-plot": "^1.25.4",
+    "idb-keyval": "^6.2.6",
     "lucide-react": "^1.6.0",
     "mapbox-gl": "^3.22.0",
     "maplibre-gl": "^5.21.1",

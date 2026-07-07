@@ -112,6 +112,8 @@ export default function DesktopChatScreen({ partner, isActive, partnerIsTyping, 
         setShowStreamingWalkthrough(true);
       } else if (e.detail && e.detail.feature === 'chat-refresh') {
         setShowRefreshWalkthrough(true);
+      } else if (e.detail && e.detail.feature === 'chat-search') {
+        setIsSearchOpen(true);
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);
