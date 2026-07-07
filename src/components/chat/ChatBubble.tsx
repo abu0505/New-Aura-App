@@ -776,17 +776,59 @@ function ChatBubble({
             )}
           </div>
         );
-      default:
+      case 'document':
+      default: {
+        const getDocIcon = (filename: string | null): string => {
+          if (!filename) return 'description';
+          const ext = filename.split('.').pop()?.toLowerCase();
+          const icons: Record<string, string> = {
+            pdf: 'picture_as_pdf',
+            doc: 'article', docx: 'article',
+            xls: 'table_chart', xlsx: 'table_chart',
+            ppt: 'slideshow', pptx: 'slideshow',
+            zip: 'folder_zip', rar: 'folder_zip',
+            txt: 'text_snippet',
+            mp3: 'audio_file', wav: 'audio_file',
+          };
+          return icons[ext || ''] || 'description';
+        };
+
+        const formatFileSize = (bytes: number | null | undefined): string => {
+          if (!bytes) return 'Unknown size';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        };
+
         return (
-          <a 
-            href={decryptedMediaUrl ?? undefined} 
-            target="_blank" 
-            className="flex items-center gap-2 bg-black/20 px-4 py-2 rounded-xl text-xs text-primary underline"
-          >
-            <span className="material-symbols-outlined">description</span>
-            View Attachment
-          </a>
+          <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl min-w-[220px] max-w-[280px] cursor-pointer active:scale-95 transition-all"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 if (decryptedMediaUrl) {
+                   const link = document.createElement('a');
+                   link.href = decryptedMediaUrl;
+                   link.download = message.file_name || 'document';
+                   link.click();
+                 }
+               }}>
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-primary text-2xl">
+                {getDocIcon(message.file_name)}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate text-white">{message.file_name || 'Document'}</p>
+              <p className="text-xs text-white/40 mt-0.5">{formatFileSize(message.file_size)}</p>
+            </div>
+            {!decryptedMediaUrl ? (
+              <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin shrink-0" />
+            ) : (
+              <span className="material-symbols-outlined text-primary/60 text-xl shrink-0">download</span>
+            )}
+          </div>
         );
+      }
     }
   };
 

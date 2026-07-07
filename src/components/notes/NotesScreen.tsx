@@ -43,6 +43,26 @@ export default function NotesScreen({ onBack }: NotesScreenProps = {}) {
     return typeof window !== 'undefined' && localStorage.getItem('aura_stealth_mode') === 'true';
   });
 
+  const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
+
+  useEffect(() => {
+    const show = localStorage.getItem('show_raw_note_walkthrough') === 'true';
+    setShowWalkthroughBanner(show);
+  }, []);
+
+  const closeWalkthrough = () => {
+    localStorage.removeItem('show_raw_note_walkthrough');
+    setShowWalkthroughBanner(false);
+  };
+
+  useEffect(() => {
+    const handleDismiss = () => {
+      setShowWalkthroughBanner(false);
+    };
+    window.addEventListener('dismiss-raw-note-walkthrough', handleDismiss);
+    return () => window.removeEventListener('dismiss-raw-note-walkthrough', handleDismiss);
+  }, []);
+
   useEffect(() => {
     const handleStealthChange = () => {
       setIsStealthActive(localStorage.getItem('aura_stealth_mode') === 'true');
@@ -342,6 +362,34 @@ export default function NotesScreen({ onBack }: NotesScreenProps = {}) {
           </button>
         </div>
       )}
+
+      {/* Walkthrough Banner */}
+      <AnimatePresence>
+        {showWalkthroughBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-0 left-0 right-0 z-30 px-4 py-3.5 bg-black/90 backdrop-blur-xl border-b border-white/10 flex flex-col gap-2 shrink-0 shadow-2xl safe-top safe-pt"
+          >
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">code</span>
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">New: Raw Text Notes! 📝</h4>
+              </div>
+              <button
+                onClick={closeWalkthrough}
+                className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer underline"
+              >
+                Got it
+              </button>
+            </div>
+            <p className="text-[11px] text-white/60 leading-relaxed font-medium">
+              Want to keep your note raw (e.g. typing hyphens without them turning into bullets)? Open any note and tap the new <strong>Code/Raw Mode (code)</strong> toggle button in the header! The note will stay raw for you and your partner.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* If Desktop & Editing, show split pane with folder tree. Otherwise, normal view. */}
       {isDesktop && currentEditingNote ? (

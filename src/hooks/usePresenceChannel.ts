@@ -8,6 +8,8 @@ export interface PartnerPresence {
   isOnline: boolean;
   /** True after the presence channel has completed its first sync. */
   hasSynced: boolean;
+  /** True if partner is in AFK/Study mode */
+  isAfk?: boolean;
 }
 
 /**
@@ -60,7 +62,7 @@ export function usePresenceChannel(partnerId: string | null) {
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const joinStatusRef = useRef<'DISCONNECTED' | 'JOINING' | 'JOINED'>('DISCONNECTED');
-  const desiredTrackRef = useRef<{ userId: string; page?: string } | null>(null);
+  const desiredTrackRef = useRef<{ userId: string; page?: string; afk?: boolean } | null>(null);
   const channelGenRef = useRef(0);
   const [reconnectTrigger, setReconnectTrigger] = useState(0);
   const reconnectCountRef = useRef(0);
@@ -89,16 +91,24 @@ export function usePresenceChannel(partnerId: string | null) {
     joinStatusRef.current = 'JOINING';
 
     /**
-     * Filters out phantom/stale presence entries.
-     * Returns count of entries whose `online_at` is within PRESENCE_STALE_MS.
+     * Filters out phantom/stale presence entries and extracts AFK status.
      */
-    const getFreshEntryCount = (entries: any[] | undefined): number => {
-      if (!entries || entries.length === 0) return 0;
+    const getPresenceStatus = (entries: any[] | undefined) => {
+      if (!entries || entries.length === 0) return { isOnline: false, isAfk: false };
       const now = Date.now();
-      return entries.filter(e => {
+      const fresh = entries.filter(e => {
         const onlineAt = e.online_at ? new Date(e.online_at).getTime() : 0;
         return (now - onlineAt) < PRESENCE_STALE_MS;
-      }).length;
+      });
+      if (fresh.length === 0) return { isOnline: false, isAfk: false };
+      
+      // Sort newest first
+      fresh.sort((a, b) => new Date(b.online_at).getTime() - new Date(a.online_at).getTime());
+      
+      return {
+        isOnline: true,
+        isAfk: !!fresh[0].afk
+      };
     };
 
     channel
@@ -107,12 +117,11 @@ export function usePresenceChannel(partnerId: string | null) {
         if (!partnerId) return;
         const state = channel.presenceState();
         const entries = state[partnerId] as any[] | undefined;
-        const freshCount = getFreshEntryCount(entries);
-        const isOnline = freshCount > 0;
+        const status = getPresenceStatus(entries);
 
         setPartnerPresence(prev => {
-          if (prev.hasSynced && prev.isOnline === isOnline) return prev;
-          return { isOnline, hasSynced: true };
+          if (prev.hasSynced && prev.isOnline === status.isOnline && prev.isAfk === status.isAfk) return prev;
+          return { ...status, hasSynced: true };
         });
       })
       .on('presence', { event: 'join' }, ({ key }) => {
@@ -133,12 +142,11 @@ export function usePresenceChannel(partnerId: string | null) {
 
         const state = channel.presenceState();
         const remaining = state[partnerId] as any[] | undefined;
-        const freshCount = getFreshEntryCount(remaining);
-        const isOnline = freshCount > 0;
+        const status = getPresenceStatus(remaining);
 
         setPartnerPresence(prev => {
-          if (prev.isOnline === isOnline && prev.hasSynced) return prev;
-          return { isOnline, hasSynced: true };
+          if (prev.isOnline === status.isOnline && prev.isAfk === status.isAfk && prev.hasSynced) return prev;
+          return { ...status, hasSynced: true };
         });
       })
       .subscribe((status) => {
@@ -153,6 +161,7 @@ export function usePresenceChannel(partnerId: string | null) {
               user_id: desired.userId,
               page: desired.page,
               online_at: new Date().toISOString(),
+              afk: desired.afk,
             }).catch(() => {});
           }
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
@@ -178,6 +187,7 @@ export function usePresenceChannel(partnerId: string | null) {
         user_id: desired.userId,
         page: desired.page,
         online_at: new Date().toISOString(),
+        afk: desired.afk,
       }).catch(() => {});
     }, HEARTBEAT_MS);
 
@@ -191,13 +201,12 @@ export function usePresenceChannel(partnerId: string | null) {
 
       const state = channel.presenceState();
       const entries = state[partnerId] as any[] | undefined;
-      const freshCount = getFreshEntryCount(entries);
-      const isOnline = freshCount > 0;
+      const status = getPresenceStatus(entries);
 
       setPartnerPresence(prev => {
-        if (prev.isOnline === isOnline && prev.hasSynced) return prev;
+        if (prev.isOnline === status.isOnline && prev.isAfk === status.isAfk && prev.hasSynced) return prev;
         if (!prev.hasSynced) return prev; // Don't override initial sync
-        return { isOnline, hasSynced: true };
+        return { ...status, hasSynced: true };
       });
     }, STALE_CHECK_MS);
 
@@ -215,12 +224,12 @@ export function usePresenceChannel(partnerId: string | null) {
     };
   }, [user?.id, partnerId, reconnectTrigger]);
 
-  const trackMyStatus = useCallback(async (userId: string, page?: string) => {
-    desiredTrackRef.current = { userId, page };
+  const trackMyStatus = useCallback(async (userId: string, page?: string, afk?: boolean) => {
+    desiredTrackRef.current = { userId, page, afk };
     if (!channelRef.current || joinStatusRef.current !== 'JOINED') return;
     try {
       await channelRef.current.track({
-        user_id: userId, page, online_at: new Date().toISOString(),
+        user_id: userId, page, online_at: new Date().toISOString(), afk
       });
     } catch (err) {
       

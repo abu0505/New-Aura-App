@@ -12,7 +12,16 @@ import { fetchDiverseMediaPool } from '../../utils/feedPool';
 import { useGlobalMute } from '../../hooks/useGlobalMute';
 import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import type { Database } from '../../integrations/supabase/types';
-import { Heart, MessageSquare, Bookmark, Volume2, VolumeX, Lock, Star, Share2 } from 'lucide-react';
+import { Heart, Bookmark, Volume2, VolumeX, Lock, Star, Share2, FolderPlus, MoreHorizontal, Trash2 } from 'lucide-react';
+import { useMediaFolders } from '../../hooks/useMediaFolders';
+import { useGarbageContext } from '../../contexts/GarbageContext';
+
+/** Extract cloud_name and public_id from a Cloudinary URL */
+function parseCloudinaryUrl(url: string): { cloudName: string; publicId: string } | null {
+  const match = url.match(/res\.cloudinary\.com\/([^/]+)\/[^/]+\/upload\/(?:v\d+\/)?(.+)/);
+  if (!match) return null;
+  return { cloudName: match[1], publicId: match[2] };
+}
 
 // Semaphore to limit parallel decryptions
 class DecryptionSemaphore {
@@ -62,6 +71,17 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
   const { partner } = usePartner();
   const [reels, setReels] = useState<ReelItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
+
+  useEffect(() => {
+    const show = localStorage.getItem('show_reels_folder_walkthrough') === 'true';
+    setShowWalkthroughBanner(show);
+  }, []);
+
+  const closeWalkthrough = () => {
+    localStorage.removeItem('show_reels_folder_walkthrough');
+    setShowWalkthroughBanner(false);
+  };
   const [loadingMore, setLoadingMore] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
@@ -204,13 +224,21 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
     if (!userId || !partnerId) return;
     setLoading(true);
     try {
+      const { data: garbageData } = await supabase
+        .from('garbage_bin')
+        .select('message_id')
+        .eq('added_by', userId);
+      const garbageIds = new Set(garbageData?.map(g => g.message_id).filter(Boolean) || []);
+
       const pool = await fetchDiverseMediaPool(userId, partnerId, {
         recentLimit: 40,
         middleLimit: 80,
         oldLimit: 80,
       });
 
-      const decryptablePool = filterDecryptableItems(pool as ReelItem[]);
+      const nonGarbagePool = pool.filter(p => !garbageIds.has(p.id));
+
+      const decryptablePool = filterDecryptableItems(nonGarbagePool as ReelItem[]);
 
       // Apply weighted reservoir sampling algorithm
       const weighted = buildReelQueue(decryptablePool, 60);
@@ -227,6 +255,12 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
     if (!userId || !partnerId || loadingMore) return;
     setLoadingMore(true);
     try {
+      const { data: garbageData } = await supabase
+        .from('garbage_bin')
+        .select('message_id')
+        .eq('added_by', userId);
+      const garbageIds = new Set(garbageData?.map(g => g.message_id).filter(Boolean) || []);
+
       let excludeIds = [...seenVideoIds.current, ...seenImageIds.current];
 
       let pool = await fetchDiverseMediaPool(
@@ -239,6 +273,9 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
         },
         excludeIds
       );
+
+      // Filter out items in garbage
+      pool = pool.filter(p => !garbageIds.has(p.id));
 
       let fetchedVideos = pool.filter(p => p.type === 'video');
       let fetchedImages = pool.filter(p => p.type !== 'video');
@@ -274,6 +311,8 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
           },
           excludeIds
         );
+        // Filter out items in garbage again after re-fetch
+        pool = pool.filter(p => !garbageIds.has(p.id));
         fetchedVideos = pool.filter(p => p.type === 'video');
         fetchedImages = pool.filter(p => p.type !== 'video');
       }
@@ -332,6 +371,34 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
 
   return (
     <div className="h-full w-full bg-black relative select-none overflow-hidden">
+      {/* Walkthrough Banner */}
+      <AnimatePresence>
+        {showWalkthroughBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="absolute top-0 left-0 right-0 z-30 px-4 py-3.5 bg-black/85 backdrop-blur-xl border-b border-white/10 flex flex-col gap-2 shrink-0 shadow-2xl"
+          >
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-[var(--gold)] text-xl animate-bounce">create_new_folder</span>
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">New: Organize & Tidy Reels!</h4>
+              </div>
+              <button
+                onClick={closeWalkthrough}
+                className="text-white/40 hover:text-white/80 transition-colors text-xs font-bold cursor-pointer underline"
+              >
+                Got it
+              </button>
+            </div>
+            <p className="text-[11px] text-white/60 leading-relaxed font-medium">
+              Click the <strong>Folder+</strong> button on the right to directly add any reel to your collections. Use the <strong>3-dots (...)</strong> menu to move bad reels to the <strong>Garbage Can</strong> and keep your database size optimized!
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {loading ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
           <div className="w-8 h-8 border-2 border-[var(--gold)]/20 border-t-[var(--gold)] rounded-full animate-spin"></div>
@@ -383,6 +450,9 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
                 onLikeToggle={() => toggleFavorite(item.id)}
                 isSaved={savedItems.has(item.id)}
                 onSaveToggle={() => toggleSaved(item.id)}
+                onMoveToGarbage={() => {
+                  setReels(prev => prev.filter(r => r.id !== item.id));
+                }}
               />
             );
           })}
@@ -430,12 +500,20 @@ interface ReelCardProps {
   onLikeToggle: () => void;
   isSaved: boolean;
   onSaveToggle: () => void;
+  onMoveToGarbage?: () => void;
 }
 
-export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPublicKey, isLiked, onLikeToggle, isSaved, onSaveToggle }: ReelCardProps) {
+export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPublicKey, isLiked, onLikeToggle, isSaved, onSaveToggle, onMoveToGarbage }: ReelCardProps) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
+  const { folders, createFolder, addItemsToFolder } = useMediaFolders();
+  const { moveToGarbage } = useGarbageContext();
+
+  const [showFolderPicker, setShowFolderPicker] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Detect chunked video: type=video but no media_url (data lives in video_chunks table)
   const isChunkedVideo = item.type === 'video' && !item.media_url;
@@ -465,6 +543,87 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
   useEffect(() => { getDecryptedBlobRef.current = getDecryptedBlob; }, [getDecryptedBlob]);
 
   const tag = `[ReelCard][${item.id?.slice(0,8)}]`;
+
+  const handleAddToFolder = async (folderId: string) => {
+    if (!item.id) {
+      toast.error("Cannot add this item to a folder");
+      return;
+    }
+    const success = await addItemsToFolder(folderId, [item.id]);
+    if (success) {
+      toast.success("Added to folder! 📁");
+      setShowFolderPicker(false);
+    } else {
+      toast.error("Failed to add to folder");
+    }
+  };
+
+  const handleCreateFolderAndAdd = async () => {
+    if (!newFolderName.trim() || !item.id) return;
+    setIsCreatingFolder(true);
+    const folderId = await createFolder(newFolderName.trim());
+    if (folderId) {
+      await addItemsToFolder(folderId, [item.id]);
+      toast.success("Folder created and item added! 📁");
+      setNewFolderName('');
+      setShowFolderPicker(false);
+    } else {
+      toast.error("Failed to create folder");
+    }
+    setIsCreatingFolder(false);
+  };
+
+  const handleMoveToGarbage = async () => {
+    let mediaUrl = item.media_url;
+    let type = item.type || 'video';
+    let size = item.file_size;
+
+    const toastId = toast.loading('Moving reel to Garbage...');
+
+    try {
+      if (!mediaUrl && isChunkedVideo) {
+        const { data: firstChunk } = await supabase
+          .from('video_chunks')
+          .select('chunk_url')
+          .eq('message_id', item.id)
+          .limit(1)
+          .single();
+        if (firstChunk?.chunk_url) {
+          mediaUrl = firstChunk.chunk_url;
+        }
+      }
+
+      if (!mediaUrl) {
+        throw new Error('No media URL found for this reel');
+      }
+
+      const parsed = parseCloudinaryUrl(mediaUrl);
+      if (!parsed) {
+        throw new Error('Could not parse media URL');
+      }
+
+      const ok = await moveToGarbage(
+        item.id,
+        parsed.publicId,
+        parsed.cloudName,
+        type,
+        size ?? null
+      );
+
+      if (ok) {
+        toast.success('Moved to Garbage 🗑️', {
+          id: toastId,
+          description: 'Go to Settings → Garbage Can to delete it permanently.',
+        });
+        onMoveToGarbage?.();
+      } else {
+        throw new Error('Failed to save to database bin');
+      }
+    } catch (err: any) {
+      console.error('Error moving reel to garbage:', err);
+      toast.error(err.message || 'Failed to move to garbage', { id: toastId });
+    }
+  };
 
   // ── Chunked video: pick up blobUrl from useVideoChunks store ──
   useEffect(() => {
@@ -780,7 +939,7 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
 
   return (
     <div
-      className="h-full w-full snap-start relative bg-black flex items-center justify-center lg:py-[0.4rem]"
+      className="h-full w-full snap-start relative bg-black flex items-center justify-center"
       style={{ height: '100dvh', scrollSnapStop: 'always' }}
     >
       <div className="relative w-full h-full lg:w-[420px] lg:h-full flex items-center justify-center overflow-visible">
@@ -792,7 +951,7 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
           onTouchStart={handlePressStart}
           onTouchEnd={handlePressEnd}
           onTouchCancel={handlePressCancel}
-          className="relative w-full h-full lg:rounded-3xl lg:overflow-hidden lg:border lg:border-white/10 lg:shadow-[0_24px_64px_rgba(0,0,0,0.8)] lg:bg-[#0c0c14] flex items-center justify-center cursor-pointer select-none"
+          className="relative w-full h-full lg:overflow-hidden lg:border lg:border-white/10 lg:shadow-[0_24px_64px_rgba(0,0,0,0.8)] lg:bg-[#0c0c14] flex items-center justify-center cursor-pointer select-none"
         >
           {/* Media Rendering */}
           <div className="absolute inset-0 w-full h-full flex items-center justify-center">
@@ -948,31 +1107,99 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
           {/* Like */}
           <button
             onClick={(e) => { e.stopPropagation(); onLikeToggle(); }}
-            className="flex flex-col items-center gap-1.5 group"
+            className="flex flex-col items-center gap-1.5 group focus:outline-none"
           >
-            <div className={`w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200 ${isLiked ? 'text-rose-500 lg:shadow-[0_0_12px_rgba(244,63,94,0.2)]' : 'text-white'}`}>
+            <div className={`w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-transparent lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none group-hover:bg-transparent group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200 ${isLiked ? 'text-rose-500 lg:shadow-[0_0_12px_rgba(244,63,94,0.2)]' : 'text-white'}`}>
               <Heart className={`w-[28px] h-[28px] transition-all duration-300 ${isLiked ? 'fill-rose-500 stroke-rose-500 scale-110' : 'stroke-current'}`} />
             </div>
             <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">{isLiked ? 'Liked' : 'Like'}</span>
           </button>
 
-          {/* Comment */}
-          <button
-            onClick={(e) => { e.stopPropagation(); toast.info('Add a message in Chat to reply!'); }}
-            className="flex flex-col items-center gap-1.5 group"
-          >
-            <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
-              <MessageSquare className="w-[28px] h-[28px] stroke-white" />
-            </div>
-            <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">Note</span>
-          </button>
+          {/* Add to Folder */}
+          <div className="relative flex flex-col items-center">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowFolderPicker(prev => !prev); }}
+              className="flex flex-col items-center gap-1.5 group focus:outline-none"
+            >
+              <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-transparent lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-transparent group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
+                <FolderPlus className="w-[28px] h-[28px] stroke-white" />
+              </div>
+              <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">Folder</span>
+            </button>
+
+            {/* Folder Picker Dropdown/Menu (exact MediaViewer UI, positioned at same height left side) */}
+            <AnimatePresence>
+              {showFolderPicker && (
+                <>
+                  {/* Backdrop click-away listener for the dropdown */}
+                  <div 
+                    className="fixed inset-0 z-35"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowFolderPicker(false);
+                    }}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, x: 10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, x: 10 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-14 top-1/2 -translate-y-1/2 w-64 bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl pl-3 pt-3 pb-3 pr-0 shadow-2xl flex flex-col gap-2 z-40"
+                  >
+                    <div className="text-xs text-white/50 font-bold uppercase tracking-widest mb-1 px-1 pr-3">Add to Folder</div>
+                    
+                    <div className="max-h-48 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                      {folders.map(folder => (
+                        <button
+                          key={folder.id}
+                          onClick={() => handleAddToFolder(folder.id)}
+                          className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-white/10 transition-colors text-left w-full cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm text-[var(--gold)]">folder</span>
+                          <span className="text-sm text-white/90 truncate">{folder.name}</span>
+                        </button>
+                      ))}
+                      {folders.length === 0 && (
+                        <div className="text-xs text-white/40 px-2 py-1 italic pr-3">No folders yet</div>
+                      )}
+                    </div>
+                    
+                    <div className="h-px bg-white/10 my-1 mr-3" />
+                    
+                    <div className="flex gap-2 pr-3">
+                      <input
+                        type="text"
+                        placeholder="New folder name..."
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onKeyDown={(e) => { 
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleCreateFolderAndAdd(); 
+                          }
+                        }}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-[var(--gold)] transition-colors placeholder:text-white/30"
+                      />
+                      <button
+                        onClick={handleCreateFolderAndAdd}
+                        disabled={isCreatingFolder || !newFolderName.trim()}
+                        className="bg-[var(--gold)] text-black rounded-lg px-3 py-1.5 text-sm font-bold disabled:opacity-50 transition-opacity cursor-pointer shrink-0"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Share */}
           <button
             onClick={(e) => { e.stopPropagation(); handleShareReel(); }}
-            className="flex flex-col items-center gap-1.5 group"
+            className="flex flex-col items-center gap-1.5 group focus:outline-none"
           >
-            <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
+            <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-transparent lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-transparent group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
               <Share2 className="w-[26px] h-[26px] stroke-white" />
             </div>
             <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">Share</span>
@@ -981,13 +1208,60 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
           {/* Save */}
           <button
             onClick={(e) => { e.stopPropagation(); onSaveToggle(); }}
-            className="flex flex-col items-center gap-1.5 group"
+            className="flex flex-col items-center gap-1.5 group focus:outline-none"
           >
-            <div className={`w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-black/40 lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none group-hover:bg-black/60 group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200 ${isSaved ? 'text-[var(--gold)] lg:shadow-[0_0_12px_rgba(201,169,110,0.2)]' : 'text-white'}`}>
+            <div className={`w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-transparent lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none group-hover:bg-transparent group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200 ${isSaved ? 'text-[var(--gold)] lg:shadow-[0_0_12px_rgba(201,169,110,0.2)]' : 'text-white'}`}>
               <Bookmark className={`w-[28px] h-[28px] transition-all duration-300 ${isSaved ? 'fill-[var(--gold)] stroke-[var(--gold)] scale-110' : 'stroke-current'}`} />
             </div>
             <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">{isSaved ? 'Saved' : 'Save'}</span>
           </button>
+
+          {/* More Options (3 horizontal dots) */}
+          <div className="relative flex flex-col items-center">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowMoreMenu(prev => !prev); }}
+              className="flex flex-col items-center gap-1.5 group focus:outline-none"
+            >
+              <div className="w-12 h-12 bg-transparent border-none flex items-center justify-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] lg:rounded-full lg:bg-transparent lg:backdrop-blur-md lg:border lg:border-white/10 lg:drop-shadow-none text-white group-hover:bg-transparent group-hover:scale-105 group-hover:border-white/20 active:scale-95 transition-all duration-200">
+                <MoreHorizontal className="w-[28px] h-[28px] stroke-white" />
+              </div>
+              <span className="hidden lg:block text-[10px] text-white/80 font-bold uppercase tracking-wider group-hover:text-white transition-colors duration-200">More</span>
+            </button>
+
+            {/* More Options Dropdown/Menu */}
+            <AnimatePresence>
+              {showMoreMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMoreMenu(false);
+                    }}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="absolute right-16 bottom-0 z-40 w-44 bg-black/85 backdrop-blur-xl border border-white/10 rounded-2xl p-1.5 shadow-2xl flex flex-col"
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMoreMenu(false);
+                        handleMoveToGarbage();
+                      }}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition-colors text-left w-full cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest">Add to Garbage</span>
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

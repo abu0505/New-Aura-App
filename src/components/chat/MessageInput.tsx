@@ -402,7 +402,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
     const files: File[] = [];
     for (let i = 0; i < items.length; i++) {
-      if (items[i].type.includes('image/') || items[i].type.includes('video/')) {
+      if (!items[i].type.includes('text/plain')) {
         const file = items[i].getAsFile();
         if (file) files.push(file);
       }
@@ -551,7 +551,7 @@ const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(({
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const type = file.type.includes('video/') ? 'video' : (file.type.includes('audio/') ? 'audio' : 'image');
+      const type = file.type.includes('video/') ? 'video' : (file.type.includes('audio/') ? 'audio' : (file.type.includes('image/') ? 'image' : 'document'));
       // Removed direct recording check to force all videos through chunked pipeline (as requested)
       if (type === 'video' && onChunkedVideoStart) {
         // Generate a quick local thumbnail for the optimistic UI

@@ -131,7 +131,7 @@ self.onmessage = async (e: MessageEvent) => {
           height: outHeight,
           bitrate: videoBitrate,
           framerate: fps,
-          latencyMode: 'realtime',            // Low-latency: encode each frame as it arrives
+          latencyMode: 'quality',             // Quality mode for better bit allocation
           hardwareAcceleration: 'prefer-hardware',
         };
         const baselineProfile: VideoEncoderConfig = {
@@ -140,7 +140,7 @@ self.onmessage = async (e: MessageEvent) => {
           height: outHeight,
           bitrate: videoBitrate,
           framerate: fps,
-          latencyMode: 'realtime',
+          latencyMode: 'quality',
           hardwareAcceleration: 'prefer-software',
         };
 
@@ -171,7 +171,7 @@ self.onmessage = async (e: MessageEvent) => {
           codec: 'mp4a.40.2',     // AAC-LC — widest hardware support on Android/iOS
           sampleRate: audioSampleRate,
           numberOfChannels: audioChannelCount,
-          bitrate: 128_000,       // 128 kbps — excellent quality for voice/ambient audio
+          bitrate: 192_000,       // 192 kbps — excellent quality for voice/ambient audio
         };
 
         let audioConfigSupported = false;

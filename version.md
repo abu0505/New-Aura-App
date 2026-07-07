@@ -1,13 +1,26 @@
 # App Version
-VersionName: 2.21.0
-VersionCode: 130
-Date: 2026-07-04
+VersionName: 2.22.2
+VersionCode: 133
+Date: 2026-07-07
 Changes:
+- **Fix — Reels Button Highlights:** Removed the black background hover/active styles and the browser-level dark tap highlight overlays for the Reels action buttons, replacing them with a premium transparent/white-subtle glow.
+- **Fix — Reels Folder Picker UI:** Repositioned the folder picker popup to display at the exact left side of the Folder button at the same height. Aligned the layout and colors to match the premium MediaViewer folder picker style.
+- **Feature — Reels Folder Saving:** Replaced the Note button on the Reels page with a direct "Add to Folder" folder action. Users can now choose or create a collection/folder and organize high-quality reels immediately.
+- **Feature — Reels Garbage Bin:** Added a 3-dot actions menu to the right side of the Reel Card. Users can stage poor/boring reels into the Garbage bin immediately, which are then filtered out of their feed.
+- **Walkthrough — Reels Onboarding:** Introduced a guided walkthrough banner on the Reels tab, which is triggered when clicking "Get Started" on the What's New modal.
+
+## Previous Version (2.22.0)
+VersionCode: 131
+Date: 2026-07-07
+Changes:
+- **Feature — Raw Note Mode:** Added a toggle button in the note editor to view/edit notes in their raw text format, bypassing rich text/markdown automatic preview styling. The raw setting persists in the database so that every user sees the note exactly as raw text, without affecting other notes.
+- **Walkthrough — Raw Note Tutorial:** Introduced an interactive walkthrough banner on the notes page to guide the user on how to use the raw note toggle.
+- **What's New Modal Update:** Updated the What's New modal to present the new Raw Note feature.
+
+## Previous Version (2.21.0)
 - **Feature — Pull-to-Refresh & Chat Reload:** Implemented a physics-based, glassmorphic swipe-to-refresh component wrapper for mobile (touch drag) and desktop (mouse drag) scrolling containers. Added a header-sync refresh button for instant manual re-fetching and rebuilding of Realtime database subscriptions to recover from 503/500 connection drops.
 - **Fix — Supabase 500/503 Connection Dropouts:** Handled database schema caching timeouts and sleep-mode disconnects by allowing a full-scope clean re-query without resetting the application state.
 - **Walkthrough — Reload & Refresh Tutorial:** Added contextual onboarding tutorials and walkthrough banners to both desktop and mobile chat screens.
-
-## Previous Version (2.20.0)
 - **Feature — YouTube-Style Video Streaming:** Restored progressive video playback via MediaSource Extensions (MSE) allowing receivers to play chunked videos instantly as soon as first few blocks land.
 - **Fix — NaCl Decryption MAC Failures:** Resolved decryption failures on video resume/reload by adding `downloadingIndices` track queue to prevent race conditions between Realtime and loadExistingChunks fetches, and ensuring already-decrypted blocks are preserved.
 - **Fix — Supabase 400 & 406 Errors:** Filtered out undefined/null/empty ID inputs to `.in('id', ...)` Supabase filters, and gracefully handle PGRST116 (missing profile row) on profile stats load to prevent screen crashes.

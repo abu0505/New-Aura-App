@@ -202,6 +202,7 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   const previousMessageCountRef = useRef<number>(0);
   const isInitialMount = useRef(true);
   const isBottomLocked = useRef(true);
+  const scrollRafRef = useRef<number | null>(null);
   
   const [isJumpingToPinned, setIsJumpingToPinned] = useState<string | null>(null);
   const [showScrollDown, setShowScrollDown] = useState(false);
@@ -275,21 +276,26 @@ export default function MobileChatScreen({ partner, isActive, partnerIsTyping, s
   }, [partnerIsTyping, viewMode]);
 
   const handleScroll = () => {
-    const container = scrollContainerRef.current;
-    if (!container || loadingMore || viewMode === 'pinned') return;
+    if (scrollRafRef.current) return;
+    scrollRafRef.current = requestAnimationFrame(() => {
+      scrollRafRef.current = null;
+      
+      const container = scrollContainerRef.current;
+      if (!container || loadingMore || viewMode === 'pinned') return;
 
-    // Raise threshold to 300px — better UX for touch scrolling
-    if (hasMore && container.scrollTop < 300) {
-      previousScrollHeightRef.current = container.scrollHeight;
-      loadMore();
-    }
+      // Raise threshold to 300px — better UX for touch scrolling
+      if (hasMore && container.scrollTop < 300) {
+        previousScrollHeightRef.current = container.scrollHeight;
+        loadMore();
+      }
 
-    if (hasMoreNewer && container.scrollHeight - container.scrollTop - container.clientHeight < 300) {
-      loadMoreNewer();
-    }
+      if (hasMoreNewer && container.scrollHeight - container.scrollTop - container.clientHeight < 300) {
+        loadMoreNewer();
+      }
 
-    const isFarFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight > 400;
-    setShowScrollDown(isFarFromBottom);
+      const isFarFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight > 400;
+      setShowScrollDown(isFarFromBottom);
+    });
   };
 
   const handleJumpToLatest = async () => {

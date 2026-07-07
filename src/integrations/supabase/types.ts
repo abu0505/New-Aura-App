@@ -58,6 +58,7 @@ export interface Database {
           thumbnail_url: string | null
           file_name: string | null
           file_size: number | null
+          mime_type: string | null
           duration: number | null
           reaction: string | null
           reply_to: string | null
@@ -87,6 +88,7 @@ export interface Database {
           thumbnail_url?: string | null
           file_name?: string | null
           file_size?: number | null
+          mime_type?: string | null
           duration?: number | null
           reaction?: string | null
           reply_to?: string | null
@@ -116,6 +118,7 @@ export interface Database {
           thumbnail_url?: string | null
           file_name?: string | null
           file_size?: number | null
+          mime_type?: string | null
           duration?: number | null
           reaction?: string | null
           reply_to?: string | null

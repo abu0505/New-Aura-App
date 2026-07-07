@@ -319,6 +319,20 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+
+      // Pre-warm audio in the background (P1 Optimization)
+      // Done separately so if it fails, the video viewfinder still works
+      navigator.mediaDevices.getUserMedia({
+        audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true, sampleRate: { ideal: 48000 }, channelCount: { ideal: 2 } }
+      })
+      .then(audioStream => {
+        if (streamRef.current) {
+          audioStream.getAudioTracks().forEach(t => streamRef.current!.addTrack(t));
+        } else {
+          audioStream.getTracks().forEach(t => t.stop());
+        }
+      })
+      .catch(() => { /* Silent fail */ });
       setHasPermission(true);
 
       const track = stream.getVideoTracks()[0];
@@ -765,7 +779,7 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
     if (streamRef.current.getAudioTracks().length === 0) {
       try {
         const audioStream = await navigator.mediaDevices.getUserMedia({
-          audio: { noiseSuppression: true, echoCancellation: true },
+          audio: { noiseSuppression: true, echoCancellation: true, autoGainControl: true, sampleRate: { ideal: 48000 }, channelCount: { ideal: 2 } },
           video: false,
         });
         for (const track of audioStream.getAudioTracks()) {
@@ -1522,14 +1536,22 @@ const MobileCameraModal: React.FC<MobileCameraModalProps> = ({
               </button>
 
               <div className="flex flex-col items-center pointer-events-auto">
-                <div className={`flex items-center backdrop-blur-md rounded-full border p-1 transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 border-black/10 shadow-lg' : 'bg-black/30 border-white/10'}`}>
+                <div className={`flex items-center backdrop-blur-md rounded-full border p-1 transition-all duration-500 gap-1 ${isFlashOn && facingMode === 'user' ? 'bg-white/40 border-black/10 shadow-lg' : 'bg-black/30 border-white/10'}`}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setResolution(r => r === '720p' ? '1080p' : '720p');
+                    }}
+                    className={`px-3 py-1.5 rounded-full flex items-center transition-all duration-500 ${isFlashOn && facingMode === 'user' ? 'text-black hover:bg-black/10' : 'text-white hover:bg-white/10'}`}
+                  >
+                    <span className="text-xs font-bold font-mono tracking-widest">{resolution.toUpperCase()}</span>
+                  </button>
+                  <div className="w-[1px] h-4 bg-white/20" />
                   <button
                     onClick={() => setShowSettings(!showSettings)}
                     className={`px-3 py-1.5 rounded-full flex gap-1.5 items-center transition-all duration-500 ${showSettings ? 'bg-primary text-background' : (isFlashOn && facingMode === 'user' ? 'text-black hover:bg-black/10' : 'text-white hover:bg-white/10')}`}
                   >
                     <span className="material-symbols-outlined text-[16px]">tune</span>
-                    <span className="text-xs font-bold font-mono tracking-widest">{resolution.toUpperCase()}</span>
-                    <span className="w-1 h-1 rounded-full bg-current opacity-30" />
                     <span className="text-xs font-bold uppercase">{fpsSetting} FPS</span>
                     <span className="w-1 h-1 rounded-full bg-current opacity-30" />
                     <span className="text-xs font-bold uppercase">{aspectRatio}</span>

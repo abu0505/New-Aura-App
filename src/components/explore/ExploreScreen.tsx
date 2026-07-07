@@ -62,11 +62,13 @@ export default function ExploreScreen() {
     };
   }, []);
 
-  // Listen for redirection to memories gallery
+  // Listen for redirection to memories gallery or notes
   useEffect(() => {
     const handleRedirect = (e: any) => {
       if (e.detail && (e.detail.feature === 'rename-collections' || e.detail.feature === 'frequent-folders')) {
         setSubView('gallery');
+      } else if (e.detail && e.detail.feature === 'raw-note') {
+        setSubView('notes');
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);

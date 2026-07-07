@@ -40,6 +40,7 @@ export interface Note {
   folderId?: string | null;
   // Drawing canvas data — stored as JSON array of drawing strokes
   drawingData?: any | null;
+  isRaw?: boolean;
 }
 
 export type NoteColor =
@@ -139,6 +140,7 @@ const mapDbNoteToNote = (db: any): Note => ({
   customColor: db.custom_color || null,
   folderId: db.folder_id || null,
   drawingData: db.drawing_data || null,
+  isRaw: db.is_raw || false,
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -235,7 +237,8 @@ export function useNotes() {
             custom_color: n.customColor,
             mood: n.mood,
             created_at: n.createdAt,
-            updated_at: n.updatedAt
+            updated_at: n.updatedAt,
+            is_raw: n.isRaw || false
           }));
 
           await supabase.from('notes').upsert(toInsert);
@@ -337,6 +340,7 @@ export function useNotes() {
       mood: null,
       folderId: null,
       drawingData: null,
+      isRaw: false,
       ...partial,
     };
 
@@ -363,7 +367,8 @@ export function useNotes() {
       folder_id: note.folderId,
       drawing_data: note.drawingData,
       created_at: note.createdAt,
-      updated_at: note.updatedAt
+      updated_at: note.updatedAt,
+      is_raw: note.isRaw
     }).then(({ error }) => {
       if (error) console.error("Error inserting note:", error);
     });
@@ -396,6 +401,7 @@ export function useNotes() {
     if (changes.mood !== undefined) payload.mood = changes.mood;
     if (changes.folderId !== undefined) payload.folder_id = changes.folderId;
     if (changes.drawingData !== undefined) payload.drawing_data = changes.drawingData;
+    if (changes.isRaw !== undefined) payload.is_raw = changes.isRaw;
 
     supabase.from('notes')
       .update(payload)
@@ -447,6 +453,7 @@ export function useNotes() {
       mood: original.mood,
       customBg: original.customBg ? { ...original.customBg } : null,
       customColor: original.customColor,
+      isRaw: original.isRaw,
     });
   }, [createNote]);
 

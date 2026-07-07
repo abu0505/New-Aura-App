@@ -37,6 +37,7 @@ export function formatLastSeen(lastSeen: string | null, compact?: boolean): stri
 
 interface LastSeenStatusProps {
   isOnline: boolean;
+  isAfk?: boolean;
   lastSeen: string | null;
   /** Use compact format for mobile (no "Last seen" prefix) */
   compact?: boolean;
@@ -47,7 +48,7 @@ interface LastSeenStatusProps {
  *   Online  → "Online"
  *   Offline → "Last seen X ago" (refreshes every 30s)
  */
-export function LastSeenStatus({ isOnline, lastSeen, compact }: LastSeenStatusProps) {
+export function LastSeenStatus({ isOnline, isAfk, lastSeen, compact }: LastSeenStatusProps) {
   // Tick state forces re-render every 30s for time freshness
   const [, setTick] = useState(0);
 
@@ -56,6 +57,10 @@ export function LastSeenStatus({ isOnline, lastSeen, compact }: LastSeenStatusPr
     const interval = setInterval(() => setTick(t => t + 1), 30_000);
     return () => clearInterval(interval);
   }, [isOnline]);
+
+  if (isAfk) {
+    return <span className="flex items-center gap-1"><span className="text-[12px] leading-none">📚</span> Studying</span>;
+  }
 
   if (isOnline) {
     return <>Online</>;

@@ -256,6 +256,149 @@ const processBlockMarkdown = (editor: any, pos: number): boolean => {
   return false;
 };
 
+const convertHtmlToMarkdown = (html: string): string => {
+  if (!html) return '';
+  let md = html;
+
+  // Headings
+  md = md.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n');
+  md = md.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n');
+  md = md.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n');
+
+  // Lists (bullets and numbered)
+  md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
+  md = md.replace(/<\/?ul>/gi, '');
+  md = md.replace(/<\/?ol>/gi, '');
+
+  // Bold & Strong
+  md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
+  md = md.replace(/<b>(.*?)<\/b>/gi, '**$1**');
+
+  // Italics & Emphasized
+  md = md.replace(/<em>(.*?)<\/em>/gi, '*$1*');
+  md = md.replace(/<i>(.*?)<\/i>/gi, '*$1*');
+
+  // Underline
+  md = md.replace(/<u>(.*?)<\/u>/gi, '_$1_');
+
+  // Code block
+  md = md.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n');
+
+  // Paragraphs and breaks
+  md = md.replace(/<p>(.*?)<\/p>/gi, '$1\n');
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+
+  // Strip remaining tags
+  md = md.replace(/<[^>]*>/g, '');
+
+  // Unescape standard HTML entities
+  md = md
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#039;/g, "'");
+
+  return md.trim();
+};
+
+const convertMarkdownToHtml = (md: string): string => {
+  if (!md) return '';
+  const lines = md.split('\n');
+  let html = '';
+  let inList = false;
+  let listType: 'ul' | 'ol' | null = null;
+  let inCodeBlock = false;
+  let codeContent = '';
+
+  for (let line of lines) {
+    if (line.startsWith('```')) {
+      if (inCodeBlock) {
+        html += `<pre><code>${escapeHtml(codeContent.trim())}</code></pre>`;
+        inCodeBlock = false;
+        codeContent = '';
+      } else {
+        inCodeBlock = true;
+      }
+      continue;
+    }
+
+    if (inCodeBlock) {
+      codeContent += line + '\n';
+      continue;
+    }
+
+    if (line.startsWith('# ')) {
+      if (inList) { html += listType === 'ul' ? '</ul>' : '</ol>'; inList = false; listType = null; }
+      html += `<h1>${renderInlineMarkdown(line.slice(2))}</h1>`;
+      continue;
+    }
+    if (line.startsWith('## ')) {
+      if (inList) { html += listType === 'ul' ? '</ul>' : '</ol>'; inList = false; listType = null; }
+      html += `<h2>${renderInlineMarkdown(line.slice(3))}</h2>`;
+      continue;
+    }
+    if (line.startsWith('### ')) {
+      if (inList) { html += listType === 'ul' ? '</ul>' : '</ol>'; inList = false; listType = null; }
+      html += `<h3>${renderInlineMarkdown(line.slice(4))}</h3>`;
+      continue;
+    }
+
+    const bulletMatch = line.match(/^[-*]\s+(.+)$/);
+    if (bulletMatch) {
+      if (inList && listType !== 'ul') {
+        html += '</ol>';
+        inList = false;
+      }
+      if (!inList) {
+        html += '<ul>';
+        inList = true;
+        listType = 'ul';
+      }
+      html += `<li>${renderInlineMarkdown(bulletMatch[1])}</li>`;
+      continue;
+    }
+
+    const numberMatch = line.match(/^(\d+)\.\s+(.+)$/);
+    if (numberMatch) {
+      if (inList && listType !== 'ol') {
+        html += '</ul>';
+        inList = false;
+      }
+      if (!inList) {
+        html += '<ol>';
+        inList = true;
+        listType = 'ol';
+      }
+      html += `<li>${renderInlineMarkdown(numberMatch[2])}</li>`;
+      continue;
+    }
+
+    if (inList) {
+      html += listType === 'ul' ? '</ul>' : '</ol>';
+      inList = false;
+      listType = null;
+    }
+
+    if (line.trim() === '') {
+      html += '<p></p>';
+    } else {
+      html += `<p>${renderInlineMarkdown(line)}</p>`;
+    }
+  }
+
+  if (inList) {
+    html += listType === 'ul' ? '</ul>' : '</ol>';
+  }
+  if (inCodeBlock && codeContent) {
+    html += `<pre><code>${escapeHtml(codeContent.trim())}</code></pre>`;
+  }
+
+  return html;
+};
+
 const EnterKeyHandler = Extension.create({
   name: 'enterKeyHandler',
   addKeyboardShortcuts() {
@@ -475,6 +618,29 @@ export default function NoteEditor({
   const titleRef = useRef<HTMLInputElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [showEditorTooltip, setShowEditorTooltip] = useState(false);
+
+  useEffect(() => {
+    const show = localStorage.getItem('show_raw_note_walkthrough') === 'true';
+    if (show) {
+      setShowEditorTooltip(true);
+    }
+  }, []);
+
+  const dismissTooltip = () => {
+    localStorage.removeItem('show_raw_note_walkthrough');
+    setShowEditorTooltip(false);
+    window.dispatchEvent(new Event('dismiss-raw-note-walkthrough'));
+  };
+
+  useEffect(() => {
+    if (note.isRaw && textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [content, note.isRaw]);
   const [decryptedBg, setDecryptedBg] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showColorMenu, setShowColorMenu] = useState(false);
@@ -740,12 +906,24 @@ export default function NoteEditor({
   });
 
   const lastNoteIdRef = useRef(note.id);
+  const lastIsRawRef = useRef(note.isRaw);
+
   useEffect(() => {
-    if (editor && note.id !== lastNoteIdRef.current) {
+    if (note.id !== lastNoteIdRef.current) {
       lastNoteIdRef.current = note.id;
-      editor.commands.setContent(note.content || '');
+      lastIsRawRef.current = note.isRaw;
+      setContent(note.content || '');
+      if (editor) {
+        editor.commands.setContent(note.content || '');
+      }
+    } else if (note.isRaw !== lastIsRawRef.current) {
+      lastIsRawRef.current = note.isRaw;
+      setContent(note.content || '');
+      if (editor) {
+        editor.commands.setContent(note.content || '');
+      }
     }
-  }, [note.id, editor]);
+  }, [note.id, note.isRaw, editor]);
 
   useEffect(() => {
     if (editor) {
@@ -2108,6 +2286,59 @@ export default function NoteEditor({
                 {moodStyle.emoji}
               </div>
             )}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  const newIsRaw = !note.isRaw;
+                  if (newIsRaw) {
+                    const converted = convertHtmlToMarkdown(content || '');
+                    onUpdate(note.id, { isRaw: true, content: converted });
+                    setContent(converted);
+                    if (editor) editor.commands.setContent(converted);
+                  } else {
+                    const converted = convertMarkdownToHtml(content || '');
+                    onUpdate(note.id, { isRaw: false, content: converted });
+                    setContent(converted);
+                    if (editor) editor.commands.setContent(converted);
+                  }
+                }}
+                className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${note.isRaw ? 'text-[var(--gold)] animate-pulse' : 'text-white/40 hover:text-white/70'
+                  }`}
+                title={note.isRaw ? 'Rich Text Mode' : 'Raw Text Mode'}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>code</span>
+              </button>
+
+              {/* Contextual Tooltip */}
+              <AnimatePresence>
+                {showEditorTooltip && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                    className="absolute right-0 top-11 z-[60] w-64 p-3 rounded-xl bg-zinc-900 border border-white/10 shadow-2xl text-left"
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--gold)] flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">info</span>
+                        Raw Text Option
+                      </span>
+                      <button 
+                        onClick={dismissTooltip}
+                        className="text-white/40 hover:text-white text-xs underline cursor-pointer"
+                      >
+                        Got it
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-white/75 leading-relaxed font-normal">
+                      Turn this ON to disable automatic formatting (like bullet lists). Your note will stay in raw text view for all users.
+                    </p>
+                    {/* Tooltip triangle */}
+                    <div className="absolute right-3.5 -top-1 w-2.5 h-2.5 bg-zinc-900 border-t border-l border-white/10 rotate-45" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
             <button
               onClick={() => onTogglePin(note.id)}
               className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${note.isPinned ? 'text-[var(--gold)]' : 'text-white/40 hover:text-white/70'
@@ -2360,6 +2591,13 @@ export default function NoteEditor({
                     </motion.div>
                   )}
                 </AnimatePresence>
+              </div>
+            ) : note.isRaw ? (
+              /* ── RAW MODE TOOLBAR ── */
+              <div className="flex items-center gap-1.5 py-1.5 text-white/40 text-xs shrink-0 select-none">
+                <span className="material-symbols-outlined text-[var(--gold)] animate-pulse" style={{ fontSize: '18px' }}>code</span>
+                <span className="font-sans text-[10px] font-bold uppercase tracking-wider text-white/60">Raw Mode Active</span>
+                <span className="text-[10px] text-white/25">— plain text editing active</span>
               </div>
             ) : (
               /* ── FORMAT MODE TOOLBAR (original) ── */
@@ -2704,7 +2942,21 @@ export default function NoteEditor({
                   className={`w-full bg-transparent text-[var(--text-primary)] text-sm focus:outline-none min-h-[150px] leading-relaxed ${drawMode ? 'cursor-default pointer-events-none select-none' : 'cursor-text'
                     }`}
                 >
-                  <EditorContent editor={editor} />
+                  {note.isRaw ? (
+                    <textarea
+                      ref={textareaRef}
+                      value={content || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setContent(val);
+                        debouncedSave({ content: val });
+                      }}
+                      placeholder="Note"
+                      className="w-full bg-transparent text-[var(--text-primary)] text-sm focus:outline-none min-h-[250px] leading-relaxed resize-none border-0 outline-none p-0 focus:ring-0"
+                    />
+                  ) : (
+                    <EditorContent editor={editor} />
+                  )}
                 </div>
 
                 {/* Inline drawing canvas overlay */}

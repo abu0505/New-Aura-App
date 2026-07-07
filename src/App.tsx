@@ -175,6 +175,7 @@ function InnerApp({
 
   // ── Raw signal: NEVER fall back to DB is_online ──
   const rawIsOnline = partnerPresence.hasSynced ? partnerPresence.isOnline : false;
+  const rawIsAfk = partnerPresence.hasSynced ? !!partnerPresence.isAfk : false;
 
   // ── Stability filter ──
   // Absorbs ALL flicker from presence (sync races, reconnects, network blips).
@@ -237,6 +238,7 @@ function InnerApp({
   const partnerWithPresence = partner ? { 
     ...partner, 
     is_online: stableOnline,
+    is_afk: rawIsAfk,
     last_seen: effectiveLastSeen,
   } : partner;
 
@@ -301,10 +303,12 @@ function InnerApp({
   // Listen for redirection to a new feature
   useEffect(() => {
     const handleRedirect = (e: any) => {
-      if (e.detail && (e.detail.feature === 'rename-collections' || e.detail.feature === 'frequent-folders')) {
+      if (e.detail && (e.detail.feature === 'rename-collections' || e.detail.feature === 'frequent-folders' || e.detail.feature === 'raw-note')) {
         setActiveTab('explore');
       } else if (e.detail && (e.detail.feature === 'save-to-folders' || e.detail.feature === 'retry-failed-message')) {
         setActiveTab('chat');
+      } else if (e.detail && e.detail.feature === 'reels-folder') {
+        setActiveTab('reels');
       }
     };
     window.addEventListener('open-whats-new-feature', handleRedirect);
@@ -381,7 +385,7 @@ function InnerApp({
         />
         <AppLockModal />
       <KeySetupModal />
-      {!isLocked && <WhatsNewModal currentVersion="2.21.0" />}
+      {!isLocked && <WhatsNewModal currentVersion="2.22.2" />}
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} hasUnreadChat={hasUnreadChat}>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center bg-background w-full h-full">

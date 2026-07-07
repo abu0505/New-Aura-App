@@ -92,6 +92,7 @@ self.onmessage = (e: MessageEvent) => {
     partnerPublicKeyB64,
     fallbackKeysB64,
     query,
+    requestId,
   } = e.data;
 
   if (type !== 'DECRYPT_BATCH') return;
@@ -153,5 +154,5 @@ self.onmessage = (e: MessageEvent) => {
     }
   }
 
-  self.postMessage({ type: 'BATCH_RESULT', matches, allDecrypted });
+  self.postMessage({ type: 'BATCH_RESULT', matches, allDecrypted, requestId });
 };

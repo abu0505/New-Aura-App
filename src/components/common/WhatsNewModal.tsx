@@ -26,12 +26,12 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
   const handleGetStarted = () => {
     localStorage.setItem('seen_whats_new_version', currentVersion);
     // Set walkthrough flag for new feature
-    localStorage.setItem('show_chat_refresh_walkthrough', 'true');
+    localStorage.setItem('show_raw_note_walkthrough', 'true');
     setIsOpen(false);
     
     // Dispatch redirect event
     window.dispatchEvent(new CustomEvent('open-whats-new-feature', { 
-      detail: { feature: 'chat-refresh' } 
+      detail: { feature: 'raw-note' } 
     }));
   };
 
@@ -67,19 +67,41 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
                 }}
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shrink-0"
               >
-                <span className="material-symbols-outlined text-3xl text-[var(--gold)]">auto_awesome</span>
+                <span className="material-symbols-outlined text-3xl text-[var(--gold)]">code</span>
               </div>
 
               <h2 className="font-sans font-bold text-2xl md:text-3xl text-white tracking-tight mb-1 flex items-center gap-1.5 shrink-0">
                 What's New! <span className="text-xl md:text-2xl">✨</span>
               </h2>
               <p className="font-sans text-xs tracking-wider text-white/40 mb-6 font-medium shrink-0">
-                Version 2.21.0
+                Version {currentVersion}
               </p>
 
               {/* Updates List */}
               <div className="w-full text-left space-y-4 mb-6 overflow-y-auto scrollbar-hide flex-1 min-h-0">
-                {/* Update 1: Pull-to-Refresh & Chat Reload */}
+                {/* Update 1: Raw Text Notes */}
+                <div 
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(30px)',
+                    WebkitBackdropFilter: 'blur(30px)',
+                  }}
+                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
+                >
+                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                    <span className="material-symbols-outlined text-[22px] block">code</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white/90 mb-1">Raw Text Notes 📝</h3>
+                    <p className="text-xs text-white/50 leading-relaxed font-medium">
+                      Want to keep your note raw? Bypass rich text parsing (e.g. hyphens becoming bullet lists) by enabling the Code/Raw Mode in the note header.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Update 2: Collaborative Sync */}
                 <div 
                   style={{
                     background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
@@ -94,53 +116,9 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
                     <span className="material-symbols-outlined text-[22px] block">sync</span>
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-white/90 mb-1">Pull-to-Refresh & Desktop Reload 🔄</h3>
+                    <h3 className="text-sm font-semibold text-white/90 mb-1">Collaborative Sync 🔄</h3>
                     <p className="text-xs text-white/50 leading-relaxed font-medium">
-                      Easily reload chat data and rebuild Realtime channels! Pull down from the top on mobile, or click the sleek header sync button on desktop.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Update 2: Instant Video Streaming */}
-                <div 
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(30px)',
-                    WebkitBackdropFilter: 'blur(30px)',
-                  }}
-                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
-                >
-                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                    <span className="material-symbols-outlined text-[22px] block">movie</span>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white/90 mb-1">Instant Video Streaming 🎥</h3>
-                    <p className="text-xs text-white/50 leading-relaxed font-medium">
-                      YouTube-style progressive playback! Watch received chunked videos instantly as soon as they start landing, without waiting for the entire upload.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Update 3: Retry Failed Messages */}
-                <div 
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(30px)',
-                    WebkitBackdropFilter: 'blur(30px)',
-                  }}
-                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
-                >
-                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                    <span className="material-symbols-outlined text-[22px] block">sync</span>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white/90 mb-1">Retry Resending Failed Messages 🔄</h3>
-                    <p className="text-xs text-white/50 leading-relaxed font-medium">
-                      Failed to deliver a message? Just tap/click it and select "Retry Resend" to try sending it again instantly without retyping.
+                      Your raw note preference synchronizes in realtime for all users, ensuring that anyone viewing or editing the note sees it in raw layout.
                     </p>
                   </div>
                 </div>

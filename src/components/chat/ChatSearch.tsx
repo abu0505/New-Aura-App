@@ -126,6 +126,11 @@ export default function ChatSearch({
   const [statusWordIndex, setStatusWordIndex] = useState(0);
   const [wordVisible, setWordVisible] = useState(true);
   const [isCommitted, setIsCommitted] = useState(false); // true after Enter
+  const isCommittedRef = useRef(false);
+
+  useEffect(() => {
+    isCommittedRef.current = isCommitted;
+  }, [isCommitted]);
 
   const abortRef = useRef<AbortController | null>(null);
   const statusIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -224,7 +229,7 @@ export default function ChatSearch({
       normalQ !== poolQueryRef.current.toLowerCase()
     ) {
       // Pool is already warm and still valid — just update committed results if shown
-      if (isCommitted) {
+      if (isCommittedRef.current) {
         const filtered = filterPool(normalQ);
         setDisplayResults(filtered);
       }
@@ -268,7 +273,7 @@ export default function ChatSearch({
     }
 
     // If user already pressed Enter while we were scanning, show immediate results
-    if (isCommitted && !controller.signal.aborted) {
+    if (isCommittedRef.current && !controller.signal.aborted) {
       setDisplayResults(filterPool(normalQ));
     }
 
@@ -292,7 +297,7 @@ export default function ChatSearch({
         });
       }
 
-      if (isCommitted && !controller.signal.aborted) {
+      if (isCommittedRef.current && !controller.signal.aborted) {
         setDisplayResults(filterPool(normalQ));
       }
     } catch { /* IndexedDB unavailable */ }
@@ -318,35 +323,41 @@ export default function ChatSearch({
     const secretKeyB64 = encodeBase64(myKeyPair.secretKey);
     const fallbackKeysB64 = partnerKeyHistory || [];
     const worker = getDecryptWorker();
-    let cursor: string | null = null;
     let pagesDone = 0;
     const MAX_PAGES = 100;
 
     try {
       while (!controller.signal.aborted && pagesDone < MAX_PAGES) {
-        let queryBuilder = supabase
-          .from('messages')
-          .select(MSG_COLS)
-          .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
-          .order('created_at', { ascending: false })
-          .limit(PAGE_SIZE);
+        const fetchPage = async (pageIdx: number) => {
+          const { data, error } = await supabase
+            .from('messages')
+            .select(MSG_COLS)
+            .or(`and(sender_id.eq.${userId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${userId})`)
+            .order('created_at', { ascending: false })
+            .range(pageIdx * PAGE_SIZE, (pageIdx + 1) * PAGE_SIZE - 1);
+          return { data, error };
+        };
 
-        if (cursor) queryBuilder = queryBuilder.lt('created_at', cursor);
+        // Fetch 2 pages in parallel
+        const [res1, res2] = await Promise.all([
+          fetchPage(pagesDone),
+          fetchPage(pagesDone + 1)
+        ]);
 
-        const { data, error } = await queryBuilder;
         if (controller.signal.aborted) return;
-        if (error || !data || data.length === 0) break;
+        const combinedData = [...(res1.data || []), ...(res2.data || [])];
+        if (combinedData.length === 0) break;
 
-        cursor = data[data.length - 1].created_at;
-        const uncached = data.filter(row => !seenIdsRef.current.has(row.id));
+        const uncached = combinedData.filter(row => !seenIdsRef.current.has(row.id));
 
         if (uncached.length > 0) {
+          const reqId = crypto.randomUUID();
           const workerResult = await new Promise<{
             matches: Array<{ id: string; content: string; sender_id: string; created_at: string; is_mine: boolean }>;
             allDecrypted: Array<{ id: string; content: string; sender_id: string; created_at: string; is_deleted: boolean }>;
           }>((resolve) => {
             const handler = (e: MessageEvent) => {
-              if (e.data.type === 'BATCH_RESULT') {
+              if (e.data.type === 'BATCH_RESULT' && e.data.requestId === reqId) {
                 worker.removeEventListener('message', handler);
                 resolve(e.data);
               }
@@ -360,6 +371,7 @@ export default function ChatSearch({
               partnerPublicKeyB64: partnerPublicKey,
               fallbackKeysB64,
               query: q,
+              requestId: reqId,
             });
           });
 
@@ -393,13 +405,14 @@ export default function ChatSearch({
           }
 
           // Live-update display if user already pressed Enter
-          if (isCommitted && !controller.signal.aborted) {
+          if (isCommittedRef.current && !controller.signal.aborted) {
             setDisplayResults(filterPool(normalQ));
           }
         }
 
-        if (data.length < PAGE_SIZE) break;
-        pagesDone++;
+        if (res1.data && res1.data.length < PAGE_SIZE) break;
+        if (res2.data && res2.data.length < PAGE_SIZE) break;
+        pagesDone += 2;
       }
     } catch { /* network error */ }
 
@@ -409,11 +422,11 @@ export default function ChatSearch({
       stopStatusCycle();
 
       // Final update if committed
-      if (isCommitted) {
+      if (isCommittedRef.current) {
         setDisplayResults(filterPool(normalQ));
       }
     }
-  }, [userId, partnerId, partnerPublicKey, partnerKeyHistory, cachedMessages, startStatusCycle, stopStatusCycle, isCommitted]);
+  }, [userId, partnerId, partnerPublicKey, partnerKeyHistory, cachedMessages, startStatusCycle, stopStatusCycle]);
 
   // ── Filter pool locally by current query (subset filtering — ~0.1ms) ──
   function filterPool(normalQuery: string): SearchResult[] {

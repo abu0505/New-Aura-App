@@ -352,10 +352,11 @@ button:focus-visible {
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
-/* ===== Prevent double-tap zoom on mobile ===== */
+/* ===== Prevent double-tap zoom on mobile & remove tap highlight overlay ===== */
 button,
 a {
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ===== Long press prevention on context menu ===== */

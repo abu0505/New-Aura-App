@@ -69,7 +69,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
   useEffect(() => { encryptionStatusRef.current = encryptionStatus; }, [encryptionStatus]);
 
   // Only fetch columns we actually need — huge egress savings vs select('*')
-  const MSG_COLUMNS = 'id,sender_id,receiver_id,encrypted_content,nonce,type,media_url,media_key,media_nonce,thumbnail_url,file_name,file_size,duration,reaction,reply_to,is_read,is_delivered,is_edited,is_deleted_for_everyone,is_deleted_for_sender,is_deleted_for_receiver,updated_at,read_at,delivered_at,created_at,sender_public_key' as const;
+  const MSG_COLUMNS = 'id,sender_id,receiver_id,encrypted_content,nonce,type,media_url,media_key,media_nonce,thumbnail_url,file_name,file_size,mime_type,duration,reaction,reply_to,is_read,is_delivered,is_edited,is_deleted_for_everyone,is_deleted_for_sender,is_deleted_for_receiver,updated_at,read_at,delivered_at,created_at,sender_public_key' as const;
 
   // Track latest partnerPublicKey via ref so realtime handlers always use the current value
   const partnerKeyRef = useRef(partnerPublicKey);
@@ -810,7 +810,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
 
   const sendMessage = async (
     text: string, 
-    media?: { url: string, media_key: string, media_nonce: string, type: string },
+    media?: { url: string, media_key: string, media_nonce: string, type: string, name?: string, size?: number, mime_type?: string },
     replyToId?: string
   ) => {
     if (!user || !partnerId) return;
@@ -843,8 +843,9 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       media_key: media?.media_key || null,
       media_nonce: media?.media_nonce || null,
       thumbnail_url: null,
-      file_name: null,
-      file_size: null,
+      file_name: media?.name || null,
+      file_size: media?.size || null,
+      mime_type: media?.mime_type || null,
       duration: null,
       reaction: null,
       reply_to: replyToId || null,
@@ -911,6 +912,9 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
         media_url: media?.url || null,
         media_key: media?.media_key || null,
         media_nonce: media?.media_nonce || null,
+        file_name: media?.name || null,
+        file_size: media?.size || null,
+        mime_type: media?.mime_type || null,
         reply_to: replyToId || null,
         sender_public_key: myPublicKeyStr,
     };
@@ -1027,6 +1031,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       thumbnail_url: null,
       file_name: null,
       file_size: null,
+      mime_type: null,
       duration: null,
       reaction: null,
       reply_to: replyToId || null,
@@ -1254,6 +1259,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       thumbnail_url: null,
       file_name: null,
       file_size: null,
+      mime_type: null,
       duration: null,
       reaction: null,
       reply_to: replyToId || null,
@@ -1427,6 +1433,7 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       thumbnail_url: null,
       file_name: null,
       file_size: null,
+      mime_type: null,
       duration: null,
       reaction: null,
       reply_to: null,

@@ -13,6 +13,7 @@ export interface PartnerProfile {
   is_online: boolean;
   last_seen: string | null;
   status_message: string | null;
+  is_afk?: boolean;
   key_history: { public_key: string; created_at: string }[] | null;
 }
 

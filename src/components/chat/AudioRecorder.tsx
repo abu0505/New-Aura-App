@@ -28,9 +28,10 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const [waveformBars, setWaveformBars] = useState<number[]>(new Array(24).fill(4));
+  const prevBarsRef = useRef<number[]>(new Array(32).fill(4));
+  const [waveformBars, setWaveformBars] = useState<number[]>(new Array(32).fill(4));
 
-  const BAR_COUNT = 24;
+  const BAR_COUNT = 32;
 
   const updateWaveform = useCallback(() => {
     const analyser = analyserRef.current;
@@ -55,9 +56,11 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
       }
       const rms = Math.sqrt(sumSq / (end - start));
       // Scale: min 4px (silence), max 28px (loud)
-      bars.push(Math.max(4, Math.min(28, 4 + rms * 160)));
+      const newHeight = Math.max(4, Math.min(28, 4 + rms * 160));
+      bars.push(Math.max(newHeight, (prevBarsRef.current[i] || 4) * 0.82));
     }
 
+    prevBarsRef.current = bars;
     setWaveformBars(bars);
     animationFrameRef.current = requestAnimationFrame(updateWaveform);
   }, []);
@@ -69,7 +72,15 @@ export default function AudioRecorder({ onRecordingComplete, onCancel }: AudioRe
 
     try {
       setError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { 
+          noiseSuppression: true, 
+          echoCancellation: true, 
+          autoGainControl: true, 
+          sampleRate: { ideal: 48000 }, 
+          channelCount: { ideal: 2 } 
+        } 
+      });
       streamRef.current = stream;
 
       const audioContext = new AudioContext();

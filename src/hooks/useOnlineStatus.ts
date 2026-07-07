@@ -26,7 +26,7 @@ import { Capacitor } from '@capacitor/core';
  * EGRESS: 1 small PATCH per transition (~150 bytes). Presence uses WS.
  */
 export function useOnlineStatus(
-  trackMyStatus: (userId: string, page?: string) => Promise<void>,
+  trackMyStatus: (userId: string, page?: string, afk?: boolean) => Promise<void>,
   untrackMyStatus: () => Promise<void>,
   currentPage?: string,
 ) {
@@ -147,7 +147,7 @@ export function useOnlineStatus(
         // one actually fires the online update.
         visTimer = setTimeout(() => {
           if (isUnlockedRef.current && userIdRef.current) {
-            trackMyStatus(userIdRef.current, currentPageRef.current);
+            trackMyStatus(userIdRef.current, currentPageRef.current, isAfk);
             setDbStatus(userIdRef.current, true);
           }
         }, 800);
@@ -157,6 +157,14 @@ export function useOnlineStatus(
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('visibilitychange', handleVisibility);
+
+    // Track AFK mode toggle live
+    const handleAfkToggle = (e: any) => {
+      const uid = userIdRef.current;
+      if (!uid || !isUnlockedRef.current) return;
+      trackMyStatus(uid, currentPageRef.current, e.detail);
+    };
+    window.addEventListener('afk-mode-change', handleAfkToggle);
 
     let appStateListener: any = null;
     if (Capacitor.isNativePlatform()) {
@@ -178,7 +186,7 @@ export function useOnlineStatus(
         } else {
           visTimer = setTimeout(() => {
             if (isUnlockedRef.current && userIdRef.current) {
-              trackMyStatus(userIdRef.current, currentPageRef.current);
+              trackMyStatus(userIdRef.current, currentPageRef.current, isAfk);
               setDbStatus(userIdRef.current, true);
             }
           }, 800);
@@ -192,6 +200,7 @@ export function useOnlineStatus(
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('afk-mode-change', handleAfkToggle);
       if (appStateListener) appStateListener.remove();
       clearTimeout(visTimer);
       untrackMyStatus();
@@ -204,8 +213,9 @@ export function useOnlineStatus(
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
+      const isAfk = localStorage.getItem('aura_afk_mode') === 'true';
       if (isUnlocked) {
-        trackMyStatus(user.id, currentPage);
+        trackMyStatus(user.id, currentPage, isAfk);
         setDbStatus(user.id, true);
       } else {
         untrackMyStatus();
