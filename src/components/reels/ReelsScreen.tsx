@@ -70,6 +70,8 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
   const { user } = useAuth();
   const { partner } = usePartner();
   const [reels, setReels] = useState<ReelItem[]>([]);
+  const { getDecryptedBlob } = useMedia();
+  const { loadExistingChunks, getChunksForMessage } = useVideoChunks();
   const [loading, setLoading] = useState(true);
   const [showWalkthroughBanner, setShowWalkthroughBanner] = useState(false);
 
@@ -352,7 +354,92 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
         seenImageIds.current.push(activeReel.id);
       }
     }
-  }, [activeIndex, reels]);
+  }, [activeIndex, reels, isActive, fetchReels]);
+
+  // ── Sequential Background Queue for Eager Pre-Loading ──
+  useEffect(() => {
+    if (!isActive || reels.length === 0 || !partnerPublicKey) return;
+
+    let cancelQueue = false;
+
+    const processQueue = async () => {
+      // Look ahead up to 5 items from current index (sliding window)
+      for (let i = activeIndex; i <= activeIndex + 5; i++) {
+        if (cancelQueue) break;
+        if (i >= reels.length) break;
+
+        const item = reels[i];
+        if (!item.media_url && item.type !== 'video') continue;
+        
+        const isChunked = item.type === 'video' && !item.media_url;
+
+        try {
+          if (isChunked) {
+            // Check if first chunk is already in memory
+            const existing = getChunksForMessage(item.id);
+            if (existing && existing.some(c => c.isDecrypted)) continue;
+
+            // 1. First reel is video -> fully decrypt (all chunks)
+            // 2. Next reels are videos -> only load 1st chunk
+            const limitCount = (i === activeIndex) ? 1000 : 1;
+
+            const { data, error } = await supabase
+              .from('video_chunks')
+              .select('message_id, chunk_index, total_chunks, chunk_url, chunk_key, chunk_nonce, duration')
+              .eq('message_id', item.id)
+              .order('chunk_index', { ascending: true })
+              .limit(limitCount); 
+
+            if (!error && data && data.length > 0) {
+              // Decrypt chunk(s) silently in background
+              await loadExistingChunks(item.id, data, partnerPublicKey);
+            }
+          } else {
+            // Standard media (Image or Standard Video)
+            if (!item.media_url || !item.media_key || !item.media_nonce) continue;
+
+            // 1. Image -> fully decrypt
+            // 2. Video at activeIndex -> fully decrypt
+            if (item.type === 'image' || i === activeIndex) {
+              await getDecryptedBlob(
+                item.media_url,
+                item.media_key,
+                item.media_nonce,
+                partnerPublicKey,
+                item.sender_public_key,
+                undefined,
+                item.type
+              );
+            }
+          }
+        } catch (err) {
+          // Silent catch for background queue
+        }
+
+        // Small delay to allow UI to breathe between decryptions
+        await new Promise(r => setTimeout(r, 150));
+      }
+    };
+
+    // Use requestIdleCallback if available to avoid blocking main thread
+    const scheduleQueue = () => {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(() => {
+          if (!cancelQueue) processQueue();
+        });
+      } else {
+        setTimeout(() => {
+          if (!cancelQueue) processQueue();
+        }, 300);
+      }
+    };
+
+    scheduleQueue();
+
+    return () => {
+      cancelQueue = true;
+    };
+  }, [activeIndex, reels, isActive, partnerPublicKey, getDecryptedBlob, loadExistingChunks, getChunksForMessage]);
 
   // Handle slide change
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -426,9 +513,9 @@ export default function ReelsScreen({ isActive = true }: ReelsScreenProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {reels.map((item, idx) => {
-            const isVisible = Math.abs(idx - activeIndex) <= 5;
-            // BANDWIDTH FIX: Reduced pre-load window from 4 to 2 (saves 40% bandwidth on scrolls)
-            const isNearby = Math.abs(idx - activeIndex) <= 2;
+            const isVisible = Math.abs(idx - activeIndex) <= 6;
+            // BANDWIDTH FIX: Pre-load window set to 5 for aggressive caching and smooth scrolling
+            const isNearby = Math.abs(idx - activeIndex) <= 5;
 
             if (!isVisible) {
               return (
