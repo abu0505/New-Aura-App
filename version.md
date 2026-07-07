@@ -1,8 +1,9 @@
 # App Version
-VersionName: 2.22.4
-VersionCode: 135
+VersionName: 2.22.5
+VersionCode: 136
 Date: 2026-07-07
 Changes:
+- **Feature — LRFU Cache Eviction:** Upgraded the media cache eviction policy from basic LRU to a hybrid LRFU (Least Recently & Frequently Used) model. Added a time-decay popularity score with a 48-hour half-life to prevent scrolling from evicting frequently viewed photos and videos.
 - **Feature — Persistent Media Cache:** Implemented a persistent L2 media cache using IndexedDB (`idb-keyval`) to drastically reduce Cloudinary bandwidth consumption. Decrypted images, videos, avatars, and note backgrounds now survive page reloads and tab switches without re-fetching from the network.
 - **Optimization — Bandwidth Leak Fixes:** Added in-flight request deduplication to `EncryptedImage` (so avatars and UI elements share the same fetch) and reduced the Reels background pre-load window from 4 to 2 to minimize wasteful downloads.
 - **Feature — Storage Dashboard:** Added real-time Media Cache statistics (size and item count) to the Settings > Storage section, with a one-click "Manage App Storage" button to safely clear both RAM and persistent cache.

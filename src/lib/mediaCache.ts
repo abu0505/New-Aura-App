@@ -56,6 +56,8 @@ interface CacheMeta {
   lastAccessedAt: number;
   /** Timestamp (ms) when this entry was first cached */
   cachedAt: number;
+  /** Number of times this media was read from cache or written */
+  accessCount: number;
 }
 
 // ─── Availability Check ───────────────────────────────────────────────────────
@@ -94,10 +96,11 @@ export async function getCachedBlob(url: string): Promise<Blob | null> {
     const blob = await get<Blob>(url, blobStore);
     if (!blob) return null;
 
-    // Update access time (fire-and-forget, don't block)
+    // Update access time and increment access frequency count (fire-and-forget, don't block)
     const meta = await get<CacheMeta>(url, metaStore);
     if (meta) {
       meta.lastAccessedAt = Date.now();
+      meta.accessCount = (meta.accessCount || 0) + 1;
       set(url, meta, metaStore).catch(() => {});
     }
 
@@ -122,8 +125,9 @@ export async function setCachedBlob(url: string, blob: Blob): Promise<void> {
     // Don't re-cache if already cached with same size
     const existing = await get<CacheMeta>(url, metaStore);
     if (existing && existing.sizeBytes === blob.size) {
-      // Just update access time
+      // Just update access time and access count
       existing.lastAccessedAt = Date.now();
+      existing.accessCount = (existing.accessCount || 0) + 1;
       await set(url, existing, metaStore);
       return;
     }
@@ -134,6 +138,7 @@ export async function setCachedBlob(url: string, blob: Blob): Promise<void> {
       mimeType: blob.type || 'application/octet-stream',
       lastAccessedAt: Date.now(),
       cachedAt: Date.now(),
+      accessCount: 1,
     };
 
     // Write blob and meta
@@ -229,10 +234,20 @@ async function evictIfNeeded(): Promise<void> {
 
     if (totalBytes <= MAX_CACHE_BYTES) { _evicting = false; return; }
 
-    // Sort by lastAccessedAt ascending (oldest first)
-    entries.sort((a, b) => a.lastAccessedAt - b.lastAccessedAt);
+    // LRFU Score Calculation: Score = accessCount * (0.5 ^ (ageInHours / 48))
+    // 48 hours is the half-life decay. Frequently viewed items hold highly durable scores
+    // whereas single-viewed scrolled items decay very rapidly.
+    const now = Date.now();
+    const calculateLrfuScore = (entry: CacheMeta) => {
+      const ageInHours = (now - entry.lastAccessedAt) / (1000 * 60 * 60);
+      const recencyFactor = Math.pow(0.5, ageInHours / 48); // 48-hour half life
+      return (entry.accessCount || 1) * recencyFactor;
+    };
 
-    // Evict oldest until under limit
+    // Sort by LRFU score ascending (lowest score first)
+    entries.sort((a, b) => calculateLrfuScore(a) - calculateLrfuScore(b));
+
+    // Evict lowest scored items until under limit
     let bytesToFree = totalBytes - MAX_CACHE_BYTES;
     const toDelete: string[] = [];
 
