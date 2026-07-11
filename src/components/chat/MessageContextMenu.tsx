@@ -12,10 +12,11 @@ interface MessageContextMenuProps {
   messageIds?: string[];
   onCloseMenu?: () => void;
   onRetry?: () => void;
+  onReply?: () => void;
 }
 
 export default function MessageContextMenu({
-  isMine, hasMedia, onEdit, onPin, onMoveToGarbage, messageIds, onCloseMenu, onRetry
+  isMine, hasMedia, onEdit, onPin, onMoveToGarbage, messageIds, onCloseMenu, onRetry, onReply
 }: MessageContextMenuProps) {
   const [showFolders, setShowFolders] = useState(false);
   const { folders, addItemsToFolder, createFolder, loading } = useMediaFolders();
@@ -79,6 +80,16 @@ export default function MessageContextMenu({
               >
                 <span className="material-symbols-outlined text-[18px]">sync</span>
                 Retry Resend
+              </button>
+            )}
+
+            {onReply && (
+              <button 
+                onClick={onReply}
+                className="flex items-center gap-3 px-4 py-3 hover:bg-[rgba(var(--primary-rgb),_0.1)] text-[#e4e1ed] transition-colors text-sm text-left font-body border-b border-white/5"
+              >
+                <span className="material-symbols-outlined text-[18px]">reply</span>
+                Reply
               </button>
             )}
 

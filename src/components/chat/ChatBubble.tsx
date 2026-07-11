@@ -1083,6 +1083,10 @@ function ChatBubble({
                     onRetry(message.id);
                     setInteractionType('none');
                   } : undefined}
+                  onReply={onReply ? () => {
+                    onReply(message.id);
+                    setInteractionType('none');
+                  } : undefined}
                 />
               )
             )}

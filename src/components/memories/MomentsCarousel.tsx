@@ -239,7 +239,7 @@ export default function MomentsCarousel({ moments, partnerPublicKey, className =
                       {moment.items[0]?.type === 'video' && (
                         <div className="absolute inset-0 flex items-center justify-center z-20">
                           <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 flex items-center justify-center">
-                            <span className="material-symbols-outlined text-white text-2xl ml-1">play_arrow</span>
+                            <span className="material-symbols-outlined text-white text-2xl">play_arrow</span>
                           </div>
                         </div>
                       )}

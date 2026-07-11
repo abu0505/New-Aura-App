@@ -279,7 +279,7 @@ function NoteCard({
             <p className={`text-[var(--text-secondary)] text-xs leading-relaxed whitespace-pre-wrap ${
               viewMode === 'grid' ? 'line-clamp-[12]' : 'line-clamp-2'
             }`}>
-              {note.isRaw ? note.content : getPlainText(note.content)}
+              {getPlainText(note.content)}
             </p>
           )}
 

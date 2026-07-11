@@ -44,6 +44,27 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
   const [randomShuffleItems, setRandomShuffleItems] = useState<MemoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document' | 'favorites'>('all');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [uploaderFilter, setUploaderFilter] = useState<'all' | 'me' | 'partner'>('all');
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const sortOrderRef = useRef(sortOrder);
+  useEffect(() => {
+    sortOrderRef.current = sortOrder;
+  }, [sortOrder]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowFilterDropdown(false);
+      }
+    }
+    if (showFilterDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showFilterDropdown]);
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const favoritesRef = useRef(favorites);
   useEffect(() => {
@@ -62,6 +83,8 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
 
   const filteredMemories = memories.filter(m => {
     if (m.failed) return false;
+    if (uploaderFilter === 'me' && m.sender_id !== user?.id) return false;
+    if (uploaderFilter === 'partner' && m.sender_id === user?.id) return false;
     if (filter === 'all') return true;
     if (filter === 'favorites') return favorites.has(m.id);
     return m.type === filter;
@@ -238,8 +261,12 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
           setMemories(prev => {
             // Deduplication guard
             if (prev.some(m => m.id === newMsg.id)) return prev;
-            // Prepend the new memory so it appears at the top of the grid
-            return [newMsg, ...prev];
+            const next = [newMsg, ...prev];
+            return next.sort((a, b) => {
+              const timeA = new Date(a.created_at).getTime();
+              const timeB = new Date(b.created_at).getTime();
+              return sortOrderRef.current === 'oldest' ? timeA - timeB : timeB - timeA;
+            });
           });
         }
       } else if (payload.eventType === 'UPDATE') {
@@ -254,7 +281,14 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
               // If it now has media but wasn't in memories, check conversation and add it
               const isFromMe = updatedMsg.sender_id === user.id && updatedMsg.receiver_id === partner.id;
               const isFromPartner = updatedMsg.sender_id === partner.id && updatedMsg.receiver_id === user.id;
-              if (isFromMe || isFromPartner) return [updatedMsg, ...prev];
+              if (isFromMe || isFromPartner) {
+                const next = [updatedMsg, ...prev];
+                return next.sort((a, b) => {
+                  const timeA = new Date(a.created_at).getTime();
+                  const timeB = new Date(b.created_at).getTime();
+                  return sortOrderRef.current === 'oldest' ? timeA - timeB : timeB - timeA;
+                });
+              }
               return prev;
             }
           });
@@ -354,18 +388,27 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
 
       const { data, error } = await query
         .range((pageNumber - 1) * LIMIT, pageNumber * LIMIT - 1)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: sortOrder === 'oldest' });
 
       if (error) throw error;
 
       const newMemories = data as MemoryItem[];
 
       if (pageNumber === 1) {
-        setMemories(newMemories);
+        setMemories([...newMemories].sort((a, b) => {
+          const timeA = new Date(a.created_at).getTime();
+          const timeB = new Date(b.created_at).getTime();
+          return sortOrder === 'oldest' ? timeA - timeB : timeB - timeA;
+        }));
       } else {
         setMemories(prev => {
           const newItems = newMemories.filter(d => !prev.some(p => p.id === d.id));
-          return [...prev, ...newItems];
+          const combined = [...prev, ...newItems];
+          return combined.sort((a, b) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            return sortOrder === 'oldest' ? timeA - timeB : timeB - timeA;
+          });
         });
       }
 
@@ -377,7 +420,7 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
     } finally {
       if (pageNumber === 1) setLoading(false);
     }
-  }, [user?.id, partner?.id, filter]);
+  }, [user?.id, partner?.id, filter, sortOrder]);
 
   const fetchThrowbacks = async () => {
     if (!user || !partner) return;
@@ -794,7 +837,11 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
                     merged.push(item);
                   }
                 });
-                return merged.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                return merged.sort((a, b) => {
+                  const timeA = new Date(a.created_at).getTime();
+                  const timeB = new Date(b.created_at).getTime();
+                  return sortOrder === 'oldest' ? timeA - timeB : timeB - timeA;
+                });
               });
             }
           } catch (e) {
@@ -946,13 +993,13 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
             {/* Filters & Search Row */}
             <div className="relative flex items-center">
               {/* Scrollable Filters */}
-              <div className="flex-1 overflow-x-auto no-scrollbar scroll-smooth flex gap-2 pr-12">
+              <div className="flex-1 overflow-x-auto no-scrollbar scroll-smooth flex gap-2 pr-[105px] lg:pr-[320px]">
                 {['all', 'favorites', 'image', 'video', 'audio', 'document'].map((f) => (
                   <button
                     key={f}
                     onClick={() => setFilter(f as any)}
                     className={`px-5 py-1.5 rounded-full text-[10px] font-label uppercase tracking-widest border transition-all whitespace-nowrap ${filter === f
-                        ? 'bg-[var(--gold)] text-[var(--on-accent)] border-[var(--gold)] font-bold shadow-md shadow-[rgba(var(--primary-rgb),_0.1)]'
+                        ? 'bg-[var(--gold)] text-[#f0ede8] border-[var(--gold)] font-bold shadow-md shadow-[rgba(var(--primary-rgb),_0.1)]'
                         : 'bg-transparent text-[#998f81] border-white/10 hover:border-white/20'
                       }`}
                   >
@@ -962,7 +1009,159 @@ export default function MemoriesScreen({ onBack }: MemoriesScreenProps = {}) {
               </div>
 
               {/* Static Search Icon / Bar with Fade */}
-              <div className="absolute right-0 top-0 bottom-0 flex items-center pl-8 bg-gradient-to-l from-[var(--bg-primary)] via-[var(--bg-primary)]/90 to-transparent">
+              <div className="absolute right-0 top-0 bottom-0 flex items-center gap-2 pl-12 bg-gradient-to-l from-[var(--bg-primary)] via-[var(--bg-primary)]/90 to-transparent">
+                {/* Filter Dropdown */}
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowFilterDropdown(!showFilterDropdown);
+                    }}
+                    className={`flex items-center gap-2 p-2 px-3 rounded-xl border transition-all group ${
+                      showFilterDropdown
+                        ? 'bg-[var(--gold)]/10 border-white/5 text-[var(--gold)] shadow-[0_0_15px_rgba(var(--primary-rgb),_0.15)]'
+                        : 'bg-white/5 border-white/5 text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10 hover:border-white/10'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px] block group-hover:scale-110 transition-transform">tune</span>
+                    <span className="hidden lg:block text-[10px] font-label uppercase tracking-[0.2em] font-bold whitespace-nowrap">Filter</span>
+                  </button>
+
+                  <AnimatePresence>
+                    {showFilterDropdown && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute right-0 mt-3 w-60 rounded-3xl border border-white/10 bg-black/45 backdrop-blur-3xl shadow-2xl p-3 z-30 flex flex-col gap-2.5"
+                        style={{
+                          boxShadow: '0 24px 48px -12px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.08)',
+                        }}
+                      >
+                        {/* Sort Order Section */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 text-[#998f81]/50">
+                            <span className="material-symbols-outlined text-[13px]">sort</span>
+                            <span className="text-[8px] font-label uppercase tracking-[0.25em] font-bold">
+                              Sort Order
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSortOrder('newest');
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between group/opt ${
+                              sortOrder === 'newest'
+                                ? 'text-[var(--gold)] bg-white/5 border border-white/5 font-bold'
+                                : 'text-[#998f81] border border-transparent hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <span className="tracking-wide">Newest First</span>
+                            {sortOrder === 'newest' && (
+                              <span className="material-symbols-outlined text-[16px] text-[var(--gold)] font-bold">check</span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSortOrder('oldest');
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between group/opt ${
+                              sortOrder === 'oldest'
+                                ? 'text-[var(--gold)] bg-white/5 border border-white/5 font-bold'
+                                : 'text-[#998f81] border border-transparent hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <span className="tracking-wide">Oldest First</span>
+                            {sortOrder === 'oldest' && (
+                              <span className="material-symbols-outlined text-[16px] text-[var(--gold)] font-bold">check</span>
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Divider */}
+                        <div className="h-[1px] bg-white/5 mx-1.5" />
+
+                        {/* Uploader Filter Section */}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 text-[#998f81]/50">
+                            <span className="material-symbols-outlined text-[13px]">group</span>
+                            <span className="text-[8px] font-label uppercase tracking-[0.25em] font-bold">
+                              Shared By
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setUploaderFilter('all');
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between group/opt ${
+                              uploaderFilter === 'all'
+                                ? 'text-[var(--gold)] bg-white/5 border border-white/5 font-bold'
+                                : 'text-[#998f81] border border-transparent hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className={`material-symbols-outlined text-[18px] transition-transform duration-250 group-hover/opt:scale-110 ${
+                                uploaderFilter === 'all' ? 'text-[var(--gold)]' : 'text-[#998f81]/60'
+                              }`}>favorite</span>
+                              <span className="tracking-wide">Both of Us</span>
+                            </div>
+                            {uploaderFilter === 'all' && (
+                              <span className="material-symbols-outlined text-[16px] text-[var(--gold)] font-bold">check</span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUploaderFilter('me');
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between group/opt ${
+                              uploaderFilter === 'me'
+                                ? 'text-[var(--gold)] bg-white/5 border border-white/5 font-bold'
+                                : 'text-[#998f81] border border-transparent hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className={`material-symbols-outlined text-[18px] transition-transform duration-250 group-hover/opt:scale-110 ${
+                                uploaderFilter === 'me' ? 'text-[var(--gold)]' : 'text-[#998f81]/60'
+                              }`}>person</span>
+                              <span className="tracking-wide">Only Me</span>
+                            </div>
+                            {uploaderFilter === 'me' && (
+                              <span className="material-symbols-outlined text-[16px] text-[var(--gold)] font-bold">check</span>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUploaderFilter('partner');
+                              setShowFilterDropdown(false);
+                            }}
+                            className={`w-full text-left px-3 py-2.5 rounded-2xl text-xs transition-all flex items-center justify-between group/opt ${
+                              uploaderFilter === 'partner'
+                                ? 'text-[var(--gold)] bg-white/5 border border-white/5 font-bold'
+                                : 'text-[#998f81] border border-transparent hover:text-white hover:bg-white/5'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className={`material-symbols-outlined text-[18px] transition-transform duration-250 group-hover/opt:scale-110 ${
+                                uploaderFilter === 'partner' ? 'text-[var(--gold)]' : 'text-[#998f81]/60'
+                              }`}>favorite_border</span>
+                              <span className="tracking-wide truncate max-w-[130px]">Only {partner?.display_name || 'Partner'}</span>
+                            </div>
+                            {uploaderFilter === 'partner' && (
+                              <span className="material-symbols-outlined text-[16px] text-[var(--gold)] font-bold">check</span>
+                            )}
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Search Button */}
                 <button
                   onClick={() => setViewMode('search')}
                   className="flex items-center gap-3 p-2 px-3 rounded-xl bg-white/5 border border-white/10 text-[#998f81] hover:text-[var(--gold)] hover:bg-white/10 hover:border-white/20 transition-all group lg:min-w-[200px]"

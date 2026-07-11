@@ -12,9 +12,13 @@ import { fetchDiverseMediaPool } from '../../utils/feedPool';
 import { useGlobalMute } from '../../hooks/useGlobalMute';
 import { getStoredKeyPair, encodeBase64 } from '../../lib/encryption';
 import type { Database } from '../../integrations/supabase/types';
-import { Heart, Bookmark, Volume2, VolumeX, Lock, Star, Share2, FolderPlus, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Heart, Bookmark, Volume2, VolumeX, Lock, Star, Share2, FolderPlus, MoreHorizontal, Trash2, User } from 'lucide-react';
 import { useMediaFolders } from '../../hooks/useMediaFolders';
 import { useGarbageContext } from '../../contexts/GarbageContext';
+import ImageCropperModal from '../common/ImageCropperModal';
+import imageCompression from 'browser-image-compression';
+import { encryptFile } from '../../lib/encryption';
+import { uploadToCloudinary } from '../../lib/cloudinary';
 
 /** Extract cloud_name and public_id from a Cloudinary URL */
 function parseCloudinaryUrl(url: string): { cloudName: string; publicId: string } | null {
@@ -578,6 +582,21 @@ const getAspectClass = (fileName: string | null) => {
   return 'w-full h-full';
 };
 
+const captureVideoFrame = (videoEl: HTMLVideoElement): string | null => {
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = videoEl.videoWidth || 640;
+    canvas.height = videoEl.videoHeight || 360;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.9);
+  } catch (err) {
+    console.error('Error capturing video frame:', err);
+    return null;
+  }
+};
+
 interface ReelCardProps {
   item: ReelItem;
 
@@ -592,7 +611,7 @@ interface ReelCardProps {
 }
 
 export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partnerPublicKey, isLiked, onLikeToggle, isSaved, onSaveToggle, onMoveToGarbage }: ReelCardProps) {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { partner } = usePartner();
   const { getDecryptedBlob } = useMedia();
   const { folders, createFolder, addItemsToFolder } = useMediaFolders();
@@ -602,6 +621,8 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [uploadingPfp, setUploadingPfp] = useState(false);
 
   // Detect chunked video: type=video but no media_url (data lives in video_chunks table)
   const isChunkedVideo = item.type === 'video' && !item.media_url;
@@ -631,6 +652,83 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
   useEffect(() => { getDecryptedBlobRef.current = getDecryptedBlob; }, [getDecryptedBlob]);
 
   const tag = `[ReelCard][${item.id?.slice(0,8)}]`;
+
+  const handleCropComplete = async (croppedFile: File) => {
+    if (!user) return;
+    setImageToCrop(null);
+    setUploadingPfp(true);
+    const toastId = toast.loading('Updating profile picture...');
+    try {
+      const options = {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      };
+      const compressedFile = await imageCompression(croppedFile, options);
+      
+      const fileBuffer = new Uint8Array(await compressedFile.arrayBuffer());
+      const { encryptedData, fileKey, nonce } = encryptFile(fileBuffer);
+      
+      const blob = new Blob([encryptedData as unknown as BlobPart], { type: 'application/octet-stream' });
+      const { url } = await uploadToCloudinary(new File([blob], 'avatar.enc'));
+      
+      const keyArray = Array.from(fileKey);
+      const nonceArray = Array.from(nonce);
+      const [authResult] = await Promise.all([
+        supabase.auth.updateUser({
+          data: { avatar_url: url, avatar_key: keyArray, avatar_nonce: nonceArray }
+        }),
+        supabase.from('profiles').update({ 
+          avatar_url: url,
+          avatar_key: JSON.stringify(keyArray),
+          avatar_nonce: JSON.stringify(nonceArray)
+        }).eq('id', user.id),
+      ]);
+
+      if (authResult.error) {
+        toast.error('Authentication update failed', {
+          id: toastId,
+          description: authResult.error.message,
+        });
+      } else {
+        await refreshUser();
+        toast.success('Profile picture updated successfully! ✨', { id: toastId });
+      }
+    } catch (err: any) {
+      toast.error('Failed to update profile picture', {
+        id: toastId,
+        description: err.message,
+      });
+    } finally {
+      setUploadingPfp(false);
+      setShowMoreMenu(false);
+    }
+  };
+
+  const handleCropCancel = () => {
+    setImageToCrop(null);
+  };
+
+  const handleAddToPfp = () => {
+    if (!decryptedUrl) {
+      toast.error('Media is not loaded yet');
+      return;
+    }
+    if (item.type === 'video') {
+      if (videoRef.current) {
+        const frameUrl = captureVideoFrame(videoRef.current);
+        if (frameUrl) {
+          setImageToCrop(frameUrl);
+        } else {
+          toast.error('Failed to capture video frame');
+        }
+      } else {
+        toast.error('Video player is not ready');
+      }
+    } else {
+      setImageToCrop(decryptedUrl);
+    }
+  };
 
   const handleAddToFolder = async (folderId: string) => {
     if (!item.id) {
@@ -1337,6 +1435,18 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        handleAddToPfp();
+                      }}
+                      disabled={uploadingPfp || !decryptedUrl}
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-white/10 text-white transition-colors text-left w-full cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <User className="w-4 h-4 text-[var(--gold)]" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/90">Add to PFP</span>
+                    </button>
+                    <div className="h-px bg-white/10 my-1" />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
                         setShowMoreMenu(false);
                         handleMoveToGarbage();
                       }}
@@ -1352,6 +1462,13 @@ export const ReelCard = memo(function ReelCard({ item, isActive, isNearby, partn
           </div>
         </div>
       </div>
+      {imageToCrop && (
+        <ImageCropperModal
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+        />
+      )}
     </div>
   );
 });

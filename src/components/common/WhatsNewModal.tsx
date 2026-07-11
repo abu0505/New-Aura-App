@@ -67,7 +67,7 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
                 }}
                 className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 shrink-0"
               >
-                <span className="material-symbols-outlined text-3xl text-[var(--gold)]">search</span>
+                <span className="material-symbols-outlined text-3xl text-[var(--gold)]">portrait</span>
               </div>
 
               <h2 className="font-sans font-bold text-2xl md:text-3xl text-white tracking-tight mb-1 flex items-center gap-1.5 shrink-0">
@@ -79,7 +79,29 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
 
               {/* Updates List */}
               <div className="w-full text-left space-y-4 mb-6 overflow-y-auto scrollbar-hide flex-1 min-h-0">
-                {/* Update 1: Smart Chat Search */}
+                {/* Update 1: Reels PFP Updater */}
+                <div 
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(30px)',
+                    WebkitBackdropFilter: 'blur(30px)',
+                  }}
+                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
+                >
+                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                    <span className="material-symbols-outlined text-[22px] block">portrait</span>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white/90 mb-1">Reels PFP Updater 👤</h3>
+                    <p className="text-xs text-white/50 leading-relaxed font-medium">
+                      Set any reel image or capture a frame from any video reel and set it as your profile picture directly. Adjust it perfectly using the built-in cropper.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Update 2: Smart Chat Search */}
                 <div 
                   style={{
                     background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
@@ -97,28 +119,6 @@ export default function WhatsNewModal({ currentVersion }: WhatsNewModalProps) {
                     <h3 className="text-sm font-semibold text-white/90 mb-1">Smart Chat Search 🔍</h3>
                     <p className="text-xs text-white/50 leading-relaxed font-medium">
                       Search is now smarter! The search field won't hide your text while you type. Hit Enter to begin scanning, showing animated progress alongside your query.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Update 2: Raw Text Notes */}
-                <div 
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(30px)',
-                    WebkitBackdropFilter: 'blur(30px)',
-                  }}
-                  className="flex gap-4 p-4 rounded-2xl hover:bg-white/[0.12] hover:border-white/15 transition-all duration-300 group"
-                >
-                  <div className="p-3 rounded-xl bg-white/5 h-fit text-[var(--gold)] shrink-0 border border-white/5 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                    <span className="material-symbols-outlined text-[22px] block">code</span>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white/90 mb-1">Raw Text Notes 📝</h3>
-                    <p className="text-xs text-white/50 leading-relaxed font-medium">
-                      Want to keep your note raw? Bypass rich text parsing by enabling Code/Raw Mode in the note header.
                     </p>
                   </div>
                 </div>

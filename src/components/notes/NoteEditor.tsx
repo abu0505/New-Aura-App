@@ -266,16 +266,6 @@ const convertHtmlToMarkdown = (html: string): string => {
   if (!html) return '';
   let md = html;
 
-  // Headings
-  md = md.replace(/<h1>(.*?)<\/h1>/gi, '# $1\n');
-  md = md.replace(/<h2>(.*?)<\/h2>/gi, '## $1\n');
-  md = md.replace(/<h3>(.*?)<\/h3>/gi, '### $1\n');
-
-  // Lists (bullets and numbered)
-  md = md.replace(/<li>(.*?)<\/li>/gi, '- $1\n');
-  md = md.replace(/<\/?ul>/gi, '');
-  md = md.replace(/<\/?ol>/gi, '');
-
   // Bold & Strong
   md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
   md = md.replace(/<b>(.*?)<\/b>/gi, '**$1**');
@@ -287,120 +277,38 @@ const convertHtmlToMarkdown = (html: string): string => {
   // Underline
   md = md.replace(/<u>(.*?)<\/u>/gi, '_$1_');
 
-  // Code block
-  md = md.replace(/<pre><code>([\s\S]*?)<\/code><\/pre>/gi, '```\n$1\n```\n');
+  // Strikethrough
+  md = md.replace(/<del>(.*?)<\/del>/gi, '~~$1~~');
 
-  // Paragraphs and breaks
-  md = md.replace(/<p>(.*?)<\/p>/gi, '$1\n');
-  md = md.replace(/<br\s*\/?>/gi, '\n');
+  // Inline code (not pre-wrapped code block)
+  md = md.replace(/(?<!<pre[^>]*>)<code>(.*?)<\/code>/gi, '`$1`');
 
-  // Strip remaining tags
-  md = md.replace(/<[^>]*>/g, '');
+  // Highlight
+  md = md.replace(/<mark>(.*?)<\/mark>/gi, '==$1==');
 
-  // Unescape standard HTML entities
-  md = md
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#039;/g, "'");
-
-  return md.trim();
+  return md;
 };
 
 const convertMarkdownToHtml = (md: string): string => {
   if (!md) return '';
-  const lines = md.split('\n');
-  let html = '';
-  let inList = false;
-  let listType: 'ul' | 'ol' | null = null;
-  let inCodeBlock = false;
-  let codeContent = '';
+  let html = md;
 
-  for (let line of lines) {
-    if (line.startsWith('```')) {
-      if (inCodeBlock) {
-        html += `<pre><code>${escapeHtml(codeContent.trim())}</code></pre>`;
-        inCodeBlock = false;
-        codeContent = '';
-      } else {
-        inCodeBlock = true;
-      }
-      continue;
-    }
+  // Convert Bold: **text** or __text__
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
 
-    if (inCodeBlock) {
-      codeContent += line + '\n';
-      continue;
-    }
+  // Convert Italic: *text* or _text_
+  html = html.replace(/(?<![*_])\*(?![*])(.+?)(?<![*])\*(?![*_])/g, '<em>$1</em>');
+  html = html.replace(/(?<![*_])\_(?![_])(.+?)(?<![_])\_(?![*_])/g, '<em>$1</em>');
 
-    if (line.startsWith('# ')) {
-      if (inList) { html += listType === 'ul' ? '</ul>' : '</ol>'; inList = false; listType = null; }
-      html += `<h1>${renderInlineMarkdown(line.slice(2))}</h1>`;
-      continue;
-    }
-    if (line.startsWith('## ')) {
-      if (inList) { html += listType === 'ul' ? '</ul>' : '</ol>'; inList = false; listType = null; }
-      html += `<h2>${renderInlineMarkdown(line.slice(3))}</h2>`;
-      continue;
-    }
-    if (line.startsWith('### ')) {
-      if (inList) { html += listType === 'ul' ? '</ul>' : '</ol>'; inList = false; listType = null; }
-      html += `<h3>${renderInlineMarkdown(line.slice(4))}</h3>`;
-      continue;
-    }
+  // Convert Strikethrough: ~~text~~
+  html = html.replace(/~~(.+?)~~/g, '<del>$1</del>');
 
-    const bulletMatch = line.match(/^[-*]\s+(.+)$/);
-    if (bulletMatch) {
-      if (inList && listType !== 'ul') {
-        html += '</ol>';
-        inList = false;
-      }
-      if (!inList) {
-        html += '<ul>';
-        inList = true;
-        listType = 'ul';
-      }
-      html += `<li>${renderInlineMarkdown(bulletMatch[1])}</li>`;
-      continue;
-    }
+  // Convert Inline code: `code`
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 
-    const numberMatch = line.match(/^(\d+)\.\s+(.+)$/);
-    if (numberMatch) {
-      if (inList && listType !== 'ol') {
-        html += '</ul>';
-        inList = false;
-      }
-      if (!inList) {
-        html += '<ol>';
-        inList = true;
-        listType = 'ol';
-      }
-      html += `<li>${renderInlineMarkdown(numberMatch[2])}</li>`;
-      continue;
-    }
-
-    if (inList) {
-      html += listType === 'ul' ? '</ul>' : '</ol>';
-      inList = false;
-      listType = null;
-    }
-
-    if (line.trim() === '') {
-      html += '<p></p>';
-    } else {
-      html += `<p>${renderInlineMarkdown(line)}</p>`;
-    }
-  }
-
-  if (inList) {
-    html += listType === 'ul' ? '</ul>' : '</ol>';
-  }
-  if (inCodeBlock && codeContent) {
-    html += `<pre><code>${escapeHtml(codeContent.trim())}</code></pre>`;
-  }
+  // Convert Highlight: ==text==
+  html = html.replace(/==(.+?)==/g, '<mark>$1</mark>');
 
   return html;
 };
@@ -807,8 +715,13 @@ export default function NoteEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Underline,
+      StarterKit.configure({
+        bold: note.isRaw ? false : {},
+        italic: note.isRaw ? false : {},
+        strike: note.isRaw ? false : {},
+        code: note.isRaw ? false : {},
+      }),
+      ...(note.isRaw ? [] : [Underline]),
       Placeholder.configure({
         placeholder: 'Note',
       }),
@@ -909,7 +822,7 @@ export default function NoteEditor({
     onTransaction: ({ editor }) => {
       updateActiveStyles(editor);
     },
-  });
+  }, [note.id, note.isRaw]);
 
   const lastNoteIdRef = useRef(note.id);
   const lastIsRawRef = useRef(note.isRaw);
@@ -2118,6 +2031,23 @@ export default function NoteEditor({
 
   const handleFormat = (command: string) => {
     if (!editor) return;
+    if (note.isRaw) {
+      const { state } = editor;
+      const { selection } = state;
+      const { from, to } = selection;
+      const selectedText = state.doc.textBetween(from, to, ' ');
+      let wrapper = '';
+      if (command === 'bold') wrapper = '**';
+      else if (command === 'italic') wrapper = '*';
+      else if (command === 'underline') wrapper = '_';
+      else if (command === 'strikeThrough') wrapper = '~~';
+
+      if (wrapper) {
+        editor.chain().focus().insertContentAt({ from, to }, `${wrapper}${selectedText}${wrapper}`).run();
+        return;
+      }
+    }
+
     if (command === 'bold') {
       editor.chain().focus().toggleBold().run();
     } else if (command === 'italic') {
@@ -2960,21 +2890,7 @@ export default function NoteEditor({
                   className={`w-full bg-transparent text-[var(--text-primary)] text-sm focus:outline-none min-h-[150px] leading-relaxed ${drawMode ? 'cursor-default pointer-events-none select-none' : 'cursor-text'
                     }`}
                 >
-                  {note.isRaw ? (
-                    <textarea
-                      ref={textareaRef}
-                      value={content || ''}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setContent(val);
-                        debouncedSave({ content: val });
-                      }}
-                      placeholder="Note"
-                      className="w-full bg-transparent text-[var(--text-primary)] text-sm focus:outline-none min-h-[250px] leading-relaxed resize-none border-0 outline-none p-0 focus:ring-0"
-                    />
-                  ) : (
-                    <EditorContent editor={editor} />
-                  )}
+                  <EditorContent editor={editor} />
                 </div>
 
                 {/* Inline drawing canvas overlay */}

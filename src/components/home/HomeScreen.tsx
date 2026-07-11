@@ -1005,7 +1005,7 @@ export default function HomeScreen({ onTabChange, partner: livePartner }: HomeSc
                         </div>
                       ) : (
                         <p className="text-[10px] text-white/60 line-clamp-3 leading-relaxed whitespace-pre-wrap">
-                          {note.is_raw ? note.content : getPlainText(note.content)}
+                          {getPlainText(note.content)}
                         </p>
                       )}
                       

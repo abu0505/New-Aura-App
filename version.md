@@ -1,5 +1,72 @@
 # App Version
-VersionName: 2.24.2
+VersionName: 2.25.9
+VersionCode: 152
+Date: 2026-07-11
+Changes:
+- **Feature — Long Press to Reply:** Added a "Reply" option to the message long-press and right-click context menu, giving users a secondary way to reply to messages alongside the existing swipe gesture.
+- **Refinement — Note Raw Mode:** Upgraded note raw mode to preserve layout structural elements (headings, newlines, and list layouts) while keeping inline formatting tags (like `**bold**`, `*italic*`) raw and literal, allowing raw notes to use the high-performance rich text editor canvas instead of basic plain text textareas.
+
+## Previous Version (2.25.8)
+VersionCode: 151
+Date: 2026-07-11
+Changes:
+- **Feature — Long Press to Reply:** Added a "Reply" option to the message long-press and right-click context menu, giving users a secondary way to reply to messages alongside the existing swipe gesture.
+
+## Previous Version (2.25.7)
+VersionCode: 150
+Date: 2026-07-08
+Changes:
+- **Refinement — Soft Muted Active Text Color:** Adjusted the active header filter button text from pure bright white to a premium, softer warm off-white cream color (`text-[#f0ede8]`), matching the app's overall typography palette.
+
+## Previous Version (2.25.6)
+VersionCode: 149
+Date: 2026-07-08
+Changes:
+- **Refinement — Header Active Button White Text:** Changed text color of active header scrollable buttons ("All", "Favorites", etc.) from gold/contrast to a high-contrast premium solid white text (`text-white`).
+- **Refinement — Filter Button Borders & Colors:** Muted the filter button borders to `border-white/5` (hovering at `border-white/10`) to remove visual harshness. Adjusted the text/icon coloring to apply the gold accent color ONLY on hover or when the dropdown is active (open).
+
+## Previous Version (2.25.5)
+VersionCode: 148
+Date: 2026-07-08
+Changes:
+- **Refinement — Filter Button Borders & Colors:** Muted the filter button borders to `border-white/5` (hovering at `border-white/10`) to remove visual harshness. Adjusted the text/icon coloring to apply the gold accent color ONLY on hover or when the dropdown is active (open).
+
+## Previous Version (2.25.4)
+VersionCode: 147
+Date: 2026-07-08
+Changes:
+- **Fix — Moments Carousel Play Icon Centering:** Removed the offset margin-left (`ml-1`) from the play icon inside the Moments Carousel cards, centering it perfectly within its circular background.
+
+## Previous Version (2.25.3)
+VersionCode: 146
+Date: 2026-07-08
+Changes:
+- **Refinement — Active Filter Styling:** Updated active filter dropdown items to have a subtle `bg-white/5` background and a custom border matching the separator line color (`border-white/5`), preventing design clutter.
+- **Refinement — Simplified Sorting Options:** Removed icons from the "Newest First" and "Oldest First" sorting options to ensure a cleaner and more user-friendly appearance.
+
+## Previous Version (2.25.2)
+VersionCode: 145
+Date: 2026-07-08
+Changes:
+- **Refinement — Glassmorphic Filter Dropdown:** Redesigned the filter popup UI in the Memories Gallery with a premium glassmorphic frosted appearance (`backdrop-blur-3xl`, transparent dark overlay, fine border).
+- **Refinement — Visual Symbols & Micro-interactions:** Added custom Material Symbol icons to each dropdown option (clocks, histories, and hearts) with smooth scale-up micro-interactions on hover for a highly polished, user-friendly feel.
+
+## Previous Version (2.25.1)
+VersionCode: 144
+Date: 2026-07-08
+Changes:
+- **Feature — Memories Gallery Filter Dropdown:** Added a custom filter/sorting dropdown in the Memories Gallery next to the "Search by date" button.
+- **Feature — Oldest vs Newest Sorting:** Allows sorting gallery images/videos in chronological order (Oldest First) or reverse chronological order (Newest First) with full paginated database synchronization.
+- **Feature — Uploader Filter:** Added quick filters to view memories shared by "Both of Us", "Only Me", or "Only [Partner]".
+
+## Previous Version (2.25.0)
+VersionCode: 143
+Date: 2026-07-08
+Changes:
+- **Feature — Reels PFP Updater:** Added an "Add to PFP" option to the Reels "More" options menu. Users can now set any photo memory or a captured frame from any video reel as their profile photo directly from the Reels screen.
+- **Feature — Integrated Profile Cropper:** Selecting "Add to PFP" opens the standard circular image cropping modal, allowing users to zoom and adjust the crop of their new avatar before uploading.
+
+## Previous Version (2.24.2)
 VersionCode: 142
 Date: 2026-07-08
 Changes:

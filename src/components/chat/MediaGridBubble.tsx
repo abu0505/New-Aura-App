@@ -383,6 +383,10 @@ function MediaGridBubble({
                 onMoveToGarbage={hasCloudinaryMedia && !messages[0].is_deleted_for_everyone ? handleMoveToGarbage : undefined}
                 messageIds={messages.map(m => m.id)}
                 onCloseMenu={() => setInteractionType('none')}
+                onReply={onReply ? () => {
+                  onReply(messages[0].id);
+                  setInteractionType('none');
+                } : undefined}
               />
             )}
           </motion.div>
