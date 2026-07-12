@@ -129,7 +129,7 @@ class BackgroundUploadPlugin : Plugin() {
             val supabaseAccessToken = call.getString("supabaseAccessToken") ?: ""
             val packedKey = call.getString("packedKey") ?: ""
             val baseNonce = call.getString("baseNonce") ?: ""
-            val duration = call.getInt("duration") ?: 0
+               val duration = call.getInt("duration") ?: 0
             val senderId = call.getString("senderId") ?: ""
             val receiverId = call.getString("receiverId") ?: ""
 

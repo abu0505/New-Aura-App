@@ -254,3 +254,46 @@ export function forceAccount(label: 'A' | 'B'): void {
     console.log(`[CloudinaryRouter] Manually switched to Account ${label}`);
   } catch { /* ignore */ }
 }
+
+/**
+ * Perform a background check at app startup to see if Account A is blocked/exhausted.
+ * This runs instantly on boot and decides the routing before the user ever clicks upload.
+ */
+export async function initAccountRouter(): Promise<void> {
+  console.log('[CloudinaryRouter] Running startup account routing check...');
+  
+  // Create an AbortController to prevent long hangs if network is slow/dead
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4-second timeout limit
+
+  try {
+    const testUrl = `https://res.cloudinary.com/${ACCOUNT_A.cloudName}/raw/upload/dummy_ping_test_${Date.now()}`;
+    const response = await fetch(testUrl, {
+      method: 'HEAD',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+
+    // If Cloudinary returns 400/401/403/429, the account itself is blocked.
+    // A healthy account would return 404 (Not Found) for this random nonexistent file.
+    if (
+      response.status === 400 ||
+      response.status === 401 ||
+      response.status === 403 ||
+      response.status === 429
+    ) {
+      console.warn(`[CloudinaryRouter] Account A (${ACCOUNT_A.cloudName}) returned HTTP ${response.status}. Account is BLOCKED/LIMIT-REACHED. Routing to Account B.`);
+      markAccountFailed(ACCOUNT_A);
+    } else {
+      console.log(`[CloudinaryRouter] Account A (${ACCOUNT_A.cloudName}) returned HTTP ${response.status}. Account is HEALTHY. Routing to Account A.`);
+      // Recover Account A as preferred
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(FAILED_AT_KEY);
+    }
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    console.warn('[CloudinaryRouter] Startup check failed (possibly offline or timeout). Using stored preference:', getPreferredAccount().label, error?.message);
+  }
+}
+

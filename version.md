@@ -1,5 +1,11 @@
 # App Version
-VersionName: 2.26.0
+VersionName: 2.26.1
+VersionCode: 154
+Date: 2026-07-12
+Changes:
+- **Optimization — Pre-emptive Cloudinary Startup Ping:** Added a fast, non-blocking `initAccountRouter` check on app startup in `App.tsx`. The app pings Account A using a delivery endpoint check. If Account A is blocked (HTTP 401/403), it immediately configures the router to upload to Account B. This removes the first-upload UI latency and avoids making the user wait for a failed network request during their first post-lockout upload.
+
+## Previous Version (2.26.0)
 VersionCode: 153
 Date: 2026-07-12
 Changes:

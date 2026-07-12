@@ -7,11 +7,8 @@ import { toast } from 'sonner';
 import { realtimeHub } from './lib/realtimeHub';
 import { MessageCircle } from 'lucide-react';
 // ── Cloudinary dual-account bootstrap ─────────────────────────────────────
-// Account A (del5o1vnd) is currently over its credit limit.
-// Force Account B (tvxm21ys) as primary immediately.
-// Remove this import once Account A resets (~10-15 days).
-import { forceAccount } from './lib/cloudinaryRouter';
-forceAccount('B');
+// Periodically check if Account A is active/blocked and update router state.
+import { initAccountRouter } from './lib/cloudinaryRouter';
 // ──────────────────────────────────────────────────────────────────────────
 const ChatScreen = lazy(() => import('./components/chat/ChatScreen'));
 const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
@@ -90,6 +87,11 @@ function InnerApp({
 
   // ── Global Tab Badge: runs on ALL pages, not just chat ──
   useTabNotification();
+
+  // ── Cloudinary Smart Router: Startup background check ──
+  useEffect(() => {
+    initAccountRouter();
+  }, []);
 
   // ── In-app toast + unread dot when new message arrives outside chat ──
   useEffect(() => {
