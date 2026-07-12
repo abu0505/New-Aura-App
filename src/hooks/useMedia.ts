@@ -383,18 +383,16 @@ export function useMedia() {
         myKeyPair.secretKey
       );
 
-      // ── Upload Ciphertext ──────────────────────────────────────────────────
+      // ── Upload Ciphertext (smart dual-account router) ────────────────────
       const uploadFile = async (data: Uint8Array, type: 'raw' | 'image' = 'raw', filename?: string) => {
-        const formData = new FormData();
-        formData.append('file', new Blob([data as any]), filename || 'encrypted_file.raw');
-        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/${type}/upload`,
-          { method: 'POST', body: formData }
-        );
-        if (!response.ok) throw new Error('Upload failed');
-        return await response.json();
+        const { routedUpload } = await import('../lib/cloudinaryRouter');
+        const result = await routedUpload({
+          blob: new Blob([data as any]),
+          fileName: filename || 'encrypted_file.raw',
+          resourceType: type,
+        });
+        // Return a shape compatible with the existing code
+        return { secure_url: result.secureUrl, public_id: result.publicId, bytes: result.bytes };
       };
 
       const uploadResult = await uploadFile(encryptedData, 'raw', fileToProcess.name);
@@ -796,19 +794,13 @@ export function useMedia() {
       // Extracted JS upload path into a function for reuse as fallback
       async function jsUploadPath() {
         const uploadBlock = async (data: Uint8Array): Promise<string> => {
-          const formData = new FormData();
-          formData.append('file', new Blob([data as unknown as BlobPart]), 'chunk.enc');
-          formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
-          const res = await fetch(
-            `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/raw/upload`,
-            { method: 'POST', body: formData }
-          );
-          if (!res.ok) {
-            let errText = '';
-            try { errText = await res.text(); } catch {}
-            throw new Error(`Cloudinary upload failed (HTTP ${res.status}): ${errText}`);
-          }
-          return (await res.json()).secure_url as string;
+          const { routedUpload } = await import('../lib/cloudinaryRouter');
+          const result = await routedUpload({
+            blob: new Blob([data as unknown as BlobPart]),
+            fileName: 'chunk.enc',
+            resourceType: 'raw',
+          });
+          return result.secureUrl;
         };
 
         const encryptAndUploadAndInsert = async (blockIndex: number) => {

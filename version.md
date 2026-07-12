@@ -1,5 +1,11 @@
 # App Version
-VersionName: 2.25.9
+VersionName: 2.26.0
+VersionCode: 153
+Date: 2026-07-12
+Changes:
+- **Infrastructure — Smart Dual Cloudinary Router:** Added a `cloudinaryRouter.ts` system that intelligently manages two Cloudinary accounts (A: del5o1vnd, B: tvxm21ys). Automatically switches to the backup account when the primary hits its credit/bandwidth limit, with auto-recovery retry every 24 hours. All upload paths (cloudinary.ts, useMedia.ts, backgroundUpload.ts) now route through this system. Account B is currently active as primary since Account A's credits are exhausted.
+
+## Previous Version (2.25.9)
 VersionCode: 152
 Date: 2026-07-11
 Changes:

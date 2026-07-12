@@ -6,6 +6,13 @@ import type { Tab } from './types';
 import { toast } from 'sonner';
 import { realtimeHub } from './lib/realtimeHub';
 import { MessageCircle } from 'lucide-react';
+// ── Cloudinary dual-account bootstrap ─────────────────────────────────────
+// Account A (del5o1vnd) is currently over its credit limit.
+// Force Account B (tvxm21ys) as primary immediately.
+// Remove this import once Account A resets (~10-15 days).
+import { forceAccount } from './lib/cloudinaryRouter';
+forceAccount('B');
+// ──────────────────────────────────────────────────────────────────────────
 const ChatScreen = lazy(() => import('./components/chat/ChatScreen'));
 const HomeScreen = lazy(() => import('./components/home/HomeScreen'));
 const ReelsScreen = lazy(() => import('./components/reels/ReelsScreen'));
@@ -28,6 +35,7 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { MediaFoldersProvider } from './contexts/MediaFoldersContext';
 import { Toaster } from 'sonner';
 import { CallProvider } from './contexts/CallContext';
+
 import CallOverlay from './components/call/CallOverlay';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { GarbageProvider } from './contexts/GarbageContext';

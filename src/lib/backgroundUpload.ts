@@ -15,6 +15,7 @@
 
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { supabase } from './supabase';
+import { getPreferredAccount } from './cloudinaryRouter';
 
 // ── Plugin Interface ──────────────────────────────────────────────────────
 
@@ -163,11 +164,13 @@ export async function enqueueMediaUpload(
       media_url: '__CLOUDINARY_URL_PLACEHOLDER__',
     };
 
+    const account = getPreferredAccount();
+
     const result = await BackgroundUpload.enqueueUpload({
       taskId,
       encryptedBase64: uint8ArrayToBase64(encryptedData),
-      cloudinaryPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
-      cloudinaryCloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+      cloudinaryPreset: account.uploadPreset,
+      cloudinaryCloudName: account.cloudName,
       uploadType,
       supabaseUrl: creds.url,
       supabaseKey: creds.key,
@@ -222,14 +225,15 @@ export async function enqueueSingleChunk(
 
   try {
     const chunkBase64 = uint8ArrayToBase64(encryptedChunk);
+    const account = getPreferredAccount();
 
     const result = await BackgroundUpload.enqueueChunkedUpload({
       messageId,
       totalChunks,
       chunkIndex,
       chunk: chunkBase64,
-      cloudinaryPreset: import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET,
-      cloudinaryCloudName: import.meta.env.VITE_CLOUDINARY_CLOUD_NAME,
+      cloudinaryPreset: account.uploadPreset,
+      cloudinaryCloudName: account.cloudName,
       supabaseUrl: creds.url,
       supabaseKey: creds.key,
       supabaseAccessToken: creds.accessToken,
