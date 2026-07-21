@@ -395,7 +395,7 @@ function InnerApp({
         />
         <AppLockModal />
       <KeySetupModal />
-      {!isLocked && <WhatsNewModal currentVersion="2.25.9" />}
+      {!isLocked && <WhatsNewModal currentVersion="2.25.10" />}
       <AppLayout activeTab={activeTab} onTabChange={handleTabChangeWrapper} hasUnreadChat={hasUnreadChat}>
         <Suspense fallback={
           <div className="flex-1 flex items-center justify-center bg-background w-full h-full">
