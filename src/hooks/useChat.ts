@@ -355,34 +355,18 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const currentKeyHistory = partnerKeyHistoryRef.current;
       
       try {
-        const [sentResult, receivedResult] = await Promise.all([
-          supabase
-            .from('messages')
-            .select(MSG_COLUMNS)
-            .eq('sender_id', user.id)
-            .eq('receiver_id', partnerId)
-            .eq('is_reel_upload', false)
-            .gt('created_at', lastMessageTimeRef.current)
-            .order('created_at', { ascending: true }),
-          supabase
-            .from('messages')
-            .select(MSG_COLUMNS)
-            .eq('sender_id', partnerId)
-            .eq('receiver_id', user.id)
-            .eq('is_reel_upload', false)
-            .gt('created_at', lastMessageTimeRef.current)
-            .order('created_at', { ascending: true })
-        ]);
+        // ⚡ SMART LOAD: Single OR query instead of 2 parallel queries for gap-fill
+        const { data, error } = await supabase
+          .from('messages')
+          .select(MSG_COLUMNS)
+          .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+          .eq('is_reel_upload', false)
+          .gt('created_at', lastMessageTimeRef.current)
+          .order('created_at', { ascending: true })
+          .limit(100);
 
-        if (sentResult.error) throw sentResult.error;
-        if (receivedResult.error) throw receivedResult.error;
+        if (error) throw error;
 
-        const combinedData = [
-          ...(sentResult.data || []),
-          ...(receivedResult.data || [])
-        ];
-        combinedData.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-        const data = combinedData;
         if (data && data.length > 0) {
           let newMessages: ChatMessage[] = [];
           if (myKeyPair) {
@@ -434,38 +418,22 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const currentPartnerKey = partnerKeyRef.current;
       const currentKeyHistory = partnerKeyHistoryRef.current;
       try {
-        const [sentResult, receivedResult] = await Promise.all([
-          supabase
-            .from('messages')
-            .select(MSG_COLUMNS)
-            .eq('sender_id', user.id)
-            .eq('receiver_id', partnerId)
-            .eq('is_reel_upload', false)
-            .order('created_at', { ascending: false })
-            .limit(PAGE_SIZE),
-          supabase
-            .from('messages')
-            .select(MSG_COLUMNS)
-            .eq('sender_id', partnerId)
-            .eq('receiver_id', user.id)
-            .eq('is_reel_upload', false)
-            .order('created_at', { ascending: false })
-            .limit(PAGE_SIZE)
-        ]);
+        // ⚡ SMART LOAD: Single RPC call instead of 2 parallel queries
+        // get_chat_messages is a SECURITY DEFINER function that fetches
+        // both sides of the conversation in one round-trip.
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_chat_messages', {
+          p_user_id: user.id,
+          p_partner_id: partnerId,
+          p_limit: PAGE_SIZE,
+        });
 
-        if (sentResult.error) throw sentResult.error;
-        if (receivedResult.error) throw receivedResult.error;
+        if (rpcError) throw rpcError;
 
-        const combinedData = [
-          ...(sentResult.data || []),
-          ...(receivedResult.data || [])
-        ];
-        combinedData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        const data = combinedData.slice(0, PAGE_SIZE);
+        // RPC returns DESC order; reverse to get ASC for display
+        const data = rpcData || [];
+        const sortedData = [...data].reverse();
 
-        if (myKeyPair && data) {
-          // Reverse data because we fetched most recent but want to display ascending
-          const sortedData = [...data].reverse();
+        if (myKeyPair && sortedData.length > 0) {
           const decrypted = await decryptRowsAsync(sortedData, myKeyPair, currentPartnerKey, currentKeyHistory);
           setMessages(decrypted);
           setHasMore(data.length === PAGE_SIZE);
@@ -478,19 +446,21 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
           }
 
           // Mark undelivered messages from partner as delivered
-          const undeliveredIds = data.filter(m => m.sender_id === partnerId && !m.is_delivered).map(m => m.id);
+          const undeliveredIds = data.filter((m: any) => m.sender_id === partnerId && !m.is_delivered).map((m: any) => m.id);
           if (undeliveredIds.length > 0) {
             await supabase.from('messages').update({ is_delivered: true, delivered_at: new Date().toISOString() }).in('id', undeliveredIds);
           }
         } else {
-          setMessages((data || []).map(row => ({ ...row, is_mine: row.sender_id === user.id })));
+          setMessages((sortedData || []).map((row: any) => ({ ...row, is_mine: row.sender_id === user.id })));
+          setHasMore(data.length === PAGE_SIZE);
           setHasMoreNewer(false);
         }
 
-        // Fetch pinned messages
+        // Fetch pinned messages with limit to avoid full-table scans
         const { data: pinnedData } = await supabase
           .from('pinned_messages')
-          .select('id,message_id,pinned_by,created_at');
+          .select('id,message_id,pinned_by,created_at')
+          .limit(100);
         if (pinnedData) {
           setPinnedMessages(pinnedData);
         }
@@ -1663,50 +1633,31 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
 
     try {
-      const [sentResult, receivedResult] = await Promise.all([
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', user.id)
-          .eq('receiver_id', partnerId)
-          .eq('is_reel_upload', false)
-          .lt('created_at', oldestTimestamp)
-          .order('created_at', { ascending: false })
-          .limit(PAGE_SIZE),
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', partnerId)
-          .eq('receiver_id', user.id)
-          .eq('is_reel_upload', false)
-          .lt('created_at', oldestTimestamp)
-          .order('created_at', { ascending: false })
-          .limit(PAGE_SIZE)
-      ]);
+      // ⚡ SMART LOAD: Single RPC call instead of 2 parallel queries
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_chat_messages', {
+        p_user_id: user.id,
+        p_partner_id: partnerId,
+        p_limit: PAGE_SIZE,
+        p_before: oldestTimestamp,
+      });
 
-      if (sentResult.error) throw sentResult.error;
-      if (receivedResult.error) throw receivedResult.error;
+      if (rpcError) throw rpcError;
 
-      const combinedData = [
-        ...(sentResult.data || []),
-        ...(receivedResult.data || [])
-      ];
-      combinedData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      const data = combinedData.slice(0, PAGE_SIZE);
+      const data = rpcData || [];
 
       if (!data || data.length === 0) {
         setHasMore(false);
         return;
       }
 
+      // RPC returns DESC, reverse for ASC prepend
+      const sortedData = [...data].reverse();
+
       if (myKeyPair) {
-        // Reverse to maintain ASC sequence
-        const sortedData = [...data].reverse();
         const decrypted = await decryptRowsAsync(sortedData, myKeyPair, currentPartnerKey, currentKeyHistory);
         setMessages(prev => [...decrypted, ...prev]);
       } else {
-        const sortedData = [...data].reverse();
-        setMessages(prev => [...sortedData.map(row => ({ ...row, is_mine: row.sender_id === user.id })), ...prev]);
+        setMessages(prev => [...sortedData.map((row: any) => ({ ...row, is_mine: row.sender_id === user.id })), ...prev]);
       }
       
       setHasMore(data.length === PAGE_SIZE);
@@ -1733,36 +1684,17 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
     }
 
     try {
-      const [sentResult, receivedResult] = await Promise.all([
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', user.id)
-          .eq('receiver_id', partnerId)
-          .eq('is_reel_upload', false)
-          .gt('created_at', newestTimestamp)
-          .order('created_at', { ascending: true })
-          .limit(PAGE_SIZE),
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', partnerId)
-          .eq('receiver_id', user.id)
-          .eq('is_reel_upload', false)
-          .gt('created_at', newestTimestamp)
-          .order('created_at', { ascending: true })
-          .limit(PAGE_SIZE)
-      ]);
+      // ⚡ SMART LOAD: Single OR query instead of 2 parallel queries
+      const { data, error } = await supabase
+        .from('messages')
+        .select(MSG_COLUMNS)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .eq('is_reel_upload', false)
+        .gt('created_at', newestTimestamp)
+        .order('created_at', { ascending: true })
+        .limit(PAGE_SIZE);
 
-      if (sentResult.error) throw sentResult.error;
-      if (receivedResult.error) throw receivedResult.error;
-
-      const combinedData = [
-        ...(sentResult.data || []),
-        ...(receivedResult.data || [])
-      ];
-      combinedData.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      const data = combinedData.slice(0, PAGE_SIZE);
+      if (error) throw error;
 
       if (!data || data.length === 0) {
         setHasMoreNewer(false);
@@ -1805,68 +1737,31 @@ export function useChat(partnerId: string | undefined, partnerPublicKey: string 
       const targetDate = targetData.created_at;
 
       // 2. Fetch older messages (including target itself by using lte)
-      const [olderSent, olderReceived] = await Promise.all([
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', user.id)
-          .eq('receiver_id', partnerId)
-          .eq('is_reel_upload', false)
-          .lte('created_at', targetDate)
-          .order('created_at', { ascending: false })
-          .limit(20),
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', partnerId)
-          .eq('receiver_id', user.id)
-          .eq('is_reel_upload', false)
-          .lte('created_at', targetDate)
-          .order('created_at', { ascending: false })
-          .limit(20)
-      ]);
+      // ⚡ SMART LOAD: Single OR query instead of 2 parallel queries
+      const { data: olderData, error: olderError } = await supabase
+        .from('messages')
+        .select(MSG_COLUMNS)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .eq('is_reel_upload', false)
+        .lte('created_at', targetDate)
+        .order('created_at', { ascending: false })
+        .limit(20);
 
-      if (olderSent.error) throw olderSent.error;
-      if (olderReceived.error) throw olderReceived.error;
-
-      const combinedOlder = [
-        ...(olderSent.data || []),
-        ...(olderReceived.data || [])
-      ];
-      combinedOlder.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-      const olderData = combinedOlder.slice(0, 20);
+      if (olderError) throw olderError;
 
       // 3. Fetch newer messages
-      const [newerSent, newerReceived] = await Promise.all([
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', user.id)
-          .eq('receiver_id', partnerId)
-          .eq('is_reel_upload', false)
-          .gt('created_at', targetDate)
-          .order('created_at', { ascending: true })
-          .limit(20),
-        supabase
-          .from('messages')
-          .select(MSG_COLUMNS)
-          .eq('sender_id', partnerId)
-          .eq('receiver_id', user.id)
-          .eq('is_reel_upload', false)
-          .gt('created_at', targetDate)
-          .order('created_at', { ascending: true })
-          .limit(20)
-      ]);
+      // ⚡ SMART LOAD: Single OR query instead of 2 parallel queries
+      const { data: newerData, error: newerError } = await supabase
+        .from('messages')
+        .select(MSG_COLUMNS)
+        .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
+        .eq('is_reel_upload', false)
+        .gt('created_at', targetDate)
+        .order('created_at', { ascending: true })
+        .limit(20);
 
-      if (newerSent.error) throw newerSent.error;
-      if (newerReceived.error) throw newerReceived.error;
+      if (newerError) throw newerError;
 
-      const combinedNewer = [
-        ...(newerSent.data || []),
-        ...(newerReceived.data || [])
-      ];
-      combinedNewer.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-      const newerData = combinedNewer.slice(0, 20);
       const olderSorted = olderData ? [...olderData].reverse() : [];
       const newerSorted = newerData || [];
       

@@ -162,7 +162,7 @@ export default function MobileLoginScreen({ onLogin }: MobileLoginScreenProps) {
               End-to-end encryption keys are held locally in your browser session.
             </p>
             <p className="text-[9px] text-[var(--text-secondary)]/30 mt-3 uppercase tracking-widest font-semibold">
-              © 2026 AURA. Private Sanctuary v2.0.0
+              © 2026 AURA. Private Sanctuary v2.27.0
             </p>
           </footer>
         </main>
