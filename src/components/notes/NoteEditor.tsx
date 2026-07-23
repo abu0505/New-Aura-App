@@ -266,6 +266,58 @@ const convertHtmlToMarkdown = (html: string): string => {
   if (!html) return '';
   let md = html;
 
+  // ── Block-level elements first (order matters) ──
+
+  // Code blocks: <pre><code>...</code></pre>
+  md = md.replace(/<pre[^>]*>\s*<code[^>]*>([\s\S]*?)<\/code>\s*<\/pre>/gi, (_, code) => {
+    const decoded = code
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'");
+    return '\n```\n' + decoded.trim() + '\n```\n';
+  });
+
+  // Headings
+  md = md.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '\n# $1\n');
+  md = md.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '\n## $1\n');
+  md = md.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '\n### $1\n');
+
+  // Blockquote
+  md = md.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, inner) => {
+    return inner.trim().split('\n').map((line: string) => '> ' + line).join('\n') + '\n';
+  });
+
+  // Ordered list items
+  let olIndex = 1;
+  md = md.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, (_, inner) => {
+    olIndex = 1;
+    const items = inner.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_: string, item: string) => {
+      return `${olIndex++}. ${item.trim()}\n`;
+    });
+    return '\n' + items + '\n';
+  });
+
+  // Unordered list items
+  md = md.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, (_, inner) => {
+    const items = inner.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_: string, item: string) => {
+      return `- ${item.trim()}\n`;
+    });
+    return '\n' + items + '\n';
+  });
+
+  // Paragraphs → newlines (empty p tags become blank lines)
+  md = md.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, inner) => {
+    const text = inner.trim();
+    return text ? text + '\n' : '\n';
+  });
+
+  // Line breaks
+  md = md.replace(/<br\s*\/?>/gi, '\n');
+
+  // ── Inline elements ──
+
   // Bold & Strong
   md = md.replace(/<strong>(.*?)<\/strong>/gi, '**$1**');
   md = md.replace(/<b>(.*?)<\/b>/gi, '**$1**');
@@ -280,13 +332,28 @@ const convertHtmlToMarkdown = (html: string): string => {
   // Strikethrough
   md = md.replace(/<del>(.*?)<\/del>/gi, '~~$1~~');
 
-  // Inline code (not pre-wrapped code block)
-  md = md.replace(/(?<!<pre[^>]*>)<code>(.*?)<\/code>/gi, '`$1`');
+  // Inline code
+  md = md.replace(/<code>(.*?)<\/code>/gi, '`$1`');
 
   // Highlight
   md = md.replace(/<mark>(.*?)<\/mark>/gi, '==$1==');
 
-  return md;
+  // Strip any remaining HTML tags
+  md = md.replace(/<[^>]+>/g, '');
+
+  // Decode HTML entities
+  md = md
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+
+  // Clean up excessive blank lines (max 2 consecutive)
+  md = md.replace(/\n{3,}/g, '\n\n');
+
+  return md.trim();
 };
 
 const convertMarkdownToHtml = (md: string): string => {
@@ -2240,14 +2307,15 @@ export default function NoteEditor({
                   const newIsRaw = !note.isRaw;
                   if (newIsRaw) {
                     const converted = convertHtmlToMarkdown(content || '');
-                    onUpdate(note.id, { isRaw: true, content: converted });
+                    // Only call onUpdate — useEditor will re-create the editor
+                    // when note.isRaw changes (dep array). Calling setContent on the
+                    // old editor instance while it is being destroyed causes a crash.
                     setContent(converted);
-                    if (editor) editor.commands.setContent(converted);
+                    onUpdate(note.id, { isRaw: true, content: converted });
                   } else {
                     const converted = convertMarkdownToHtml(content || '');
-                    onUpdate(note.id, { isRaw: false, content: converted });
                     setContent(converted);
-                    if (editor) editor.commands.setContent(converted);
+                    onUpdate(note.id, { isRaw: false, content: converted });
                   }
                 }}
                 className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors ${note.isRaw ? 'text-[var(--gold)] animate-pulse' : 'text-white/40 hover:text-white/70'
